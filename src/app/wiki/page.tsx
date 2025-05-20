@@ -110,7 +110,7 @@ export default function WikiPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      
       <main className="container py-12">
         <div className="max-w-6xl mx-auto space-y-8">
           <div className="text-center space-y-4">

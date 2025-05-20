@@ -99,7 +99,6 @@ const categorias = ['Realista', 'Balanceado', 'Vibrante', 'Versátil', 'Ligero']
 export default function ShadersPage() {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       <main className="container py-12">
         <div className="max-w-6xl mx-auto space-y-8">

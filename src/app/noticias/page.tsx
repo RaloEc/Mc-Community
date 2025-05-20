@@ -1,111 +1,300 @@
-import Header from '../../components/Header'
-import Image from 'next/image'
-import Link from 'next/link'
-import { CalendarIcon, ArrowRightIcon } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import NoticiasLista from '@/components/NoticiasLista'
+import FiltrosBtnFlotante from '@/components/FiltrosBtnFlotante';
+import FiltrosModal from '@/components/FiltrosModal';
+import FiltrosDesktop from '@/components/FiltrosDesktop';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default function Noticias() {
-  // Datos de ejemplo para las noticias
-  const noticias = [
-    {
-      id: 1,
-      titulo: 'Nueva Actualización 1.21',
-      fecha: '2025-04-03',
-      imagen: 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+Update',
-      resumen: 'Descubre todas las novedades que trae la última actualización de Minecraft',
-      categoria: 'Actualizaciones'
-    },
-    {
-      id: 2,
-      titulo: 'Torneo PvP Internacional',
-      fecha: '2025-04-02',
-      imagen: 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+PvP',
-      resumen: 'El mayor torneo de PvP del año está por comenzar. ¡Inscríbete ahora!',
-      categoria: 'Eventos'
-    },
-    {
-      id: 3,
-      titulo: 'Nuevo Pack de Texturas',
-      fecha: '2025-04-01',
-      imagen: 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+Textures',
-      resumen: 'Realismo extremo: El pack de texturas que revolucionará tu experiencia',
-      categoria: 'Recursos'
+  // Obtener parámetros de la URL
+  const searchParams = useSearchParams();
+  
+  // Estado para controlar la apertura del modal de filtros
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [filtrosActivos, setFiltrosActivos] = useState(0);
+  
+  // Estados para los filtros
+  const [busqueda, setBusqueda] = useState('');
+  const [autor, setAutor] = useState('');
+  const [categoria, setCategoria] = useState('');
+  const [ordenFecha, setOrdenFecha] = useState<'asc' | 'desc'>('desc');
+  const [categorias, setCategorias] = useState<{id: string, nombre: string}[]>([]);
+  const [filtrosActivosArray, setFiltrosActivosArray] = useState<{tipo: string, valor: string, etiqueta: string}[]>([]);
+  
+  // Referencia para evitar bucles infinitos
+  const categoriaProcesada = useRef(false);
+  
+  // Estados para los valores temporales del modal (para no aplicar cambios hasta que se haga clic en Aplicar)
+  const [busquedaTemp, setBusquedaTemp] = useState('');
+  const [autorTemp, setAutorTemp] = useState('');
+  const [categoriaTemp, setCategoriaTemp] = useState('');
+  const [ordenFechaTemp, setOrdenFechaTemp] = useState<'asc' | 'desc'>('desc');
+  
+  // Efecto para leer los parámetros de la URL y aplicar los filtros al cargar la página
+  useEffect(() => {
+    const urlBusqueda = searchParams.get('busqueda');
+    const urlAutor = searchParams.get('autor');
+    const urlCategoria = searchParams.get('categoria');
+    const urlOrden = searchParams.get('orden');
+    
+    // Aplicar filtros desde la URL
+    if (urlBusqueda) setBusqueda(urlBusqueda);
+    if (urlAutor) setAutor(urlAutor);
+    if (urlCategoria) {
+      // Cuando carguen las categorías, buscaremos la que coincida con el nombre
+      // El ID se asignará después cuando se carguen las categorías
+      setCategoria(urlCategoria);
+      
+      // Guardamos el nombre de la categoría para buscarlo después
+      console.log('Categoría en URL:', urlCategoria);
     }
-  ]
+    if (urlOrden === 'asc' || urlOrden === 'desc') setOrdenFecha(urlOrden);
+    
+  }, [searchParams]);
+  
+  // Efecto para actualizar los filtros activos cuando se cargan las categorías
+  useEffect(() => {
+    // Si ya procesamos esta categoría o no hay categorías cargadas o no hay categoría seleccionada, no hacemos nada
+    if (categoriaProcesada.current || categorias.length === 0 || !categoria) {
+      return;
+    }
+    
+    // Primero verificamos si tenemos un ID o un nombre de categoría
+    const esCategoriaId = categorias.some(c => c.id === categoria);
+    
+    if (esCategoriaId) {
+      // Ya tenemos un ID de categoría, actualizamos el array de filtros activos
+      const categoriaEncontradaPorId = categorias.find(c => c.id === categoria);
+      
+      if (categoriaEncontradaPorId) {
+        const nuevosFiltros = [...filtrosActivosArray.filter(f => f.tipo !== 'categoria')];
+        
+        nuevosFiltros.push({
+          tipo: 'categoria',
+          valor: categoria,
+          etiqueta: `Categoría: ${categoriaEncontradaPorId.nombre}`
+        });
+        
+        setFiltrosActivosArray(nuevosFiltros);
+        categoriaProcesada.current = true;
+      }
+    } else {
+      // Es un nombre de categoría, buscar su ID
+      const categoriaEncontradaPorNombre = categorias.find(c => 
+        c.nombre.toLowerCase() === categoria.toLowerCase()
+      );
+      
+      if (categoriaEncontradaPorNombre) {
+        // Marcamos como procesada antes de actualizar el estado para evitar bucles
+        categoriaProcesada.current = true;
+        
+        // Actualizar el estado con el ID de la categoría
+        setCategoria(categoriaEncontradaPorNombre.id);
+        
+        // Actualizar el array de filtros activos
+        const nuevosFiltros = [...filtrosActivosArray.filter(f => f.tipo !== 'categoria')];
+        
+        nuevosFiltros.push({
+          tipo: 'categoria',
+          valor: categoriaEncontradaPorNombre.id,
+          etiqueta: `Categoría: ${categoriaEncontradaPorNombre.nombre}`
+        });
+        
+        setFiltrosActivosArray(nuevosFiltros);
+      }
+    }
+  }, [categorias, categoria, filtrosActivosArray]);
+  
+  // Efecto para actualizar los filtros activos cuando cambian los filtros
+  useEffect(() => {
+    // Actualizar los valores temporales con los valores reales
+    setBusquedaTemp(busqueda);
+    setAutorTemp(autor);
+    setCategoriaTemp(categoria);
+    setOrdenFechaTemp(ordenFecha);
+  }, [busqueda, autor, categoria, ordenFecha]);
+  
+  // Función para eliminar un filtro específico
+  const eliminarFiltro = (tipo: string) => {
+    if (tipo === 'busqueda') setBusqueda('');
+    if (tipo === 'autor') setAutor('');
+    if (tipo === 'categoria') {
+      setCategoria('');
+      // Resetear el estado de procesamiento para permitir seleccionar la misma categoría nuevamente
+      categoriaProcesada.current = false;
+    }
+    if (tipo === 'ordenFecha') setOrdenFecha('desc');
+    
+    setFiltrosActivosArray(filtrosActivosArray.filter(f => f.tipo !== tipo));
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <main className="container py-12">
-        {/* Título de la sección */}
-        <div className="space-y-4 text-center mb-12">
-          <h1 className="text-4xl font-bold tracking-tight">
-            Últimas Noticias
-          </h1>
-          <p className="text-muted-foreground max-w-2xl mx-auto">
-            Mantente al día con las últimas novedades del mundo de Minecraft
-          </p>
+    <div className="min-h-screen flex flex-col bg-black text-white">
+      <main className="flex-1 container mx-auto px-4 py-6">
+        <h1 className="text-2xl md:text-3xl font-bold mb-6">Noticias</h1>
+        
+        {/* Filtros de escritorio */}
+        <div className="hidden md:block mb-6">
+          <FiltrosDesktop 
+            busqueda={busqueda}
+            autor={autor}
+            categoria={categoria}
+            ordenFecha={ordenFecha}
+            categorias={categorias}
+            filtrosActivos={filtrosActivosArray}
+            onBusquedaChange={setBusqueda}
+            onAutorChange={setAutor}
+            onCategoriaChange={setCategoria}
+            onOrdenFechaChange={setOrdenFecha}
+            onEliminarFiltro={eliminarFiltro}
+            onAplicarFiltros={() => {
+              // No necesitamos hacer nada aquí porque los cambios se aplican inmediatamente
+              console.log('Filtros aplicados desde escritorio');
+            }}
+            onLimpiarFiltros={() => {
+              setBusqueda('');
+              setAutor('');
+              setCategoria('');
+              setOrdenFecha('desc');
+              setFiltrosActivosArray([]);
+              // Resetear el estado de procesamiento
+              categoriaProcesada.current = false;
+            }}
+          />
         </div>
-
-        {/* Grid de noticias */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {noticias.map((noticia) => (
-            <article 
-              key={noticia.id}
-              className="group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md dark:border-blue-900/20 dark:bg-amoled-gray"
-            >
-              <div className="relative h-48 w-full overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                <Image
-                  src={noticia.imagen}
-                  alt={noticia.titulo}
-                  fill
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <Badge 
-                  className="absolute top-4 right-4 z-20"
-                  variant="secondary"
-                >
-                  {noticia.categoria}
-                </Badge>
-              </div>
-              
-              <div className="flex flex-col space-y-1.5 p-6">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CalendarIcon className="mr-1 h-3 w-3" />
-                  <time>
-                    {new Date(noticia.fecha).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </time>
-                </div>
-                <h2 className="text-xl font-semibold leading-none tracking-tight mt-2">
-                  {noticia.titulo}
-                </h2>
-                <p className="text-muted-foreground">
-                  {noticia.resumen}
-                </p>
-                <div className="pt-4 mt-auto">
-                  <Button 
-                    variant="link" 
-                    className="px-0 text-primary" 
-                    asChild
-                  >
-                    <Link href={`/noticias/${noticia.id}`}>
-                      Leer más
-                      <ArrowRightIcon className="ml-1 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            </article>
-          ))}
+        
+        <div className="max-w-[1600px] mx-auto">
+          <NoticiasLista 
+            limit={16} 
+            columnas={3} 
+            mostrarResumen={true} 
+            mostrarFiltros={false}
+            busqueda={busqueda}
+            autor={autor}
+            categoria={categoria}
+            ordenFecha={ordenFecha}
+            onFiltrosActivosChange={(cantidad) => {
+              setFiltrosActivos(cantidad);
+            }}
+            onCategoriasLoaded={(cats) => {
+              setCategorias(cats);
+            }}
+            onFiltrosActivosArrayChange={(filtros) => {
+              setFiltrosActivosArray(filtros);
+            }}
+          />
         </div>
+        
+        {/* Botón flotante para abrir el modal de filtros */}
+        <FiltrosBtnFlotante 
+          modalAbierto={modalAbierto} 
+          onAbrirModal={() => setModalAbierto(true)}
+          hayFiltrosActivos={busqueda !== '' || categoria !== ''}
+        />
+        
+        {/* Modal de filtros */}
+        <FiltrosModal 
+          isOpen={modalAbierto}
+          onClose={() => setModalAbierto(false)}
+          busqueda={busquedaTemp}
+          autor={autorTemp}
+          categoria={categoriaTemp}
+          ordenFecha={ordenFechaTemp}
+          categorias={categorias}
+          filtrosActivos={filtrosActivosArray}
+          onBusquedaChange={setBusquedaTemp}
+          onAutorChange={setAutorTemp}
+          onCategoriaChange={setCategoriaTemp}
+          onOrdenFechaChange={setOrdenFechaTemp}
+          onAplicarFiltros={() => {
+            // Aplicar los valores temporales a los valores reales
+            setBusqueda(busquedaTemp);
+            setAutor(autorTemp);
+            setCategoria(categoriaTemp);
+            setOrdenFecha(ordenFechaTemp);
+            
+            // Actualizar el array de filtros activos
+            const nuevosFiltros = [];
+            
+            if (busquedaTemp) {
+              nuevosFiltros.push({
+                tipo: 'busqueda',
+                valor: busquedaTemp,
+                etiqueta: `Título: ${busquedaTemp}`
+              });
+            }
+            
+            if (autorTemp) {
+              nuevosFiltros.push({
+                tipo: 'autor',
+                valor: autorTemp,
+                etiqueta: `Autor: ${autorTemp}`
+              });
+            }
+            
+            if (categoriaTemp) {
+              const categoriaSeleccionada = categorias.find(c => c.id === categoriaTemp);
+              nuevosFiltros.push({
+                tipo: 'categoria',
+                valor: categoriaTemp,
+                etiqueta: `Categoría: ${categoriaSeleccionada ? categoriaSeleccionada.nombre : categoriaTemp}`
+              });
+            }
+            
+            if (ordenFechaTemp !== 'desc') {
+              nuevosFiltros.push({
+                tipo: 'ordenFecha',
+                valor: ordenFechaTemp,
+                etiqueta: `Orden: Más antiguas primero`
+              });
+            }
+            
+            setFiltrosActivosArray(nuevosFiltros);
+            console.log('Filtros aplicados:', nuevosFiltros);
+          }}
+          onLimpiarFiltros={() => {
+            // Limpiar los valores temporales
+            setBusquedaTemp('');
+            setAutorTemp('');
+            setCategoriaTemp('');
+            setOrdenFechaTemp('desc');
+            
+            // Limpiar los valores reales
+            setBusqueda('');
+            setAutor('');
+            setCategoria('');
+            setOrdenFecha('desc');
+            setFiltrosActivosArray([]);
+            
+            // Resetear el estado de procesamiento
+            categoriaProcesada.current = false;
+          }}
+          onEliminarFiltro={(tipo) => {
+            if (tipo === 'busqueda') {
+              setBusquedaTemp('');
+              setBusqueda('');
+            }
+            if (tipo === 'autor') {
+              setAutorTemp('');
+              setAutor('');
+            }
+            if (tipo === 'categoria') {
+              setCategoriaTemp('');
+              setCategoria('');
+            }
+            if (tipo === 'ordenFecha') {
+              setOrdenFechaTemp('desc');
+              setOrdenFecha('desc');
+            }
+            setFiltrosActivosArray(filtrosActivosArray.filter(f => f.tipo !== tipo));
+          }}
+        />
       </main>
     </div>
-  )
+  );
 }

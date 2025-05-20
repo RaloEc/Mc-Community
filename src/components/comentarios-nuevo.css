@@ -1,0 +1,166 @@
+/* Estilos para el nuevo componente de comentarios */
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Contenedor principal */
+.comentarios-container {
+  --comentario-bg: #f3f4f6;
+  --comentario-bg-dark: #1f2937;
+  --text-primary: #111827;
+  --text-primary-dark: #e5e7eb;
+  --text-secondary: #6b7280;
+  --text-secondary-dark: #9ca3af;
+  --border-color: #e5e7eb;
+  --border-color-dark: #374151;
+  position: relative;
+}
+
+/* Contenedor de la lista de comentarios con altura máxima */
+.comentarios-lista {
+  max-height: 600px; /* Altura para mostrar aproximadamente 6 comentarios */
+  overflow-y: auto;
+  position: relative;
+  padding-right: 4px;
+  /* Ocultar scrollbar pero mantener funcionalidad */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE y Edge */
+}
+
+/* Ocultar scrollbar para Chrome, Safari y Opera */
+.comentarios-lista::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Indicador de desplazamiento */
+.scroll-indicator {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 36px;
+  height: 36px;
+  background-color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.2s ease;
+  opacity: 0.9;
+  border: 1px solid var(--border-color);
+}
+
+.scroll-indicator:hover {
+  transform: translateX(-50%) translateY(2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  opacity: 1;
+}
+
+.scroll-indicator svg {
+  transition: transform 0.2s ease;
+}
+
+.scroll-indicator:hover svg {
+  transform: translateY(2px);
+}
+
+/* Ajuste para modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .comentarios-lista::-webkit-scrollbar-track {
+    background: var(--comentario-bg-dark);
+  }
+  
+  .scroll-indicator {
+    background-color: var(--comentario-bg-dark);
+    border-color: var(--border-color-dark);
+  }
+}
+
+/* Ajustes para modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .comentarios-container {
+    --comentario-bg: var(--comentario-bg-dark);
+    --text-primary: var(--text-primary-dark);
+    --text-secondary: var(--text-secondary-dark);
+    --border-color: var(--border-color-dark);
+  }
+}
+
+/* Estilo para cada comentario */
+.comentario-item {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+  margin-bottom: 1.5rem;
+}
+
+/* Espacio para respuestas */
+.comentario-item .ml-10 {
+  position: relative;
+  margin-left: 3.5rem; /* Aumentar la indentación para mayor claridad jerárquica */
+  padding-left: 0.5rem; /* Añadir padding adicional */
+  border-left: 2px solid #f3f4f6; /* Borde sutil para indicar jerarquía */
+}
+
+/* Ajuste para modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .comentario-item .ml-10 {
+    border-left-color: #1f2937;
+  }
+}
+
+/* Estilos para los textareas */
+.comentarios-container textarea {
+  transition: all 0.2s ease;
+}
+
+.comentarios-container textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+/* Botones de acción */
+.comentarios-container button {
+  transition: all 0.15s ease;
+}
+
+/* Estilo para el botón de enviar */
+.comentarios-container button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Efecto hover para los comentarios */
+.comentario-item > div:first-child:hover,
+.comentario-item .ml-10 > div:hover {
+  z-index: 1;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 640px) {
+  .comentario-item .ml-10 {
+    margin-left: 1.5rem;
+  }
+  
+  .comentario-item .ml-10::before {
+    left: -12px;
+    width: 12px;
+  }
+}

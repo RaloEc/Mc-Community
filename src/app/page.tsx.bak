@@ -1,0 +1,474 @@
+'use client'
+
+import Link from 'next/link'
+import Image from 'next/image'
+import { Button } from '@/components/ui/button'
+import { ModeToggle } from '@/components/mode-toggle'
+import { Gamepad2, Globe, Newspaper, ChevronDown, Book, CalendarIcon } from 'lucide-react'
+import NoticiasMiniatura from '@/components/NoticiasMiniatura'
+import BotonNoticias from '@/components/BotonNoticias'
+import { useAuth } from '@/context/AuthContext'
+
+export default function Home() {
+  const { session, user, loading } = useAuth()
+  
+  // Manejar el caso donde la autenticación está cargando
+  const isAuthenticated = !loading && session !== null
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/90 dark:from-amoled-black dark:to-amoled-black">
+      {/* Hero Section - Solo se muestra si no hay sesión iniciada */}
+      {!isAuthenticated && (
+        <section className="relative py-20 md:py-32">
+          <div className="absolute inset-0 bg-[url('/minecraft-epic-landscape.jpeg')] bg-cover bg-center opacity-10"></div>
+          <div className="container relative z-10">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5">
+                <span className="text-xs font-medium text-primary">Versión 1.20 Disponible</span>
+              </div>
+              <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+                Bienvenido a la <span className="text-primary">Comunidad</span>
+              </h1>
+              <p className="mb-8 text-lg text-muted-foreground">
+                Únete a la mayor comunidad de Minecraft en español. Descubre servidores, recursos y noticias sobre el juego.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5" />
+                  <span>Explorar Servidores</span>
+                </Button>
+                <Button variant="outline" size="lg" className="flex items-center gap-2">
+                  <ChevronDown className="h-5 w-5" />
+                  <span>Iniciar Sesión</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Sección principal - Contenido diferente según autenticación */}
+      {isAuthenticated ? (
+        <div className="py-8 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full">
+            {/* Columna principal (2/3 del ancho) */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Bloque de Noticias - Versión destacada */}
+              <section className="bg-card dark:bg-amoled-gray/30 rounded-xl border shadow-sm dark:border-blue-900/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="p-8">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+                    <div className="flex items-center space-x-4 mb-4 sm:mb-0">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+                        <Newspaper className="h-7 w-7 text-primary" />
+                    </div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                        Últimas Noticias
+                    </h2>
+                    </div>
+                    <BotonNoticias />
+                  </div>
+                  <div className="mt-6">
+                    <NoticiasMiniatura limit={3} featured={true} />
+                  </div>
+                </div>
+                </section>
+
+                {/* Bloque de Servidores - Versión mejorada */}
+                <section className="bg-card dark:bg-amoled-gray/30 rounded-xl border shadow-sm dark:border-blue-900/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                <div className="p-8">
+                  <div className="flex items-center space-x-4 mb-8">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
+                      <Globe className="h-7 w-7 text-primary" />
+                    </div>
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                      Servidores Populares
+                    </h2>
+                  </div>
+                  <div className="space-y-4">
+                    {[
+                      { 
+                        name: 'SkyBlock Paradise', 
+                        players: '120/150', 
+                        status: 'online',
+                        version: '1.20.1',
+                        type: 'Skyblock',
+                        image: '/images/servers/skyblock.jpg'
+                      },
+                      { 
+                        name: 'Survival Games', 
+                        players: '85/100', 
+                        status: 'online',
+                        version: '1.19.2',
+                        type: 'PvP',
+                        image: '/images/servers/survival.jpg'
+                      },
+                      { 
+                        name: 'Creative World', 
+                        players: '45/50', 
+                        status: 'online',
+                        version: '1.20.1',
+                        type: 'Creativo',
+                        image: '/images/servers/creative.jpg'
+                      },
+                      { 
+                        name: 'PvP Arena', 
+                        players: '92/100', 
+                        status: 'online',
+                        version: '1.20.1',
+                        type: 'PvP',
+                        image: '/images/servers/pvp.jpg'
+                      }
+                    ].map((server, index) => (
+                      <div key={index} className="group relative overflow-hidden rounded-xl bg-background/50 dark:bg-amoled-black/50 p-0 border dark:border-blue-900/20 hover:shadow-md transition-all">
+                        <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `url('${server.image}')` }}>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                          <div className="absolute top-2 right-2">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                              {server.status === 'online' ? 'En línea' : 'Desconectado'}
+                            </span>
+                          type: 'PvP',
+                          image: '/images/servers/pvp.jpg'
+                        }
+                      ].map((server, index) => (
+                        <div key={index} className="group relative overflow-hidden rounded-xl bg-background/50 dark:bg-amoled-black/50 p-0 border dark:border-blue-900/20 hover:shadow-md transition-all">
+                          <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `url('${server.image}')` }}>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+                            <div className="absolute top-2 right-2">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                                {server.status === 'online' ? 'En línea' : 'Desconectado'}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between">
+                              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
+                                {server.name}
+                              </h3>
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                {server.type}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex items-center text-sm text-muted-foreground">
+                              <span className="flex items-center">
+                                <span className={`h-2 w-2 rounded-full mr-1.5 ${server.status === 'online' ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                                {server.players} jugadores
+                              </span>
+                              <span className="mx-2">•</span>
+                              <span>v{server.version}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-8 text-center">
+                      <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 hover:border-primary/50 px-8 py-2 rounded-full transition-all">
+                        Ver todos los servidores
+                      </Button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              {/* Sidebar (1/3 del ancho) */}
+              <div className="space-y-8 lg:col-span-1">
+                {/* Widget de Estado de la Red */}
+                <div className="bg-card dark:bg-amoled-gray/30 rounded-xl border shadow-sm dark:border-blue-900/20 p-6 hover:shadow-lg transition-shadow duration-300">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center">
+                    <span className="h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+                    Estado de la Red
+                  </h3>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Servidores en línea</span>
+                      <span className="font-medium">12/12</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Jugadores conectados</span>
+                      <span className="font-medium">1,243</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Uptime</span>
+                      <span className="font-medium">99.9%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bloque de Mods y Recursos - Versión Sidebar */}
+                <section className="bg-card dark:bg-amoled-gray/30 rounded-xl border shadow-sm dark:border-blue-900/20 overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h2 className="text-xl font-semibold">Recursos Populares</h2>
+                      <Button variant="ghost" size="sm" className="text-primary hover:bg-primary/10">
+                        Ver todo
+                      </Button>
+                  </div>
+                  <div className="space-y-4">
+                      {[
+                        { 
+                          title: 'Epic Adventure', 
+                          type: 'Mod',
+                          category: 'Aventura',
+                          downloads: '1.2M',
+                          rating: 4.8
+                        },
+                        { 
+                          title: 'Medieval Pack', 
+                          type: 'Textura',
+                          category: 'Texturas',
+                          downloads: '856K',
+                          rating: 4.6
+                        },
+                        { 
+                          title: 'Ultimate Shaders', 
+                          type: 'Shader',
+                          category: 'Gráficos',
+                          downloads: '2.1M',
+                          rating: 4.9
+                        }
+                      ].map((item, index) => (
+                        <div key={index} className="group flex items-start space-x-3 p-3 rounded-lg hover:bg-background/50 dark:hover:bg-amoled-black/50 transition-colors">
+                          <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-medium text-primary">{item.type[0]}</span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                              {item.title}
+                            </p>
+                            <div className="flex items-center mt-1">
+                              <div className="flex items-center">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                  <svg
+                                    key={star}
+                                    className={`h-3 w-3 ${star <= Math.floor(item.rating) ? 'text-yellow-400' : 'text-gray-300'} ${item.rating % 1 > 0 && star === Math.floor(item.rating) ? 'text-yellow-400' : ''}`}
+                                    fill="currentColor"
+                                    viewBox="0 0 20 20"
+                                  >
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                  </svg>
+                                ))}
+                                <span className="ml-1 text-xs text-muted-foreground">{item.rating}</span>
+                              </div>
+                              <span className="mx-1 text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">{item.downloads}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </section>
+
+                {/* Widget de Eventos Próximos */}
+                <div className="bg-card dark:bg-amoled-gray/30 rounded-xl border shadow-sm dark:border-blue-900/20 p-6 hover:shadow-lg transition-shadow duration-300">
+                  <h3 className="text-lg font-semibold mb-4">Próximos Eventos</h3>
+                  <div className="space-y-4">
+                    {[
+                      { 
+                        title: 'Torneo PvP', 
+                        date: '20 Mayo', 
+                        time: '18:00',
+                        participants: 24,
+                        type: 'competitivo'
+                      },
+                      { 
+                        title: 'Construcción en Equipo', 
+                        date: '25 Mayo', 
+                        time: '16:00',
+                        participants: 12,
+                        type: 'construcción'
+                      },
+                      { 
+                        title: 'Caza del Tesoro', 
+                        date: '28 Mayo', 
+                        time: '20:00',
+                        participants: 30,
+                        type: 'aventura'
+                      }
+                    ].map((event, index) => (
+                      <div key={index} className="flex items-start space-x-3 group">
+                        <div className="flex-shrink-0 w-12 text-center">
+                          <div className="text-sm font-medium text-muted-foreground">{event.date}</div>
+                          <div className="text-xs text-muted-foreground">{event.time}</div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                            {event.title}
+                          </h4>
+                          <div className="flex items-center mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                              {event.type}
+                            </span>
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              {event.participants} participantes
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-4">
+                    <Button variant="outline" size="sm" className="w-full border-primary/30 text-primary hover:bg-primary/10">
+                      Ver calendario completo
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <section className="py-16 md:py-24">
+          <div className="container">
+            <div className="grid gap-8 md:grid-cols-3">
+              {/* Noticias Card */}
+              <div className="group rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:bg-amoled-gray dark:border-blue-900/20 card-hover-effect">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                  <Newspaper className="h-6 w-6 text-primary" />
+                </div>
+                <h3 className="mb-2 text-xl font-bold">Últimas Noticias</h3>
+                <p className="mb-4 text-muted-foreground">
+                  Mantente al día con las últimas actualizaciones, eventos y noticias del mundo de Minecraft.
+                </p>
+                <NoticiasMiniatura limit={2} />
+                <div className="mt-4">
+                  <BotonNoticias />
+                </div>
+              </div>
+
+              {/* Servidores Card */}
+              <div className="group relative overflow-hidden rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:bg-amoled-gray dark:border-blue-900/20 card-hover-effect">
+                <div className="absolute inset-0 bg-gradient-to-br from-minecraft-blue-500/5 to-minecraft-blue-700/5 opacity-0 transition-opacity group-hover:opacity-100"></div>
+                <div className="relative z-10">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Globe className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">Servidores</h3>
+                  <p className="mb-4 text-muted-foreground">
+                    Descubre una variedad de servidores de Minecraft para todos los gustos.
+                  </p>
+                  <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/10">
+                    Ver servidores
+                  </Button>
+                </div>
+              </div>
+
+              {/* Wiki Card */}
+              <div className="group relative rounded-xl border bg-card p-6 shadow-sm transition-all hover:shadow-md dark:bg-amoled-gray dark:border-blue-900/20 card-hover-effect">
+                <div className="absolute inset-0 bg-gradient-to-br from-minecraft-green-500/5 to-minecraft-green-700/5 opacity-0 transition-opacity group-hover:opacity-100"></div>
+                <div className="relative z-10">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                    <Book className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="mb-2 text-xl font-bold">Wiki</h3>
+                  <p className="mb-4 text-muted-foreground">
+                    Aprende todo sobre Minecraft en nuestro wiki completo.
+                  </p>
+                  <Button variant="outline" className="w-full border-primary/30 text-primary hover:bg-primary/10">
+                    Explorar wiki
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Wiki Section */}
+      <section className="py-16 bg-muted/50 dark:bg-amoled-gray/50">
+        <div className="container">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Wiki de Minecraft</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Explora nuestra completa wiki con información detallada sobre bloques, ítems, mobs y más.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-card dark:bg-amoled-black rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all dark:border-blue-900/20 card-hover-effect">
+              <div className="p-4">
+                <h3 className="font-medium mb-1">Bloques</h3>
+                <p className="text-sm text-muted-foreground">Todos los bloques del juego</p>
+              </div>
+              <div className="bg-primary/5 px-4 py-2 border-t dark:border-blue-900/10">
+                <p className="text-xs text-muted-foreground">+300 bloques documentados</p>
+              </div>
+            </div>
+            <div className="bg-card dark:bg-amoled-black rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all dark:border-blue-900/20 card-hover-effect">
+              <div className="p-4">
+                <h3 className="font-medium mb-1">Ítems</h3>
+                <p className="text-sm text-muted-foreground">Herramientas, armas y más</p>
+              </div>
+              <div className="bg-primary/5 px-4 py-2 border-t dark:border-blue-900/10">
+                <p className="text-xs text-muted-foreground">+200 ítems documentados</p>
+              </div>
+            </div>
+            <div className="bg-card dark:bg-amoled-black rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all dark:border-blue-900/20 card-hover-effect">
+              <div className="p-4">
+                <h3 className="font-medium mb-1">Mobs</h3>
+                <p className="text-sm text-muted-foreground">Criaturas y enemigos</p>
+              </div>
+              <div className="bg-primary/5 px-4 py-2 border-t dark:border-blue-900/10">
+                <p className="text-xs text-muted-foreground">+150 mobs documentados</p>
+              </div>
+            </div>
+            <div className="bg-card dark:bg-amoled-black rounded-lg overflow-hidden border shadow-sm hover:shadow-md transition-all dark:border-blue-900/20 card-hover-effect">
+              <div className="p-4">
+                <h3 className="font-medium mb-1">Guías</h3>
+                <p className="text-sm text-muted-foreground">Tutoriales y consejos</p>
+              </div>
+              <div className="bg-primary/5 px-4 py-2 border-t dark:border-blue-900/10">
+                <p className="text-xs text-muted-foreground">+50 guías detalladas</p>
+              </div>
+            </div>
+          </div>
+          <div className="text-center mt-8">
+            <Button variant="outline" className="border-primary/30 hover:bg-primary/10">
+              Explorar Wiki Completa
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="border-t border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 dark:bg-amoled-black dark:border-blue-900/20 py-6">
+        <div className="container">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5 text-primary"
+              >
+                <path d="M14 11h4"></path>
+                <path d="M14 15h4"></path>
+                <path d="M11 15v-3.5a1.5 1.5 0 0 0-3 0V15"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+              </svg>
+              <p className="text-sm text-muted-foreground">
+                © 2025 MC Community. Todos los derechos reservados.
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                Términos de Servicio
+              </Link>
+              <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                Política de Privacidad
+              </Link>
+              <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                Contacto
+              </Link>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}

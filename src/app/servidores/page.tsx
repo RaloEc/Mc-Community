@@ -1,15 +1,16 @@
 'use client'
 
-import { useState } from 'react'
-import Header from '../../components/Header'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { UsersIcon, ServerIcon, TagIcon, ExternalLinkIcon } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
+import { Servidor } from '@/types'
 
 // Datos de ejemplo para los servidores
-const servidoresEjemplo = [
+/* const servidoresEjemplo = [
   {
     id: 1,
     nombre: 'SurvivalCraft',
@@ -77,6 +78,7 @@ const servidoresEjemplo = [
     destacado: false
   }
 ]
+ */
 
 // Tipos de servidores para filtrar
 const tiposServidores = ['Todos', 'Supervivencia', 'Creativo', 'SkyBlock', 'PvP', 'Mods', 'Factions']
@@ -84,9 +86,38 @@ const tiposServidores = ['Todos', 'Supervivencia', 'Creativo', 'SkyBlock', 'PvP'
 export default function Servidores() {
   const [filtroTipo, setFiltroTipo] = useState('Todos')
   const [busqueda, setBusqueda] = useState('')
+  const [servidores, setServidores] = useState<Servidor[]>([])
+  const [cargando, setCargando] = useState(true)
   
+  useEffect(() => {
+    async function cargarServidores() {
+      try {
+        setCargando(true)
+        
+        let query = supabase
+          .from('servidores')
+          .select('*')
+        
+        const { data, error } = await query
+        
+        if (error) {
+          console.error('Error al cargar servidores:', error)
+          return
+        }
+        
+        setServidores(data || [])
+      } catch (error) {
+        console.error('Error al cargar servidores:', error)
+      } finally {
+        setCargando(false)
+      }
+    }
+    
+    cargarServidores()
+  }, [])
+
   // Filtrar servidores por tipo y búsqueda
-  const servidoresFiltrados = servidoresEjemplo.filter(servidor => 
+  const servidoresFiltrados = servidores.filter(servidor => 
     (filtroTipo === 'Todos' || servidor.tipo === filtroTipo) && 
     (servidor.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
      servidor.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
@@ -94,7 +125,6 @@ export default function Servidores() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       
       {/* Banner de la página */}
       <div className="bg-muted/40 dark:bg-amoled-gray py-16">

@@ -1,0 +1,87 @@
+/* Animaciones para comentarios */
+
+:root {
+  --primary-rgb: 59, 130, 246; /* Color azul predeterminado, se ajustará al tema de la aplicación */
+  --line-color: #e5e7eb; /* Color de la línea conectora en modo claro */
+  --line-color-dark: #374151; /* Color de la línea conectora en modo oscuro */
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+
+/* Contenedor de respuestas con línea conectora en forma de L */
+.comentario-respuestas-container {
+  position: relative;
+}
+
+/* Estilo para cada respuesta individual con línea en forma de L */
+.comentario-respuesta {
+  position: relative;
+}
+
+/* Línea conectora en forma de L para respuestas */
+.comentario-respuesta {
+  position: relative;
+}
+
+/* Crear la línea en forma de L con un pseudo-elemento */
+.comentario-respuesta .linea-conectora {
+  position: absolute;
+  top: -15px; /* Posición vertical ajustada para que comience más arriba */
+  left: -25px; /* Posición horizontal ajustada */
+  width: 25px; /* Ancho de la parte horizontal */
+  height: 27px; /* Altura total ajustada */
+  border-left: 2px solid #ef4444; /* Línea vertical */
+  border-bottom: 2px solid #ef4444; /* Línea horizontal */
+  border-bottom-left-radius: 0; /* Sin redondeo */
+  z-index: 1; /* Asegurar que esté por encima de otros elementos */
+}
+
+/* Formulario de respuesta con línea en forma de L */
+.comentario-respuesta-form {
+  position: relative;
+}
+
+/* Usar el mismo estilo de línea conectora que las respuestas */
+.comentario-respuesta-form .linea-conectora {
+  position: absolute;
+  top: -15px;
+  left: -25px;
+  width: 25px;
+  height: 27px;
+  border-left: 2px solid #ef4444;
+  border-bottom: 2px solid #ef4444;
+  border-bottom-left-radius: 0;
+  z-index: 1;
+}
+
+/* Ajustes para modo oscuro */
+@media (prefers-color-scheme: dark) {
+  .comentario-respuesta .linea-conectora,
+  .comentario-respuesta-form .linea-conectora {
+    border-color: #ef4444; /* Mantener el rojo en modo oscuro */
+  }
+}
+
+/* Asegurar que las respuestas tengan un estilo distintivo */
+.comentarios-container li li {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Estilo para el área de respuesta */
+.comentarios-container textarea:focus {
+  box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
+}

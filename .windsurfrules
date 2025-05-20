@@ -1,0 +1,5 @@
+## Reglas de Windsurf
+
+1. Don't use "any" type when possible
+2. Don't use PowerShell commands.
+3. Use CMD commands always.
