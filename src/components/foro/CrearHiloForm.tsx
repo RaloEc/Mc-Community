@@ -19,6 +19,7 @@ interface CrearHiloFormProps {
   categorias: CategoriaForo[];
 }
 
+// Mantenemos la exportación nombrada para compatibilidad
 export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const [titulo, setTitulo] = useState('');
   const [contenido, setContenido] = useState('');
@@ -168,3 +169,6 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
     </form>
   );
 }
+
+// Añadimos la exportación por defecto para solucionar el error de compilación
+export default CrearHiloForm;
