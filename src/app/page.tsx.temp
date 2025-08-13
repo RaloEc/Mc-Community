@@ -1,0 +1,237 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Gamepad2, ChevronDown, Download, Box, Code, Star, ArrowRight } from 'lucide-react';
+import BotonVerMas from '@/components/BotonVerMas';
+import BotonIcono from '@/components/BotonIcono';
+import NoticiasMiniatura from '@/components/NoticiasMiniatura';
+import BotonNoticias from '@/components/BotonNoticias';
+import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
+import { FeaturedMods } from '@/components/mods/FeaturedMods';
+
+export default function Home() {
+  const { session, loading } = useAuth();
+  
+  // Manejar el caso donde la autenticación está cargando
+  const isAuthenticated = !loading && session !== null;
+
+  // Estado para las estadísticas
+  const [stats, setStats] = useState({
+    totalMods: 0,
+    totalDownloads: 0,
+    totalCategories: 0,
+    loading: true,
+    error: null as string | null
+  });
+
+  // Cargar estadísticas
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const supabase = createClient();
+        
+        // Obtener estadísticas de los mods
+        const { count: totalMods, error: modsError } = await supabase
+          .from('mods')
+          .select('*', { count: 'exact', head: true });
+
+        if (modsError) throw modsError;
+
+        // Obtener el total de descargas sumando el campo total_downloads de todos los mods
+        let totalDownloads = 0;
+        try {
+          const { data: downloadsData, error: downloadsError } = await supabase
+            .from('mods')
+            .select('total_downloads'); // Usamos total_downloads que es el nombre correcto de la columna
+
+          if (!downloadsError && downloadsData) {
+            totalDownloads = downloadsData.reduce((sum, mod) => sum + (mod.total_downloads || 0), 0) || 0;
+          }
+        } catch (downloadError) {
+          console.log('No se pudo obtener las descargas, usando valor predeterminado');
+          // No lanzamos el error para que la página siga cargando
+        }
+
+        // Usamos las categorías únicas de los mods existentes en lugar de consultar una tabla que no existe
+        let totalCategories = 0;
+        try {
+          const { data: categoriesData, error: categoriesError } = await supabase
+            .from('mods')
+            .select('categories');
+
+          if (!categoriesError && categoriesData) {
+            // Obtenemos todas las categorías únicas de todos los mods
+            const allCategories = new Set();
+            categoriesData.forEach(mod => {
+              if (mod.categories && Array.isArray(mod.categories)) {
+                mod.categories.forEach(category => allCategories.add(category));
+              }
+            });
+            totalCategories = allCategories.size;
+          }
+        } catch (categoriesError) {
+          console.log('No se pudieron obtener las categorías, usando valor predeterminado');
+          // No lanzamos el error para que la página siga cargando
+        }
+
+        setStats({
+          totalMods: totalMods || 0,
+          totalDownloads,
+          totalCategories: totalCategories || 0,
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error('Error al cargar estadísticas:', error);
+        setStats(prev => ({
+          ...prev,
+          loading: false,
+          error: 'No se pudieron cargar las estadísticas. Por favor, inténtalo de nuevo más tarde.'
+        }));
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/90 dark:from-amoled-black dark:to-amoled-black">
+      {/* Hero Section - Solo se muestra si no hay sesión iniciada */}
+      {!isAuthenticated && (
+        <section className="relative py-20 md:py-32">
+          <div className="absolute inset-0 bg-[url('/minecraft-epic-landscape.jpeg')] bg-cover bg-center opacity-10"></div>
+          <div className="container relative z-10">
+            <div className="mx-auto max-w-3xl text-center">
+              <div className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5">
+                <span className="text-xs font-medium text-primary">Versión 1.20 Disponible</span>
+              </div>
+              <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
+                Bienvenido a la <span className="text-primary">Comunidad</span>
+              </h1>
+              <p className="mb-8 text-lg text-muted-foreground">
+                Únete a la mayor comunidad de Minecraft en español. Descubre servidores, recursos y noticias sobre el juego.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button size="lg" className="flex items-center gap-2">
+                  <Gamepad2 className="h-5 w-5" />
+                  <span>Explorar Servidores</span>
+                </Button>
+                <Button variant="outline" size="lg" className="flex items-center gap-2">
+                  <ChevronDown className="h-5 w-5" />
+                  <span>Iniciar Sesión</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <main className="container mx-auto px-4 py-12 space-y-16">
+        {/* Sección de noticias */}
+        <section>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Últimas Noticias</h2>
+            <BotonNoticias />
+          </div>
+          <NoticiasMiniatura />
+        </section>
+
+        {/* Sección de Tutoriales y Construcciones */}
+        <section>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Tutoriales y Construcciones</h2>
+            <BotonVerMas href="/tutoriales" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Tarjeta 1: Tutorial de Construcción */}
+            <Link href="/tutoriales/construccion-castillo-medieval" className="group block">
+              <article className="h-full flex flex-col rounded-xl border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <div className="relative h-48 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">Construcción</span>
+                  </div>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                </div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors mb-2">
+                    Cómo construir un castillo medieval épico
+                  </h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+                    Aprende las técnicas básicas para construir un impresionante castillo medieval en Minecraft, desde los cimientos hasta los detalles finales.
+                  </p>
+                  <div className="mt-auto pt-3 border-t border-border/20">
+                    <span className="inline-flex items-center text-sm font-medium text-primary">
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </div>
+              </article>
+            </Link>
+
+            {/* Tarjeta 2: Tutorial de Granjas */}
+            <Link href="/tutoriales/granja-automatica" className="group block">
+              <article className="h-full flex flex-col rounded-xl border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <div className="relative h-48 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">Granjas</span>
+                  </div>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                </div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors mb-2">
+                    Granja automática de caña de azúcar
+                  </h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+                    Construye una granja automática de caña de azúcar fácil y eficiente para obtener recursos infinitos en tu mundo de Minecraft.
+                  </p>
+                  <div className="mt-auto pt-3 border-t border-border/20">
+                    <span className="inline-flex items-center text-sm font-medium text-primary">
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </div>
+              </article>
+            </Link>
+
+            {/* Tarjeta 3: Tutorial de Instalación de Mods */}
+            <Link href="/tutoriales/instalar-mods" className="group block">
+              <article className="h-full flex flex-col rounded-xl border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+                <div className="relative h-48 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
+                    <span className="text-white text-lg font-medium">Guías</span>
+                  </div>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                </div>
+                <div className="p-5 flex-1 flex flex-col">
+                  <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors mb-2">
+                    Cómo instalar mods en Minecraft
+                  </h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
+                    Guía paso a paso para instalar Forge, Fabric y mods en Minecraft. Soluciona problemas comunes y optimiza tu experiencia de juego.
+                  </p>
+                  <div className="mt-auto pt-3 border-t border-border/20">
+                    <span className="inline-flex items-center text-sm font-medium text-primary">
+                      <ArrowRight className="h-4 w-4" />
+                    </span>
+                  </div>
+                </div>
+              </article>
+            </Link>
+          </div>
+        </section>
+
+        {/* Sección de mods destacados */}
+        <section>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Mods Destacados</h2>
+            <BotonVerMas href="/mods" />
+          </div>
+          <FeaturedMods />
+        </section>
+      </main>
+    </div>
+  );
+}

@@ -100,7 +100,7 @@ export default function NoticiasGrid({
                     {noticia.categorias.map((cat) => (
                       <Badge 
                         key={cat.id}
-                        className="text-xs bg-blue-900 hover:bg-blue-800 text-white border-none"
+                        className="text-xs bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
                         variant="default"
                       >
                         {cat.nombre}
@@ -109,7 +109,7 @@ export default function NoticiasGrid({
                   </div>
                 ) : (
                   <Badge 
-                    className="absolute top-4 right-4 z-20 bg-blue-900 hover:bg-blue-800 text-white border-none"
+                    className="absolute top-4 right-4 z-20 bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
                     variant="default"
                   >
                     General

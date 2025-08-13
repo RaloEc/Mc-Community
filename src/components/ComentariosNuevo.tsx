@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import Link from 'next/link'
 import { Comentario } from '@/types/comentarios'
 import { formatDistanceToNow, format, differenceInHours } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -31,6 +32,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
   const [eliminando, setEliminando] = useState(false)
   const [respondiendo, setRespondiendo] = useState<string | null>(null)
   const [respuesta, setRespuesta] = useState('')
+  const [orden, setOrden] = useState('desc') // 'desc' para más recientes, 'asc' para más antiguos
 
   // Función para obtener la URL base
   const getBaseUrl = () => {
@@ -43,13 +45,13 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
   }
 
   // Cargar comentarios
-  const cargarComentarios = async (nuevoOffset = offset, reemplazar = false) => {
+  const cargarComentarios = async (reemplazar = false) => {
     try {
       setCargando(true)
       setError(null)
       
       const baseUrl = getBaseUrl()
-      const url = `${baseUrl}/api/comentarios?tipo_entidad=${tipoEntidad}&entidad_id=${entidadId}&limite=${limite}&offset=${nuevoOffset}`
+      const url = `${baseUrl}/api/comentarios?tipo_entidad=${tipoEntidad}&entidad_id=${entidadId}&limite=${limite}&offset=${reemplazar ? 0 : offset}&orden=${orden}`
       
       const respuesta = await fetch(url)
       const datos = await respuesta.json()
@@ -65,7 +67,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
       }
       
       setTotalComentarios(datos.total)
-      setOffset(nuevoOffset + limite)
+      setOffset(prevOffset => (reemplazar ? 0 : prevOffset) + (datos.data?.length || 0))
     } catch (err) {
       console.error('Error al cargar comentarios:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -101,9 +103,10 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         throw new Error(datos.error || 'Error al enviar comentario')
       }
       
-      // Limpiar el campo y recargar comentarios
+      // Añadir el nuevo comentario al principio de la lista
+      setComentarios(prevComentarios => [datos.data, ...prevComentarios])
+      setTotalComentarios(prevTotal => prevTotal + 1)
       setNuevoComentario('')
-      cargarComentarios(0, true)
     } catch (err) {
       console.error('Error al enviar comentario:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -140,10 +143,11 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         throw new Error(datos.error || 'Error al enviar respuesta')
       }
       
-      // Limpiar el campo y recargar comentarios
+      // Añadir la nueva respuesta al principio de la lista para visibilidad inmediata
+      setComentarios(prevComentarios => [datos.data, ...prevComentarios])
+      setTotalComentarios(prevTotal => prevTotal + 1)
       setRespuesta('')
       setRespondiendo(null)
-      cargarComentarios(0, true)
     } catch (err) {
       console.error('Error al enviar respuesta:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -199,10 +203,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         throw new Error(datos.error || 'Error al editar comentario')
       }
       
-      // Actualizar la lista de comentarios
+      // Actualizar el comentario en la lista
+      setComentarios(prevComentarios => 
+        prevComentarios.map(c => c.id === id ? { ...c, ...datos.data } : c)
+      )
       setComentarioEditando(null)
       setContenidoEditado('')
-      cargarComentarios(0, true)
     } catch (err) {
       console.error('Error al editar comentario:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -233,8 +239,9 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         throw new Error(datos.error || 'Error al eliminar comentario')
       }
       
-      // Actualizar la lista de comentarios
-      cargarComentarios(0, true)
+      // Eliminar el comentario de la lista
+      setComentarios(prevComentarios => prevComentarios.filter(c => c.id !== id))
+      setTotalComentarios(prevTotal => prevTotal - 1)
     } catch (err) {
       console.error('Error al eliminar comentario:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
@@ -243,10 +250,11 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
     }
   }
 
-  // Cargar comentarios al montar el componente
+  // Cargar comentarios al montar el componente o al cambiar el orden
   useEffect(() => {
-    cargarComentarios(0, true)
-  }, [tipoEntidad, entidadId, session])
+    setOffset(0)
+    cargarComentarios(true)
+  }, [tipoEntidad, entidadId, session, orden])
   
   // Comprobar si hay suficientes comentarios para mostrar el indicador
   useEffect(() => {
@@ -300,7 +308,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
 
   return (
     <div className="w-full max-w-4xl mx-auto comentarios-container">
-      <h2 className="text-2xl font-bold mb-6">Comentarios ({totalComentarios})</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Comentarios ({totalComentarios})</h2>
+        <Button variant="outline" size="sm" onClick={() => setOrden(orden === 'desc' ? 'asc' : 'desc')}>
+          {orden === 'desc' ? 'Más recientes primero' : 'Más antiguos primero'}
+        </Button>
+      </div>
       
       {/* Mensajes de error */}
       {error && (
@@ -400,14 +413,16 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                 <div className="flex-1">
                   <div className="rounded-lg p-3 shadow-sm">
                     <div className="flex justify-between items-center mb-1">
-                      <span className="font-medium text-foreground dark:text-gray-200">
-                        {comentario.perfiles?.username || 'Usuario'}
+                      <div className="flex items-center">
+                        <Link href={`/perfil/${comentario.perfiles?.username}`} className="font-semibold text-sm text-foreground hover:underline [.amoled_&]:!text-white">
+                          {comentario.perfiles?.username || 'Usuario desconocido'}
+                        </Link>
                         {comentario.perfiles?.role === 'admin' && (
                           <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
                             Admin
                           </span>
                         )}
-                      </span>
+                      </div>
                       <span className="text-muted-foreground dark:text-gray-400 text-xs">
                         {formatearFecha(comentario.created_at)}
                         {comentario.updated_at !== comentario.created_at && (
@@ -444,7 +459,8 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                         </div>
                       </div>
                     ) : (
-                      <div className="text-foreground dark:text-gray-300 text-sm" 
+                      <div 
+                        className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]"
                         dangerouslySetInnerHTML={{ __html: comentario.contenido }} 
                       />
                     )}
@@ -552,7 +568,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                                 </div>
                               )}
                             </div>
-                            <span className="font-medium text-foreground dark:text-gray-200">
+                            <span className="font-medium text-foreground dark:text-gray-200 [.amoled_&]:!text-white">
                               {respuestaItem.perfiles?.username || 'Usuario'}
                               {respuestaItem.perfiles?.role === 'admin' && (
                                 <span className="ml-2 text-xs bg-primary text-white px-1.5 py-0.5 rounded-full">
@@ -565,7 +581,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                             {formatearFecha(respuestaItem.created_at)}
                           </span>
                         </div>
-                        <div className="text-foreground dark:text-gray-300 text-sm mt-1" 
+                        <div className="prose prose-sm dark:prose-invert max-w-none mt-1 [.amoled_&]:[&_*]:!text-white" 
                           dangerouslySetInnerHTML={{ __html: respuestaItem.contenido }} 
                         />
                       </div>
@@ -613,7 +629,18 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         )}
       </div>
       
-      {/* Se ha eliminado el botón de cargar más comentarios */}
+      {/* Botón para cargar más comentarios */}
+      {comentarios.length < totalComentarios && (
+        <div className="text-center mt-6">
+          <Button
+            onClick={() => cargarComentarios(false)}
+            disabled={cargando}
+            variant="outline"
+          >
+            {cargando ? 'Cargando...' : 'Cargar más comentarios'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

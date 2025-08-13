@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Gamepad2, ChevronDown, Download, Box, Code, Star } from 'lucide-react';
+import { Gamepad2, ChevronDown, Download, Box, Code, Star, ArrowRight } from 'lucide-react';
+import BotonVerMas from '@/components/BotonVerMas';
+import BotonIcono from '@/components/BotonIcono';
 import NoticiasMiniatura from '@/components/NoticiasMiniatura';
 import BotonNoticias from '@/components/BotonNoticias';
 import { useAuth } from '@/context/AuthContext';
 import { createClient } from '@/lib/supabase/client';
 import { FeaturedMods } from '@/components/mods/FeaturedMods';
+import AdBanner from '@/components/ads/AdBanner';
+import AdRectangle from '@/components/ads/AdRectangle';
+import ForosBloque from '@/components/foro/ForosBloque';
 
 export default function Home() {
   const { session, loading } = useAuth();
@@ -96,98 +101,81 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/90 dark:from-amoled-black dark:to-amoled-black">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/90 dark:from-amoled-black dark:to-amoled-black/95">
       {/* Hero Section - Solo se muestra si no hay sesión iniciada */}
       {!isAuthenticated && (
         <section className="relative py-20 md:py-32">
-          <div className="absolute inset-0 bg-[url('/minecraft-epic-landscape.jpeg')] bg-cover bg-center opacity-10"></div>
+          <div className="absolute inset-0 bg-[url('/minecraft-epic-landscape.jpeg')] bg-cover bg-center opacity-10 dark:opacity-5"></div>
           <div className="container relative z-10">
             <div className="mx-auto max-w-3xl text-center">
-              <div className="mb-4 inline-block rounded-full bg-primary/10 px-4 py-1.5">
-                <span className="text-xs font-medium text-primary">Versión 1.20 Disponible</span>
-              </div>
-              <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground sm:text-5xl md:text-6xl">
-                Bienvenido a la <span className="text-primary">Comunidad</span>
+              {/* Etiqueta de versión eliminada */}
+              <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground dark:text-white sm:text-5xl md:text-6xl">
+                Bienvenido a <span className="text-primary">GamersHub</span>
               </h1>
-              <p className="mb-8 text-lg text-muted-foreground">
-                Únete a la mayor comunidad de Minecraft en español. Descubre servidores, recursos y noticias sobre el juego.
+              <p className="mb-8 text-lg text-muted-foreground dark:text-gray-300">
+                Únete a nuestra comunidad de gamers. Descubre contenido exclusivo, comparte experiencias y encuentra nuevos compañeros de juego.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button size="lg" className="flex items-center gap-2">
-                  <Gamepad2 className="h-5 w-5" />
-                  <span>Explorar Servidores</span>
-                </Button>
-                <Button variant="outline" size="lg" className="flex items-center gap-2">
-                  <ChevronDown className="h-5 w-5" />
-                  <span>Iniciar Sesión</span>
-                </Button>
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
+                <Link href="/foro" passHref>
+                  <Button size="lg" className="flex items-center gap-2 dark:bg-primary dark:text-white dark:hover:bg-primary/90">
+                    <Star className="h-5 w-5" />
+                    <span>Visitar Foro</span>
+                  </Button>
+                </Link>
+                <Link href="/login" passHref>
+                  <Button variant="outline" size="lg" className="flex items-center gap-2 dark:border-white dark:text-white dark:hover:bg-white/10">
+                    <span>Iniciar Sesión</span>
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      <main className="container mx-auto px-4 py-12 space-y-16">
-        {/* Sección de estadísticas */}
-        <section>
-          <h2 className="text-3xl font-bold mb-8 text-center">Estadísticas de la Comunidad</h2>
-          {stats.loading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-card rounded-lg border p-6 animate-pulse">
-                  <div className="h-6 w-6 bg-muted rounded-full mb-4"></div>
-                  <div className="h-8 bg-muted rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-muted rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : stats.error ? (
-            <div className="text-center text-destructive">{stats.error}</div>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <div className="bg-card rounded-lg border p-6">
-                <Box className="h-6 w-6 text-primary mb-4" />
-                <h3 className="text-2xl font-bold">{stats.totalMods}</h3>
-                <p className="text-sm text-muted-foreground">Mods disponibles</p>
-              </div>
-              <div className="bg-card rounded-lg border p-6">
-                <Download className="h-6 w-6 text-primary mb-4" />
-                <h3 className="text-2xl font-bold">{stats.totalDownloads.toLocaleString()}</h3>
-                <p className="text-sm text-muted-foreground">Descargas totales</p>
-              </div>
-              <div className="bg-card rounded-lg border p-6">
-                <Code className="h-6 w-6 text-primary mb-4" />
-                <h3 className="text-2xl font-bold">{stats.totalCategories}</h3>
-                <p className="text-sm text-muted-foreground">Categorías</p>
-              </div>
-              <div className="bg-card rounded-lg border p-6">
-                <Star className="h-6 w-6 text-primary mb-4" />
-                <h3 className="text-2xl font-bold">+1000</h3>
-                <p className="text-sm text-muted-foreground">Usuarios activos</p>
-              </div>
-            </div>
-          )}
-        </section>
-
-        {/* Sección de mods destacados */}
-        <section>
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Mods Destacados</h2>
-            <Button asChild variant="outline">
-              <Link href="/mods">Ver todos los mods</Link>
-            </Button>
-          </div>
-          <FeaturedMods />
-        </section>
-
+      <main className="container mx-auto px-4 py-12 space-y-16 no-transition">
         {/* Sección de noticias */}
         <section>
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold">Últimas Noticias</h2>
             <BotonNoticias />
           </div>
-          <NoticiasMiniatura />
+          <NoticiasMiniatura limit={4} />
         </section>
+        {/* Banner de anuncios superior */}
+        <AdBanner className="my-4" />
+        
+        {/* Sección de foros */}
+        <ForosBloque limit={5} />
+        
+        {/* Anuncio rectangular después de las noticias */}
+        <div className="flex justify-center">
+          <AdRectangle className="my-4" />
+        </div>
+
+        {/* Secciones temporalmente ocultas - Tutoriales, construcciones y mods destacados */}
+        {/* 
+        <section>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Tutoriales y Construcciones</h2>
+            <BotonVerMas href="/tutoriales" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Tarjetas de tutoriales y construcciones ocultas -->
+          </div>
+        </section>
+
+        <section>
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold">Mods Destacados</h2>
+            <BotonVerMas href="/mods" />
+          </div>
+          <FeaturedMods />
+        </section>
+        */}
+        
+        {/* Banner de anuncios inferior */}
+        <AdBanner className="my-4" />
       </main>
     </div>
   );

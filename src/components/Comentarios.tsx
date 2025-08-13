@@ -258,12 +258,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
       
       {/* Lista de comentarios */}
       {error && (
-        <div className="bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-lg mb-4">
+        <div className="bg-destructive/15 border border-destructive text-destructive p-4 rounded-lg mb-4">
           {error}
         </div>
       )}
       
-      <div className={`comentarios-container relative ${comentarios.length === 0 ? 'h-[150px]' : comentarios.length < 3 ? 'h-[250px]' : 'h-[400px]'} mb-6 bg-background/50 dark:bg-gray-900/50 rounded-lg overflow-hidden border border-border transition-all duration-300`}>
+      <div className={`comentarios-container relative ${comentarios.length === 0 ? 'h-[150px]' : comentarios.length < 3 ? 'h-[250px]' : 'h-[400px]'} mb-6 bg-muted/50 rounded-lg overflow-hidden border border-border transition-all duration-300`}>
         <div className="absolute inset-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-primary/30 hover:scrollbar-thumb-primary/50">
           {comentarios && comentarios.length > 0 ? (
             <ul
@@ -273,7 +273,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
             >
               {comentarios.map((comentario) => (
                 <li key={comentario.id} role="article" className="relative mb-4">
-                  <div className="hover:bg-gray-100 dark:hover:bg-gray-800/50 rounded-md p-2 transition-colors duration-150">
+                  <div className="hover:bg-accent/50 rounded-md p-2 transition-colors duration-150">
                     {/* Contenido principal del comentario */}
                     <div className="flex gap-3">
                       <a
@@ -300,7 +300,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                           <span className="font-bold text-base text-foreground">
                             {comentario.perfiles?.username || 'Usuario'}
                             {comentario.perfiles?.role === 'admin' && (
-                              <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">
+                              <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                 Admin
                               </span>
                             )}
@@ -342,7 +342,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                             </div>
                           </div>
                         ) : (
-                          <div className="text-foreground dark:text-slate-300 mt-1" dangerouslySetInnerHTML={{ __html: comentario.contenido }} />
+                          <div className="text-foreground mt-1" dangerouslySetInnerHTML={{ __html: comentario.contenido }} />
                         )}
                       
                         {/* Botones de acciones */}
@@ -352,7 +352,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                             <Button 
                               variant="ghost" 
                               size="sm"
-                              className="text-xs h-7 px-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                              className="text-xs h-7 px-2 text-primary hover:text-primary/90"
                               onClick={() => {
                                 setRespondiendo(comentario.id)
                                 setRespuesta('')
@@ -532,13 +532,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
       </div>
       
       {/* Botón para cargar más comentarios */}
-      {comentarios && comentarios.length < totalComentarios && (
+      {comentarios.length < totalComentarios && (
         <div className="flex justify-center mb-6">
           <Button
-            variant="outline"
             onClick={() => cargarComentarios()}
             disabled={cargando}
-            size="sm"
+            className="w-full"
           >
             {cargando ? 'Cargando...' : 'Cargar más comentarios'}
           </Button>

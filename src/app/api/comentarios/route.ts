@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerClient } from '@/utils/supabase-server';
 import { getServiceClient } from '@/utils/supabase-service';
-import { Comentario, HistorialEdicion } from '@/types';
+// NOTE: Tipos específicos no requeridos aquí; se omite import para evitar lints
 
 // GET para obtener comentarios de una entidad específica
 export async function GET(request: Request) {
@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     const entidadId = searchParams.get('entidad_id');
     const limite = parseInt(searchParams.get('limite') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
+    const orden = searchParams.get('orden') || 'desc'; // 'desc' por defecto
 
     console.log('[API Comentarios] Parámetros de búsqueda:', { tipoEntidad, entidadId, limite, offset });
 
@@ -26,6 +27,66 @@ export async function GET(request: Request) {
 
     // Obtener comentarios con información del usuario
     const supabase = getServiceClient();
+
+    // Caso especial: hilos del foro usan foro_posts como fuente de respuestas
+    if (tipoEntidad === 'hilo') {
+      console.log('[API Comentarios] Modo hilo: leyendo desde foro_posts');
+      const ascending = orden === 'asc';
+      // 1) Obtener posts del hilo (sin join)
+      const { data: posts, error: postsError } = await supabase
+        .from('foro_posts')
+        .select(`id, contenido, autor_id, created_at`)
+        .eq('hilo_id', entidadId)
+        .order('created_at', { ascending })
+        .range(offset, offset + limite - 1);
+
+      if (postsError) {
+        console.error('[API Comentarios] Error al obtener foro_posts:', postsError);
+        return NextResponse.json(
+          { success: false, error: `Error al obtener respuestas del hilo: ${postsError.message}` },
+          { status: 500 }
+        );
+      }
+
+      // 2) Contar posts totales
+      const { count, error: countError } = await supabase
+        .from('foro_posts')
+        .select('*', { count: 'exact', head: true })
+        .eq('hilo_id', entidadId);
+
+      if (countError) {
+        console.error('[API Comentarios] Error al contar foro_posts:', countError);
+      }
+
+      // 3) Obtener perfiles para los usuario_id distintos
+      let dataConPerfiles = posts || [];
+      if (posts && posts.length > 0) {
+        const ids = Array.from(new Set(posts.map(p => p.autor_id).filter(Boolean)));
+        if (ids.length > 0) {
+          const { data: perfiles, error: perfilesError } = await supabase
+            .from('perfiles')
+            .select('id, username, avatar_url, role')
+            .in('id', ids as string[]);
+          if (perfilesError) {
+            console.error('[API Comentarios] Error al obtener perfiles:', perfilesError);
+          } else {
+            const mapaPerfiles = new Map(perfiles.map(p => [p.id, p]));
+            dataConPerfiles = posts.map(p => ({
+              ...p,
+              perfiles: mapaPerfiles.get(p.autor_id) || null,
+            }));
+          }
+        }
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: dataConPerfiles,
+        total: count || 0,
+        offset,
+        limite,
+      });
+    }
     // Obtener comentarios principales (sin padre) con información de usuario usando un join con la tabla perfiles
     const { data: comentariosPrincipales, error } = await supabase
       .from('comentarios')
@@ -36,7 +97,7 @@ export async function GET(request: Request) {
       .eq('tipo_entidad', tipoEntidad)
       .eq('entidad_id', entidadId)
       .is('comentario_padre_id', null)
-      .order('created_at', { ascending: false })
+      .order('created_at', { ascending: orden === 'asc' })
       .range(offset, offset + limite - 1);
       
     // Obtener todas las respuestas para estos comentarios principales
@@ -87,7 +148,8 @@ export async function GET(request: Request) {
       .from('comentarios')
       .select('*', { count: 'exact', head: true })
       .eq('tipo_entidad', tipoEntidad)
-      .eq('entidad_id', entidadId);
+      .eq('entidad_id', entidadId)
+      .is('comentario_padre_id', null);
 
     if (countError) {
       console.error('Error al contar comentarios:', countError);
@@ -355,9 +417,48 @@ export async function POST(request: Request) {
       );
     }
 
-    // Insertar el comentario
+    // Insertar el comentario / post del foro
     const supabase = getServiceClient();
     console.log('[API Comentarios] Usando cliente de servicio para insertar comentario');
+
+    // Caso especial: hilos del foro escriben en foro_posts
+    if (tipo_entidad === 'hilo') {
+      console.log('[API Comentarios] Modo hilo (POST): insertando en foro_posts');
+      const { data: postData, error: postError } = await supabase
+        .from('foro_posts')
+        .insert({
+          contenido,
+          autor_id: usuario_id,
+          hilo_id: entidad_id
+        })
+        .select(`id, contenido, autor_id, created_at`)
+        .single();
+
+      if (postError) {
+        console.error('[API Comentarios] Error al crear post del hilo:', postError);
+        return NextResponse.json(
+          { success: false, error: `Error al crear la respuesta del hilo: ${postError.message}` },
+          { status: 500 }
+        );
+      }
+
+      // Adjuntar perfil manualmente
+      let perfilesData: any = null;
+      if (postData?.autor_id) {
+        const { data: perfil, error: perfilError } = await supabase
+          .from('perfiles')
+          .select('id, username, avatar_url, role')
+          .eq('id', postData.autor_id)
+          .single();
+        if (perfilError) {
+          console.error('[API Comentarios] Error al obtener perfil del autor tras crear post:', perfilError);
+        } else {
+          perfilesData = perfil;
+        }
+      }
+
+      return NextResponse.json({ success: true, data: { ...postData, perfiles: perfilesData } });
+    }
     
     try {
       let data: any = null;

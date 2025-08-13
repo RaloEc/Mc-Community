@@ -13,7 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from "@/components/ui/textarea"
 import { Noticia } from '@/types'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { createClient } from '@/lib/supabase/client'
 
 // Estilos para el scrollbar
 const scrollbarStyles = `
@@ -49,7 +49,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
     const checkUsuario = async () => {
       try {
         setCargandoAuth(true);
-        const supabase = createBrowserClient();
+        const supabase = createClient();
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
@@ -293,8 +293,8 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         
         {/* Contenido de la noticia */}
         <div 
-          className="prose prose-lg dark:prose-invert max-w-4xl mx-auto [&_img]:w-full md:[&_img]:max-w-[85%] [&_img]:mx-auto mb-8"
-          dangerouslySetInnerHTML={{ __html: noticia.contenido }}
+          className="prose prose-lg dark:prose-invert max-w-4xl mx-auto [&_img]:w-full md:[&_img]:max-w-[85%] [&_img]:mx-auto mb-8 noticia-contenido dark:[&_*]:!text-green-400 [.amoled_&]:[&_*]:!text-white dark:prose-a:!text-white" 
+          dangerouslySetInnerHTML={{ __html: noticia.contenido }} 
         />
         
         {/* Divisor después del contenido */}
@@ -309,15 +309,11 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             <div className="flex flex-wrap gap-2">
               {noticia.categorias.map((categoria) => (
                 <Link 
-                  href={`/noticias?categoria=${encodeURIComponent(categoria.nombre)}`} 
+                  href={`/noticias/categoria/${(categoria as any).slug || categoria.id}`}
                   key={categoria.id}
+                  className="block bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ease-in-out"
                 >
-                  <Badge 
-                    variant="outline" 
-                    className="px-3 py-1 rounded-full hover:bg-accent cursor-pointer"
-                  >
-                    {categoria.nombre}
-                  </Badge>
+                  {categoria.nombre}
                 </Link>
               ))}
             </div>

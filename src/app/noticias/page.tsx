@@ -134,7 +134,7 @@ export default function Noticias() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-black text-white">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       <main className="flex-1 container mx-auto px-4 py-6">
         <h1 className="text-2xl md:text-3xl font-bold mb-6">Noticias</h1>
         

@@ -5,7 +5,8 @@ import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import { Session } from '@supabase/supabase-js'
 import { ThemeProvider } from '@/components/theme-provider'
 import { AuthProvider } from '@/context/AuthContext'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { createClient } from '@/lib/supabase/client'
+import { Toaster } from '@/components/ui/sonner'
 
 export default function Providers({
   children,
@@ -20,7 +21,7 @@ export default function Providers({
   // Inicializar el cliente de Supabase solo en el lado del cliente
   useEffect(() => {
     // Crear el cliente solo una vez en el lado del cliente
-    const client = createBrowserClient()
+    const client = createClient()
     setSupabaseClient(client)
     setMounted(true)
   }, [])
@@ -34,8 +35,9 @@ export default function Providers({
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <SessionContextProvider supabaseClient={supabaseClient} initialSession={session}>
-        <AuthProvider>
+        <AuthProvider initialSession={session}>
           {children}
+          <Toaster />
         </AuthProvider>
       </SessionContextProvider>
     </ThemeProvider>

@@ -12,7 +12,7 @@ export default function BotonNoticias({ className = '' }: BotonNoticiasProps) {
   return (
     <Link href="/noticias" className={className}>
       <Button variant="outline" size="sm" className="flex items-center space-x-1 border-primary/30 text-primary hover:bg-primary/10">
-        <span>Ver todas las noticias</span>
+        <span>Ver más</span>
         <ArrowRight className="h-4 w-4" />
       </Button>
     </Link>

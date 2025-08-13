@@ -37,7 +37,7 @@ export const findAllYoutubeVideos = (editor: Editor | null) => {
 }
 
 // Función para subir una imagen a Supabase Storage
-export const uploadImageToSupabase = async (file: File): Promise<string> => {
+export const uploadImageToSupabase = async (file: File, folder?: string): Promise<string> => {
   try {
     // Verificar que el archivo sea válido
     if (!file || file.size === 0) {
@@ -52,6 +52,9 @@ export const uploadImageToSupabase = async (file: File): Promise<string> => {
     // Crear FormData para enviar el archivo
     const formData = new FormData()
     formData.append('file', file)
+    if (folder) {
+      formData.append('folder', folder)
+    }
     
     // Registrar información del archivo que se va a subir
     console.log(`Preparando subida de imagen: ${file.name} (${file.size} bytes, tipo: ${file.type})`)

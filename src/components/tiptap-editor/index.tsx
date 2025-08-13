@@ -124,31 +124,40 @@ const TiptapEditorBase = ({
           const file = item.getAsFile()
           if (!file) continue
           
+          const loadingDiv = document.createElement('div');
+          loadingDiv.id = `tiptap-loading-indicator-${Date.now()}`;
+          loadingDiv.textContent = 'Subiendo imagen...';
+          loadingDiv.style.position = 'fixed';
+          loadingDiv.style.top = '50%';
+          loadingDiv.style.left = '50%';
+          loadingDiv.style.transform = 'translate(-50%, -50%)';
+          loadingDiv.style.backgroundColor = 'rgba(0,0,0,0.7)';
+          loadingDiv.style.color = 'white';
+          loadingDiv.style.padding = '10px 20px';
+          loadingDiv.style.borderRadius = '4px';
+          loadingDiv.style.zIndex = '1000';
+          document.body.appendChild(loadingDiv);
+
           try {
-            // Almacenar la imagen en el caché y obtener una URL temporal
-            const tempImageUrl = imageCache.storeImage(file)
-            
-            // Insertar la imagen en la posición actual del cursor
-            editor.commands.setImage({ 
-              src: tempImageUrl,
+            // Subir la imagen a Supabase y obtener la URL pública
+            const imageUrl = await uploadImageToSupabase(file, 'foro/contenido');
+
+            // Insertar la imagen en el editor con la URL de Supabase
+            editor.chain().focus().setImage({ 
+              src: imageUrl,
               alt: file.name,
               title: file.name
-            })
-            
-            // Solución simple: forzar la posición de desplazamiento después de insertar la imagen
-            // Usar setTimeout con delay 0 para ejecutar después del ciclo de eventos actual
-            setTimeout(() => {
-              window.scrollTo(0, scrollPosition)
-              
-              // Asegurar que el desplazamiento se mantiene con múltiples intentos
-              const times = [10, 20, 50, 100, 200]
-              times.forEach(time => {
-                setTimeout(() => window.scrollTo(0, scrollPosition), time)
-              })
-            }, 0)
-            
+            }).run();
+
+            // Restaurar la posición de desplazamiento
+            window.scrollTo(0, scrollPosition);
+
           } catch (error) {
-            console.error('Error al procesar imagen:', error)
+            console.error('Error al subir la imagen pegada:', error);
+            alert('Error al subir la imagen. Por favor, inténtalo de nuevo.');
+          } finally {
+            // Quitar el indicador de carga
+            loadingDiv.remove();
           }
         }
       }

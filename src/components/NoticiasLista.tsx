@@ -7,6 +7,8 @@ import { CalendarIcon, ArrowRightIcon, StarIcon, XIcon, FilterIcon, ChevronUpIco
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Noticia } from '@/types';
+import AdBanner from '@/components/ads/AdBanner';
+import AdRectangle from '@/components/ads/AdRectangle';
 
 // Tipos para controlar mejor los filtros
 type FiltroActivo = {
@@ -19,6 +21,9 @@ type Categoria = {
   id: string;
   nombre: string;
 };
+
+// Tipo extendido para manejar anuncios entre noticias
+type NoticiaConAnuncio = Noticia & { esAnuncio?: boolean };
 
 interface NoticiasListaProps {
   limit?: number;
@@ -47,8 +52,8 @@ export default function NoticiasLista({
   ordenFecha = 'desc',
   categoria = '',
   mostrarFiltros = false,
-  filtrosAbiertos,
-  onToggleFiltros,
+  filtrosAbiertos = false,
+  onToggleFiltros = () => {},
   onFiltrosActivosChange,
   onCategoriasLoaded,
   onFiltrosActivosArrayChange
@@ -86,8 +91,19 @@ export default function NoticiasLista({
     filtrosAbiertos !== undefined ? filtrosAbiertos : false
   );
   
-  // Ya no usamos estados para animaciones
-
+  // Estado para controlar el modal de filtros en móvil
+  const [modalAbierto, setModalAbierto] = useState(false);
+  
+  // Referencia para el timeout de búsqueda
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Definir el número de columnas según el prop
+  const gridCols: Record<number, string> = {
+    1: 'grid-cols-1 max-w-4xl mx-auto',
+    2: 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto',
+    3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-w-7xl mx-auto',
+  };
+  
   // Efecto para sincronizar el estado de filtrosVisibles con la prop filtrosAbiertos
   useEffect(() => {
     if (filtrosAbiertos !== undefined && filtrosAbiertos !== filtrosVisibles) {
@@ -102,7 +118,6 @@ export default function NoticiasLista({
       actualizarFiltrosActivos(busqueda, autor, categoria, ordenFecha);
     }
   }, []);
-
   
   // Efecto para notificar al componente padre sobre cambios en filtros activos
   useEffect(() => {
@@ -163,7 +178,7 @@ export default function NoticiasLista({
     }
     
     setFiltrosActivos(nuevosFiltros);
-  }, [categorias, categoria]);  // Añadimos categoria como dependencia para evitar bucles infinitos
+  }, [categorias, categoria]);
   
   // Usamos un callback para la función de carga de noticias
   const fetchNoticias = useCallback(async () => {
@@ -205,7 +220,7 @@ export default function NoticiasLista({
       setError('Error al cargar las noticias');
       setLoading(false);
     }
-  }, [filtrosAplicados]);  // Quitamos noticias como dependencia para evitar actualizaciones innecesarias
+  }, [filtrosAplicados]);
   
   // Efecto para cargar las noticias cuando se aplican los filtros o en la carga inicial
   useEffect(() => {
@@ -218,9 +233,7 @@ export default function NoticiasLista({
       filtersChanged.current = false;
       fetchNoticias();
     }
-  }, [fetchNoticias]);  // Quitamos filtrosAplicados como dependencia para evitar actualizaciones innecesarias
-  
-  // Ya no necesitamos el efecto para limpiar animaciones
+  }, [fetchNoticias]);
   
   // Efecto para detectar cambios en las props de filtros
   useEffect(() => {
@@ -273,484 +286,341 @@ export default function NoticiasLista({
       categoria: categoriaLocal,
       ordenFecha: ordenFechaLocal
     });
-    
-    // Actualizamos los filtros activos que se muestran en la UI
-    actualizarFiltrosActivos(busquedaLocal, autorLocal, categoriaLocal, ordenFechaLocal);
-    
-    // Marcamos que los filtros han cambiado para que se actualicen las noticias
+
+    // Marcamos que cambiaron los filtros para saber que debemos recargar las noticias
     filtersChanged.current = true;
-  }, [busquedaLocal, autorLocal, categoriaLocal, ordenFechaLocal, actualizarFiltrosActivos]);
-  
-  // Función para manejar cambios en los campos de búsqueda con aplicación inmediata
-  const handleInputChange = (valor: string, tipo: 'busqueda' | 'autor') => {
-    // Actualizar el estado local inmediatamente para la UI
+  }, [busquedaLocal, autorLocal, categoriaLocal, ordenFechaLocal]);
+
+  // Función para manejar cambios en los campos de búsqueda con debounce
+  const handleInputChange = useCallback((valor: string, tipo: 'busqueda' | 'autor') => {
+    // Actualizamos el estado local
     if (tipo === 'busqueda') {
       setBusquedaLocal(valor);
-    } else {
+    } else if (tipo === 'autor') {
       setAutorLocal(valor);
     }
-    
-    // Actualizar filtros activos
-    const nuevosFiltros = [...filtrosActivos.filter(f => f.tipo !== tipo)];
-    
-    if (valor) {
-      nuevosFiltros.push({
-        tipo,
-        valor,
-        etiqueta: tipo === 'busqueda' ? `Título: ${valor}` : `Autor: ${valor}`
-      });
-    }
-    
-    // Verificar si los filtros han cambiado realmente antes de actualizar
-    const filtrosIguales = filtrosActivos.length === nuevosFiltros.length &&
-      filtrosActivos.every((filtro, index) => 
-        filtro.tipo === nuevosFiltros[index]?.tipo && 
-        filtro.valor === nuevosFiltros[index]?.valor
-      );
-    
-    if (!filtrosIguales) {
+
+    // Si el usuario borra el campo, aplicamos el filtro inmediatamente
+    if (valor === '') {
+      setFiltrosAplicados(prev => ({
+        ...prev,
+        [tipo]: valor
+      }));
+
+      // Actualizar filtros activos
+      const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
       setFiltrosActivos(nuevosFiltros);
+
+      // Si hay un timeout pendiente, lo limpiamos
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    } else {
+      // Si está escribiendo, esperamos un momento antes de aplicar el filtro
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      timeoutRef.current = setTimeout(() => {
+        setFiltrosAplicados(prev => ({
+          ...prev,
+          [tipo]: valor
+        }));
+
+        // Actualizar filtros activos
+        const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
+        if (valor) {
+          nuevosFiltros.push({
+            tipo,
+            valor,
+            etiqueta: `${tipo === 'busqueda' ? 'Búsqueda' : 'Autor'}: ${valor}`
+          });
+        }
+        setFiltrosActivos(nuevosFiltros);
+
+        // Marcar que los filtros han cambiado
+        filtersChanged.current = true;
+      }, 500);
     }
-  };
-  
+  }, [filtrosActivos]);
+
+  // Renderizar el selector de orden
+  const renderOrdenSelector = () => (
+    <select
+      value={ordenFechaLocal}
+      onChange={(e) => {
+        const valor = e.target.value as 'asc' | 'desc';
+        setOrdenFechaLocal(valor);
+        setFiltrosAplicados(prev => ({
+          ...prev,
+          ordenFecha: valor
+        }));
+
+        // Actualizar filtros activos
+        const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== 'ordenFecha');
+        if (valor !== 'desc') {
+          nuevosFiltros.push({
+            tipo: 'ordenFecha',
+            valor,
+            etiqueta: `Orden: ${valor === 'asc' ? 'Más antiguas primero' : 'Más recientes primero'}`
+          });
+        }
+        setFiltrosActivos(nuevosFiltros);
+
+        // Marcar que los filtros han cambiado
+        filtersChanged.current = true;
+      }}
+      className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+    >
+      <option value="desc">Más recientes primero</option>
+      <option value="asc">Más antiguas primero</option>
+    </select>
+  );
+
   // Función para limpiar todos los filtros
-  const limpiarFiltros = useCallback(() => {
-    // Restablecemos todos los estados de filtros locales
+  const limpiarFiltros = () => {
     setBusquedaLocal('');
     setAutorLocal('');
     setCategoriaLocal('');
     setOrdenFechaLocal('desc');
-    
-    // Actualizamos los filtros aplicados
     setFiltrosAplicados({
       busqueda: '',
       autor: '',
       categoria: '',
       ordenFecha: 'desc'
     });
-    
-    // Limpiamos los filtros activos en la UI
     setFiltrosActivos([]);
-    
-    // Marcamos que los filtros han cambiado
     filtersChanged.current = true;
-  }, []);
-  
-  // Función para eliminar un filtro específico
-  const eliminarFiltro = useCallback((tipo: string) => {
-    // Creamos una copia del estado actual de filtros
-    const nuevosFiltrosAplicados = { ...filtrosAplicados };
-    
-    // Actualizamos los estados locales y los filtros aplicados según el tipo
-    switch(tipo) {
-      case 'busqueda':
-        setBusquedaLocal('');
-        nuevosFiltrosAplicados.busqueda = '';
-        break;
-      case 'autor':
-        setAutorLocal('');
-        nuevosFiltrosAplicados.autor = '';
-        break;
-      case 'categoria':
-        setCategoriaLocal('');
-        nuevosFiltrosAplicados.categoria = '';
-        break;
-      case 'ordenFecha':
-        setOrdenFechaLocal('desc');
-        nuevosFiltrosAplicados.ordenFecha = 'desc';
-        break;
-    }
-    
-    // Actualizamos los filtros aplicados
-    setFiltrosAplicados(nuevosFiltrosAplicados);
-    
-    // Actualizamos la lista de filtros activos en la UI
-    const nuevosFiltros = filtrosActivos.filter(filtro => filtro.tipo !== tipo);
-    setFiltrosActivos(nuevosFiltros);
-    
-    // Marcamos que los filtros han cambiado
-    filtersChanged.current = true;
-  }, [filtrosActivos, filtrosAplicados]);
-
-  // Efecto para cargar las categorías disponibles
-  useEffect(() => {
-    const fetchCategorias = async () => {
-      try {
-        const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-          ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-          : 'http://localhost:3000';
-        
-        const response = await fetch(`${baseUrl}/api/categorias`);
-        
-        if (!response.ok) {
-          console.error('Error al obtener categorías');
-          return;
-        }
-        
-        const data = await response.json();
-        if (data.success && data.data) {
-          setCategorias(data.data);
-          if (onCategoriasLoaded) {
-            onCategoriasLoaded(data.data);
-          }
-          
-          // Si hay filtro de categoría, actualizamos los filtros activos con el nombre correcto
-          if (categoria && filtrosActivos.some(f => f.tipo === 'categoria')) {
-            // Creamos una copia de los filtros activos
-            const nuevosFiltros = filtrosActivos.map(f => {
-              if (f.tipo === 'categoria') {
-                // Buscamos la categoría por ID
-                const categoriaEncontrada = data.data.find(c => c.id === categoria);
-                if (categoriaEncontrada) {
-                  return {
-                    ...f,
-                    etiqueta: `Categoría: ${categoriaEncontrada.nombre}`
-                  };
-                }
-              }
-              return f;
-            });
-            
-            // Actualizamos los filtros activos solo si cambiaron
-            if (JSON.stringify(nuevosFiltros) !== JSON.stringify(filtrosActivos)) {
-              setFiltrosActivos(nuevosFiltros);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error al cargar categorías:', err);
-      }
-    };
-
-    fetchCategorias();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Determinar el número de columnas para la cuadrícula con mejor distribución responsiva
-  const gridCols = {
-    1: 'grid-cols-1',
-    2: 'grid-cols-1 sm:grid-cols-2',
-    3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
   };
 
-  // Contenido para mostrar según el estado de carga y resultados
-  const renderContenidoNoticias = () => {
-    // Solo mostrar el mensaje de carga si no hay noticias previas
-    if (loading && noticias.length === 0) {
-      return (
-        <div className="text-center py-6 w-full">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <div className="animate-pulse flex space-x-4">
-              <div className="h-12 w-12 rounded-full bg-[#333333]"></div>
-              <div className="flex-1 space-y-2 py-1">
-                <div className="h-2 w-32 rounded bg-[#333333]"></div>
-                <div className="h-2 w-24 rounded bg-[#333333]"></div>
-              </div>
-            </div>
-            <p className="text-muted-foreground">Cargando noticias...</p>
-          </div>
-        </div>
-      );
+  // Función para eliminar un filtro específico
+  const eliminarFiltro = (tipo: string) => {
+    const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
+    setFiltrosActivos(nuevosFiltros);
+    
+    // Actualizar los estados según el tipo de filtro eliminado
+    if (tipo === 'busqueda') {
+      setBusquedaLocal('');
+      setFiltrosAplicados(prev => ({ ...prev, busqueda: '' }));
+    } else if (tipo === 'autor') {
+      setAutorLocal('');
+      setFiltrosAplicados(prev => ({ ...prev, autor: '' }));
+    } else if (tipo === 'categoria') {
+      setCategoriaLocal('');
+      setFiltrosAplicados(prev => ({ ...prev, categoria: '' }));
+    } else if (tipo === 'ordenFecha') {
+      setOrdenFechaLocal('desc');
+      setFiltrosAplicados(prev => ({ ...prev, ordenFecha: 'desc' }));
     }
     
-    // Si está cargando pero ya hay noticias, mostrar las noticias actuales con efecto de carga
-    if (loading && noticias.length > 0) {
+    filtersChanged.current = true;
+  };
+
+  // Función para renderizar el contenido de las noticias
+  const renderContenidoNoticias = () => {
+    // Función para insertar anuncios entre las noticias
+    const insertarAnuncios = (items: Noticia[]): NoticiaConAnuncio[] => {
+      if (items.length <= 3) return items as NoticiaConAnuncio[];
+      
+      // Creamos una copia del array para no mutar el original
+      const resultado = [...items] as NoticiaConAnuncio[];
+      
+      // Insertamos un marcador para un anuncio después de la tercera noticia
+      resultado.splice(3, 0, { id: 'ad-1', titulo: '', contenido: '', esAnuncio: true });
+      
+      // Si hay más de 8 noticias, insertamos otro anuncio
+      if (items.length > 8) {
+        resultado.splice(8, 0, { id: 'ad-2', titulo: '', contenido: '', esAnuncio: true });
+      }
+      
+      return resultado;
+    };
+    
+    // Noticias con anuncios insertados
+    const noticiasConAnuncios: NoticiaConAnuncio[] = insertarAnuncios(noticias);
+    
+    if (loading) {
       return (
-        <div className={`grid gap-3 ${gridCols[columnas]} w-full  ease-in-out`}>
-          {noticias.map((noticia) => (
-            <article 
-              key={`loading-${noticia.id}`}
-              className="group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md dark:border-blue-900/20 dark:bg-amoled-gray w-full animate-pulse"
-            >
-              <div className="relative h-44 w-full overflow-hidden bg-[#333333]/30">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-              </div>
-              
-              <div className="flex items-center gap-1.5 px-3 pt-2 pb-0">
-                <div className="h-5 w-16 bg-[#333333]/30 rounded-md"></div>
-              </div>
-              <div className="flex flex-col space-y-1 px-3 pt-2 pb-3">
-                <div className="h-5 w-full bg-[#333333]/30 rounded-md mt-1"></div>
-                <div className="h-4 w-3/4 bg-[#333333]/30 rounded-md"></div>
-              </div>
-            </article>
-          ))}
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div className="text-center py-6 w-full">
-          <p className="text-red-500">Error: {error}</p>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <strong className="font-bold">Error: </strong>
+          <span className="block sm:inline">{error}</span>
         </div>
       );
     }
 
     if (noticias.length === 0) {
       return (
-        <div className="text-center py-6 w-full">
-          <p className="text-muted-foreground">No hay noticias que coincidan con tu búsqueda. Intenta con otros criterios.</p>
+        <div className="text-center py-12">
+          <p className="text-gray-500">No se encontraron noticias con los filtros seleccionados.</p>
         </div>
       );
     }
 
     return (
-      <div className={`grid gap-4 ${gridCols[columnas]} w-full  ease-in-out`}>
-        {/* Noticias actuales con animación de entrada */}
-        {noticias.map((noticia) => (
-          <article 
-            key={`current-${noticia.id}`}
-            className="group relative flex flex-col overflow-hidden rounded-lg border bg-card text-card-foreground shadow-sm transition-all hover:shadow-md dark:border-blue-900/20 dark:bg-amoled-gray w-full  motion-reduce:animate-none"
-          >
-            <div className="relative h-44 w-full overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-              <Image
-                src={noticia.imagen_portada || 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+News'}
-                alt={noticia.titulo}
-                fill
-                unoptimized
-                priority
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              {noticia.destacada && (
-                <Badge 
-                  className="absolute top-4 left-4 z-20 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-amber-950 border-none shadow-md animate-shimmer bg-[length:200%_100%] font-medium flex items-center gap-1 px-2.5 py-1"
-                  variant="default"
-                >
-                  <StarIcon className="h-3.5 w-3.5 fill-amber-400 text-amber-950" />
-                  Destacada
-                </Badge>
-              )}
-
-            </div>
-            
-            <div className="flex items-center gap-1.5 px-3 pt-2 pb-0">
-              {noticia.categorias && noticia.categorias.length > 0 ? (
-                <>
-                  {noticia.categorias.slice(0, 1).map((cat) => (
-                    <span 
-                      key={cat.id}
-                      className="text-xs font-medium truncate px-2 py-0.5 rounded-md bg-primary/90 text-primary-foreground shadow-sm transition-colors hover:bg-primary/100"
-                    >
-                      {cat.nombre}
-                    </span>
-                  ))}
-                  {noticia.categorias.length > 1 && (
-                    <span 
-                      className="text-xs font-medium bg-blue-700/90 text-white rounded-md px-2 py-0.5 shadow-sm transition-colors hover:bg-blue-700"
-                      title={noticia.categorias.slice(1).map(cat => cat.nombre).join(', ')}
-                    >
-                      +{noticia.categorias.length - 1}
-                    </span>
-                  )}
-                </>
+      <div className={`grid ${gridCols[columnas]} gap-6 w-full`}>
+        {noticiasConAnuncios.map((item: NoticiaConAnuncio) => (
+          item.esAnuncio ? (
+            <div key={item.id} className="col-span-full flex justify-center my-4">
+              {item.id === 'ad-1' ? (
+                <AdBanner className="w-full max-w-4xl" />
               ) : (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-md bg-slate-600/90 text-white shadow-sm transition-colors hover:bg-slate-600">General</span>
+                <AdRectangle className="" />
               )}
             </div>
-            <div className="flex flex-col space-y-1 px-3 pt-2 pb-3">
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center">
-                  <CalendarIcon className="mr-1 h-3 w-3" />
-                  <time>
-                    {new Date(noticia.fecha_publicacion || noticia.created_at || Date.now()).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
-                  </time>
-                </div>
-                {(noticia.autor_nombre || noticia.autor) && (
-                  <span 
-                    style={{ color: noticia.autor_color || '#3b82f6' }}
-                    className="font-medium text-xs"
-                    title={`Autor: ${noticia.autor_nombre || noticia.autor}`}
-                  >
-                    {noticia.autor_nombre || noticia.autor}
-                  </span>
+          ) : (
+            <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative">
+              <div className="relative h-48 overflow-hidden">
+                {item.imagen_portada ? (
+                  <Image 
+                    src={item.imagen_portada} 
+                    alt={item.titulo} 
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                    <span className="text-primary-foreground text-lg font-medium">MC Community</span>
+                  </div>
                 )}
               </div>
-              <h2 className="text-lg font-semibold leading-tight tracking-tight mt-1">
-                {noticia.titulo}
-              </h2>
-              {mostrarResumen && (
-                <p className="text-muted-foreground text-sm line-clamp-2">
-                  {noticia.resumen || (noticia.contenido ? noticia.contenido.substring(0, 120).replace(/<\/?[^>]+(>|$)/g, '') + '...' : '')}
-                </p>
-              )}
-              <div className="pt-2 mt-auto">
-                <Button 
-                  variant="link" 
-                  className="px-0 text-primary text-sm h-auto py-0" 
-                  asChild
-                >
-                  <Link href={`/noticias/${noticia.id}`}>
-                    Leer más
-                    <ArrowRightIcon className="ml-1 h-3 w-3" />
+              <div className="p-4 pb-8">
+                <div className="flex items-center mb-2 text-xs text-muted-foreground">
+                  <CalendarIcon className="h-3 w-3 mr-1" />
+                  <span>{new Date(item.created_at || item.fecha_publicacion || '').toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric'
+                  })}</span>
+                </div>
+                <h3 className="text-lg font-semibold mb-2 line-clamp-2">
+                  <Link href={`/noticias/${item.id}`} className="hover:text-primary transition-colors">
+                    {item.titulo}
                   </Link>
-                </Button>
+                </h3>
+                {mostrarResumen && item.contenido && (
+                  <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                    {item.resumen || item.contenido.replace(/<[^>]*>/g, '').substring(0, 120) + '...'}
+                  </p>
+                )}
+                <div className="flex justify-end">
+                  <Link href={`/noticias/${item.id}`} className="text-primary hover:text-primary/80 font-medium inline-flex items-center">
+                      <ArrowRightIcon className="h-5 w-5" />
+                  </Link>
+                </div>
               </div>
+              {/* Autor posicionado en el borde inferior de toda la tarjeta */}
+              {(item.autor_nombre || item.autor) && (
+                <span 
+                  className="absolute bottom-2 left-4 text-xs text-muted-foreground"
+                >
+                  <Link href={`/perfil/${item.autor_nombre}`} className="text-sm hover:underline" style={{ color: item.autor_color || 'inherit' }}>
+                    {item.autor_nombre || item.autor}
+                  </Link>
+                </span>
+              )}
             </div>
-          </article>
+          )
         ))}
       </div>
     );
   };
 
   return (
-    <div className={`w-full ${className}`}>
-      {/* Barra de búsqueda y filtros - con botón para mostrar/ocultar en móvil */}
+    <div className={`w-full flex flex-col items-center ${className}`}>
       {mostrarFiltros && (
-        <div className={`bg-[#121212] p-4 rounded-[10px] mb-8 md:relative md:top-auto sticky top-0 z-10  ease-in-out ${!filtrosVisibles ? 'max-md:hidden' : ''}`}>
-          <div className="flex items-center justify-between w-full mb-3">
-            <h3 className="text-lg font-semibold">Filtros</h3>
-            <button 
-              onClick={() => {
-                const nuevoEstado = !filtrosVisibles;
-                setFiltrosVisibles(nuevoEstado);
-                if (onToggleFiltros) {
-                  onToggleFiltros(nuevoEstado);
-                }
-              }}
-              className="md:hidden p-1 hover:bg-gray-800 rounded-full transition-colors duration-200"
-              aria-label={filtrosVisibles ? "Ocultar filtros" : "Mostrar filtros"}
-            >
-              {filtrosVisibles ? <ChevronUpIcon size={20} /> : <ChevronDownIcon size={20} />}
-            </button>
-          </div>
-          <div className={`flex flex-col gap-3 items-stretch ${filtrosVisibles ? 'block' : 'hidden'} md:block`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 w-full">
-              <input 
-                type="text" 
-                id="titleSearch" 
-                placeholder="Buscar por título..." 
-                className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full "
-                value={busquedaLocal}
-                onChange={(e) => handleInputChange(e.target.value, 'busqueda')}
-              />
-              
-              {/* Campo de autor oculto pero manteniendo la funcionalidad */}
-              <input 
-                type="text" 
-                id="authorSearch" 
-                placeholder="Buscar por autor..." 
-                className="hidden p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full "
-                value={autorLocal}
-                onChange={(e) => handleInputChange(e.target.value, 'autor')}
-              />
-              
-              <select 
-                id="categoryFilter"
-                className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full "
-                value={categoriaLocal}
-                onChange={(e) => {
-                  setCategoriaLocal(e.target.value);
-                  setFiltrosAplicados(prev => ({
-                    ...prev,
-                    categoria: e.target.value
-                  }));
-                  // Actualizar filtros activos
-                  if (e.target.value) {
-                    const categoriaSeleccionada = categorias.find(c => c.id === e.target.value);
-                    const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== 'categoria');
-                    nuevosFiltros.push({
-                      tipo: 'categoria',
-                      valor: e.target.value,
-                      etiqueta: `Categoría: ${categoriaSeleccionada ? categoriaSeleccionada.nombre : e.target.value}`
-                    });
-                    setFiltrosActivos(nuevosFiltros);
-                  } else {
-                    setFiltrosActivos(filtrosActivos.filter(f => f.tipo !== 'categoria'));
-                  }
-                }}
-              >
-                <option value="">Todas las Categorías</option>
-                {categorias.map(cat => (
-                  <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                ))}
-              </select>
-              
-              <select 
-                id="dateSort"
-                className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full "
-                value={ordenFechaLocal}
-                onChange={(e) => {
-                  const valor = e.target.value as 'asc' | 'desc';
-                  setOrdenFechaLocal(valor);
-                  setFiltrosAplicados(prev => ({
-                    ...prev,
-                    ordenFecha: valor
-                  }));
-                  
-                  // Actualizar filtros activos
-                  if (valor !== 'desc') {
-                    const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== 'ordenFecha');
-                    nuevosFiltros.push({
-                      tipo: 'ordenFecha',
-                      valor: valor,
-                      etiqueta: `Orden: Más antiguas primero`
-                    });
-                    setFiltrosActivos(nuevosFiltros);
-                  } else {
-                    setFiltrosActivos(filtrosActivos.filter(f => f.tipo !== 'ordenFecha'));
-                  }
-                  
-                  // Marcar que los filtros han cambiado
-                  filtersChanged.current = true;
-                }}
-              >
-                <option value="desc">Más recientes primero</option>
-                <option value="asc">Más antiguas primero</option>
-              </select>
+        <div className="mb-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label htmlFor="busqueda" className="block text-sm font-medium text-gray-700 mb-1">
+                  Buscar por título
+                </label>
+                <input
+                  type="text"
+                  id="busqueda"
+                  value={busquedaLocal}
+                  onChange={(e) => handleInputChange(e.target.value, 'busqueda')}
+                  className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Buscar noticias..."
+                />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="autor" className="block text-sm font-medium text-gray-700 mb-1">
+                  Filtrar por autor
+                </label>
+                <input
+                  type="text"
+                  id="autor"
+                  value={autorLocal}
+                  onChange={(e) => handleInputChange(e.target.value, 'autor')}
+                  className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                  placeholder="Nombre del autor"
+                />
+              </div>
+              <div className="w-full sm:w-48">
+                <label htmlFor="orden" className="block text-sm font-medium text-gray-700 mb-1">
+                  Ordenar por
+                </label>
+                {renderOrdenSelector()}
+              </div>
             </div>
-            
+
             <div className="flex gap-2 w-full justify-end">
               <button 
                 id="clearFilters"
-                className="p-[0.6rem] px-4 h-[38px] bg-[#333333] text-white rounded-[5px] whitespace-nowrap hover:opacity-90  flex-1 sm:flex-initial"
+                className="p-[0.6rem] px-4 h-[38px] bg-[#333333] text-white rounded-[5px] whitespace-nowrap hover:opacity-90 flex-1 sm:flex-initial"
                 onClick={limpiarFiltros}
               >
                 Limpiar
               </button>
               <button 
                 id="applyFilters"
-                className="p-[0.6rem] px-4 h-[38px] bg-[#0066cc] text-white rounded-[5px] whitespace-nowrap hover:opacity-90  flex-1 sm:flex-initial"
+                className="p-[0.6rem] px-4 h-[38px] bg-[#0066cc] text-white rounded-[5px] whitespace-nowrap hover:opacity-90 flex-1 sm:flex-initial"
                 onClick={aplicarFiltros}
               >
                 Aplicar
               </button>
             </div>
           
-          {filtrosActivos.length > 0 && (
-            <div className="w-full bg-[#1a1a1a] p-2 rounded-md border border-[#333333] ">
-              <div className="text-xs text-gray-400 mb-1.5">Filtros activos:</div>
-              <div className="flex flex-wrap gap-2 ">
-                {filtrosActivos.map((filtro, index) => (
-                  <div 
-                    key={index} 
-                    className="inline-flex items-center bg-[#0066cc] text-white text-xs py-1 px-2 rounded-[15px]   shadow-sm"
-                  >
-                    {filtro.etiqueta}
-                    <button 
-                      onClick={() => eliminarFiltro(filtro.tipo)}
-                      className="ml-2 hover:text-opacity-80 "
-                      aria-label="Eliminar filtro"
+            {filtrosActivos.length > 0 && (
+              <div className="w-full bg-[#1a1a1a] p-2 rounded-md border border-[#333333]">
+                <div className="text-xs text-gray-400 mb-1.5">Filtros activos:</div>
+                <div className="flex flex-wrap gap-2">
+                  {filtrosActivos.map((filtro, index) => (
+                    <div 
+                      key={index} 
+                      className="inline-flex items-center bg-[#0066cc] text-white text-xs py-1 px-2 rounded-[15px] shadow-sm"
                     >
-                      <XIcon size={14} />
-                    </button>
-                  </div>
-                ))}
+                      {filtro.etiqueta}
+                      <button 
+                        onClick={() => eliminarFiltro(filtro.tipo)}
+                        className="ml-2 hover:text-opacity-80"
+                        aria-label="Eliminar filtro"
+                      >
+                        <XIcon size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </div>
         </div>
       )}
       
-      {/* Contenido de noticias sin animaciones */}
-      <div>
-        {renderContenidoNoticias()}
+      {/* Contenido principal */}
+      <div className="w-full flex justify-center">
+        <div className="w-full">
+          {renderContenidoNoticias()}
+        </div>
       </div>
     </div>
   );

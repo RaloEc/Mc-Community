@@ -30,7 +30,7 @@ export default function SetupPage() {
 
             // Redireccionar al login después de 2 segundos
             setTimeout(() => {
-                router.push('/admin/login')
+                router.push('/login')
             }, 2000)
         } catch (error: any) {
             setError(error.message || 'Error al crear usuario administrador')
@@ -59,7 +59,7 @@ export default function SetupPage() {
                             <Alert>
                                 <AlertDescription>
                                     Usuario administrador creado correctamente. Ahora puedes{' '}
-                                    <a href="/admin/login" className="font-medium underline">
+                                    <a href="/login" className="font-medium underline">
                                         iniciar sesión
                                     </a>
                                 </AlertDescription>

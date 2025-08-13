@@ -3,3 +3,5 @@
 1. Don't use "any" type when possible
 2. Don't use PowerShell commands.
 3. Use CMD commands always.
+4. Don't web site preview after make something.
+5. Vamos a ejecutar el servidor para ver los cambios implementados

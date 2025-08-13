@@ -37,6 +37,7 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import Link from 'next/link'
 import { Dropzone } from '@/components/ui/dropzone'
+import AdminProtection from '@/components/AdminProtection'
 
 // Tipo para las categorías
 type Categoria = {
@@ -62,7 +63,7 @@ const formSchema = z.object({
   destacada: z.boolean().default(false),
 })
 
-export default function EditarNoticia({ params }: { params: { id: string } }) {
+function EditarNoticiaContent({ params }: { params: { id: string } }) {
   const [noticia, setNoticia] = useState<Noticia | null>(null)
   const [cargando, setCargando] = useState(true)
   const [enviando, setEnviando] = useState(false)
@@ -658,5 +659,13 @@ export default function EditarNoticia({ params }: { params: { id: string } }) {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function EditarNoticia({ params }: { params: { id: string } }) {
+  return (
+    <AdminProtection>
+      <EditarNoticiaContent params={params} />
+    </AdminProtection>
   )
 }

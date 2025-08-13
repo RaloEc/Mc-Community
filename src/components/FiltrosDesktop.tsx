@@ -34,7 +34,7 @@ export default function FiltrosDesktop({
   onEliminarFiltro
 }: FiltrosDesktopProps) {
   return (
-    <div className="hidden md:block bg-[#121212] rounded-lg border border-[#333333] mb-6 p-3">
+    <div className="hidden md:block bg-card rounded-lg border border-border mb-6 p-3">
       <div className="flex flex-wrap items-center gap-2">
         {/* Título con icono */}
         <div className="flex items-center mr-2">
@@ -47,7 +47,7 @@ export default function FiltrosDesktop({
           <input 
             type="text" 
             placeholder="Título..." 
-            className="p-1 px-2 border border-[#333333] rounded-[5px] bg-black text-white h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
+            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
           />
@@ -56,13 +56,13 @@ export default function FiltrosDesktop({
           <input 
             type="text" 
             placeholder="Autor..." 
-            className="hidden p-1 px-2 border border-[#333333] rounded-[5px] bg-black text-white h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
+            className="hidden p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
             value={autor}
             onChange={(e) => onAutorChange(e.target.value)}
           />
           
           <select 
-            className="p-1 px-2 border border-[#333333] rounded-[5px] bg-black text-white h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
+            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
             value={categoria}
             onChange={(e) => onCategoriaChange(e.target.value)}
           >
@@ -73,7 +73,7 @@ export default function FiltrosDesktop({
           </select>
           
           <select 
-            className="p-1 px-2 border border-[#333333] rounded-[5px] bg-black text-white h-[32px] text-sm flex-1 min-w-[120px] max-w-[180px]"
+            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[180px]"
             value={ordenFecha}
             onChange={(e) => onOrdenFechaChange(e.target.value as 'asc' | 'desc')}
           >
@@ -85,13 +85,13 @@ export default function FiltrosDesktop({
         {/* Botones */}
         <div className="flex gap-2 ml-auto">
           <button 
-            className="p-1 px-3 h-[32px] bg-[#333333] text-white text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
+            className="p-1 px-3 h-[32px] bg-muted text-muted-foreground text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
             onClick={onLimpiarFiltros}
           >
             Limpiar
           </button>
           <button 
-            className="p-1 px-3 h-[32px] bg-[#0066cc] text-white text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
+            className="p-1 px-3 h-[32px] bg-primary text-primary-foreground text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
             onClick={onAplicarFiltros}
           >
             Aplicar
@@ -106,7 +106,7 @@ export default function FiltrosDesktop({
           {filtrosActivos.map((filtro, index) => (
             <div 
               key={index} 
-              className="inline-flex items-center bg-[#0066cc] text-white text-xs py-1 px-2 rounded-[15px] animate-fadeIn shadow-sm"
+              className="inline-flex items-center bg-primary text-primary-foreground text-xs py-1 px-2 rounded-[15px] animate-fadeIn shadow-sm"
             >
               {filtro.etiqueta}
               <button 

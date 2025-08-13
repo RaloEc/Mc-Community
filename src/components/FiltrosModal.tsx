@@ -57,7 +57,7 @@ export default function FiltrosModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay con animación */}
       <div 
-        className={`fixed inset-0 bg-black transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-background/80 transition-opacity duration-300 ${
           animateIn ? 'opacity-50' : 'opacity-0'
         }`}
         onClick={onClose}
@@ -65,19 +65,19 @@ export default function FiltrosModal({
       
       {/* Modal con animación */}
       <div 
-        className={`relative bg-[#121212] rounded-lg w-[90%] max-w-md max-h-[90vh] overflow-y-auto transition-all duration-300 ${
+        className={`relative bg-card rounded-lg w-[90%] max-w-md max-h-[90vh] overflow-y-auto transition-all duration-300 ${
           animateIn ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
         }`}
       >
         {/* Cabecera del modal */}
-        <div className="flex items-center justify-between p-4 border-b border-[#333333]">
+        <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="text-lg font-semibold flex items-center">
             <FilterIcon size={18} className="mr-2" />
             Filtros de búsqueda
           </h3>
           <button 
             onClick={onClose}
-            className="p-1 hover:bg-[#333333] rounded-full transition-colors"
+            className="p-1 hover:bg-muted rounded-full transition-colors"
             aria-label="Cerrar"
           >
             <XIcon size={20} />
@@ -94,7 +94,7 @@ export default function FiltrosModal({
                   type="text" 
                   id="titleSearch" 
                   placeholder="Buscar por título..." 
-                  className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full transition-all duration-300"
+                  className="p-[0.6rem] border border-input rounded-[5px] bg-background text-foreground h-[38px] w-full transition-all duration-300"
                   value={busqueda}
                   onChange={(e) => onBusquedaChange(e.target.value)}
                 />
@@ -106,7 +106,7 @@ export default function FiltrosModal({
                   type="text" 
                   id="authorSearch" 
                   placeholder="Buscar por autor..." 
-                  className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full transition-all duration-300"
+                  className="p-[0.6rem] border border-input rounded-[5px] bg-background text-foreground h-[38px] w-full transition-all duration-300"
                   value={autor}
                   onChange={(e) => onAutorChange(e.target.value)}
                 />
@@ -116,7 +116,7 @@ export default function FiltrosModal({
                 <label htmlFor="categoryFilter" className="text-sm font-medium">Categoría</label>
                 <select 
                   id="categoryFilter"
-                  className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full transition-all duration-300"
+                  className="p-[0.6rem] border border-input rounded-[5px] bg-background text-foreground h-[38px] w-full transition-all duration-300"
                   value={categoria}
                   onChange={(e) => onCategoriaChange(e.target.value)}
                 >
@@ -131,7 +131,7 @@ export default function FiltrosModal({
                 <label htmlFor="dateSort" className="text-sm font-medium">Ordenar por fecha</label>
                 <select 
                   id="dateSort"
-                  className="p-[0.6rem] border border-[#333333] rounded-[5px] bg-black text-white h-[38px] w-full transition-all duration-300"
+                  className="p-[0.6rem] border border-input rounded-[5px] bg-background text-foreground h-[38px] w-full transition-all duration-300"
                   value={ordenFecha}
                   onChange={(e) => onOrdenFechaChange(e.target.value as 'asc' | 'desc')}
                 >
@@ -142,13 +142,13 @@ export default function FiltrosModal({
             </div>
             
             {filtrosActivos.length > 0 && (
-              <div className="w-full bg-[#1a1a1a] p-2 rounded-md border border-[#333333] transition-all duration-300 mt-2">
+              <div className="w-full bg-muted p-2 rounded-md border border-border transition-all duration-300 mt-2">
                 <div className="text-xs text-gray-400 mb-1.5">Filtros activos:</div>
                 <div className="flex flex-wrap gap-2 transition-all duration-300">
                   {filtrosActivos.map((filtro, index) => (
                     <div 
                       key={index} 
-                      className="inline-flex items-center bg-[#0066cc] text-white text-xs py-1 px-2 rounded-[15px] transition-all duration-300 animate-fadeIn shadow-sm"
+                      className="inline-flex items-center bg-primary text-primary-foreground text-xs py-1 px-2 rounded-[15px] transition-all duration-300 animate-fadeIn shadow-sm"
                     >
                       {filtro.etiqueta}
                       <button 
@@ -167,15 +167,15 @@ export default function FiltrosModal({
         </div>
         
         {/* Pie del modal con botones */}
-        <div className="p-4 border-t border-[#333333] flex gap-2 justify-end">
+        <div className="p-4 border-t border-border flex gap-2 justify-end">
           <button 
-            className="p-[0.6rem] px-4 h-[38px] bg-[#333333] text-white rounded-[5px] whitespace-nowrap hover:opacity-90 transition-all duration-300"
+            className="p-[0.6rem] px-4 h-[38px] bg-muted text-muted-foreground rounded-[5px] whitespace-nowrap hover:opacity-90 transition-all duration-300"
             onClick={onLimpiarFiltros}
           >
             Limpiar
           </button>
           <button 
-            className="p-[0.6rem] px-4 h-[38px] bg-[#0066cc] text-white rounded-[5px] whitespace-nowrap hover:opacity-90 transition-all duration-300"
+            className="p-[0.6rem] px-4 h-[38px] bg-primary text-primary-foreground rounded-[5px] whitespace-nowrap hover:opacity-90 transition-all duration-300"
             onClick={() => {
               onAplicarFiltros();
               onClose();

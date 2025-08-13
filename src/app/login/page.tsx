@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -11,10 +11,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const redirectUrl = searchParams.get('redirect')
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -22,7 +24,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const supabase = createBrowserClient();
+      const supabase = createClient();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -30,18 +32,24 @@ export default function LoginPage() {
 
       if (error) throw error
 
-      // Verificar si es admin para redirigir al dashboard
+      // Manejar redirección después del login
       if (data.session) {
-        const { data: perfil } = await supabase
-          .from('perfiles')
-          .select('role')
-          .eq('id', data.user.id)
-          .single()
-
-        if (perfil && perfil.role === 'admin') {
-          router.push('/admin/dashboard')
+        // Si hay una URL de redirección, usarla
+        if (redirectUrl) {
+          router.push(redirectUrl)
         } else {
-          router.push('/') // Redirigir a la página principal para usuarios normales
+          // Si no hay redirección específica, verificar si es admin
+          const { data: perfil } = await supabase
+            .from('perfiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single()
+
+          if (perfil && perfil.role === 'admin') {
+            router.push('/admin/dashboard')
+          } else {
+            router.push('/') // Redirigir a la página principal para usuarios normales
+          }
         }
       }
     } catch (error: any) {

@@ -373,7 +373,7 @@ export default function PerfilPage() {
                       onChange={(e) => setUsername(e.target.value)}
                       placeholder="Tu nombre de usuario"
                     />
-                    <div className="mt-2 p-2 border rounded-md bg-muted/30">
+                    <div className="mt-2 p-2 border rounded-md bg-muted/30 dark:bg-zinc-800/30 amoled:bg-zinc-900/50">
                       <p className="text-xs text-muted-foreground">Vista previa:</p>
                       <p className="font-medium" style={{ color: userColor }}>
                         {username || 'Tu nombre de usuario'}
@@ -389,7 +389,7 @@ export default function PerfilPage() {
                   )}
                   
                   {saveSuccess && (
-                    <Alert className="w-full bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                    <Alert className="w-full bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400 amoled:bg-green-950/30 amoled:text-green-400">
                       <AlertDescription>Cambios guardados correctamente</AlertDescription>
                     </Alert>
                   )}
@@ -417,7 +417,7 @@ export default function PerfilPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <Button 
                         variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2"
+                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
                         onClick={() => router.push('/admin/dashboard')}
                       >
                         <Server className="h-6 w-6" />
@@ -426,7 +426,7 @@ export default function PerfilPage() {
                       
                       <Button 
                         variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2"
+                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
                         onClick={() => router.push('/admin/noticias')}
                       >
                         <FileText className="h-6 w-6" />
@@ -435,7 +435,7 @@ export default function PerfilPage() {
                       
                       <Button 
                         variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2"
+                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
                         onClick={() => router.push('/admin/servidores')}
                       >
                         <Server className="h-6 w-6" />
@@ -444,7 +444,7 @@ export default function PerfilPage() {
                       
                       <Button 
                         variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2"
+                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
                         onClick={() => router.push('/admin/recursos')}
                       >
                         <FileText className="h-6 w-6" />

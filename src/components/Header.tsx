@@ -1,138 +1,255 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Menu, ChevronDown, Home, Newspaper, Server, Package, PaintBucket, BookOpen, User, Settings, LogOut, Bell, Shield } from 'lucide-react'
+import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/mode-toggle'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
-// No es necesario importar Image de Next.js
 
 export default function Header() {
   const router = useRouter()
-  const { session, loading: authLoading, user: authUser } = useAuth()
+  const { session, user: authUser } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [currentTheme, setCurrentTheme] = useState('light');
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
+  const adminMenuRef = useRef<HTMLLIElement | null>(null)
+  // Foro menu state
+  const [isForoMenuOpen, setIsForoMenuOpen] = useState(false)
+  const foroMenuRef = useRef<HTMLLIElement | null>(null)
+  type ForoCategoria = {
+    id: string
+    nombre: string
+    slug: string
+    parent_id: string | null
+    nivel: number | null
+    color: string | null
+    subcategorias?: ForoCategoria[]
+  }
+  type ApiForoCategoria = {
+    id: string
+    nombre: string
+    slug: string
+    parent_id: string | null
+    nivel: number | null
+    color: string | null
+  }
+  const [foroCategorias, setForoCategorias] = useState<ForoCategoria[]>([])
+  const [foroMobileOpen, setForoMobileOpen] = useState(false)
 
   useEffect(() => {
-    // Si estamos cargando la autenticación, no hacemos nada aún
-    if (authLoading) return;
-    
-    // Verificar si el usuario es admin cuando cambia el usuario autenticado
+    const detectTheme = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('amoled')) {
+        setCurrentTheme('amoled');
+      } else if (htmlElement.classList.contains('dark')) {
+        setCurrentTheme('dark');
+      } else {
+        setCurrentTheme('light');
+      }
+    };
+
+    detectTheme();
+    const observer = new MutationObserver(detectTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, [])
+
+  useEffect(() => {
     if (authUser && session) {
-      // Verificar si es admin basado en el rol del usuario
       setIsAdmin(authUser.role === 'admin');
     } else {
       setIsAdmin(false);
     }
-  }, [authLoading, authUser, session])
+  }, [authUser, session])
+
+  // Cerrar submenú Admin al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setIsAdminMenuOpen(false)
+      }
+      if (foroMenuRef.current && !foroMenuRef.current.contains(e.target as Node)) {
+        setIsForoMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Cargar categorías de foro y construir jerarquía
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await fetch('/api/foro/categorias')
+        if (!res.ok) return
+        const json = await res.json()
+        const flat: ForoCategoria[] = ((json?.data || []) as ApiForoCategoria[]).map((c) => ({
+          id: c.id,
+          nombre: c.nombre,
+          slug: c.slug,
+          parent_id: c.parent_id ?? null,
+          nivel: c.nivel ?? 0,
+          color: c.color ?? null,
+        }))
+        const map = new Map<string, ForoCategoria>()
+        flat.forEach(c => map.set(c.id, { ...c, subcategorias: [] }))
+        const roots: ForoCategoria[] = []
+        flat.forEach(c => {
+          if (c.parent_id && map.has(c.parent_id)) {
+            map.get(c.parent_id)!.subcategorias!.push(map.get(c.id)!)
+          } else {
+            roots.push(map.get(c.id)!)
+          }
+        })
+        setForoCategorias(roots)
+      } catch (e) {
+        // noop
+      }
+    }
+    fetchCategorias()
+  }, [])
 
   const handleLogout = async () => {
-    try {
-      // Primero limpiamos el almacenamiento local
-      localStorage.removeItem('mc-community-auth')
-      
-      // Luego cerramos sesión en Supabase
-      const supabase = createBrowserClient();
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        console.error('Error al cerrar sesión:', error.message)
-        return
-      }
-      
-      // Actualizar el estado local inmediatamente
-      setIsAdmin(false)
-      
-      // Redirigir solo después de un cierre de sesión exitoso
-      router.refresh() // Actualiza el estado de la aplicación
-      router.push('/')
-    } catch (error) {
-      console.error('Error inesperado al cerrar sesión:', error)
-      // Intentamos limpiar todo en caso de error
-      localStorage.removeItem('mc-community-auth')
-      setIsAdmin(false)
-      router.refresh()
-      router.push('/')
-    }
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    setIsUserMenuOpen(false);
+    setIsMenuOpen(false);
+    router.refresh();
+  }
+
+  const closeAllMenus = () => {
+    setIsMenuOpen(false);
+    setIsUserMenuOpen(false);
+    setIsAdminMenuOpen(false);
   }
 
   return (
-    <header className="bg-background dark:bg-amoled-black sticky top-0 z-40 border-b border-border/40 dark:border-gray-800">
+    <header className="bg-background dark:bg-amoled-black sticky top-0 z-50 border-b border-border/40 dark:border-gray-800 text-gray-900 dark:text-white amoled:text-white">
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex-1 md:flex md:items-center md:gap-12">
-            <Link className="block" href="/">
+            <Link className="block" href="/" onClick={closeAllMenus}>
               <span className="sr-only">Inicio</span>
-              <img 
-                src="/images/logo.png" 
-                alt="MC Community Logo" 
-                className="h-10 w-10" 
-              />
+              <img src="/images/logo.png" alt="MC Community Logo" className="h-10 w-10" />
             </Link>
           </div>
 
           <div className="md:flex md:items-center md:gap-12">
             <nav aria-label="Global" className="hidden md:block">
               <ul className="flex items-center gap-1 text-sm">
-                <li>
-                  <Link
-                    href="/noticias"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
+                <li><Link href="/noticias" className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>Noticias</Link></li>
+                <li className="relative" ref={foroMenuRef}>
+                  <button
+                    type="button"
+                    aria-haspopup="menu"
+                    aria-expanded={isForoMenuOpen}
+                    className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}
+                    onClick={() => setIsForoMenuOpen(v => !v)}
                   >
-                    Noticias
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/servidores"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
+                    Foro
+                  </button>
+                  <div
+                    className={`absolute ${isForoMenuOpen ? 'block' : 'hidden'} top-full left-0 mt-1 w-72 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}
                   >
-                    Servidores
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/mods"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
-                  >
-                    Mods
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/recursos/texturas"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
-                  >
-                    Texturas
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/recursos/shaders"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
-                  >
-                    Shaders
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/wiki"
-                    className="px-4 py-2 text-gray-300 transition hover:text-white dark:text-gray-300 dark:hover:text-white border-b-2 border-transparent hover:border-primary"
-                  >
-                    Wiki
-                  </Link>
+                    <ul className="py-2 text-sm max-h-[70vh] overflow-auto">
+                      <li>
+                        <Link
+                          href="/foro"
+                          className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                          onClick={() => setIsForoMenuOpen(false)}
+                        >
+                          Ver todo el foro
+                        </Link>
+                      </li>
+                      {foroCategorias.map(cat => (
+                        <li key={cat.id} className="px-2 py-1">
+                          <Link
+                            href={`/foro/categoria/${cat.slug}`}
+                            className={`block rounded px-2 py-1 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                            onClick={() => setIsForoMenuOpen(false)}
+                            style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : undefined}
+                          >
+                            {cat.nombre}
+                          </Link>
+                          {cat.subcategorias && cat.subcategorias.length > 0 && (
+                            <ul className="mt-1 ml-3 border-l border-gray-200 dark:border-gray-700">
+                              {cat.subcategorias.map(sub => (
+                                <li key={sub.id}>
+                                  <Link
+                                    href={`/foro/categoria/${sub.slug}`}
+                                    className={`block rounded px-2 py-1 ml-2 ${currentTheme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
+                                    onClick={() => setIsForoMenuOpen(false)}
+                                  >
+                                    {sub.nombre}
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </li>
                 {isAdmin && (
-                  <li>
-                    <Link
-                      href="/admin/dashboard"
-                      className="px-4 py-2 text-primary transition hover:text-primary/75 dark:text-primary dark:hover:text-primary/75 border-b-2 border-transparent hover:border-primary"
+                  <li className="relative" ref={adminMenuRef}>
+                    <button
+                      type="button"
+                      aria-haspopup="menu"
+                      aria-expanded={isAdminMenuOpen}
+                      className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}
+                      onClick={() => setIsAdminMenuOpen((v) => !v)}
                     >
-                      Panel Admin
-                    </Link>
+                      Admin
+                    </button>
+                    <div
+                      className={`absolute ${isAdminMenuOpen ? 'block' : 'hidden'} top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}
+                    >
+                      <ul className="py-2 text-sm">
+                        <li>
+                          <Link
+                            href="/admin/dashboard"
+                            className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Dashboard
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/admin/noticias"
+                            className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Noticias
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/admin/usuarios"
+                            className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Usuarios
+                          </Link>
+                        </li>
+                        <li>
+                          <Link
+                            href="/admin/foro"
+                            className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Foros
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
                   </li>
                 )}
               </ul>
@@ -141,97 +258,30 @@ export default function Header() {
             <div className="flex items-center gap-4">
               <ModeToggle />
               
-              {/* Auth Buttons - Desktop */}
               <div className="hidden md:flex items-center gap-4">
-                <button className="text-gray-300 hover:text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-                  </svg>
-                </button>
-                
-                {authLoading ? (
-                  <div className="h-8 w-8 bg-muted rounded-full animate-pulse"></div>
-                ) : session && authUser ? (
+                {authUser ? (
                   <div className="relative">
-                    <button
-                      type="button"
-                      className="overflow-hidden rounded-full border border-gray-700 shadow-inner"
-                      onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    >
+                    <button type="button" className="overflow-hidden rounded-full border border-gray-700 shadow-inner" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
                       <span className="sr-only">Abrir menú de usuario</span>
                       {authUser.avatar_url ? (
-                        <div className="size-8 overflow-hidden">
-                          <img 
-                            src={authUser.avatar_url} 
-                            alt="Foto de perfil" 
-                            className="w-full h-full object-cover rounded-full"
-                            crossOrigin="anonymous"
-                          />
-                        </div>
+                        <img src={authUser.avatar_url} alt="Foto de perfil" className="size-10 object-cover rounded-full" crossOrigin="anonymous"/>
                       ) : (
-                        <div className="size-8 flex items-center justify-center bg-primary text-white font-bold rounded-full">
-                          {authUser.username?.charAt(0).toUpperCase() || authUser.email?.charAt(0).toUpperCase() || 'U'}
-                        </div>
+                        <div className="size-10 flex items-center justify-center bg-primary text-white font-bold rounded-full">{authUser.username?.charAt(0).toUpperCase() || 'U'}</div>
                       )}
                     </button>
-
-                    {isMenuOpen && (
+                    {isUserMenuOpen && (
                       <>
-                        {/* Overlay para cerrar el menú al hacer clic fuera */}
-                        <div 
-                          className="fixed inset-0 z-10" 
-                          onClick={() => setIsMenuOpen(false)}
-                        />
-                        <div
-                          className="absolute end-0 z-20 mt-2 w-64 rounded-md border border-gray-800 bg-amoled-black/90 backdrop-blur-sm shadow-lg"
-                          role="menu"
-                        >
-                          <div className="p-0">
-                            <div className="flex items-center px-6 py-4 border-b border-gray-800/50">
-                            {authUser.avatar_url ? (
-                              <div className="size-8 overflow-hidden rounded-full mr-3">
-                                <img 
-                                  src={authUser.avatar_url} 
-                                  alt="Foto de perfil" 
-                                  className="w-full h-full object-cover object-center"
-                                  crossOrigin="anonymous"
-                                />
-                              </div>
-                            ) : (
-                              <div className="size-8 flex items-center justify-center bg-primary text-white font-bold rounded-full mr-3">
-                                {authUser.username?.charAt(0).toUpperCase() || authUser.email?.charAt(0).toUpperCase() || 'U'}
-                              </div>
-                            )}
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium text-white">
-                                {authUser.username || 'Usuario'}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {authUser.email}
-                              </span>
-                            </div>
-                            </div>
-                            <Link
-                              href="/perfil"
-                              className="flex items-center gap-3 text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50"
-                              role="menuitem"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              <User className="h-4 w-4" />
-                              Mi Perfil
-                            </Link>
-                            <button
-                              onClick={() => {
-                                handleLogout();
-                                setIsMenuOpen(false);
-                              }}
-                              className="w-full text-left text-sm font-medium text-red-500 hover:text-red-400 px-6 py-3 hover:bg-gray-800/50 transition-colors flex items-center gap-3"
-                              role="menuitem"
-                            >
-                              <LogOut className="h-4 w-4" />
-                              Cerrar Sesión
-                            </button>
+                        <div className="fixed inset-0 z-10" onClick={() => setIsUserMenuOpen(false)} />
+                        <div className={`absolute end-0 z-20 mt-2 w-64 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}>
+                          <div className="p-2">
+                             <div className={`flex items-center px-4 py-3 border-b mb-2 ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+                                <div className="flex-1">
+                                  <span className={`font-medium ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>{authUser.username || 'Usuario'}</span>
+                                  <span className={`block text-xs ${currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>{authUser.email}</span>
+                                </div>
+                             </div>
+                            <Link href="/perfil" className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={() => setIsUserMenuOpen(false)}><User className="h-4 w-4" />Mi Perfil</Link>
+                            <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-lg hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut className="h-4 w-4" />Cerrar sesión</button>
                           </div>
                         </div>
                       </>
@@ -239,50 +289,15 @@ export default function Header() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Link href="/login">
-                      <Button variant="outline" size="sm" className="border-minecraft-diamond text-minecraft-diamond hover:bg-minecraft-diamond/10">Iniciar Sesión</Button>
-                    </Link>
-                    <Link href="/register">
-                      <Button size="sm">Registrarse</Button>
-                    </Link>
+                    <Link href="/login" onClick={closeAllMenus}><Button variant="outline" size="sm">Iniciar Sesión</Button></Link>
+                    <Link href="/register" onClick={closeAllMenus}><Button size="sm">Registrarse</Button></Link>
                   </div>
                 )}
               </div>
 
-              {/* Mobile Menu Button */}
               <div className="block md:hidden">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                  aria-label="Menú principal"
-                  aria-expanded={isMenuOpen}
-                  className="text-primary dark:text-primary p-1"
-                >
-                  <span className="sr-only">Abrir menú</span>
-                  {isMenuOpen ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="size-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="size-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                  )}
+                <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Menú principal">
+                  <Menu />
                 </Button>
               </div>
             </div>
@@ -290,227 +305,120 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Menú móvil expandible */}
       {isMenuOpen && (
-        <>
-          {/* Overlay semitransparente */}
-          <div 
-            className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-[99] transition-opacity duration-300 ease-in-out"
-            onClick={() => setIsMenuOpen(false)}
-          />
-          
-          <div 
-            className="md:hidden fixed right-0 top-0 w-72 h-full overflow-y-auto bg-background dark:bg-amoled-black border-l border-border/40 dark:border-gray-800 shadow-lg z-[100] transition-all duration-300 ease-in-out transform translate-x-0"
-            style={{
-              animation: 'slideInRight 0.3s ease-out forwards'
-            }}
-          >
-            <div className="p-0">
-            <nav className="flex flex-col h-full">
-              <style jsx global>{`
-                @keyframes slideInRight {
-                  from { transform: translateX(100%); }
-                  to { transform: translateX(0); }
-                }
-                @keyframes fadeIn {
-                  from { opacity: 0; }
-                  to { opacity: 1; }
-                }
-              `}</style>
-              <div className="pt-6 p-4 pb-2 flex items-center justify-between border-b border-gray-800/50">
-                <div className="flex items-center">
-                  <Link href="/" className="flex items-center" onClick={() => setIsMenuOpen(false)}>
-                    <img 
-                      src="/images/logo.png" 
-                      alt="MC Community Logo" 
-                      className="h-10 w-10" 
-                    />
-                  </Link>
+        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsMenuOpen(false)} />
+      )}
+      
+      <div className={`md:hidden fixed right-0 top-0 w-72 h-full overflow-y-auto shadow-lg z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'} amoled:text-white`}>
+        <nav className="flex flex-col h-full">
+          <div className={`p-4 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+            {authUser ? (
+              <div className="flex items-center">
+                {authUser.avatar_url ? (
+                  <img src={authUser.avatar_url} alt="Foto de perfil" className="size-10 object-cover rounded-full mr-3" crossOrigin="anonymous"/>
+                ) : (
+                  <div className="size-10 flex items-center justify-center bg-primary text-white font-bold rounded-full mr-3">{authUser.username?.charAt(0).toUpperCase() || 'U'}</div>
+                )}
+                <div>
+                  <p className={`font-semibold ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>{authUser.username || 'Usuario'}</p>
+                  <p className={`text-sm ${currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>{authUser.email}</p>
                 </div>
-                <button 
-                  onClick={() => setIsMenuOpen(false)}
-                  className="text-gray-400 hover:text-white p-2 rounded-full hover:bg-gray-800/30 transition-colors"
-                  aria-label="Cerrar menú"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="size-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
               </div>
-              
-              <div className="py-2">
-                <h3 className="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Navegación</h3>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Link href="/login" onClick={closeAllMenus}><Button variant="outline" className="w-full">Iniciar Sesión</Button></Link>
+                <Link href="/register" onClick={closeAllMenus}><Button className="w-full">Registrarse</Button></Link>
               </div>
-              
-              <Link
-                href="/noticias"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Newspaper className="h-4 w-4" />
-                Noticias
+            )}
+          </div>
+
+          <ul className="flex-grow p-4 space-y-2">
+            <li>
+              <Link href="/noticias" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                <Newspaper size={18} /> Noticias
               </Link>
-              <Link
-                href="/servidores"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                onClick={() => setForoMobileOpen(v => !v)}
               >
-                <Server className="h-4 w-4" />
-                Servidores
-              </Link>
-              <Link
-                href="/recursos/mods"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <Package className="h-4 w-4" />
-                Mods
-              </Link>
-              <Link
-                href="/recursos/texturas"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <PaintBucket className="h-4 w-4" />
-                Texturas
-              </Link>
-              <Link
-                href="/recursos/shaders"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <PaintBucket className="h-4 w-4" />
-                Shaders
-              </Link>
-              <Link
-                href="/wiki"
-                className="text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <BookOpen className="h-4 w-4" />
-                Wiki
-              </Link>
-              
-              {isAdmin && (
-                <>
-                  <div className="py-2 mt-2">
-                    <h3 className="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Administración</h3>
-                  </div>
-                  <Link
-                    href="/admin/dashboard"
-                    className="text-sm font-medium text-primary hover:text-primary/80 px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <Shield className="h-4 w-4" />
-                    Panel Admin
+                <span className="flex items-center gap-2"><MessageSquare size={18} /> Foro</span>
+                <span className="text-xs">{foroMobileOpen ? '−' : '+'}</span>
+              </button>
+              {foroMobileOpen && (
+                <div className="mt-1 ml-2">
+                  <Link href="/foro" className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    Ver todo el foro
                   </Link>
-                </>
-              )}
-              
-              <div className="mt-auto border-t border-gray-800/50">
-                <div className="py-2">
-                  <h3 className="px-6 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">Tu cuenta</h3>
-                </div>
-                {authLoading ? (
-                  <div className="flex flex-col space-y-2 p-4">
-                    <div className="h-9 w-full bg-muted rounded animate-pulse"></div>
-                  </div>
-                ) : authUser && session ? (
-                  <>
-                    <div className="flex items-center px-6 py-4 border-b border-gray-800/50">
-                      {authUser.avatar_url ? (
-                        <div className="size-8 overflow-hidden rounded-full mr-3">
-                          <img 
-                            src={authUser.avatar_url} 
-                            alt="Foto de perfil" 
-                            className="w-full h-full object-cover object-center"
-                            crossOrigin="anonymous"
-                          />
-                        </div>
-                      ) : (
-                        <div className="size-8 flex items-center justify-center bg-primary text-white font-bold rounded-full mr-3">
-                          {authUser.username?.charAt(0).toUpperCase() || authUser.email?.charAt(0).toUpperCase() || 'U'}
+                  {foroCategorias.map(cat => (
+                    <div key={cat.id} className="mt-1">
+                      <Link
+                        href={`/foro/categoria/${cat.slug}`}
+                        className={`block rounded px-3 py-2 text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
+                        onClick={closeAllMenus}
+                      >
+                        {cat.nombre}
+                      </Link>
+                      {cat.subcategorias && cat.subcategorias.length > 0 && (
+                        <div className="ml-3">
+                          {cat.subcategorias.map(sub => (
+                            <Link
+                              key={sub.id}
+                              href={`/foro/categoria/${sub.slug}`}
+                              className={`block rounded px-3 py-1.5 text-sm ${currentTheme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800'}`}
+                              onClick={closeAllMenus}
+                            >
+                              {sub.nombre}
+                            </Link>
+                          ))}
                         </div>
                       )}
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-white">
-                          {authUser.username || 'Usuario'}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {authUser.email}
-                        </span>
-                      </div>
-                      <div className="ml-auto">
-                        <button className="text-gray-400 hover:text-white p-1 rounded-full hover:bg-gray-800/30 transition-colors">
-                          <Bell className="h-5 w-5" />
-                        </button>
-                      </div>
                     </div>
-                    <Link
-                      href="/perfil"
-                      className="flex items-center gap-3 text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <User className="h-4 w-4" />
-                      Mi Perfil
-                    </Link>
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-3 text-sm font-medium text-white hover:text-primary px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Configuración
-                    </Link>
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setIsMenuOpen(false);
-                      }}
-                      className="w-full text-left text-sm font-medium text-red-500 hover:text-red-400 px-6 py-3 hover:bg-gray-800/50 transition-colors border-b border-gray-800/50 flex items-center gap-3"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Cerrar Sesión
-                    </button>
-                  </>
-                ) : (
-                  <div className="flex flex-col p-4 space-y-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full justify-center border-minecraft-diamond text-minecraft-diamond hover:bg-minecraft-diamond/10"
-                      onClick={() => {
-                        router.push('/login');
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Iniciar Sesión
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="w-full justify-center bg-primary hover:bg-primary/90"
-                      onClick={() => {
-                        router.push('/register');
-                        setIsMenuOpen(false);
-                      }}
-                    >
-                      Registrarse
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </nav>
+                  ))}
+                </div>
+              )}
+            </li>
+          </ul>
+
+          {isAdmin && (
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+              <p className={`text-sm font-semibold mb-2 ${currentTheme === 'light' ? 'text-gray-500' : 'text-gray-400'} amoled:text-gray-300`}>Administración</p>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/admin/dashboard" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <Shield size={18} /> Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/foro" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <MessageSquare size={18} /> Admin Foro
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/noticias" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <Newspaper size={18} /> Admin Noticias
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/usuarios" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <User size={18} /> Admin Usuarios
+                  </Link>
+                </li>
+                
+              </ul>
             </div>
-          </div>
-        </>
-      )}
+          )}
+
+          {authUser && (
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+              <Link href="/perfil" className={`flex items-center gap-2 p-2 rounded-md w-full text-left ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}><User size={18} /> Mi Perfil</Link>
+              <button onClick={handleLogout} className="flex items-center gap-2 p-2 rounded-md hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut size={18} /> Cerrar Sesión</button>
+            </div>
+          )}
+        </nav>
+      </div>
     </header>
   )
 }

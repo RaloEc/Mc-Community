@@ -16,6 +16,14 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+    screens: {
+      'xs': '480px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       borderColor: {
         'border-color': 'hsl(var(--border))',
@@ -127,10 +135,56 @@ module.exports = {
         shimmer: 'shimmer 2s infinite linear',
         pulse: 'pulse 1.5s ease-in-out infinite',
       },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            '--tw-prose-body': theme('colors.gray[800]'),
+            '--tw-prose-headings': theme('colors.gray[900]'),
+            '--tw-prose-lead': theme('colors.gray[600]'),
+            '--tw-prose-links': theme('colors.gray[900]'),
+            '--tw-prose-bold': theme('colors.gray[900]'),
+            '--tw-prose-counters': theme('colors.gray[500]'),
+            '--tw-prose-bullets': theme('colors.gray[300]'),
+            '--tw-prose-hr': theme('colors.gray[200]'),
+            '--tw-prose-quotes': theme('colors.gray[900]'),
+            '--tw-prose-quote-borders': theme('colors.gray[200]'),
+            '--tw-prose-captions': theme('colors.gray[500]'),
+            '--tw-prose-code': theme('colors.gray[900]'),
+            '--tw-prose-pre-code': theme('colors.gray[200]'),
+            '--tw-prose-pre-bg': theme('colors.gray[800]'),
+            '--tw-prose-th-borders': theme('colors.gray[300]'),
+            '--tw-prose-td-borders': theme('colors.gray[200]'),
+            // ... Agrega más personalizaciones si es necesario
+          },
+        },
+        invert: {
+          css: {
+            '--tw-prose-body': theme('colors.stone[200]'),
+            '--tw-prose-headings': theme('colors.stone[50]'),
+            '--tw-prose-lead': theme('colors.stone[300]'),
+            '--tw-prose-links': theme('colors.white'),
+            '--tw-prose-bold': theme('colors.white'),
+            '--tw-prose-counters': theme('colors.stone[300]'),
+            '--tw-prose-bullets': theme('colors.stone[500]'),
+            '--tw-prose-hr': theme('colors.stone[800]'),
+            '--tw-prose-quotes': theme('colors.stone[50]'),
+            '--tw-prose-quote-borders': theme('colors.stone[700]'),
+            '--tw-prose-captions': theme('colors.stone[400]'),
+            '--tw-prose-code': theme('colors.white'),
+            '--tw-prose-pre-code': theme('colors.stone[200]'),
+            '--tw-prose-pre-bg': 'rgb(0 0 0 / 50%)',
+            '--tw-prose-th-borders': theme('colors.stone[500]'),
+            '--tw-prose-td-borders': theme('colors.stone[700]'),
+          },
+        },
+      }),
     },
   },
   plugins: [
     require('@tailwindcss/typography'),
-    require("tailwindcss-animate")
+    require("tailwindcss-animate"),
+    function({ addVariant }) {
+      addVariant('amoled', '.amoled &')
+    }
   ],
 }

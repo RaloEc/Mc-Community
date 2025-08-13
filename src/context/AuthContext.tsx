@@ -1,301 +1,157 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { Session } from '@supabase/supabase-js'
+import { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react'
+import { supabase } from '@/lib/supabase/client'
+import { Session, AuthChangeEvent, User } from '@supabase/supabase-js'
+import { PostgrestError } from '@supabase/postgrest-js'
+
+type PerfilUsuario = {
+  id: string
+  username: string
+  role: string
+  email?: string
+  avatar_url?: string
+}
 
 type AuthContextType = {
   session: Session | null
   loading: boolean
-  user: any | null
+  user: PerfilUsuario | null
+  authInitialized: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
-  user: null
+  user: null,
+  authInitialized: false,
 })
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null)
-  const [user, setUser] = useState<any | null>(null)
+  const [user, setUser] = useState<PerfilUsuario | null>(null)
   const [loading, setLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
-  const initializationAttempted = useRef(false)
-  const profileLoadAttempted = useRef(false)
-  const supabaseClientRef = useRef(createClient())
-  
-  // Agregar un temporizador de seguridad para evitar que la página se quede cargando indefinidamente
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log('[AuthContext] Forzando finalización de carga después de 5 segundos')
-        setLoading(false)
-      }
-    }, 5000) // 5 segundos como máximo de espera
+  const isMounted = useRef(true)
+
+  const actualizarUltimoAcceso = useCallback(async (userId: string) => {
+    if (!supabase) return
+    try {
+      await supabase
+        .from('perfiles')
+        .update({ fecha_ultimo_acceso: new Date().toISOString() })
+        .eq('id', userId)
+    } catch (error) {
+      console.error('[AuthContext] Error al actualizar último acceso:', error)
+    }
+  }, [])
+
+  const cargarOcrearPerfil = useCallback(async (authUser: User) => {
+    if (!isMounted.current || !supabase) return
     
-    return () => clearTimeout(timeoutId)
-  }, [loading])
-  
-  // Efecto para depuración del estado actual
-  useEffect(() => {
-    console.log('[AuthContext] Estado actual:', { 
-      session: session ? 'Presente' : 'Null', 
-      user: user ? 'Presente' : 'Null',
-      loading,
-      authInitialized 
-    })
-  }, [session, user, loading, authInitialized])
+    try {
+      const { data: perfilData, error: perfilError } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
 
-  useEffect(() => {
-    console.log('[AuthContext] Inicializando contexto de autenticación')
-    const supabase = supabaseClientRef.current
-
-    // Función para cargar el perfil del usuario con manejo de errores mejorado
-    const cargarPerfil = async (userId: string) => {
-      if (profileLoadAttempted.current) {
-        console.log('[AuthContext] Ya se intentó cargar el perfil anteriormente')
-        // Aseguramos que loading se establezca en false incluso si ya se intentó cargar el perfil
-        setLoading(false)
+      if (perfilData) {
+        setUser(perfilData)
         return
       }
-      
-      profileLoadAttempted.current = true
-      
-      try {
-        console.log(`[AuthContext] Cargando perfil para usuario: ${userId}`)
-        const { data: perfilData, error } = await supabase
+
+      if (perfilError && (perfilError as PostgrestError).code === 'PGRST116') {
+        console.log('[AuthContext] Perfil no encontrado, creando uno nuevo.')
+        const username = authUser.user_metadata?.username || authUser.email?.split('@')[0] || 'usuario_anonimo'
+        const email = authUser.email
+        const avatar_url = authUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/initials/svg?seed=${username}`
+
+        const { data: newProfile, error: createError } = await supabase
           .from('perfiles')
+          .upsert({ id: authUser.id, username, email, avatar_url, role: 'usuario' })
           .select('*')
-          .eq('id', userId)
           .single()
         
-        if (error) {
-          console.log('[AuthContext] Error al cargar perfil, intentando crear uno nuevo')
-          
-          // Intentar crear un perfil si no existe
-          const { data: userData } = await supabase.auth.getUser()
-          if (userData && userData.user) {
-            const username = userData.user.user_metadata?.username || 'usuario'
-            
-            try {
-              // Intentar crear el perfil usando upsert para evitar errores de duplicación
-              const { data: newProfile, error: createError } = await supabase
-                .from('perfiles')
-                .upsert({
-                  id: userId,
-                  username: username,
-                  role: 'user'
-                }, { onConflict: 'id' })
-                .select('*')
-                .single()
-              
-              if (createError) {
-                console.error('[AuthContext] Error al crear perfil:', createError)
-                // Continuar a pesar del error para no bloquear la carga
-              } else {
-                console.log('[AuthContext] Perfil creado correctamente:', newProfile)
-                setUser(newProfile)
-              }
-            } catch (createError) {
-              console.error('[AuthContext] Error al crear perfil (excepción):', createError)
-              // Continuar a pesar del error para no bloquear la carga
-            }
-          }
-        } else {
-          console.log('[AuthContext] Perfil cargado correctamente')
-          setUser(perfilData)
+        if (newProfile) {
+          setUser(newProfile)
+        } else if (createError) {
+          console.error('[AuthContext] Error creando nuevo perfil:', createError)
+          setUser(null)
         }
-      } catch (error) {
-        console.error('[AuthContext] Error al cargar el perfil:', error)
-      } finally {
-        // Asegurarse de que loading se establezca en false incluso si hay errores
-        setLoading(false)
-        console.log('[AuthContext] Estado de carga establecido a false')
+      } else if (perfilError) {
+        console.error('[AuthContext] Error obteniendo perfil:', perfilError)
+        setUser(null)
       }
+    } catch (error) {
+      console.error('[AuthContext] Excepción inesperada en cargarOcrearPerfil:', error)
+      setUser(null)
     }
+  }, [])
 
-    // Obtener la sesión inicial con manejo de errores mejorado
-    const inicializarAuth = async () => {
-      if (initializationAttempted.current) {
-        console.log('[AuthContext] Ya se intentó inicializar la autenticación')
+  useEffect(() => {
+    isMounted.current = true
+
+    const fetchSession = async () => {
+      if (!supabase) {
+        setLoading(false)
+        setAuthInitialized(true)
         return
       }
       
-      initializationAttempted.current = true
-      console.log('[AuthContext] Inicializando autenticación')
+      // 1. Obtener la sesión inicial para saber si el usuario ya está logueado
+      const { data: { session: initialSession } } = await supabase.auth.getSession()
       
-      try {
-        // Forzar una actualización completa de la sesión
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error('[AuthContext] Error al obtener la sesión inicial:', error.message)
-          setLoading(false)
-          return
-        }
-        
-        const initialSession = data.session
-        console.log('[AuthContext] Sesión inicial obtenida:', initialSession ? 'Presente' : 'Null')
-        
-        if (initialSession?.user) {
-          console.log('[AuthContext] Usuario en sesión:', initialSession.user.email)
-          setSession(initialSession)
-          
-          // Verificar si el usuario existe en la tabla de perfiles
-          await cargarPerfil(initialSession.user.id)
-        } else {
-          console.log('[AuthContext] No hay sesión activa')
-          setSession(null)
-          setUser(null)
-          setLoading(false)
-        }
-      } catch (error) {
-        console.error('[AuthContext] Error al inicializar autenticación:', error)
-        setLoading(false)
-      } finally {
-        setAuthInitialized(true)
-        console.log('[AuthContext] Inicialización de autenticación completada')
+      if (initialSession?.user) {
+        setSession(initialSession)
+        await cargarOcrearPerfil(initialSession.user)
       }
+      
+      setLoading(false)
+      setAuthInitialized(true)
     }
 
-    // Inicializar autenticación solo una vez
-    if (!authInitialized && !initializationAttempted.current) {
-      inicializarAuth().catch(err => {
-        console.error('[AuthContext] Error en inicialización:', err)
-        setLoading(false)
-      })
-    }
-    
-    // Configurar la suscripción a eventos de autenticación
+    fetchSession()
+
+    // 2. Escuchar cambios en el estado de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        try {
-          console.log(`[AuthContext] Evento de autenticación: ${event}`, newSession ? 'Con sesión' : 'Sin sesión')
-          
-          // Actualizar el estado de la sesión
-          setSession(newSession)
-          
-          if (newSession?.user?.id) {
-            console.log(`[AuthContext] Usuario autenticado: ${newSession.user.email}`)
-            // Forzar la recarga del perfil en cada cambio de estado de autenticación
-            profileLoadAttempted.current = false
-            await cargarPerfil(newSession.user.id)
-          } else {
-            console.log('[AuthContext] Usuario desconectado')
-            setUser(null)
-            setLoading(false)
-            
-            // Limpiar cualquier dato de sesión en localStorage
-            try {
-              localStorage.removeItem('mc-community-auth')
-              console.log('[AuthContext] Datos de sesión eliminados de localStorage')
-            } catch (e) {
-              console.error('[AuthContext] Error al limpiar localStorage:', e)
-            }
-          }
-        } catch (error) {
-          console.error('[AuthContext] Error en evento de autenticación:', error)
-          // Garantizar que loading se establezca en false incluso si hay errores
-          setLoading(false)
+        if (!isMounted.current) return
+
+        console.log(`[AuthContext] onAuthStateChange: Evento: ${event}`)
+        setSession(newSession)
+
+        if (event === 'SIGNED_IN' && newSession?.user) {
+          await cargarOcrearPerfil(newSession.user)
+          await actualizarUltimoAcceso(newSession.user.id)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
+        } else if (event === 'USER_UPDATED' && newSession?.user) {
+          await cargarOcrearPerfil(newSession.user)
         }
       }
     )
-    
-    return () => subscription.unsubscribe()
-  }, [authInitialized])
 
-  // Verificar periódicamente si la sesión sigue siendo válida
-  useEffect(() => {
-    if (!authInitialized) return
-
-    const supabase = supabaseClientRef.current
-
-    // Función para verificar periódicamente si la sesión sigue siendo válida
-    const verificarPerfil = async (userId: string) => {
-      try {
-        console.log(`[AuthContext] Verificando perfil para usuario: ${userId}`)
-        const { data: perfilData, error } = await supabase
-          .from('perfiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-        
-        if (error) {
-          console.log('[AuthContext] Error al verificar perfil, intentando crear uno nuevo')
-          
-          // Intentar crear un perfil si no existe
-          const { data: userData } = await supabase.auth.getUser()
-          if (userData && userData.user) {
-            const username = userData.user.user_metadata?.username || 'usuario'
-            
-            try {
-              // Intentar crear el perfil usando upsert para evitar errores de duplicación
-              const { data: newProfile, error: createError } = await supabase
-                .from('perfiles')
-                .upsert({
-                  id: userId,
-                  username: username,
-                  role: 'user'
-                }, { onConflict: 'id' })
-                .select('*')
-                .single()
-              
-              if (createError) {
-                console.error('[AuthContext] Error al crear perfil en verificación:', createError)
-                // No lanzar error para evitar bloquear la verificación
-              } else {
-                console.log('[AuthContext] Perfil creado correctamente en verificación:', newProfile)
-                setUser(newProfile)
-              }
-            } catch (createError) {
-              console.error('[AuthContext] Error al crear perfil en verificación (excepción):', createError)
-              // No lanzar error para evitar bloquear la verificación
-            }
-          }
-        } else {
-          console.log('[AuthContext] Perfil verificado correctamente')
-          setUser(perfilData)
-        }
-      } catch (error) {
-        console.error('[AuthContext] Error al verificar perfil:', error)
-        // No lanzar error para evitar bloquear la verificación
-      }
+    return () => {
+      isMounted.current = false
+      subscription?.unsubscribe()
     }
+  }, [cargarOcrearPerfil, actualizarUltimoAcceso])
 
-    // Verificar inmediatamente si no hay usuario pero hay sesión
-    if (session?.user?.id && !user) {
-      verificarPerfil(session.user.id)
-    }
+  const value = {
+    session,
+    user,
+    loading,
+    authInitialized,
+  }
 
-    const interval = setInterval(async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession()
-        if (JSON.stringify(currentSession) !== JSON.stringify(session)) {
-          console.log('[AuthContext] Actualizando sesión en intervalo')
-          setSession(currentSession)
-          
-          if (currentSession?.user?.id) {
-            await verificarPerfil(currentSession.user.id)
-          } else if (session && !currentSession) {
-            setUser(null)
-          }
-        }
-      } catch (error) {
-        console.error('[AuthContext] Error al verificar sesión:', error)
-        // No hacer nada más para evitar bloquear la verificación
-      }
-    }, 60000) // Verificar cada minuto
-
-    return () => clearInterval(interval)
-  }, [authInitialized, session, user])
-
-  // Renderizar el contenido incluso si está cargando después de cierto punto
-  return (
-    <AuthContext.Provider value={{ session, loading, user }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
-export const useAuth = () => useContext(AuthContext)
+export const useAuth = () => {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth debe usarse dentro de un AuthProvider')
+  }
+  return context
+}

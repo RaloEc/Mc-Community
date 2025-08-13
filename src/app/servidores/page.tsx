@@ -4,81 +4,12 @@ import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { UsersIcon, ServerIcon, TagIcon, ExternalLinkIcon } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { UsersIcon, ServerIcon, TagIcon, ExternalLinkIcon, RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Servidor } from '@/types'
-
-// Datos de ejemplo para los servidores
-/* const servidoresEjemplo = [
-  {
-    id: 1,
-    nombre: 'SurvivalCraft',
-    descripcion: 'Servidor de supervivencia con economía y protección de terrenos.',
-    ip: 'survival.ejemplo.com',
-    version: '1.19.2',
-    jugadores: '120/500',
-    tipo: 'Supervivencia',
-    imagen: '/images/servers/survival.jpg',
-    destacado: true
-  },
-  {
-    id: 2,
-    nombre: 'CreativeMC',
-    descripcion: 'Servidor creativo con parcelas y herramientas de construcción avanzadas.',
-    ip: 'creative.ejemplo.com',
-    version: '1.19.2',
-    jugadores: '85/200',
-    tipo: 'Creativo',
-    imagen: '/images/servers/creative.jpg',
-    destacado: false
-  },
-  {
-    id: 3,
-    nombre: 'SkyBlock Network',
-    descripcion: 'La mejor experiencia de SkyBlock con misiones y eventos semanales.',
-    ip: 'skyblock.ejemplo.com',
-    version: '1.19.2',
-    jugadores: '210/1000',
-    tipo: 'SkyBlock',
-    imagen: '/images/servers/skyblock.jpg',
-    destacado: true
-  },
-  {
-    id: 4,
-    nombre: 'PvP Legends',
-    descripcion: 'Arena PvP con diferentes modos de juego y sistema de rangos.',
-    ip: 'pvp.ejemplo.com',
-    version: '1.19.2',
-    jugadores: '150/300',
-    tipo: 'PvP',
-    imagen: '/images/servers/pvp.jpg',
-    destacado: false
-  },
-  {
-    id: 5,
-    nombre: 'Pixelmon World',
-    descripcion: 'Servidor de Pixelmon con gimnasios y eventos de captura.',
-    ip: 'pixelmon.ejemplo.com',
-    version: '1.16.5',
-    jugadores: '95/200',
-    tipo: 'Mods',
-    imagen: '/images/servers/pixelmon.jpg',
-    destacado: true
-  },
-  {
-    id: 6,
-    nombre: 'Factions Empire',
-    descripcion: 'Servidor de facciones con guerras, economía y misiones.',
-    ip: 'factions.ejemplo.com',
-    version: '1.19.2',
-    jugadores: '180/400',
-    tipo: 'Factions',
-    imagen: '/images/servers/factions.jpg',
-    destacado: false
-  }
-]
- */
+import ServidorCard from '@/components/servidores/ServidorCard'
+import ConsultaServidorInline from '@/components/servidores/ConsultaServidorInline'
 
 // Tipos de servidores para filtrar
 const tiposServidores = ['Todos', 'Supervivencia', 'Creativo', 'SkyBlock', 'PvP', 'Mods', 'Factions']
@@ -88,31 +19,34 @@ export default function Servidores() {
   const [busqueda, setBusqueda] = useState('')
   const [servidores, setServidores] = useState<Servidor[]>([])
   const [cargando, setCargando] = useState(true)
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
   
-  useEffect(() => {
-    async function cargarServidores() {
-      try {
-        setCargando(true)
-        
-        let query = supabase
-          .from('servidores')
-          .select('*')
-        
-        const { data, error } = await query
-        
-        if (error) {
-          console.error('Error al cargar servidores:', error)
-          return
-        }
-        
-        setServidores(data || [])
-      } catch (error) {
+  // Función para cargar servidores desde Supabase
+  const cargarServidores = async () => {
+    try {
+      setCargando(true)
+      
+      let query = supabase
+        .from('servidores')
+        .select('*')
+      
+      const { data, error } = await query
+      
+      if (error) {
         console.error('Error al cargar servidores:', error)
-      } finally {
-        setCargando(false)
+        return
       }
+      
+      setServidores(data || [])
+    } catch (error) {
+      console.error('Error al cargar servidores:', error)
+    } finally {
+      setCargando(false)
     }
-    
+  }
+  
+  // Cargar servidores al montar el componente
+  useEffect(() => {
     cargarServidores()
   }, [])
 
@@ -140,124 +74,121 @@ export default function Servidores() {
         </div>
       </div>
       
-      {/* Filtros y búsqueda */}
+      {/* Contenido principal */}
       <div className="container py-8">
-        <div className="flex flex-col md:flex-row gap-4 mb-8">
-          <div className="flex-1">
-            <Input
-              type="text"
-              placeholder="Buscar servidores..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {tiposServidores.map((tipo) => (
-              <Button
-                key={tipo}
-                variant={filtroTipo === tipo ? "default" : "outline"}
-                size="sm"
-                onClick={() => setFiltroTipo(tipo)}
-                className={filtroTipo === tipo ? "" : "hover:bg-accent"}
-              >
-                {tipo}
-              </Button>
-            ))}
-          </div>
-        </div>
-        
-        {/* Lista de servidores */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {servidoresFiltrados.length > 0 ? (
-            servidoresFiltrados.map((servidor) => (
-              <Card 
-                key={servidor.id}
-                className={`overflow-hidden transition-all hover:shadow-md ${servidor.destacado ? 'border-primary' : ''}`}
-              >
-                <div className="h-40 bg-accent/50 relative flex items-center justify-center">
-                  {servidor.destacado && (
-                    <Badge className="absolute top-2 right-2 z-10">
-                      Destacado
-                    </Badge>
-                  )}
-                  <div className="text-4xl">
-                    🎮
-                  </div>
+        <div className="space-y-6">
+            {/* Sección para agregar servidor */}
+            <div className="mb-8 bg-muted/30 dark:bg-amoled-gray/60 rounded-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">
+                    ¿Tienes un servidor de Minecraft?
+                  </h2>
+                  <p className="text-muted-foreground mt-1">
+                    Añade tu servidor a nuestra lista y llega a miles de jugadores
+                  </p>
                 </div>
-                <CardHeader className="pb-2">
-                  <CardTitle>{servidor.nombre}</CardTitle>
-                  <CardDescription>{servidor.descripcion}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2 p-2 rounded-md bg-accent/50">
-                      <ServerIcon className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Versión</p>
-                        <p className="text-sm font-medium">{servidor.version}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 rounded-md bg-accent/50">
-                      <UsersIcon className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-xs text-muted-foreground">Jugadores</p>
-                        <p className="text-sm font-medium">{servidor.jugadores}</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 rounded-md bg-accent/50">
-                    <div className="w-full">
-                      <p className="text-xs text-muted-foreground">IP del servidor</p>
-                      <p className="text-sm font-medium font-mono">{servidor.ip}</p>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <TagIcon className="h-3 w-3" />
-                    {servidor.tipo}
-                  </Badge>
-                  <Button size="sm">
-                    <ExternalLinkIcon className="h-4 w-4 mr-1" />
-                    Conectar
+                <Button 
+                  onClick={() => setMostrarFormulario(!mostrarFormulario)}
+                  className="whitespace-nowrap"
+                >
+                  {mostrarFormulario ? 'Ocultar formulario' : 'Agregar servidor'}
+                </Button>
+              </div>
+              
+              {mostrarFormulario && (
+                <div className="mt-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                  <ConsultaServidorInline onServerAdded={() => {
+                    cargarServidores()
+                    setMostrarFormulario(false)
+                  }} />
+                </div>
+              )}
+            </div>
+            
+            {/* Filtros y búsqueda */}
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              <div className="flex-1">
+                <Input
+                  type="text"
+                  placeholder="Buscar servidores..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {tiposServidores.map((tipo) => (
+                  <Button
+                    key={tipo}
+                    variant={filtroTipo === tipo ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setFiltroTipo(tipo)}
+                    className={filtroTipo === tipo ? "" : "hover:bg-accent"}
+                  >
+                    {tipo}
                   </Button>
-                </CardFooter>
-              </Card>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-xl text-muted-foreground mb-4">No se encontraron servidores con estos criterios</p>
+                ))}
+              </div>
+            </div>
+            
+            {/* Botón para actualizar todos los servidores */}
+            <div className="flex justify-end mb-4">
               <Button 
-                variant="outline"
-                onClick={() => {
-                  setFiltroTipo('Todos')
-                  setBusqueda('')
-                }}
+                variant="outline" 
+                size="sm"
+                onClick={cargarServidores}
+                disabled={cargando}
               >
-                Limpiar filtros
+                <RefreshCw className={`h-4 w-4 mr-2 ${cargando ? 'animate-spin' : ''}`} />
+                Actualizar lista
               </Button>
             </div>
-          )}
+            
+            {/* Lista de servidores */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cargando ? (
+                // Mostrar esqueletos de carga
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div key={index} className="border rounded-lg overflow-hidden">
+                    <div className="h-40 bg-muted animate-pulse" />
+                    <div className="p-6 space-y-4">
+                      <div className="h-6 bg-muted animate-pulse rounded" />
+                      <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="h-12 bg-muted animate-pulse rounded" />
+                        <div className="h-12 bg-muted animate-pulse rounded" />
+                      </div>
+                      <div className="h-12 bg-muted animate-pulse rounded" />
+                    </div>
+                  </div>
+                ))
+              ) : servidoresFiltrados.length > 0 ? (
+                servidoresFiltrados.map((servidor) => (
+                  <ServidorCard 
+                    key={servidor.id} 
+                    servidor={servidor} 
+                    onRefresh={cargarServidores}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-12">
+                  <p className="text-xl text-muted-foreground mb-4">No se encontraron servidores con estos criterios</p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setFiltroTipo('Todos')
+                      setBusqueda('')
+                    }}
+                  >
+                    Limpiar filtros
+                  </Button>
+                </div>
+              )}
+            </div>
         </div>
       </div>
-      
-      {/* Sección para agregar servidor */}
-      <div className="bg-muted/40 dark:bg-amoled-gray py-16 mt-12">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center space-y-6">
-            <h2 className="text-3xl font-bold tracking-tight">
-              ¿Tienes un servidor de Minecraft?
-            </h2>
-            <p className="text-muted-foreground text-lg">
-              Añade tu servidor a nuestra lista y llega a miles de jugadores. Promociona tu comunidad y aumenta tu base de jugadores.
-            </p>
-            <Button size="lg" className="mt-4">
-              Agregar mi servidor
-            </Button>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 }

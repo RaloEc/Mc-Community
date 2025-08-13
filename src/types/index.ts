@@ -1,125 +1,173 @@
-// Definición de tipos para la aplicación
-export * from './comentarios';
+// =================================================================
+// PERFILES Y USUARIOS
+// =================================================================
 
-export interface Servidor {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  ip: string;
-  version: string;
-  jugadores: string;
-  tipo: string;
-  imagen?: string;
-  destacado: boolean;
-}
+export type Perfil = {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+  role: 'admin' | 'moderator' | 'user';
+  color: string | null;
+  bio?: string | null;
+  ubicacion?: string | null;
+  sitio_web?: string | null;
+  activo?: boolean;
+  fecha_ultimo_acceso?: string | null;
+};
 
-export interface Noticia {
-  id: string; // UUID en Supabase
-  titulo: string;
-  contenido: string;
-  imagen_portada?: string;
-  autor?: string;
-  autor_id?: string; // ID del usuario que creó la noticia
-  autor_nombre?: string; // Nombre de usuario del autor
-  autor_color?: string; // Color personalizado del autor
-  autor_avatar?: string; // URL de la imagen de perfil del autor
-  fecha_publicacion?: string;
-  destacada?: boolean;
-  created_at?: string;
-  updated_at?: string;
-  resumen?: string; // Resumen limpio del contenido para mostrar en tarjetas
-  // Campos para relaciones
-  categoria_id?: string; // Para compatibilidad con código existente
-  categoria?: string; // Campo virtual para mostrar el nombre de la categoría
-  categorias?: Categoria[]; // Para múltiples categorías
-  categoria_ids?: string[]; // IDs de las categorías seleccionadas
-}
+export type UsuarioCompleto = {
+  id: string;
+  email: string | undefined;
+  created_at: string;
+  perfil: Perfil | null;
+};
 
-export interface Categoria {
+// =================================================================
+// FORO
+// =================================================================
+
+export type CategoriaForo = {
   id: string;
   nombre: string;
-}
+  descripcion: string;
+  slug: string;
+  color: string | null;
+  icono: string | null;
+  parent_id: string | null;
+  nivel: number | null;
+  orden: number | null;
+  es_activa: boolean;
+  subcategorias?: CategoriaForo[];
+};
 
-export interface WikiArticulo {
+export type Hilo = {
+  id: string;
+  titulo: string;
+  contenido: string;
+  fecha_creacion: string;
+  autor_id: string;
+  categoria_id: string;
+  fijado: boolean;
+  cerrado: boolean;
+  vistas: number;
+  imagen_url?: string;
+  // Relaciones
+  autor: Perfil | null;
+  categoria: Pick<CategoriaForo, 'nombre' | 'slug'> | null;
+};
+
+export type Post = {
+  id: string;
+  contenido: string;
+  fecha_creacion: string;
+  autor_id: string;
+  hilo_id: string;
+  // Relaciones
+  autor: Perfil | null;
+};
+
+// =================================================================
+// NOTICIAS
+// =================================================================
+
+export type CategoriaNoticia = {
+  id: number;
+  nombre: string;
+  slug: string;
+};
+
+export type Noticia = {
   id: number;
   titulo: string;
   contenido: string;
+  fecha_publicacion: string;
+  autor_id: string;
+  categoria_id: number;
+  slug: string;
+  imagen_url: string | null;
+  // Relaciones
+  autor: Perfil | null;
+  categoria: CategoriaNoticia | null;
+};
+
+// =================================================================
+// SERVIDORES
+// =================================================================
+
+export type Servidor = {
+  id: string;
+  nombre: string;
+  direccion_ip: string;
+  puerto: number;
+  descripcion: string;
+  version: string;
+  tipo: 'survival' | 'creativo' | 'minijuegos' | 'otro';
+  web_url: string | null;
+  discord_url: string | null;
+  banner_url: string | null;
+  online: boolean;
+  jugadores_actuales: number;
+  jugadores_maximos: number;
+  agregado_por: string;
+  // Relaciones
+  propietario: Perfil | null;
+};
+
+export type SolicitudServidor = {
+  id: string;
+  nombre_servidor: string;
+  direccion_ip: string;
+  puerto: number;
+  descripcion: string;
+  estado: 'pendiente' | 'aprobado' | 'rechazado';
+  solicitante_id: string;
+  fecha_solicitud: string;
+  // Relaciones
+  solicitante: Perfil | null;
+};
+
+// =================================================================
+// WIKI
+// =================================================================
+
+export type WikiArticulo = {
+  id: string;
+  titulo: string;
+  contenido: string;
+  slug: string;
   categoria: string;
   fecha_creacion: string;
-  ultima_actualizacion: string;
-  autor: string;
-}
+  fecha_actualizacion: string;
+  autor_id: string;
+  // Relaciones
+  autor: Perfil | null;
+};
 
-export interface Textura {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  version: string;
-  autor: string;
-  url_descarga: string;
-  imagen?: string;
-  resolucion: string;
-  categoria: string;
-  fecha_publicacion: string;
-  destacado: boolean;
-}
+// =================================================================
+// RECURSOS (Texturas, Shaders, Mods)
+// =================================================================
 
-export interface Shader {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  version: string;
-  autor: string;
-  url_descarga: string;
-  imagen?: string;
-  requisitos: string;
-  categoria: string;
-  fecha_publicacion: string;
-  destacado: boolean;
-}
-
-export interface Mod {
-  id: number; // Ahora es bigint en la base de datos
-  source: string; // Fuente del mod (curseforge, modrinth, etc)
-  source_id: string; // ID del mod en la fuente original
-  name: string; // Nombre del mod
-  slug?: string; // Slug para URLs amigables
-  summary?: string; // Resumen corto
-  description_html?: string; // Descripción completa en HTML
-  logo_url?: string; // URL del logo/imagen
-  website_url: string; // URL del sitio web principal
-  total_downloads?: number; // Total de descargas
-  author_name?: string; // Nombre del autor
-  categories?: string[]; // Categorías como array de strings
-  game_versions?: string[]; // Versiones del juego como array de strings
-  mod_loader?: string[]; // Cargadores de mods como array de strings (forge, fabric, etc)
-  date_created_api?: string; // Fecha de creación según la API
-  date_modified_api?: string; // Fecha de modificación según la API
-  first_synced_at?: string; // Primera vez que se sincronizó
-  last_synced_at?: string; // Última vez que se sincronizó
-  
-  // Campos adicionales para compatibilidad con el código existente
-  nombre?: string; // Alias para name
-  descripcion?: string; // Alias para summary o description_html
-  version?: string; // Puede extraerse de game_versions
-  version_minecraft?: string; // Puede extraerse de game_versions
-  autor?: string; // Alias para author_name
-  descargas?: number; // Alias para total_downloads
-  imagen_url?: string; // Alias para logo_url
-  
-  // Enlaces específicos (pueden derivarse de website_url y source)
-  enlace_curseforge?: string;
-  enlace_modrinth?: string;
-  enlace_github?: string;
-  enlace_web_autor?: string;
-  
-  // Campos calculados
-  enlace_principal?: string; // URL principal para descargas
-  tipo_enlace_principal?: 'curseforge' | 'modrinth' | 'github';
-}
-
-export interface CategoriasMod {
+interface RecursoBase {
   id: string;
   nombre: string;
-  descripcion?: string;
+  descripcion: string;
+  url_descarga: string;
+  url_imagen: string | null;
+  version_mc: string;
+  autor_id: string;
+  // Relaciones
+  autor: Perfil | null;
 }
+
+export type Textura = RecursoBase & {
+  resolucion: '16x' | '32x' | '64x' | '128x' | '256x' | '512x+';
+};
+
+export type Shader = RecursoBase & {
+  rendimiento: 'bajo' | 'medio' | 'alto';
+};
+
+export type Mod = RecursoBase & {
+  tipo: 'forge' | 'fabric' | 'rift' | 'otro';
+  dependencias: string | null;
+};

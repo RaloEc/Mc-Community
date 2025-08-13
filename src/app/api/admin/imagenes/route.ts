@@ -20,6 +20,7 @@ export async function POST(request: Request) {
     
     const formData = await request.formData();
     const file = formData.get('file') as File;
+    const folder = formData.get('folder') as string | null;
     
     if (!file) {
       console.error('No se proporcionó ningún archivo');
@@ -72,7 +73,8 @@ export async function POST(request: Request) {
     // Generar nombre único para el archivo
     const fileExt = file.name.split('.').pop() || 'jpg';
     const fileName = `${uuidv4()}.${fileExt}`;
-    const filePath = `noticias/${fileName}`;
+    const basePath = folder || 'noticias';
+    const filePath = `${basePath}/${fileName}`;
     
     console.log(`Nombre de archivo generado: ${filePath}`);
     

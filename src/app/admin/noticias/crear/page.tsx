@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, getServiceClient } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import TiptapEditor, { processEditorContent } from '@/components/TiptapEditor' // Importamos processEditorContent
@@ -38,6 +38,7 @@ import { useForm } from 'react-hook-form'
 import * as z from 'zod'
 import Link from 'next/link'
 import { Dropzone } from '@/components/ui/dropzone'
+import AdminProtection from '@/components/AdminProtection'
 
 // Tipo para las categorías
 type Categoria = {
@@ -59,7 +60,7 @@ const formSchema = z.object({
   destacada: z.boolean().default(false),
 })
 
-export default function CrearNoticia() {
+function CrearNoticiaContent() {
   const [enviando, setEnviando] = useState(false)
   const [imagenPreview, setImagenPreview] = useState<string | null>(null)
   const [categorias, setCategorias] = useState<Categoria[]>([])
@@ -112,7 +113,7 @@ export default function CrearNoticia() {
           console.warn('No hay usuario autenticado en el contexto')
           
           // Intentar obtener la sesión usando el cliente del navegador como respaldo
-          const supabaseBrowser = createBrowserClient()
+          const supabaseBrowser = createClient()
           const { data: { user: supabaseUser }, error: userError } = await supabaseBrowser.auth.getUser()
           
           if (userError || !supabaseUser) {
@@ -134,9 +135,6 @@ export default function CrearNoticia() {
         if (user.username) {
           console.log('Usando nombre de usuario del contexto:', user.username)
           setNombreUsuario(user.username)
-        } else if (user.nombre_completo) {
-          console.log('Usando nombre completo del contexto:', user.nombre_completo)
-          setNombreUsuario(user.nombre_completo)
         } else if (user.email) {
           console.log('Usando email del contexto:', user.email)
           setNombreUsuario(user.email)
@@ -635,5 +633,13 @@ export default function CrearNoticia() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+export default function CrearNoticia() {
+  return (
+    <AdminProtection>
+      <CrearNoticiaContent />
+    </AdminProtection>
   )
 }

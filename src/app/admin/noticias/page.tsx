@@ -46,6 +46,7 @@ import {
   User, 
   Tag 
 } from 'lucide-react'
+import AdminProtection from '@/components/AdminProtection'
 
 // Noticias de ejemplo para mostrar mientras se cargan los datos reales
 const noticiasEjemplo: Noticia[] = [
@@ -78,7 +79,7 @@ const noticiasEjemplo: Noticia[] = [
   }
 ]
 
-export default function AdminNoticias() {
+function AdminNoticiasContent() {
   const [noticias, setNoticias] = useState<Noticia[]>([])
   const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
@@ -369,5 +370,13 @@ export default function AdminNoticias() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export default function AdminNoticias() {
+  return (
+    <AdminProtection>
+      <AdminNoticiasContent />
+    </AdminProtection>
   )
 }

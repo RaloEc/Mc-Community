@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createBrowserClient } from '@/utils/supabase-browser'
+import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
 export default function LogoutPage() {
@@ -11,7 +11,7 @@ export default function LogoutPage() {
   useEffect(() => {
     async function cerrarSesion() {
       try {
-        const supabase = createBrowserClient()
+        const supabase = createClient()
         
         // Intentar cerrar sesión
         const { error } = await supabase.auth.signOut()

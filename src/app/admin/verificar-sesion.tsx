@@ -46,7 +46,7 @@ export default function VerificarSesion() {
       if (error) {
         setError(`Error al cerrar sesión: ${error.message}`)
       } else {
-        window.location.href = '/admin/login'
+        window.location.href = '/login'
       }
     } catch (e: any) {
       setError(`Error al cerrar sesión: ${e.message}`)

@@ -85,3 +85,16 @@
 .comentarios-container textarea:focus {
   box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
 }
+
+/* Estilo para el scrollbar en modo oscuro */
+.comentario.scrollbar-thumb-primary/30:hover {
+  --tw-scrollbar-thumb: hsl(var(--primary) / 0.5);
+}
+
+.dark .scrollbar-thumb-primary/30 {
+  --tw-scrollbar-thumb: #4a4a4a; /* Un gris más oscuro para el modo oscuro */
+}
+
+.dark .scrollbar-thumb-primary/30:hover {
+  --tw-scrollbar-thumb: #6a6a6a; /* Un gris más claro para el hover en modo oscuro */
+}

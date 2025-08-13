@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
 import { ModCard } from './ModCard';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
 // Usar el cliente singleton de Supabase
-import { createBrowserClient } from '@/utils/supabase-browser';
-const supabase = createBrowserClient();
+import { createClient } from '@/lib/supabase/client';
+const supabase = createClient();
 
 export function FeaturedMods() {
   const [featuredMods, setFeaturedMods] = useState<any[]>([]);

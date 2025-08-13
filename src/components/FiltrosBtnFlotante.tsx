@@ -17,16 +17,16 @@ export default function FiltrosBtnFlotante({
   return (
     <button
       onClick={onAbrirModal}
-      className="md:hidden fixed bottom-6 right-6 z-10 flex items-center justify-center p-3 rounded-full shadow-lg transition-all duration-300 bg-blue-600 hover:bg-blue-700"
+      className="md:hidden fixed bottom-6 right-6 z-10 flex items-center justify-center p-3 rounded-full shadow-lg transition-all duration-300 bg-primary hover:bg-primary/90"
       aria-label="Abrir filtros"
     >
       <div className="flex items-center relative">
-        <FilterIcon size={24} className="text-white" />
+        <FilterIcon size={24} className="text-primary-foreground" />
         
         {/* Indicador con efecto de brillo (glow) */}
         {hayFiltrosActivos && (
           <div 
-            className="absolute -top-1 -right-1 bg-red-500 rounded-full h-3.5 w-3.5 border border-white"
+            className="absolute -top-1 -right-1 bg-destructive rounded-full h-3.5 w-3.5 border border-background"
             style={{
               animation: 'suaveRespirar 2s infinite ease-in-out',
               boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.7)',
