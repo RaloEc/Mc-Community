@@ -70,36 +70,43 @@ export async function GET(request: NextRequest) {
             console.warn(`Error al obtener datos auth para usuario ${perfil.id}:`, authError)
           }
           
+          // Crear el objeto con la estructura correcta según el tipo UsuarioCompleto
           return {
-            auth_id: perfil.id,
-            email: authUser?.user?.email || '',
-            username: perfil.username,
-            role: perfil.role,
-            avatar_url: perfil.avatar_url,
+            id: perfil.id,
+            email: authUser?.user?.email,
             created_at: perfil.created_at,
-            updated_at: perfil.updated_at,
-            activo: perfil.activo ?? true,
-            fecha_ultimo_acceso: perfil.fecha_ultimo_acceso,
-            bio: perfil.bio,
-            ubicacion: perfil.ubicacion,
-            sitio_web: perfil.sitio_web
+            perfil: {
+              id: perfil.id,
+              username: perfil.username,
+              role: perfil.role,
+              avatar_url: perfil.avatar_url,
+              color: null, // No tenemos este dato en la consulta
+              activo: perfil.activo ?? true,
+              fecha_ultimo_acceso: perfil.fecha_ultimo_acceso,
+              bio: perfil.bio,
+              ubicacion: perfil.ubicacion,
+              sitio_web: perfil.sitio_web
+            }
           }
         } catch (error) {
           console.warn(`Error al procesar usuario ${perfil.id}:`, error)
           // Retornar datos básicos si falla la obtención de auth
           return {
-            auth_id: perfil.id,
+            id: perfil.id,
             email: '',
-            username: perfil.username,
-            role: perfil.role,
-            avatar_url: perfil.avatar_url,
             created_at: perfil.created_at,
-            updated_at: perfil.updated_at,
-            activo: perfil.activo ?? true,
-            fecha_ultimo_acceso: perfil.fecha_ultimo_acceso,
-            bio: perfil.bio,
-            ubicacion: perfil.ubicacion,
-            sitio_web: perfil.sitio_web
+            perfil: {
+              id: perfil.id,
+              username: perfil.username,
+              role: perfil.role,
+              avatar_url: perfil.avatar_url,
+              color: null,
+              activo: perfil.activo ?? true,
+              fecha_ultimo_acceso: perfil.fecha_ultimo_acceso,
+              bio: perfil.bio,
+              ubicacion: perfil.ubicacion,
+              sitio_web: perfil.sitio_web
+            }
           }
         }
       })
