@@ -20,6 +20,11 @@ type AuthContextType = {
   authInitialized: boolean
 }
 
+// Clave para almacenar en localStorage
+const AUTH_SESSION_KEY = 'auth_session_cache'
+const AUTH_USER_KEY = 'auth_user_cache'
+const CACHE_DURATION = 30 * 60 * 1000 // 30 minutos
+
 const AuthContext = createContext<AuthContextType>({
   session: null,
   loading: true,
@@ -33,9 +38,58 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true)
   const [authInitialized, setAuthInitialized] = useState(false)
   const isMounted = useRef(true)
+  const lastAccessUpdateRef = useRef<number>(0)
 
+  // Funciones para manejar el caché
+  const getFromCache = (key: string) => {
+    try {
+      if (typeof window === 'undefined') return null
+      
+      const cachedData = localStorage.getItem(key)
+      if (!cachedData) return null
+      
+      const { data, timestamp } = JSON.parse(cachedData)
+      const now = Date.now()
+      
+      if (now - timestamp < CACHE_DURATION) {
+        return data
+      }
+      
+      localStorage.removeItem(key)
+      return null
+    } catch (error) {
+      console.error(`[AuthContext] Error al leer caché (${key}):`, error)
+      return null
+    }
+  }
+
+  const saveToCache = (key: string, data: any) => {
+    try {
+      if (typeof window === 'undefined') return
+      
+      const cacheData = {
+        data,
+        timestamp: Date.now()
+      }
+      
+      localStorage.setItem(key, JSON.stringify(cacheData))
+    } catch (error) {
+      console.error(`[AuthContext] Error al guardar caché (${key}):`, error)
+    }
+  }
+
+  // Optimizado para limitar frecuencia de actualizaciones
   const actualizarUltimoAcceso = useCallback(async (userId: string) => {
     if (!supabase) return
+    
+    // Limitar a una actualización cada 5 minutos como máximo
+    const now = Date.now()
+    if (now - lastAccessUpdateRef.current < 5 * 60 * 1000) {
+      return
+    }
+    
+    lastAccessUpdateRef.current = now
+    
     try {
       await supabase
         .from('perfiles')
@@ -49,6 +103,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const cargarOcrearPerfil = useCallback(async (authUser: User) => {
     if (!isMounted.current || !supabase) return
     
+    // Intentar usar caché primero
+    const cachedUser = getFromCache(AUTH_USER_KEY)
+    if (cachedUser && cachedUser.id === authUser.id) {
+      setUser(cachedUser)
+      // Verificar en segundo plano sin bloquear UI
+      setTimeout(() => verificarPerfilEnSegundoPlano(authUser), 100)
+      return
+    }
+    
     try {
       const { data: perfilData, error: perfilError } = await supabase
         .from('perfiles')
@@ -58,6 +121,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (perfilData) {
         setUser(perfilData)
+        saveToCache(AUTH_USER_KEY, perfilData)
         return
       }
 
@@ -75,6 +139,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         if (newProfile) {
           setUser(newProfile)
+          saveToCache(AUTH_USER_KEY, newProfile)
         } else if (createError) {
           console.error('[AuthContext] Error creando nuevo perfil:', createError)
           setUser(null)
@@ -88,9 +153,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null)
     }
   }, [])
+  
+  // Función para verificar perfil en segundo plano sin bloquear UI
+  const verificarPerfilEnSegundoPlano = async (authUser: User) => {
+    if (!isMounted.current || !supabase) return
+    
+    try {
+      const { data: perfilData } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', authUser.id)
+        .single()
+
+      if (perfilData && isMounted.current) {
+        setUser(perfilData)
+        saveToCache(AUTH_USER_KEY, perfilData)
+      }
+    } catch (error) {
+      // Silenciar errores en verificaciones en segundo plano
+      console.debug('[AuthContext] Error en verificación en segundo plano:', error)
+    }
+  }
 
   useEffect(() => {
     isMounted.current = true
+    lastAccessUpdateRef.current = 0
 
     const fetchSession = async () => {
       if (!supabase) {
@@ -99,27 +186,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return
       }
       
-      // 1. Obtener la sesión inicial para saber si el usuario ya está logueado
-      const { data: { session: initialSession } } = await supabase.auth.getSession()
-      
-      if (initialSession?.user) {
-        setSession(initialSession)
-        await cargarOcrearPerfil(initialSession.user)
+      // Intentar usar caché primero
+      const cachedSession = getFromCache(AUTH_SESSION_KEY)
+      if (cachedSession) {
+        setSession(cachedSession)
+        if (cachedSession.user) {
+          await cargarOcrearPerfil(cachedSession.user)
+        }
+        setLoading(false)
+        setAuthInitialized(true)
+        
+        // Verificar en segundo plano
+        setTimeout(async () => {
+          try {
+            const { data } = await supabase.auth.getSession()
+            if (data.session) {
+              setSession(data.session)
+              saveToCache(AUTH_SESSION_KEY, data.session)
+            }
+          } catch (error) {
+            console.debug('[AuthContext] Error en verificación de sesión en segundo plano:', error)
+          }
+        }, 100)
+        
+        return
       }
       
-      setLoading(false)
-      setAuthInitialized(true)
+      // Si no hay caché, obtener sesión normalmente
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession()
+        
+        if (initialSession?.user) {
+          setSession(initialSession)
+          saveToCache(AUTH_SESSION_KEY, initialSession)
+          await cargarOcrearPerfil(initialSession.user)
+        }
+      } catch (error) {
+        console.error('[AuthContext] Error al obtener sesión inicial:', error)
+      } finally {
+        setLoading(false)
+        setAuthInitialized(true)
+      }
     }
 
     fetchSession()
 
-    // 2. Escuchar cambios en el estado de autenticación
+    // Escuchar cambios en el estado de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!isMounted.current) return
 
         console.log(`[AuthContext] onAuthStateChange: Evento: ${event}`)
+        
+        // Actualizar sesión en caché y estado
         setSession(newSession)
+        if (newSession) {
+          saveToCache(AUTH_SESSION_KEY, newSession)
+        } else {
+          localStorage.removeItem(AUTH_SESSION_KEY)
+          localStorage.removeItem(AUTH_USER_KEY)
+        }
 
         if (event === 'SIGNED_IN' && newSession?.user) {
           await cargarOcrearPerfil(newSession.user)
