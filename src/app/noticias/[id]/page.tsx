@@ -3,6 +3,38 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+
+// Función para procesar el contenido HTML y corregir URLs de imágenes
+function procesarContenido(contenido: string): string {
+  if (!contenido) return '';
+  
+  // Reemplazar URLs de blob o data por URLs de Supabase
+  let contenidoProcesado = contenido;
+  
+  // Reemplazar atributos src que contengan blob: o data:
+  contenidoProcesado = contenidoProcesado.replace(/(<img[^>]*src=["'])(?:blob:|data:)[^"']+(["'][^>]*>)/gi, 
+    (match, prefix, suffix) => {
+      // Reemplazar con una imagen de fallback
+      return `${prefix}https://placehold.co/600x400/333333/FFFFFF?text=Imagen+no+disponible${suffix}`;
+    });
+  
+  // Añadir atributo loading="lazy" a todas las imágenes para mejorar rendimiento
+  contenidoProcesado = contenidoProcesado.replace(/(<img[^>]*)>/gi, 
+    (match, prefix) => {
+      if (match.includes('loading=')) {
+        return match; // Ya tiene atributo loading
+      }
+      return `${prefix} loading="lazy">`;
+    });
+  
+  // Eliminar atributos crossOrigin incorrectos
+  contenidoProcesado = contenidoProcesado.replace(/(<img[^>]*)crossOrigin=["'][^"']*["']([^>]*>)/gi, 
+    (match, prefix, suffix) => {
+      return `${prefix}${suffix}`;
+    });
+  
+  return contenidoProcesado;
+}
 import { CalendarIcon, ArrowLeftIcon, MessageSquareIcon, ThumbsUpIcon, Pencil, Trash } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Comentarios from '@/components/ComentariosNuevo'
@@ -237,6 +269,12 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
                       alt={`Foto de ${noticia.autor?.username || 'Anónimo'}`}
                       className="w-full h-full object-cover"
                       crossOrigin="anonymous"
+                      onError={(e) => {
+                        // Si hay error al cargar la imagen, mostrar fallback
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement.classList.add('bg-gray-700');
+                        e.currentTarget.parentElement.innerHTML = `<div class="flex items-center justify-center h-full w-full text-white font-semibold text-lg">${noticia.autor?.username ? noticia.autor.username.charAt(0).toUpperCase() : 'A'}</div>`;
+                      }}
                     />
                   </div>
                 ) : (
@@ -286,13 +324,21 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         </div>
         
         {/* Imagen de portada */}
-        {noticia.imagen_url && (
+        {(noticia.imagen_url || noticia.imagen_portada) && (
           <div className="relative w-full md:w-3/4 lg:w-2/3 aspect-video mb-8 rounded-lg overflow-hidden mx-auto">
             <Image
-              src={noticia.imagen_url}
+              src={noticia.imagen_url || noticia.imagen_portada || ''}
               alt={noticia.titulo}
               fill
               className="object-cover"
+              onError={(e) => {
+                console.error('Error al cargar la imagen de portada');
+                // Ocultar el contenedor de imagen si hay error
+                const container = e.currentTarget.parentElement;
+                if (container) {
+                  container.style.display = 'none';
+                }
+              }}
             />
           </div>
         )}
@@ -300,7 +346,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         {/* Contenido de la noticia */}
         <div 
           className="prose prose-lg dark:prose-invert max-w-4xl mx-auto [&_img]:w-full md:[&_img]:max-w-[85%] [&_img]:mx-auto mb-8 noticia-contenido dark:[&_*]:!text-green-400 [.amoled_&]:[&_*]:!text-white dark:prose-a:!text-white" 
-          dangerouslySetInnerHTML={{ __html: noticia.contenido }} 
+          dangerouslySetInnerHTML={{ __html: procesarContenido(noticia.contenido) }} 
         />
         
         {/* Divisor después del contenido */}
@@ -359,7 +405,10 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
                       src={noticia.autor.avatar_url} 
                       alt={noticia.autor.username} 
                       className="object-cover"
-                      crossOrigin="anonymous"
+                      onError={() => {
+                        // Si hay error al cargar la imagen, se mostrará automáticamente el AvatarFallback
+                        console.log('Error al cargar avatar del autor');
+                      }}
                     />
                   ) : (
                     <AvatarFallback 

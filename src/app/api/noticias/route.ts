@@ -246,7 +246,9 @@ export async function GET(request: Request) {
           resumen: generarResumen(noticia.contenido, 150),
           // Añadir información del autor
           autor_nombre: autorNombre,
-          autor_color: autorColor
+          autor_color: autorColor,
+          // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
+          imagen_url: noticia.imagen_url || noticia.imagen_portada || null
         };
       });
     }

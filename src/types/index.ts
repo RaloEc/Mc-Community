@@ -85,9 +85,15 @@ export type Noticia = {
   categoria_id: number;
   slug: string;
   imagen_url: string | null;
+  imagen_portada?: string | null; // Campo alternativo para la imagen
   // Relaciones
   autor: Perfil | null;
   categoria: CategoriaNoticia | null;
+  // Propiedades adicionales que devuelve la API
+  autor_nombre?: string;
+  autor_color?: string;
+  autor_avatar?: string | null;
+  resumen?: string;
 };
 
 // =================================================================

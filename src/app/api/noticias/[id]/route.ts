@@ -219,6 +219,8 @@ export async function GET(
       success: true, 
       data: {
         ...noticia,
+        // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
+        imagen_url: noticia.imagen_url || noticia.imagen_portada || null,
         categorias: categorias || [],
         autor_nombre: autorNombre,
         autor_color: autorColor,

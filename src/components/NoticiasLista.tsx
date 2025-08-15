@@ -497,12 +497,22 @@ export default function NoticiasLista({
           ) : (
             <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative">
               <div className="relative h-48 overflow-hidden">
-                {item.imagen_url ? (
+                {(item.imagen_url || (item as any).imagen_portada) ? (
                   <Image 
-                    src={item.imagen_url} 
+                    src={item.imagen_url || (item as any).imagen_portada} 
                     alt={item.titulo} 
                     fill
                     className="object-cover"
+                    onError={(e) => {
+                      console.error('Error al cargar imagen de noticia en lista');
+                      // Ocultar la imagen y mostrar el fallback
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-primary/40');
+                      const fallback = document.createElement('span');
+                      fallback.className = 'text-primary-foreground text-lg font-medium absolute inset-0 flex items-center justify-center';
+                      fallback.textContent = 'MC Community';
+                      e.currentTarget.parentElement?.appendChild(fallback);
+                    }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
@@ -536,12 +546,16 @@ export default function NoticiasLista({
                 </div>
               </div>
               {/* Autor posicionado en el borde inferior de toda la tarjeta */}
-              {item.autor && (
+              {(item.autor_nombre || item.autor?.username) && (
                 <span 
                   className="absolute bottom-2 left-4 text-xs text-muted-foreground"
                 >
-                  <Link href={`/perfil/${item.autor.username}`} className="text-sm hover:underline" style={{ color: item.autor.color || 'inherit' }}>
-                    {item.autor.username}
+                  <Link 
+                    href={`/perfil/${item.autor?.username || item.autor_nombre}`} 
+                    className="text-sm hover:underline" 
+                    style={{ color: item.autor?.color || item.autor_color || 'inherit' }}
+                  >
+                    {item.autor?.username || item.autor_nombre}
                   </Link>
                 </span>
               )}

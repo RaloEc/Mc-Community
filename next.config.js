@@ -16,7 +16,16 @@ const nextConfig = {
     pagesBufferLength: 5,
   },
   images: {
-    domains: ['localhost', 'placehold.co', 'www.gamespot.com', 'www.gameskinny.com', 'qeeaptyhcqfaqdecsuqc.supabase.co'],
+    domains: [
+      'localhost', 
+      'placehold.co', 
+      'www.gamespot.com', 
+      'www.gameskinny.com', 
+      'qeeaptyhcqfaqdecsuqc.supabase.co',
+      'qeeaptyhcqfaqdecsuqc.supabase.in',
+      'supabase.co',
+      'supabase.in'
+    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -24,6 +33,18 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.supabase.in',
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
   webpack: (config, { isServer }) => {
