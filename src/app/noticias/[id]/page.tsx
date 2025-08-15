@@ -88,10 +88,19 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         setCargando(true)
         
         // Construir URL absoluta para evitar problemas con Next.js
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
-                        (process.env.VERCEL_URL ? 
-                        `https://${process.env.VERCEL_URL}` : 
-                        'http://localhost:3000');
+        // Obtener la URL base de diferentes fuentes según el entorno
+        let baseUrl;
+        
+        if (typeof window !== 'undefined') {
+          // En el navegador, usar la URL actual
+          baseUrl = window.location.origin;
+        } else {
+          // En el servidor, usar variables de entorno o valores por defecto
+          baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                   (process.env.NETLIFY_URL ? `https://${process.env.NETLIFY_URL}` :
+                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                   'http://localhost:3000'));
+        }
         
         // Obtener la noticia desde nuestra API usando URL absoluta
         const response = await fetch(`${baseUrl}/api/noticias/${params.id}`, {

@@ -199,9 +199,15 @@ export default function NoticiasLista({
       setLoading(true);
       
       // Usar URL absoluta para evitar problemas con Next.js
-      const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-        : 'http://localhost:3000';
+      let baseUrl;
+      if (typeof window !== 'undefined') {
+        baseUrl = window.location.origin;
+      } else {
+        baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+                 (process.env.NETLIFY_URL ? `https://${process.env.NETLIFY_URL}` :
+                 (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+                 'http://localhost:3000'));
+      }
       
       // Construir URL con parámetros de búsqueda y filtros
       let url = `${baseUrl}/api/noticias?`;

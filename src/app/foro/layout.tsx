@@ -3,10 +3,22 @@ import ForoSidebar from '@/components/foro/ForoSidebar'
 export const revalidate = 0
 
 function getBaseUrl() {
-  const vercel = process.env.VERCEL_URL
-  if (vercel) return `https://${vercel}`
+  // Si estamos en el navegador, usar la URL actual
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // En el servidor, intentar usar variables de entorno
   const site = process.env.NEXT_PUBLIC_SITE_URL
   if (site) return site
+  
+  const netlify = process.env.NETLIFY_URL
+  if (netlify) return `https://${netlify}`
+  
+  const vercel = process.env.VERCEL_URL
+  if (vercel) return `https://${vercel}`
+  
+  // Fallback para desarrollo local
   return 'http://localhost:3000'
 }
 

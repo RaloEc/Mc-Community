@@ -29,9 +29,10 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
     if (typeof window !== 'undefined') {
       return window.location.origin
     }
-    return process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : 'http://localhost:3000'
+    return process.env.NEXT_PUBLIC_SITE_URL || 
+           (process.env.NETLIFY_URL ? `https://${process.env.NETLIFY_URL}` :
+           (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+           'http://localhost:3000'))
   }
 
   // Cargar comentarios

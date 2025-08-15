@@ -62,7 +62,10 @@ export const uploadImageToSupabase = async (file: File, folder?: string): Promis
     // Determinar la URL base para la API
     const baseUrl = typeof window !== 'undefined' 
       ? window.location.origin 
-      : process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL || 'http://localhost:3000'
+      : process.env.NEXT_PUBLIC_SITE_URL || 
+        (process.env.NETLIFY_URL ? `https://${process.env.NETLIFY_URL}` :
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
+        'http://localhost:3000'))
     
     console.log(`Enviando imagen a: ${baseUrl}/api/admin/imagenes`)
     
