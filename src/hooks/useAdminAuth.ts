@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { createClient } from '@/lib/supabase/client'
@@ -12,218 +12,153 @@ export interface AdminAuthState {
   profile: any
 }
 
-// Clave para almacenar en sessionStorage
 const ADMIN_AUTH_CACHE_KEY = 'admin_auth_state'
-// Tiempo de caché en milisegundos (5 minutos)
-const CACHE_DURATION = 5 * 60 * 1000
+const CACHE_DURATION = 5 * 60 * 1000 // 5 min
+
+function readCache(): AdminAuthState | null {
+  try {
+    if (typeof window === 'undefined') return null
+    
+    const cached = sessionStorage.getItem(ADMIN_AUTH_CACHE_KEY)
+    if (!cached) return null
+    
+    const { state, timestamp } = JSON.parse(cached)
+    if (Date.now() - timestamp < CACHE_DURATION) return state
+    
+    sessionStorage.removeItem(ADMIN_AUTH_CACHE_KEY)
+  } catch (err) {
+    console.error('Error leyendo caché:', err)
+  }
+  return null
+}
+
+function writeCache(state: AdminAuthState) {
+  try {
+    if (typeof window === 'undefined') return
+    
+    sessionStorage.setItem(
+      ADMIN_AUTH_CACHE_KEY,
+      JSON.stringify({ state, timestamp: Date.now() })
+    )
+  } catch (err) {
+    console.error('Error guardando caché:', err)
+  }
+}
 
 export function useAdminAuth() {
-  const { user, loading: authLoading, authInitialized } = useAuth()
-  const [adminState, setAdminState] = useState<AdminAuthState>({
+  const { user } = useAuth()
+  const [state, setState] = useState<AdminAuthState>({
     isLoading: true,
     isAdmin: false,
     user: null,
     profile: null
   })
   const router = useRouter()
-  const lastCheckRef = useRef<number>(0)
-  const checkInProgressRef = useRef<boolean>(false)
+  const lastCheckRef = useRef(0)
+  const inProgressRef = useRef(false)
 
-  // Función para obtener datos de caché
-  const getFromCache = () => {
-    try {
-      if (typeof window === 'undefined') return null
-      
-      const cachedData = sessionStorage.getItem(ADMIN_AUTH_CACHE_KEY)
-      if (!cachedData) return null
-      
-      const { state, timestamp } = JSON.parse(cachedData)
+  const updateState = useCallback(
+    (newState: AdminAuthState, redirect?: string) => {
+      setState(newState)
+      writeCache(newState)
+      if (redirect) router.push(redirect)
+    },
+    [router]
+  )
+
+  const fetchProfile = useCallback(async (id: string) => {
+    const supabase = createClient()
+    const { data, error } = await supabase
+      .from('perfiles')
+      .select('role, username')
+      .eq('id', id)
+      .single()
+    if (error) throw error
+    return data
+  }, [])
+
+  const checkAuth = useCallback(
+    async (background = false) => {
+      if (inProgressRef.current) return
       const now = Date.now()
-      
-      // Verificar si el caché aún es válido
-      if (now - timestamp < CACHE_DURATION) {
-        return state
-      }
-      
-      // Caché expirado, eliminar
-      sessionStorage.removeItem(ADMIN_AUTH_CACHE_KEY)
-      return null
-    } catch (error) {
-      console.error('Error al leer caché de admin:', error)
-      return null
-    }
-  }
+      if (background && now - lastCheckRef.current < 2000) return
+      lastCheckRef.current = now
+      inProgressRef.current = true
+      console.log('[useAdminAuth] Verificando autenticación admin, background:', background)
 
-  // Función para guardar en caché
-  const saveToCache = (state: AdminAuthState) => {
-    try {
-      if (typeof window === 'undefined') return
-      
-      const cacheData = {
-        state,
-        timestamp: Date.now()
+      try {
+        if (user) {
+          const profile = await fetchProfile(user.id)
+          if (profile?.role === 'admin') {
+            updateState({ isLoading: false, isAdmin: true, user, profile })
+            console.log('[useAdminAuth] Usuario admin verificado desde contexto')
+          } else {
+            updateState(
+              { isLoading: false, isAdmin: false, user, profile },
+              '/'
+            )
+            console.log('[useAdminAuth] Usuario no es admin, redirigiendo')
+          }
+          return
+        }
+
+        // Si no hay usuario en contexto, verificar sesión
+        const supabase = createClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) {
+          console.log('[useAdminAuth] No hay sesión activa')
+          updateState(
+            { isLoading: false, isAdmin: false, user: null, profile: null },
+            background ? undefined : '/login'
+          )
+          return
+        }
+        
+        console.log('[useAdminAuth] Sesión activa encontrada:', session.user.email)
+
+        const profile = await fetchProfile(session.user.id)
+        if (profile?.role === 'admin') {
+          updateState({ isLoading: false, isAdmin: true, user: session.user, profile })
+          console.log('[useAdminAuth] Usuario admin verificado desde sesión')
+        } else {
+          updateState(
+            { isLoading: false, isAdmin: false, user: session.user, profile },
+            '/'
+          )
+          console.log('[useAdminAuth] Usuario no es admin, redirigiendo')
+        }
+      } catch (err) {
+        console.error('Error verificando admin:', err)
+        updateState(
+          { isLoading: false, isAdmin: false, user: null, profile: null },
+          background ? undefined : '/login'
+        )
+      } finally {
+        inProgressRef.current = false
       }
-      
-      sessionStorage.setItem(ADMIN_AUTH_CACHE_KEY, JSON.stringify(cacheData))
-    } catch (error) {
-      console.error('Error al guardar caché de admin:', error)
-    }
-  }
+    },
+    [user, fetchProfile, updateState]
+  )
 
   useEffect(() => {
-    if (!authInitialized) return
-
-    let isMounted = true
-    const controller = new AbortController()
-    
-    // Intentar usar caché primero
-    const cachedState = getFromCache()
-    if (cachedState) {
-      setAdminState(cachedState)
-      // Aún así verificamos en segundo plano, pero sin bloquear la UI
-      setTimeout(() => checkAdminAuth(true), 100)
+    const cached = readCache()
+    if (cached) {
+      console.log('[useAdminAuth] Usando estado en caché')
+      setState(cached)
+      setTimeout(() => checkAuth(true), 100)
       return
     }
 
-    // Timeout de seguridad
     const timeoutId = setTimeout(() => {
-      if (isMounted && adminState.isLoading) {
-        console.log('Timeout en useAdminAuth, forzando resolución de estado')
-        setAdminState({
-          isLoading: false,
-          isAdmin: false,
-          user: null,
-          profile: null
-        })
-        router.push('/login')
+      if (state.isLoading) {
+        console.log('[useAdminAuth] Timeout en useAdminAuth, forzando resolución de estado')
+        updateState({ isLoading: false, isAdmin: false, user: null, profile: null }, '/login')
       }
-    }, 5000)
+    }, 3000)
 
-    async function checkAdminAuth(isBackgroundCheck = false) {
-      // Evitar verificaciones simultáneas
-      if (checkInProgressRef.current) return
-      
-      // Limitar frecuencia de verificaciones (no más de una cada 2 segundos)
-      const now = Date.now()
-      if (now - lastCheckRef.current < 2000 && isBackgroundCheck) return
-      
-      lastCheckRef.current = now
-      checkInProgressRef.current = true
+    checkAuth()
+    return () => clearTimeout(timeoutId)
+  }, [checkAuth, updateState, state.isLoading])
 
-      try {
-        if (!isMounted) return
-
-        // Si tenemos usuario en el contexto y no es una verificación en segundo plano, usarlo
-        if (user && !isBackgroundCheck) {
-          // Obtener perfil del usuario desde el contexto
-          const supabase = createClient()
-          const { data: profile, error: profileError } = await supabase
-            .from('perfiles')
-            .select('role, username')
-            .eq('id', user.id)
-            .single()
-
-          if (profileError) {
-            throw profileError
-          }
-
-          if (!profile || profile.role !== 'admin') {
-            const newState = {
-              isLoading: false,
-              isAdmin: false,
-              user: user,
-              profile: profile
-            }
-            setAdminState(newState)
-            saveToCache(newState)
-            router.push('/')
-            return
-          }
-
-          const newState = {
-            isLoading: false,
-            isAdmin: true,
-            user: user,
-            profile: profile
-          }
-          setAdminState(newState)
-          saveToCache(newState)
-          return
-        }
-
-        // Solo si es necesario, verificar con Supabase
-        const supabase = createClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!session?.user) {
-          const newState = {
-            isLoading: false,
-            isAdmin: false,
-            user: null,
-            profile: null
-          }
-          setAdminState(newState)
-          saveToCache(newState)
-          if (!isBackgroundCheck) router.push('/login')
-          return
-        }
-
-        // Obtener perfil del usuario
-        const { data: profile, error: profileError } = await supabase
-          .from('perfiles')
-          .select('role, username')
-          .eq('id', session.user.id)
-          .single()
-
-        if (profileError || !profile || profile.role !== 'admin') {
-          const newState = {
-            isLoading: false,
-            isAdmin: false,
-            user: session.user,
-            profile: profile || null
-          }
-          setAdminState(newState)
-          saveToCache(newState)
-          if (!isBackgroundCheck) router.push('/')
-          return
-        }
-
-        // Usuario es admin
-        const newState = {
-          isLoading: false,
-          isAdmin: true,
-          user: session.user,
-          profile: profile
-        }
-        setAdminState(newState)
-        saveToCache(newState)
-      } catch (error: any) {
-        console.error('Error verificando autenticación de admin:', error)
-        
-        if (!isBackgroundCheck) {
-          const newState = {
-            isLoading: false,
-            isAdmin: false,
-            user: null,
-            profile: null
-          }
-          setAdminState(newState)
-          router.push('/login')
-        }
-      } finally {
-        checkInProgressRef.current = false
-        if (!isBackgroundCheck) clearTimeout(timeoutId)
-      }
-    }
-
-    checkAdminAuth()
-
-    return () => {
-      isMounted = false
-      controller.abort()
-      clearTimeout(timeoutId)
-    }
-  }, [authInitialized, router, user])
-
-  return adminState
+  return state
 }
