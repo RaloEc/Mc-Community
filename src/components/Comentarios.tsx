@@ -281,15 +281,15 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                     <div className="flex gap-3">
                       <div className="flex-shrink-0">
                         <Avatar className="w-8 h-8">
-                          <AvatarImage src={comentario.autor?.avatar_url || undefined} alt={comentario.autor?.username || 'Usuario'} />
-                          <AvatarFallback>{getUserInitials(comentario.autor?.username, 1, 'U')}</AvatarFallback>
+                          <AvatarImage src={comentario.perfiles?.avatar_url || undefined} alt={comentario.perfiles?.username || 'Usuario'} />
+                          <AvatarFallback>{getUserInitials(comentario.perfiles?.username, 1, 'U')}</AvatarFallback>
                         </Avatar>
                       </div>
                       <div className="flex-1 flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-base text-foreground">
-                            {comentario.autor?.username || 'Usuario'}
-                            {comentario.autor?.role === 'admin' && (
+                            {comentario.perfiles?.username || 'Usuario'}
+                            {comentario.perfiles?.role === 'admin' && (
                               <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                 Admin
                               </span>
@@ -443,15 +443,15 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                             <div className="flex items-start gap-2">
                                 <div className="flex-shrink-0">
                                   <Avatar className="w-8 h-8">
-                                    <AvatarImage src={respuesta.autor?.avatar_url || undefined} alt={respuesta.autor?.username || 'Usuario'} />
-                                    <AvatarFallback>{getUserInitials(respuesta.autor?.username, 1, 'U')}</AvatarFallback>
+                                    <AvatarImage src={respuesta.perfiles?.avatar_url || undefined} alt={respuesta.perfiles?.username || 'Usuario'} />
+                                    <AvatarFallback>{getUserInitials(respuesta.perfiles?.username, 1, 'U')}</AvatarFallback>
                                   </Avatar>
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-sm">
-                                      {respuesta.autor?.username || 'Usuario'}
-                                      {respuesta.autor?.role === 'admin' && (
+                                      {respuesta.perfiles?.username || 'Usuario'}
+                                      {respuesta.perfiles?.role === 'admin' && (
                                         <span className="ml-1 text-xs bg-primary text-white px-1 py-0.5 rounded-full">
                                           Admin
                                         </span>
