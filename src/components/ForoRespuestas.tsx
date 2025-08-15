@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/pagination'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getUserInitials } from '@/lib/utils/avatar-utils'
 import type { Database } from '@/lib/database.types'
 
 // Estilos para el scrollbar
@@ -517,20 +518,15 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
         <div className="mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 self-start mt-3">
-              {authUser?.avatar_url ? (
-                <div className="w-8 h-8 overflow-hidden rounded-full">
-                  <img
-                    src={authUser.avatar_url}
-                    alt="Tu avatar"
-                    className="w-full h-full object-cover object-center"
-                    crossOrigin="anonymous"
-                  />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-blue-400 dark:border-blue-600">
-                  {authUser?.username?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )}
+              <Avatar className="w-10 h-10 border-2 border-blue-400 dark:border-blue-600">
+                <AvatarImage 
+                  src={authUser.avatar_url ?? undefined} 
+                  alt="Tu avatar" 
+                  className="object-cover object-center" 
+                  crossOrigin="anonymous" 
+                />
+                <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
+              </Avatar>
             </div>
             <div className="flex-1">
               <div className="rounded-lg">
@@ -615,7 +611,7 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
                   <div className="flex items-start space-x-3">
                     <Avatar>
                       <AvatarImage src={respuestaItem.autor.avatar_url ?? undefined} alt={`Avatar de ${respuestaItem.autor.username}`} crossOrigin="anonymous" />
-                      <AvatarFallback>{respuestaItem.autor.username?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                      <AvatarFallback>{getUserInitials(respuestaItem.autor.username, 1, 'U')}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="rounded-lg">

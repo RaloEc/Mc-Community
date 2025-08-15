@@ -8,6 +8,8 @@ import { es } from 'date-fns/locale'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Pencil, Trash2 } from 'lucide-react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getUserInitials } from '@/lib/utils/avatar-utils';
 
 // Añadir estilos de animación
 import './comentarios.css'
@@ -277,30 +279,17 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                   <div className="hover:bg-accent/50 rounded-md p-2 transition-colors duration-150">
                     {/* Contenido principal del comentario */}
                     <div className="flex gap-3">
-                      <a
-                        href={`/perfil/${comentario.perfiles?.username || comentario.usuario_id}`}
-                        className="flex-shrink-0"
-                      >
-                        {comentario.perfiles?.avatar_url ? (
-                          <img
-                            src={comentario.perfiles.avatar_url}
-                            alt={`Avatar de ${comentario.perfiles.username || 'usuario'}`}
-                            width="40"
-                            height="40"
-                            className="w-10 h-10 rounded-full"
-                            crossOrigin="anonymous"
-                          />
-                        ) : (
-                          <div className="w-10 h-10 flex items-center justify-center bg-primary text-white font-bold rounded-full">
-                            {comentario.perfiles?.username?.charAt(0).toUpperCase() || 'U'}
-                          </div>
-                        )}
-                      </a>
+                      <div className="flex-shrink-0">
+                        <Avatar className="w-8 h-8">
+                          <AvatarImage src={comentario.autor?.avatar_url || undefined} alt={comentario.autor?.username || 'Usuario'} />
+                          <AvatarFallback>{getUserInitials(comentario.autor?.username, 1, 'U')}</AvatarFallback>
+                        </Avatar>
+                      </div>
                       <div className="flex-1 flex flex-col">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-base text-foreground">
-                            {comentario.perfiles?.username || 'Usuario'}
-                            {comentario.perfiles?.role === 'admin' && (
+                            {comentario.autor?.username || 'Usuario'}
+                            {comentario.autor?.role === 'admin' && (
                               <span className="ml-2 text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                 Admin
                               </span>
@@ -408,19 +397,10 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0">
-                              {authUser?.avatar_url ? (
-                                <img
-                                  src={authUser.avatar_url}
-                                  alt="Tu avatar"
-                                  width="24"
-                                  height="24"
-                                  className="rounded-full"
-                                />
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
-                                  {authUser?.username?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                              )}
+                              <Avatar className="w-8 h-8">
+                                <AvatarImage src={authUser?.avatar_url || undefined} alt={authUser?.username || 'Usuario'} />
+                                <AvatarFallback>{getUserInitials(authUser?.username, 1, 'U')}</AvatarFallback>
+                              </Avatar>
                             </div>
                             <div className="flex-1">
                               <Textarea
@@ -462,26 +442,16 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                             <div className="linea-conectora"></div>
                             <div className="flex items-start gap-2">
                                 <div className="flex-shrink-0">
-                                  {respuesta.perfiles?.avatar_url ? (
-                                    <img
-                                      src={respuesta.perfiles.avatar_url}
-                                      alt={`Avatar de ${respuesta.perfiles.username || 'usuario'}`}
-                                      width="24"
-                                      height="24"
-                                      className="w-6 h-6 rounded-full"
-                                      crossOrigin="anonymous"
-                                    />
-                                  ) : (
-                                    <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
-                                      {respuesta.perfiles?.username?.charAt(0).toUpperCase() || 'U'}
-                                    </div>
-                                  )}
+                                  <Avatar className="w-8 h-8">
+                                    <AvatarImage src={respuesta.autor?.avatar_url || undefined} alt={respuesta.autor?.username || 'Usuario'} />
+                                    <AvatarFallback>{getUserInitials(respuesta.autor?.username, 1, 'U')}</AvatarFallback>
+                                  </Avatar>
                                 </div>
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2">
                                     <span className="font-bold text-sm">
-                                      {respuesta.perfiles?.username || 'Usuario'}
-                                      {respuesta.perfiles?.role === 'admin' && (
+                                      {respuesta.autor?.username || 'Usuario'}
+                                      {respuesta.autor?.role === 'admin' && (
                                         <span className="ml-1 text-xs bg-primary text-white px-1 py-0.5 rounded-full">
                                           Admin
                                         </span>
@@ -547,21 +517,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
       {/* Formulario para nuevo comentario */}
       {session && authUser ? (
         <div className="bg-background dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-border">
-          <div className="flex items-start gap-3">
+          <div className="flex gap-3">
             <div className="flex-shrink-0">
-              {authUser.avatar_url ? (
-                <img
-                  src={authUser.avatar_url}
-                  alt="Tu avatar"
-                  width="40"
-                  height="40"
-                  className="rounded-full"
-                />
-              ) : (
-                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  {authUser.username?.charAt(0).toUpperCase()}
-                </div>
-              )}
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={authUser?.avatar_url || undefined} alt={authUser?.username || 'Usuario'} />
+                <AvatarFallback>{getUserInitials(authUser?.username, 1, 'U')}</AvatarFallback>
+              </Avatar>
             </div>
             <div className="flex-1">
               <Textarea

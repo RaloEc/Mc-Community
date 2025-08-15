@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getUserInitials } from '@/lib/utils/avatar-utils'
 
 export type HiloDTO = {
   id: string
@@ -31,6 +33,14 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
           <Image src={hilo.media_preview_url} alt={hilo.titulo} fill className="object-cover" />
         </div>
       )}
+      {!hilo.media_preview_url && hilo.autor && (
+        <Avatar className="h-10 w-10 flex-shrink-0">
+          <AvatarImage src={hilo.autor.avatar_url || undefined} alt={hilo.autor.username || 'Usuario'} />
+          <AvatarFallback>
+            {getUserInitials(hilo.autor.username || 'Usuario')}
+          </AvatarFallback>
+        </Avatar>
+      )}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
           {hilo.subcategoria?.nombre && (
@@ -50,7 +60,11 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
           </Link>
         </h3>
         <div className="text-sm text-muted-foreground flex items-center gap-2 flex-wrap">
-          {hilo.autor?.username && <span>por <span className="font-medium">{hilo.autor.username}</span></span>}
+          {hilo.autor?.username && (
+            <span className="flex items-center gap-1">
+              por <span className="font-medium">{hilo.autor.username}</span>
+            </span>
+          )}
           <span>•</span>
           <time>{formatDate(hilo.created_at)}</time>
         </div>

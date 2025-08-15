@@ -7,6 +7,8 @@ import { Loader2, MessageSquare, ArrowBigUp, ArrowBigDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getUserInitials } from '@/lib/utils/avatar-utils';
 import type { Database } from '@/lib/database.types';
 
 // Tipos locales para el componente
@@ -398,6 +400,14 @@ export default function ForoCliente() {
                       <div className="p-3 flex-1">
                         <div className="flex justify-between items-center flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
                           <div className="flex items-center gap-x-2">
+                            <Avatar className="h-6 w-6 mr-1">
+                              <AvatarImage 
+                                src={hilo.perfiles?.avatar_url ?? undefined} 
+                                alt={`Avatar de ${hilo.perfiles?.username || 'Anónimo'}`} 
+                                crossOrigin="anonymous" 
+                              />
+                              <AvatarFallback>{getUserInitials(hilo.perfiles?.username, 1, 'A')}</AvatarFallback>
+                            </Avatar>
                             <span className="font-semibold text-gray-700 dark:text-gray-300 amoled:text-white">{hilo.perfiles?.username || 'Anónimo'}</span>
                             <span className="hidden sm:inline">•</span>
                             <span>{formatDate(hilo.created_at)}</span>

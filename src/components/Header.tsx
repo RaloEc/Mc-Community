@@ -3,11 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ModeToggle } from '@/components/mode-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getUserInitials } from '@/lib/utils/avatar-utils';
+import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
@@ -263,11 +265,10 @@ export default function Header() {
                   <div className="relative">
                     <button type="button" className="overflow-hidden rounded-full border border-gray-700 shadow-inner" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
                       <span className="sr-only">Abrir menú de usuario</span>
-                      {authUser.avatar_url ? (
-                        <img src={authUser.avatar_url} alt="Foto de perfil" className="size-10 object-cover rounded-full" crossOrigin="anonymous"/>
-                      ) : (
-                        <div className="size-10 flex items-center justify-center bg-primary text-white font-bold rounded-full">{authUser.username?.charAt(0).toUpperCase() || 'U'}</div>
-                      )}
+                      <Avatar className="w-8 h-8">
+                        <AvatarImage src={authUser.avatar_url || undefined} alt={authUser.username || 'Usuario'} />
+                        <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
+                      </Avatar>
                     </button>
                     {isUserMenuOpen && (
                       <>
@@ -314,14 +315,13 @@ export default function Header() {
           <div className={`p-4 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
             {authUser ? (
               <div className="flex items-center">
-                {authUser.avatar_url ? (
-                  <img src={authUser.avatar_url} alt="Foto de perfil" className="size-10 object-cover rounded-full mr-3" crossOrigin="anonymous"/>
-                ) : (
-                  <div className="size-10 flex items-center justify-center bg-primary text-white font-bold rounded-full mr-3">{authUser.username?.charAt(0).toUpperCase() || 'U'}</div>
-                )}
-                <div>
-                  <p className={`font-semibold ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>{authUser.username || 'Usuario'}</p>
-                  <p className={`text-sm ${currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>{authUser.email}</p>
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={authUser.avatar_url || undefined} alt={authUser.username || 'Usuario'} />
+                  <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="font-medium">{authUser.username}</span>
+                  <span className="text-xs text-muted-foreground">{authUser.role}</span>
                 </div>
               </div>
             ) : (

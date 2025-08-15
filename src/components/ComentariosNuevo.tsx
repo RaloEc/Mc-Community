@@ -8,6 +8,8 @@ import { formatDistanceToNow, format, differenceInHours } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { MessageSquare, Send, Pencil, Trash2, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { getUserInitials } from '@/lib/utils/avatar-utils'
 import './comentarios-nuevo.css'
 
 interface ComentariosProps {
@@ -328,20 +330,12 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         <div className="mb-6">
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 self-start mt-3">
-              {authUser?.avatar_url ? (
-                <div className="w-8 h-8 overflow-hidden rounded-full">
-                  <img
-                    src={authUser.avatar_url}
-                    alt="Tu avatar"
-                    className="w-full h-full object-cover object-center"
-                    crossOrigin="anonymous"
-                  />
-                </div>
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold border-2 border-blue-400 dark:border-blue-600">
-                  {authUser?.username?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )}
+              <Avatar className="w-10 h-10 border-2 border-blue-400 dark:border-blue-600">
+                <AvatarImage src={authUser?.avatar_url || undefined} alt="Tu avatar" crossOrigin="anonymous" />
+                <AvatarFallback className="bg-primary text-white font-bold">
+                  {getUserInitials(authUser?.username, 1, 'U')}
+                </AvatarFallback>
+              </Avatar>
             </div>
             <div className="flex-1">
               <div className="rounded-lg">
@@ -396,20 +390,16 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
               {/* Comentario principal */}
               <div className="flex items-start space-x-3">
                 <div className="relative">
-                  {comentario.perfiles?.avatar_url ? (
-                    <div className="w-10 h-10 overflow-hidden rounded-full">
-                      <img
-                        src={comentario.perfiles.avatar_url}
-                        alt={`Avatar de ${comentario.perfiles.username || 'usuario'}`}
-                        className="w-full h-full object-cover object-center"
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                      {comentario.perfiles?.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                  )}
+                  <Avatar className="w-10 h-10">
+                    <AvatarImage 
+                      src={comentario.perfiles?.avatar_url || undefined} 
+                      alt={`Avatar de ${comentario.perfiles?.username || 'usuario'}`}
+                      crossOrigin="anonymous" 
+                    />
+                    <AvatarFallback className="bg-primary text-white font-bold">
+                      {getUserInitials(comentario.perfiles?.username, 1, 'U')}
+                    </AvatarFallback>
+                  </Avatar>
                 </div>
                 <div className="flex-1">
                   <div className="rounded-lg p-3 shadow-sm">
@@ -554,20 +544,16 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                         <div className="flex justify-between items-center mb-1">
                           <div className="flex items-center">
                             <div className="mr-2">
-                              {respuestaItem.perfiles?.avatar_url ? (
-                                <div className="w-6 h-6 overflow-hidden rounded-full">
-                                  <img
-                                    src={respuestaItem.perfiles.avatar_url}
-                                    alt={`Avatar de ${respuestaItem.perfiles.username || 'usuario'}`}
-                                    className="w-full h-full object-cover object-center"
-                                    crossOrigin="anonymous"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
-                                  {respuestaItem.perfiles?.username?.charAt(0).toUpperCase() || 'U'}
-                                </div>
-                              )}
+                              <Avatar className="w-6 h-6">
+                                <AvatarImage 
+                                  src={respuestaItem.perfiles?.avatar_url || undefined} 
+                                  alt={`Avatar de ${respuestaItem.perfiles?.username || 'usuario'}`}
+                                  crossOrigin="anonymous" 
+                                />
+                                <AvatarFallback className="bg-primary text-white font-bold text-xs">
+                                  {getUserInitials(respuestaItem.perfiles?.username, 1, 'U')}
+                                </AvatarFallback>
+                              </Avatar>
                             </div>
                             <span className="font-medium text-foreground dark:text-gray-200 [.amoled_&]:!text-white">
                               {respuestaItem.perfiles?.username || 'Usuario'}

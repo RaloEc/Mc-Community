@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronRight, MessageSquare, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { getUserInitials } from '@/lib/utils/avatar-utils';
 
 // Tipos
 type Hilo = {
@@ -172,7 +174,13 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       key={hilo.id}
       className="block p-3 rounded-lg transition-all hover:bg-accent/50 border border-border/50"
     >
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-3">
+        <Avatar className="h-8 w-8 flex-shrink-0">
+          <AvatarImage src={hilo.perfiles?.avatar_url || undefined} alt={hilo.perfiles?.username || 'Usuario'} />
+          <AvatarFallback>
+            {getUserInitials(hilo.perfiles?.username || 'Usuario')}
+          </AvatarFallback>
+        </Avatar>
         <div className="flex-1">
           <h3 className="font-medium text-foreground line-clamp-1">{hilo.titulo}</h3>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
