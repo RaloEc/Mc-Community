@@ -11,14 +11,18 @@ import { es } from 'date-fns/locale';
 import ForosBloqueDesktop from './ForosBloqueDesktop';
 
 // Tipos
+type ConteoItem = {
+  count: number;
+};
+
 type Hilo = {
   id: string;
   titulo: string;
   autor_id: string;
   created_at: string;
   ultimo_post_at: string;
-  votos_conteo: number;
-  respuestas_conteo: number;
+  votos_conteo: number | ConteoItem | ConteoItem[];
+  respuestas_conteo: number | ConteoItem | ConteoItem[];
   perfiles: {
     username: string;
     rol: string;
@@ -136,13 +140,23 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
 
       // Normalizar los conteos (convertir de objetos a números)
       const hilosNormalizados = data?.map(hilo => {
-        const votos = Array.isArray(hilo.votos_conteo) 
-          ? (hilo.votos_conteo[0]?.count ?? 0) 
-          : (hilo.votos_conteo?.count ?? 0);
+        let votos = 0;
+        if (Array.isArray(hilo.votos_conteo) && hilo.votos_conteo.length > 0 && hilo.votos_conteo[0]) {
+          votos = (hilo.votos_conteo[0] as any).count ?? 0;
+        } else if (typeof hilo.votos_conteo === 'object' && hilo.votos_conteo !== null && 'count' in hilo.votos_conteo) {
+          votos = (hilo.votos_conteo as any).count ?? 0;
+        } else if (typeof hilo.votos_conteo === 'number') {
+          votos = hilo.votos_conteo;
+        }
         
-        const respuestas = Array.isArray(hilo.respuestas_conteo) 
-          ? (hilo.respuestas_conteo[0]?.count ?? 0) 
-          : (hilo.respuestas_conteo?.count ?? 0);
+        let respuestas = 0;
+        if (Array.isArray(hilo.respuestas_conteo) && hilo.respuestas_conteo.length > 0 && hilo.respuestas_conteo[0]) {
+          respuestas = (hilo.respuestas_conteo[0] as any).count ?? 0;
+        } else if (typeof hilo.respuestas_conteo === 'object' && hilo.respuestas_conteo !== null && 'count' in hilo.respuestas_conteo) {
+          respuestas = (hilo.respuestas_conteo as any).count ?? 0;
+        } else if (typeof hilo.respuestas_conteo === 'number') {
+          respuestas = hilo.respuestas_conteo;
+        }
         
         return { 
           ...hilo, 
@@ -206,7 +220,7 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
         </div>
         <div className="flex items-center gap-1 text-muted-foreground">
           <MessageSquare className="h-4 w-4" />
-          <span className="text-xs">{hilo.respuestas_conteo}</span>
+          <span className="text-xs">{typeof hilo.respuestas_conteo === 'number' ? hilo.respuestas_conteo : 0}</span>
         </div>
       </div>
     </Link>

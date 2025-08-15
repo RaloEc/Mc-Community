@@ -237,7 +237,7 @@ export default function CrearModPage() {
         enlace_modrinth: formData.enlace_modrinth || null,
         enlace_directo: formData.enlace_directo || null,
         enlace_otro: formData.enlace_otro || null,
-        autor: user?.user_metadata?.name || 'Usuario',
+        autor: user?.username || 'Usuario',
         imagen_url,
         categorias: formData.categorias_seleccionadas,
         user_id: user?.id

@@ -10,84 +10,73 @@ import { Textura } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 // Datos de ejemplo para las texturas (se usarán si no hay datos de la base de datos)
-const texturasEjemplo = [
+// Definimos los datos de ejemplo con el tipo correcto
+const texturasEjemplo: Textura[] = [
   {
-    id: 1,
+    id: '1',
     nombre: 'Faithful 32x',
     descripcion: 'Una versión mejorada de las texturas vanilla con mayor resolución.',
-    version: '1.19',
-    autor: 'Faithful Team',
+    version_mc: '1.19',
+    autor_id: 'faithful-team',
     url_descarga: 'https://example.com/faithful',
-    imagen: '/images/recursos/faithful.jpg',
-    resolucion: '32x32',
-    categoria: 'Fiel al juego',
-    fecha_publicacion: '2023-08-05',
-    destacado: true
+    url_imagen: '/images/recursos/faithful.jpg',
+    resolucion: '32x',
+    autor: null
   },
   {
-    id: 2,
+    id: '2',
     nombre: 'Patrix',
     descripcion: 'Pack de texturas realistas de alta resolución.',
-    version: '1.19.2',
-    autor: 'Patrix Team',
+    version_mc: '1.19.2',
+    autor_id: 'patrix-team',
     url_descarga: 'https://example.com/patrix',
-    imagen: '/images/recursos/patrix.jpg',
-    resolucion: '128x128',
-    categoria: 'Realista',
-    fecha_publicacion: '2023-09-15',
-    destacado: false
+    url_imagen: '/images/recursos/patrix.jpg',
+    resolucion: '128x',
+    autor: null
   },
   {
-    id: 3,
+    id: '3',
     nombre: 'Bare Bones',
     descripcion: 'Texturas minimalistas inspiradas en el estilo de los trailers oficiales.',
-    version: '1.19',
-    autor: 'RobotPants',
+    version_mc: '1.19',
+    autor_id: 'robotpants',
     url_descarga: 'https://example.com/barebones',
-    imagen: '/images/recursos/bare-bones.jpg',
-    resolucion: '16x16',
-    categoria: 'Minimalista',
-    fecha_publicacion: '2023-07-10',
-    destacado: false
+    url_imagen: '/images/recursos/bare-bones.jpg',
+    resolucion: '16x',
+    autor: null
   },
   {
-    id: 4,
+    id: '4',
     nombre: 'Sphax PureBDCraft',
     descripcion: 'Pack de texturas con estilo de cómic y colores vibrantes.',
-    version: '1.19.2',
-    autor: 'Sphax',
+    version_mc: '1.19.2',
+    autor_id: 'sphax',
     url_descarga: 'https://example.com/sphax',
-    imagen: '/images/recursos/sphax.jpg',
-    resolucion: '64x64',
-    categoria: 'Caricatura',
-    fecha_publicacion: '2023-08-22',
-    destacado: true
+    url_imagen: '/images/recursos/sphax.jpg',
+    resolucion: '64x',
+    autor: null
   },
   {
-    id: 5,
+    id: '5',
     nombre: 'Jicklus',
     descripcion: 'Pack de texturas medieval con un estilo rústico y detallado.',
-    version: '1.19',
-    autor: 'Jicklus',
+    version_mc: '1.19',
+    autor_id: 'jicklus',
     url_descarga: 'https://example.com/jicklus',
-    imagen: '/images/recursos/jicklus.jpg',
-    resolucion: '32x32',
-    categoria: 'Medieval',
-    fecha_publicacion: '2023-06-18',
-    destacado: false
+    url_imagen: '/images/recursos/jicklus.jpg',
+    resolucion: '32x',
+    autor: null
   },
   {
-    id: 6,
+    id: '6',
     nombre: 'Dokucraft',
     descripcion: 'Pack de texturas de fantasía con un estilo RPG detallado.',
-    version: '1.19.2',
-    autor: 'Dokucraft Team',
+    version_mc: '1.19.2',
+    autor_id: 'dokucraft-team',
     url_descarga: 'https://example.com/dokucraft',
-    imagen: '/images/recursos/dokucraft.jpg',
-    resolucion: '64x64',
-    categoria: 'Fantasía',
-    fecha_publicacion: '2023-09-30',
-    destacado: true
+    url_imagen: '/images/recursos/dokucraft.jpg',
+    resolucion: '64x',
+    autor: null
   }
 ]
 
@@ -166,10 +155,10 @@ export default function TexturasPage() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle>{textura.nombre}</CardTitle>
-                    <Badge>{textura.categoria}</Badge>
+                    <Badge>{textura.resolucion}</Badge>
                   </div>
                   <CardDescription className="flex items-center gap-2">
-                    <span className="text-xs bg-accent/50 px-2 py-0.5 rounded-full">v{textura.version}</span>
+                    <span className="text-xs bg-accent/50 px-2 py-0.5 rounded-full">v{textura.version_mc}</span>
                     <span className="text-xs">Para Minecraft</span>
                   </CardDescription>
                 </CardHeader>
@@ -181,16 +170,16 @@ export default function TexturasPage() {
                       <p className="font-medium">{textura.resolucion}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Autor:</span>
-                      <p className="font-medium">{textura.autor}</p>
+                      <span className="text-muted-foreground">Autor ID:</span>
+                      <p className="font-medium">{textura.autor_id}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Autor:</span>
-                      <p className="font-medium">{textura.autor}</p>
+                      <span className="text-muted-foreground">Versión MC:</span>
+                      <p className="font-medium">{textura.version_mc}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Categoría:</span>
-                      <p className="font-medium">{textura.categoria}</p>
+                      <span className="text-muted-foreground">Tipo:</span>
+                      <p className="font-medium">Textura</p>
                     </div>
                   </div>
                 </CardContent>

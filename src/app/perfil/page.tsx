@@ -69,8 +69,12 @@ export default function PerfilPage() {
       }
       
       // Cargar el color del usuario
-      if (perfilCompleto.color) {
-        setUserColor(perfilCompleto.color);
+      if (perfilCompleto) {
+        // Usar acceso seguro con operador de encadenamiento opcional
+        const userColor = (perfilCompleto as any).color;
+        if (userColor) {
+          setUserColor(userColor);
+        }
       } else {
         try {
           // Intentar cargar desde localStorage como respaldo

@@ -25,7 +25,7 @@ export default async function CrearHiloPage() {
     <div className="container mx-auto max-w-4xl py-8 px-4 sm:px-6 lg:px-8">
       <div className="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-lg shadow-lg p-6">
         <h1 className="text-3xl font-bold text-white mb-6 border-b border-gray-700 pb-4">Crear Nuevo Hilo</h1>
-        <CrearHiloForm categorias={categorias || []} userId={user.id} />
+        <CrearHiloForm categorias={categorias as any[] || []} userId={user.id} />
       </div>
     </div>
   );

@@ -101,12 +101,12 @@ function AdminUsuariosContent() {
 
   const toggleUserStatus = async (usuario: UsuarioCompleto) => {
     try {
-      const response = await fetch(`/api/admin/usuarios/${usuario.auth_id}`, {
+      const response = await fetch(`/api/admin/usuarios/${usuario.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'toggle_active',
-          activo: !usuario.activo
+          activo: !(usuario.perfil?.activo ?? false)
         })
       })
 
@@ -128,7 +128,7 @@ function AdminUsuariosContent() {
     if (!deleteDialog.usuario) return
 
     try {
-      const response = await fetch(`/api/admin/usuarios?userId=${deleteDialog.usuario.auth_id}`, {
+      const response = await fetch(`/api/admin/usuarios?userId=${deleteDialog.usuario.id}`, {
         method: 'DELETE'
       })
 
@@ -281,38 +281,38 @@ function AdminUsuariosContent() {
                 </TableRow>
               ) : (
                 usuarios.map(usuario => (
-                  <TableRow key={usuario.auth_id} className="hover:bg-muted/50">
+                  <TableRow key={usuario.id} className="hover:bg-muted/50">
                     <TableCell>
                       <img
-                        src={usuario.avatar_url || '/images/default-avatar.png'}
-                        alt={usuario.username}
+                        src={usuario.perfil?.avatar_url || '/images/default-avatar.png'}
+                        alt={usuario.perfil?.username || 'Usuario'}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     </TableCell>
-                    <TableCell className="font-medium text-foreground">{usuario.username}</TableCell>
-                    <TableCell>{getRoleBadge(usuario.role)}</TableCell>
-                    <TableCell>{getStatusBadge(usuario.activo)}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(usuario.fecha_ultimo_acceso)}</TableCell>
+                    <TableCell className="font-medium text-foreground">{usuario.perfil?.username || 'Usuario'}</TableCell>
+                    <TableCell>{getRoleBadge(usuario.perfil?.role ?? 'usuario')}</TableCell>
+                    <TableCell>{getStatusBadge(Boolean(usuario.perfil?.activo))}</TableCell>
+                    <TableCell className="text-muted-foreground">{usuario.perfil?.fecha_ultimo_acceso ? formatDate(usuario.perfil.fecha_ultimo_acceso) : '—'}</TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center items-center space-x-2">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="icon" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.auth_id}`)} className="text-muted-foreground hover:text-foreground"><Eye className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.id}`)} className="text-muted-foreground hover:text-foreground"><Eye className="w-4 h-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Ver Perfil</p></TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="icon" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.auth_id}/editar`)} className="text-muted-foreground hover:text-foreground"><Edit className="w-4 h-4" /></Button>
+                              <Button size="icon" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.id}/editar`)} className="text-muted-foreground hover:text-foreground"><Edit className="w-4 h-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Editar Usuario</p></TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="icon" variant="ghost" onClick={() => toggleUserStatus(usuario)} className={`${usuario.activo ? 'text-destructive hover:text-destructive/80' : 'text-green-500 hover:text-green-400'}`}>{usuario.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}</Button>
+                              <Button size="icon" variant="ghost" onClick={() => toggleUserStatus(usuario)} className={`${usuario.perfil?.activo ? 'text-destructive hover:text-destructive/80' : 'text-green-500 hover:text-green-400'}`}>{usuario.perfil?.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}</Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>{usuario.activo ? 'Desactivar Usuario' : 'Activar Usuario'}</p></TooltipContent>
+                            <TooltipContent><p>{usuario.perfil?.activo ? 'Desactivar Usuario' : 'Activar Usuario'}</p></TooltipContent>
                           </Tooltip>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -340,7 +340,7 @@ function AdminUsuariosContent() {
             <div className="grid grid-cols-1 gap-4">
               {usuarios.map(usuario => (
                 <div 
-                  key={usuario.auth_id} 
+                  key={usuario.id} 
                   className="bg-card p-4 rounded-xl flex flex-col sm:border-2 sm:dark:border-zinc-800 sm:border-zinc-200"
                   style={{
                     boxShadow: '0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08)',
@@ -349,17 +349,17 @@ function AdminUsuariosContent() {
                 >
                   <div className="flex items-center space-x-3">
                     <img
-                      src={usuario.avatar_url || '/images/default-avatar.png'}
-                      alt={usuario.username}
+                      src={usuario.perfil?.avatar_url || '/images/default-avatar.png'}
+                      alt={usuario.perfil?.username || 'Usuario'}
                       className="w-14 h-14 rounded-full object-cover"
                     />
                     <div className="flex-grow">
-                      <p className="font-bold text-foreground text-base">{usuario.username}</p>
+                      <p className="font-bold text-foreground text-base">{usuario.perfil?.username || 'Usuario'}</p>
                       <div className="flex items-center space-x-2 mt-0.5">
-                        {getRoleBadge(usuario.role)}
-                        {getStatusBadge(usuario.activo)}
+                        {getRoleBadge(usuario.perfil?.role ?? 'usuario')}
+                        {getStatusBadge(Boolean(usuario.perfil?.activo))}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">Último acceso: {formatDate(usuario.fecha_ultimo_acceso)}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Último acceso: {usuario.perfil?.fecha_ultimo_acceso ? formatDate(usuario.perfil.fecha_ultimo_acceso) : '—'}</p>
                     </div>
                   </div>
                   
@@ -367,21 +367,21 @@ function AdminUsuariosContent() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.auth_id}`)}><Eye className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.id}`)}><Eye className="w-4 h-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Ver Perfil</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.auth_id}/editar`)}><Edit className="w-4 h-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/usuarios/${usuario.id}/editar`)}><Edit className="w-4 h-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent><p>Editar Usuario</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button size="sm" variant="ghost" onClick={() => toggleUserStatus(usuario)} className={`${usuario.activo ? 'text-destructive hover:bg-destructive/10' : 'text-green-500 hover:bg-green-500/10'}`}>{usuario.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}</Button>
+                          <Button size="sm" variant="ghost" onClick={() => toggleUserStatus(usuario)} className={`${usuario.perfil?.activo ? 'text-destructive hover:bg-destructive/10' : 'text-green-500 hover:bg-green-500/10'}`}>{usuario.perfil?.activo ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}</Button>
                         </TooltipTrigger>
-                        <TooltipContent><p>{usuario.activo ? 'Desactivar Usuario' : 'Activar Usuario'}</p></TooltipContent>
+                        <TooltipContent><p>{usuario.perfil?.activo ? 'Desactivar Usuario' : 'Activar Usuario'}</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -427,7 +427,7 @@ function AdminUsuariosContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que quieres eliminar al usuario <strong>{deleteDialog.usuario?.username}</strong>?
+              ¿Estás seguro de que quieres eliminar al usuario <strong>{deleteDialog.usuario?.perfil?.username}</strong>?
               Esta acción no se puede deshacer y eliminará permanentemente la cuenta y todos sus datos asociados.
             </AlertDialogDescription>
           </AlertDialogHeader>

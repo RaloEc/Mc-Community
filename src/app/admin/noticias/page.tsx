@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { Noticia } from '@/types'
+import type { Noticia, CategoriaNoticia } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -48,34 +48,47 @@ import {
 } from 'lucide-react'
 import AdminProtection from '@/components/AdminProtection'
 
-// Noticias de ejemplo para mostrar mientras se cargan los datos reales
+// Noticias de ejemplo para mostrar mientras se cargan los datos reales (ajustadas al tipo Noticia)
+const categoriaActualizaciones: CategoriaNoticia = { id: 1, nombre: 'Actualizaciones', slug: 'actualizaciones' }
+const categoriaServidores: CategoriaNoticia = { id: 2, nombre: 'Servidores', slug: 'servidores' }
+const categoriaEventos: CategoriaNoticia = { id: 3, nombre: 'Eventos', slug: 'eventos' }
+
 const noticiasEjemplo: Noticia[] = [
   {
-    id: '1',
+    id: 1,
     titulo: 'Actualización 1.20 de Minecraft',
     contenido: 'Descubre todas las novedades de la actualización 1.20 de Minecraft...',
     fecha_publicacion: '2023-06-07',
-    autor: 'Admin',
-    categoria: 'Actualizaciones',
-    imagen_portada: '/images/news/update-120.jpg'
+    autor_id: 'admin-id',
+    categoria_id: categoriaActualizaciones.id,
+    slug: 'actualizacion-1-20-minecraft',
+    imagen_url: '/images/news/update-120.jpg',
+    autor: null,
+    categoria: categoriaActualizaciones
   },
   {
-    id: '2',
+    id: 2,
     titulo: 'Nuevo servidor de Survival',
     contenido: 'Hemos lanzado un nuevo servidor de supervivencia con características únicas...',
     fecha_publicacion: '2023-07-15',
-    autor: 'Moderador',
-    categoria: 'Servidores',
-    imagen_portada: '/images/news/survival-server.jpg'
+    autor_id: 'moderador-id',
+    categoria_id: categoriaServidores.id,
+    slug: 'nuevo-servidor-survival',
+    imagen_url: '/images/news/survival-server.jpg',
+    autor: null,
+    categoria: categoriaServidores
   },
   {
-    id: '3',
+    id: 3,
     titulo: 'Evento de Halloween',
     contenido: 'Prepárate para el evento especial de Halloween con recompensas exclusivas...',
     fecha_publicacion: '2023-10-20',
-    autor: 'Admin',
-    categoria: 'Eventos',
-    imagen_portada: '/images/news/halloween-event.jpg'
+    autor_id: 'admin-id',
+    categoria_id: categoriaEventos.id,
+    slug: 'evento-halloween',
+    imagen_url: '/images/news/halloween-event.jpg',
+    autor: null,
+    categoria: categoriaEventos
   }
 ]
 
@@ -151,7 +164,7 @@ function AdminNoticiasContent() {
     }
   }
 
-  async function eliminarNoticia(id: string) {
+  async function eliminarNoticia(id: number | string) {
     console.log('Iniciando eliminación de noticia con ID:', id)
     try {
       // Usar la API para eliminar la noticia (utiliza el cliente de servicio)
@@ -174,7 +187,7 @@ function AdminNoticiasContent() {
       console.log('Noticia eliminada correctamente')
       
       // Actualizar la lista de noticias
-      setNoticias(noticias.filter(noticia => noticia.id !== id))
+      setNoticias(noticias.filter(noticia => noticia.id !== Number(id)))
       
       // Recargar la lista de noticias para asegurarnos de que está actualizada
       setTimeout(() => {
@@ -270,15 +283,15 @@ function AdminNoticiasContent() {
                     <TableRow key={noticia.id}>
                       <TableCell className="font-medium">{truncarTexto(noticia.titulo, 40)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{noticia.categoria}</Badge>
+                        <Badge variant="outline">{noticia.categoria?.nombre ?? 'Sin categoría'}</Badge>
                       </TableCell>
                       <TableCell>{formatearFecha(noticia.fecha_publicacion)}</TableCell>
                       <TableCell>
                         <span 
-                          style={{ color: noticia.autor_color || '#3b82f6' }}
+                          style={{ color: noticia.autor?.color || '#3b82f6' }}
                           className="font-medium"
                         >
-                          {noticia.autor_nombre || noticia.autor}
+                          {noticia.autor?.username ?? 'Desconocido'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">

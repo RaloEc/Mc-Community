@@ -407,18 +407,17 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-md p-3 shadow-sm border border-gray-200 dark:border-gray-700">
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0">
-                              {authUser?.user_metadata?.avatar_url ? (
+                              {authUser?.avatar_url ? (
                                 <img
-                                  src={authUser.user_metadata.avatar_url}
+                                  src={authUser.avatar_url}
                                   alt="Tu avatar"
                                   width="24"
                                   height="24"
-                                  className="w-6 h-6 rounded-full"
-                                  crossOrigin="anonymous"
+                                  className="rounded-full"
                                 />
                               ) : (
-                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white font-bold text-xs">
-                                  {authUser?.email?.charAt(0).toUpperCase() || 'U'}
+                                <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                                  {authUser?.username?.charAt(0).toUpperCase() || 'U'}
                                 </div>
                               )}
                             </div>
@@ -549,18 +548,17 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         <div className="bg-background dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-border">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              {authUser.user_metadata?.avatar_url ? (
+              {authUser.avatar_url ? (
                 <img
-                  src={authUser.user_metadata.avatar_url}
+                  src={authUser.avatar_url}
                   alt="Tu avatar"
                   width="40"
                   height="40"
-                  className="w-10 h-10 rounded-full"
-                  crossOrigin="anonymous"
+                  className="rounded-full"
                 />
               ) : (
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">
-                  {authUser.email?.charAt(0).toUpperCase() || 'U'}
+                <div className="w-10 h-10 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
+                  {authUser.username?.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>

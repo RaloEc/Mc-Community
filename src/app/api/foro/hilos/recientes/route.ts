@@ -73,8 +73,8 @@ export async function GET(request: Request) {
           autor_nombre: autor?.nombre_usuario || 'Usuario desconocido',
           autor_avatar: autor?.avatar_url,
           categoria_id: hilo.categoria_id,
-          categoria_nombre: hilo.foro_categorias?.nombre || 'General',
-          categoria_slug: hilo.foro_categorias?.slug || 'general',
+          categoria_nombre: hilo.foro_categorias?.[0]?.nombre || 'General',
+          categoria_slug: hilo.foro_categorias?.[0]?.slug || 'general',
           respuestas: respuestasCount || 0
         };
       })

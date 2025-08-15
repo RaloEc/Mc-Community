@@ -1,11 +1,8 @@
-export interface Perfil {
-  id: string;
-  username: string;
-  rol: 'admin' | 'moderador' | 'usuario';
-  created_at: string;
-  updated_at: string;
-}
+// Reexporta todos los tipos del módulo principal para que `@/types` funcione
+export * from './types/index'
+import type { Perfil } from './types/index'
 
+// Tipos adicionales específicos del foro que no existen en `./types/index`
 export interface HiloConAutor {
   id: string;
   created_at: string;

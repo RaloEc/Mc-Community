@@ -268,7 +268,7 @@ export default function NoticiasMiniatura({
                     {/* Imagen de la noticia */}
                     <div className="relative h-40 overflow-hidden bg-card/50 dark:bg-muted/30">
                       <img
-                        src={noticia.imagen_portada || '/placeholder-noticia.jpg'}
+                        src={noticia.imagen_url || '/placeholder-noticia.jpg'}
                         alt={noticia.titulo}
                         className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                         onError={(e) => {
@@ -277,10 +277,10 @@ export default function NoticiasMiniatura({
                         }}
                       />
                       {/* Badge de categoría */}
-                      {noticia.categorias && noticia.categorias.length > 0 && (
+                      {noticia.categoria && (
                         <div className="absolute bottom-2 left-2">
                           <span className="px-2 py-1 text-xs font-medium text-white bg-primary rounded-full">
-                            {noticia.categorias[0].nombre}
+                            {noticia.categoria.nombre}
                           </span>
                         </div>
                       )}
@@ -348,10 +348,10 @@ export default function NoticiasMiniatura({
         <article className="h-full flex flex-col rounded-lg border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
           {/* Imagen con tamaño fijo */}
           <div className="w-full h-48 bg-muted/50 overflow-hidden relative">
-            {noticia.imagen_portada ? (
+            {noticia.imagen_url ? (
               <>
                 <img
-                  src={noticia.imagen_portada}
+                  src={noticia.imagen_url}
                   alt={noticia.titulo}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
@@ -378,7 +378,7 @@ export default function NoticiasMiniatura({
               {noticia.titulo}
             </h3>
             <p className="text-sm text-muted-foreground line-clamp-3">
-              {noticia.resumen || (noticia.contenido?.replace(/<[^>]*>?/gm, '') || '')}
+              {noticia.contenido?.replace(/<[^>]*>?/gm, '').substring(0, 150) || ''}
             </p>
             <div className="mt-2">
               <span className="inline-flex items-center text-sm font-medium text-primary">

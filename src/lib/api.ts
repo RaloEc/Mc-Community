@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { Servidor, Noticia } from '../types';
 
 // Funciones para servidores
 export async function getServidores() {

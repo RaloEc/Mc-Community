@@ -11,26 +11,26 @@ interface ModCardProps {
 }
 
 export function ModCard({ mod, className = '' }: ModCardProps) {
-  // Usar los campos de la nueva estructura cuando estén disponibles, o los campos de compatibilidad
-  const nombre = mod.name || (mod as any).nombre || '';
-  const descripcion = mod.summary || mod.description_html || (mod as any).descripcion || '';
-  const imagen = mod.logo_url || (mod as any).imagen_url;
-  const version = mod.game_versions?.[0] || (mod as any).version || 'Desconocida';
-  const autor = mod.author_name || (mod as any).autor || 'Desconocido';
-  const descargas = mod.total_downloads || (mod as any).descargas || 0;
-  const enlacePrincipal = mod.website_url || (mod as any).enlace_principal;
-  const tipoEnlace = mod.source || (mod as any).tipo_enlace_principal;
+  // Usar los campos de la estructura definida en RecursoBase
+  const nombre = mod.nombre || '';
+  const descripcion = mod.descripcion || '';
+  const imagen = mod.url_imagen;
+  const version = mod.version_mc || 'Desconocida';
+  const autor = mod.autor?.username || 'Desconocido';
+  const descargas = (mod as any).descargas || 0;
+  const enlacePrincipal = mod.url_descarga;
+  const tipoEnlace = mod.tipo;
   
   // Determinar enlaces específicos basados en la fuente
-  const enlaceCurseforge = tipoEnlace === 'curseforge' ? enlacePrincipal : (mod as any).enlace_curseforge;
-  const enlaceModrinth = tipoEnlace === 'modrinth' ? enlacePrincipal : (mod as any).enlace_modrinth;
-  const enlaceGithub = tipoEnlace === 'github' ? enlacePrincipal : (mod as any).enlace_github;
+  // Usamos any porque estos campos no están en el tipo Mod pero pueden existir en la implementación
+  const tipoEnlaceExterno = (mod as any).tipo_enlace_principal || '';
+  const enlaceCurseforge = (mod as any).enlace_curseforge;
+  const enlaceModrinth = (mod as any).enlace_modrinth;
+  const enlaceGithub = (mod as any).enlace_github;
   const enlaceWebAutor = (mod as any).enlace_web_autor;
   
   // Preparar categorías
-  const categorias = mod.categories 
-    ? mod.categories.map(cat => ({ id: cat, nombre: cat })) 
-    : (mod as any).categorias || [];
+  const categorias = (mod as any).categorias || [];
   
   // Función para obtener el ícono según el tipo de enlace
   const getPlatformIcon = (type: string | undefined) => {
@@ -119,15 +119,15 @@ export function ModCard({ mod, className = '' }: ModCardProps) {
                   console.log('Descargando desde:', tipoEnlace);
                 }}
               >
-                {getPlatformIcon(tipoEnlace)}
-                {getPlatformName(tipoEnlace)}
+                {getPlatformIcon(tipoEnlaceExterno)}
+                {getPlatformName(tipoEnlaceExterno)}
               </a>
             </Button>
           )}
           
           {/* Botones secundarios */}
           <div className="grid grid-cols-2 gap-2">
-            {enlaceCurseforge && tipoEnlace !== 'curseforge' && (
+            {enlaceCurseforge && tipoEnlaceExterno !== 'curseforge' && (
               <Button variant="outline" size="sm" asChild>
                 <a href={enlaceCurseforge} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                   <Sword className="h-3 w-3 mr-1" />
@@ -136,7 +136,7 @@ export function ModCard({ mod, className = '' }: ModCardProps) {
               </Button>
             )}
             
-            {enlaceModrinth && tipoEnlace !== 'modrinth' && (
+            {enlaceModrinth && tipoEnlaceExterno !== 'modrinth' && (
               <Button variant="outline" size="sm" asChild>
                 <a href={enlaceModrinth} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                   <FileText className="h-3 w-3 mr-1" />
@@ -145,7 +145,7 @@ export function ModCard({ mod, className = '' }: ModCardProps) {
               </Button>
             )}
             
-            {enlaceGithub && tipoEnlace !== 'github' && (
+            {enlaceGithub && tipoEnlaceExterno !== 'github' && (
               <Button variant="outline" size="sm" asChild>
                 <a href={enlaceGithub} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
                   <Github className="h-3 w-3 mr-1" />

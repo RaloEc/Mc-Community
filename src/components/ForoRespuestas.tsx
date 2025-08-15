@@ -585,7 +585,6 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
           ) : respuestas.length > 0 ? (
             <MagicMotion 
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              initial={{ opacity: 0, y: 20 }}
             >
               <div className="space-y-6">
                 {respuestas.map((respuestaItem) => {

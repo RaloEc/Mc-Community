@@ -35,7 +35,7 @@ export default function ServidorCard({ servidor, onRefresh }: ServidorCardProps)
     setLoading(true)
     
     try {
-      const response = await fetch(`https://api.mcsrvstat.us/2/${servidor.ip}`)
+      const response = await fetch(`https://api.mcsrvstat.us/2/${servidor.direccion_ip}`)
       const data = await response.json()
       
       setStatus(data)
@@ -50,7 +50,7 @@ export default function ServidorCard({ servidor, onRefresh }: ServidorCardProps)
   // Consultar el estado al cargar el componente
   useEffect(() => {
     checkServerStatus()
-  }, [servidor.ip])
+  }, [servidor.direccion_ip])
   
   // Función para refrescar el estado del servidor
   const refreshStatus = () => {
@@ -63,32 +63,28 @@ export default function ServidorCard({ servidor, onRefresh }: ServidorCardProps)
     if (status && status.online && status.players) {
       return `${status.players.online}/${status.players.max}`
     }
-    return servidor.jugadores || '0/0'
+    return `${servidor.jugadores_actuales || 0}/${servidor.jugadores_maximos || 0}`
   }
 
   // Función para copiar IP al portapapeles
   const copyIp = () => {
-    navigator.clipboard.writeText(servidor.ip)
+    navigator.clipboard.writeText(servidor.direccion_ip)
   }
   
   return (
-    <Card className={`servidor-card overflow-hidden transition-all hover:shadow-md dark:bg-amoled-gray ${status?.online ? 'online' : 'offline'} ${servidor.destacado ? 'destacado border-l-4 border-l-primary' : ''}`}>
+    <Card className={`servidor-card overflow-hidden transition-all hover:shadow-md dark:bg-amoled-gray ${status?.online ? 'online' : 'offline'}`}>
       {/* Cabecera con borde superior coloreado según estado */}
       <div className="servidor-header relative bg-gradient-to-b from-primary/10 to-card/80 dark:from-primary/20 dark:to-amoled-gray/80 overflow-hidden border-t-4 border-t-solid border-t-status">
-        {servidor.imagen ? (
+        {servidor.banner_url ? (
           <img 
-            src={servidor.imagen} 
+            src={servidor.banner_url} 
             alt={servidor.nombre} 
             className="h-full w-full object-cover opacity-40"
           />
         ) : null}
         
         {/* Badge destacado */}
-        {servidor.destacado && (
-          <Badge className="absolute top-2 right-2 z-10 bg-primary/90 text-primary-foreground">
-            Destacado
-          </Badge>
-        )}
+        
       </div>
       
       {/* Información principal del servidor */}
@@ -134,7 +130,7 @@ export default function ServidorCard({ servidor, onRefresh }: ServidorCardProps)
           <div className="ip-container flex items-center justify-between p-2 rounded-md border border-border/50 bg-muted/30 dark:bg-amoled-gray/80 dark:border-border/30">
             <div>
               <span className="label text-xs text-muted-foreground">IP del servidor</span>
-              <span className="ip block text-xs font-medium font-mono">{servidor.ip}</span>
+              <span className="ip block text-xs font-medium font-mono">{servidor.direccion_ip}</span>
             </div>
             <TooltipProvider>
               <Tooltip>

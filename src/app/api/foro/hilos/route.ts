@@ -61,11 +61,11 @@ export async function GET(request: Request) {
     const hilosNormalizados = data?.map(hilo => {
       const votos = Array.isArray(hilo.votos_conteo) 
         ? (hilo.votos_conteo[0]?.count ?? 0) 
-        : (hilo.votos_conteo?.count ?? 0);
+        : (hilo.votos_conteo as any)?.count ?? 0;
       
       const respuestas = Array.isArray(hilo.respuestas_conteo) 
         ? (hilo.respuestas_conteo[0]?.count ?? 0) 
-        : (hilo.respuestas_conteo?.count ?? 0);
+        : (hilo.respuestas_conteo as any)?.count ?? 0;
       
       return { 
         ...hilo, 

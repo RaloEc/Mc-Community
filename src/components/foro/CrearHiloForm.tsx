@@ -17,6 +17,7 @@ import { createClient } from '@/lib/supabase/client';
 
 interface CrearHiloFormProps {
   categorias: CategoriaForo[];
+  userId: string;
 }
 
 // Mantenemos la exportación nombrada para compatibilidad

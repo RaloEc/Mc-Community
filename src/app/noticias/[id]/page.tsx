@@ -221,21 +221,18 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-3 mb-4">
               {/* Imagen de perfil del autor */}
               <div className="flex-shrink-0">
-                {noticia.autor_avatar ? (
+                {noticia.autor?.avatar_url ? (
                   <div className="size-12 overflow-hidden rounded-full">
                     <img 
-                      src={noticia.autor_avatar} 
-                      alt={`Foto de ${noticia.autor_nombre || noticia.autor || 'Anónimo'}`}
+                      src={noticia.autor.avatar_url} 
+                      alt={`Foto de ${noticia.autor?.username || 'Anónimo'}`}
                       className="w-full h-full object-cover"
                       crossOrigin="anonymous"
                     />
                   </div>
                 ) : (
-                  <div 
-                    className="size-12 flex items-center justify-center text-white font-bold rounded-full"
-                    style={{ backgroundColor: noticia.autor_color || '#3b82f6' }}
-                  >
-                    {(noticia.autor_nombre || noticia.autor || 'A').charAt(0).toUpperCase()}
+                  <div className="size-12 flex items-center justify-center rounded-full bg-gray-700 text-white font-semibold text-lg" style={{ backgroundColor: noticia.autor?.color || '#4B5563' }}>
+                    {noticia.autor?.username ? noticia.autor.username.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
               </div>
@@ -243,7 +240,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               {/* Información del autor */}
               <div>
                 <div className="font-medium">
-                  {noticia.autor_nombre || noticia.autor || 'Anónimo'}
+                  {noticia.autor?.username || 'Anónimo'}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Redactor de Minecraft Community
@@ -269,7 +266,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             {/* Fecha y tiempo de lectura - en líneas separadas para móvil */}
             <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
               <div className="flex items-center">
-                {new Date(noticia.fecha_publicacion || noticia.created_at || Date.now()).toLocaleDateString('es-ES', {
+                {new Date(noticia.fecha_publicacion || Date.now()).toLocaleDateString('es-ES', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -280,10 +277,10 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         </div>
         
         {/* Imagen de portada */}
-        {noticia.imagen_portada && (
+        {noticia.imagen_url && (
           <div className="relative w-full md:w-3/4 lg:w-2/3 aspect-video mb-8 rounded-lg overflow-hidden mx-auto">
             <Image
-              src={noticia.imagen_portada}
+              src={noticia.imagen_url}
               alt={noticia.titulo}
               fill
               className="object-cover"
@@ -303,19 +300,17 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         </div>
         
         {/* Temas relacionados */}
-        {noticia?.categorias && noticia.categorias.length > 0 && (
+        {noticia?.categoria && (
           <div className="max-w-4xl mx-auto mb-10">
             <h2 className="text-xl font-semibold mb-4">Temas relacionados</h2>
             <div className="flex flex-wrap gap-2">
-              {noticia.categorias.map((categoria) => (
-                <Link 
-                  href={`/noticias/categoria/${(categoria as any).slug || categoria.id}`}
-                  key={categoria.id}
-                  className="block bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ease-in-out"
-                >
-                  {categoria.nombre}
-                </Link>
-              ))}
+              <Link 
+                href={`/noticias/categoria/${noticia.categoria.slug || noticia.categoria.id}`}
+                key={noticia.categoria.id}
+                className="block bg-primary/10 text-primary hover:bg-primary/20 px-4 py-2 rounded-full text-sm font-medium transition-colors duration-200 ease-in-out"
+              >
+                {noticia.categoria.nombre}
+              </Link>
             </div>
           </div>
         )}
@@ -342,7 +337,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         </div>
         
         {/* Información del autor */}
-        {noticia.autor_nombre && (
+        {noticia.autor?.username && (
           <div className="max-w-4xl mx-auto border border-border rounded-lg p-6 mb-12">
             <h2 className="text-xl font-semibold mb-4">Acerca del autor</h2>
             
@@ -350,19 +345,19 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               {/* Foto del autor */}
               <div className="flex-shrink-0">
                 <Avatar className="h-24 w-24">
-                  {noticia.autor_avatar ? (
+                  {noticia.autor?.avatar_url ? (
                     <AvatarImage 
-                      src={noticia.autor_avatar} 
-                      alt={noticia.autor_nombre} 
+                      src={noticia.autor.avatar_url} 
+                      alt={noticia.autor.username} 
                       className="object-cover"
                       crossOrigin="anonymous"
                     />
                   ) : (
                     <AvatarFallback 
                       className="text-2xl"
-                      style={{ backgroundColor: noticia.autor_color || '#3b82f6' }}
+                      style={{ backgroundColor: noticia.autor?.color || '#3b82f6' }}
                     >
-                      {noticia.autor_nombre.charAt(0).toUpperCase()}
+                      {noticia.autor?.username.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   )}
                 </Avatar>
@@ -370,12 +365,12 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               
               {/* Información del autor */}
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-lg font-medium mb-1">{noticia.autor_nombre}</h3>
+                <h3 className="text-lg font-medium mb-1">{noticia.autor?.username}</h3>
                 <p className="text-sm text-muted-foreground mb-3">Redactor de Minecraft Community</p>
                 <p className="text-sm mb-4">Autor de contenido en Minecraft Community. Comparte noticias, tutoriales y recursos para la comunidad de Minecraft.</p>
                 
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/noticias?autor=${encodeURIComponent(noticia.autor_nombre)}`}>Ver todos los artículos</Link>
+                  <Link href={`/noticias?autor=${encodeURIComponent(noticia.autor?.username || '')}`}>Ver todos los artículos</Link>
                 </Button>
               </div>
             </div>

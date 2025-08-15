@@ -3,6 +3,13 @@
 import { useEffect } from 'react';
 import Script from 'next/script';
 
+// Declarar el tipo para window.adsbygoogle
+declare global {
+  interface Window {
+    adsbygoogle: any[];
+  }
+}
+
 interface GoogleAdsenseProps {
   client: string;
   slot: string;

@@ -1,0 +1,23 @@
+
+> minecraft-community@0.1.0 build
+> next build
+
+   ▲ Next.js 14.0.0
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ⚠ Custom webpack configuration is detected. When using a custom webpack configuration, the Webpack build worker is disabled by default. To force enable it, set the "experimental.webpackBuildWorker" option to "true". Read more: https://nextjs.org/docs/messages/webpack-build-worker-opt-out
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./src/app/admin/noticias/editar/[id]/page.tsx:6:10
+Type error: Module '"@/types"' has no exported member 'Noticia'.
+
+[0m [90m 4 |[39m [36mimport[39m { useRouter } [36mfrom[39m [32m'next/navigation'[39m[0m
+[0m [90m 5 |[39m [36mimport[39m { supabase[33m,[39m getServiceClient } [36mfrom[39m [32m'@/lib/supabase'[39m[0m
+[0m[31m[1m>[22m[39m[90m 6 |[39m [36mimport[39m { [33mNoticia[39m } [36mfrom[39m [32m'@/types'[39m[0m
+[0m [90m   |[39m          [31m[1m^[22m[39m[0m
+[0m [90m 7 |[39m [36mimport[39m { [33mButton[39m } [36mfrom[39m [32m'@/components/ui/button'[39m[0m
+[0m [90m 8 |[39m [36mimport[39m { [33mInput[39m } [36mfrom[39m [32m'@/components/ui/input'[39m[0m
+[0m [90m 9 |[39m [36mimport[39m [33mTiptapEditor[39m[33m,[39m { processEditorContent } [36mfrom[39m [32m'@/components/TiptapEditor'[39m [90m// Importamos processEditorContent[39m[0m

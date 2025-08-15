@@ -56,41 +56,59 @@ import {
 } from 'lucide-react'
 import AdminProtection from '@/components/AdminProtection'
 
-// Servidores de ejemplo para mostrar mientras se cargan los datos reales
+// Servidores de ejemplo para mostrar mientras se cargan los datos reales (conformes al tipo Servidor)
 const servidoresEjemplo: Servidor[] = [
   {
-    id: 1,
+    id: '1',
     nombre: 'Survival Premium',
     descripcion: 'Servidor de supervivencia con economía y protección de terrenos',
-    ip: 'survival.ejemplo.com',
+    direccion_ip: 'survival.ejemplo.com',
+    puerto: 25565,
     version: '1.20.1',
-    jugadores: '120/200',
-    tipo: 'Survival',
-    imagen: '/images/servers/survival.jpg',
-    destacado: true
+    tipo: 'survival',
+    web_url: null,
+    discord_url: null,
+    banner_url: '/images/servers/survival.jpg',
+    online: true,
+    jugadores_actuales: 120,
+    jugadores_maximos: 200,
+    agregado_por: 'seed',
+    propietario: null,
   },
   {
-    id: 2,
+    id: '2',
     nombre: 'Creative World',
     descripcion: 'Servidor creativo con WorldEdit y VoxelSniper',
-    ip: 'creative.ejemplo.com',
+    direccion_ip: 'creative.ejemplo.com',
+    puerto: 25565,
     version: '1.19.4',
-    jugadores: '45/100',
-    tipo: 'Creativo',
-    imagen: '/images/servers/creative.jpg',
-    destacado: false
+    tipo: 'creativo',
+    web_url: null,
+    discord_url: null,
+    banner_url: '/images/servers/creative.jpg',
+    online: false,
+    jugadores_actuales: 45,
+    jugadores_maximos: 100,
+    agregado_por: 'seed',
+    propietario: null,
   },
   {
-    id: 3,
+    id: '3',
     nombre: 'SkyBlock Adventures',
     descripcion: 'Servidor de SkyBlock con misiones y eventos semanales',
-    ip: 'skyblock.ejemplo.com',
+    direccion_ip: 'skyblock.ejemplo.com',
+    puerto: 25565,
     version: '1.20',
-    jugadores: '78/150',
-    tipo: 'SkyBlock',
-    imagen: '/images/servers/skyblock.jpg',
-    destacado: true
-  }
+    tipo: 'minijuegos',
+    web_url: null,
+    discord_url: null,
+    banner_url: '/images/servers/skyblock.jpg',
+    online: true,
+    jugadores_actuales: 78,
+    jugadores_maximos: 150,
+    agregado_por: 'seed',
+    propietario: null,
+  },
 ]
 
 function AdminServidoresContent() {
@@ -170,7 +188,7 @@ function AdminServidoresContent() {
     }
   }
 
-  async function eliminarServidor(id: number) {
+  async function eliminarServidor(id: string) {
     try {
       if (!id) {
         console.error('ID de servidor inválido')
@@ -189,7 +207,7 @@ function AdminServidoresContent() {
       }
       
       // Actualizar la lista de servidores usando el patrón funcional
-      setServidores(servidoresActuales => 
+      setServidores(servidoresActuales =>
         servidoresActuales.filter(servidor => servidor.id !== id)
       )
 
@@ -283,7 +301,7 @@ function AdminServidoresContent() {
     servidor && (
       (servidor.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
       (servidor.tipo || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-      (servidor.ip || '').toLowerCase().includes(busqueda.toLowerCase())
+      (servidor.direccion_ip || '').toLowerCase().includes(busqueda.toLowerCase())
     )
   )
 
@@ -371,7 +389,7 @@ function AdminServidoresContent() {
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded overflow-hidden bg-secondary">
                                 <img 
-                                  src={servidor.imagen || `https://eu.mc-api.net/v3/server/favicon/${servidor.ip}`} 
+                                  src={servidor.banner_url || `https://eu.mc-api.net/v3/server/favicon/${servidor.direccion_ip}`} 
                                   alt={servidor.nombre} 
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
@@ -387,7 +405,7 @@ function AdminServidoresContent() {
                             {truncarTexto(servidor.descripcion, 50)}
                           </TableCell>
                           <TableCell className="hidden md:table-cell font-mono text-sm">
-                            {servidor.ip}
+                            {servidor.direccion_ip}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {servidor.version}
@@ -396,10 +414,10 @@ function AdminServidoresContent() {
                             <Badge variant="outline">{servidor.tipo}</Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {servidor.destacado ? (
-                              <Badge className="bg-amber-500 hover:bg-amber-600">Destacado</Badge>
+                            {servidor.online ? (
+                              <Badge className="bg-emerald-600 hover:bg-emerald-700">Online</Badge>
                             ) : (
-                              <span className="text-muted-foreground text-sm">No</span>
+                              <span className="text-muted-foreground text-sm">Offline</span>
                             )}
                           </TableCell>
                           <TableCell className="text-right">
@@ -507,11 +525,10 @@ function AdminServidoresContent() {
                             <div className="flex items-center gap-2">
                               <div className="w-8 h-8 rounded overflow-hidden bg-secondary">
                                 <img 
-                                  src={solicitud.url_imagen_logo || `https://eu.mc-api.net/v3/server/favicon/${solicitud.ip_servidor}`} 
+                                  src={`https://eu.mc-api.net/v3/server/favicon/${solicitud.direccion_ip || 'localhost'}`} 
                                   alt={solicitud.nombre_servidor || 'Servidor'} 
                                   className="w-full h-full object-cover"
                                   onError={(e) => {
-                                    // Si falla la carga, usar un gradiente como fallback
                                     (e.target as HTMLImageElement).style.background = 'linear-gradient(45deg, #2563eb, #4f46e5)'
                                   }}
                                 />
@@ -520,16 +537,16 @@ function AdminServidoresContent() {
                             </div>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {truncarTexto(solicitud.descripcion_solicitud || '-', 50)}
+                            {truncarTexto(solicitud.descripcion || '-', 50)}
                           </TableCell>
                           <TableCell className="hidden md:table-cell font-mono text-sm">
-                            {solicitud.ip_servidor}
+                            {solicitud.direccion_ip}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {solicitud.version_preferida || '-'}
+                            {'-'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{solicitud.tipo_juego}</Badge>
+                            <Badge variant="outline">{'-'}</Badge>
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase, getServiceClient } from '@/lib/supabase'
-import { Noticia } from '@/types'
+import type { Noticia } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import TiptapEditor, { processEditorContent } from '@/components/TiptapEditor' // Importamos processEditorContent

@@ -203,7 +203,7 @@ function EditarUsuarioContent() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-white">Editar Usuario</h1>
-            <p className="text-gray-400">Modificar información de {usuario.username}</p>
+            <p className="text-gray-400">Modificar información de {usuario.perfil?.username || 'Usuario'}</p>
           </div>
         </div>
       </div>
@@ -267,9 +267,9 @@ function EditarUsuarioContent() {
               </div>
               <div>
                 <Label htmlFor="avatar_url" className="text-gray-300">
-                  {usuario?.avatar_url && (
+                  {usuario?.perfil?.avatar_url && (
                     <img
-                      src={usuario.avatar_url}
+                      src={usuario.perfil.avatar_url}
                       alt="Avatar actual"
                       className="w-16 h-16 rounded-full mt-2"
                     />
@@ -282,7 +282,7 @@ function EditarUsuarioContent() {
                   value={formData.avatar_url}
                   onChange={(e) => handleInputChange('avatar_url', e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white"
-                  placeholder={usuario?.username || 'Cargando...'}
+                  placeholder={usuario?.perfil?.username || 'Cargando...'}
                 />
               </div>
             </div>

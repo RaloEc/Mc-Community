@@ -22,8 +22,21 @@ type Categoria = {
   nombre: string;
 };
 
-// Tipo extendido para manejar anuncios entre noticias
-type NoticiaConAnuncio = Noticia & { esAnuncio?: boolean };
+// Tipo para anuncios
+type Anuncio = {
+  id: number;
+  titulo: string;
+  contenido: string;
+  esAnuncio: true; // Literal type para facilitar discriminación
+};
+
+// Tipo unión para manejar noticias y anuncios
+type NoticiaConAnuncio = Noticia | Anuncio;
+
+// Type guard para distinguir entre Noticia y Anuncio
+function esAnuncio(item: NoticiaConAnuncio): item is Anuncio {
+  return 'esAnuncio' in item && item.esAnuncio === true;
+}
 
 interface NoticiasListaProps {
   limit?: number;
@@ -426,11 +439,11 @@ export default function NoticiasLista({
       const resultado = [...items] as NoticiaConAnuncio[];
       
       // Insertamos un marcador para un anuncio después de la tercera noticia
-      resultado.splice(3, 0, { id: 'ad-1', titulo: '', contenido: '', esAnuncio: true });
+      resultado.splice(3, 0, { id: -1, titulo: '', contenido: '', esAnuncio: true });
       
       // Si hay más de 8 noticias, insertamos otro anuncio
       if (items.length > 8) {
-        resultado.splice(8, 0, { id: 'ad-2', titulo: '', contenido: '', esAnuncio: true });
+        resultado.splice(8, 0, { id: -2, titulo: '', contenido: '', esAnuncio: true });
       }
       
       return resultado;
@@ -467,9 +480,9 @@ export default function NoticiasLista({
     return (
       <div className={`grid ${gridCols[columnas]} gap-6 w-full`}>
         {noticiasConAnuncios.map((item: NoticiaConAnuncio) => (
-          item.esAnuncio ? (
+          esAnuncio(item) ? (
             <div key={item.id} className="col-span-full flex justify-center my-4">
-              {item.id === 'ad-1' ? (
+              {item.id === -1 ? (
                 <AdBanner className="w-full max-w-4xl" />
               ) : (
                 <AdRectangle className="" />
@@ -478,9 +491,9 @@ export default function NoticiasLista({
           ) : (
             <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative">
               <div className="relative h-48 overflow-hidden">
-                {item.imagen_portada ? (
+                {item.imagen_url ? (
                   <Image 
-                    src={item.imagen_portada} 
+                    src={item.imagen_url} 
                     alt={item.titulo} 
                     fill
                     className="object-cover"
@@ -494,7 +507,7 @@ export default function NoticiasLista({
               <div className="p-4 pb-8">
                 <div className="flex items-center mb-2 text-xs text-muted-foreground">
                   <CalendarIcon className="h-3 w-3 mr-1" />
-                  <span>{new Date(item.created_at || item.fecha_publicacion || '').toLocaleDateString('es-ES', {
+                  <span>{new Date(item.fecha_publicacion || '').toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: 'long',
                     year: 'numeric'
@@ -507,7 +520,7 @@ export default function NoticiasLista({
                 </h3>
                 {mostrarResumen && item.contenido && (
                   <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-                    {item.resumen || item.contenido.replace(/<[^>]*>/g, '').substring(0, 120) + '...'}
+                    {item.contenido.replace(/<[^>]*>/g, '').substring(0, 120) + '...'}
                   </p>
                 )}
                 <div className="flex justify-end">
@@ -517,12 +530,12 @@ export default function NoticiasLista({
                 </div>
               </div>
               {/* Autor posicionado en el borde inferior de toda la tarjeta */}
-              {(item.autor_nombre || item.autor) && (
+              {item.autor && (
                 <span 
                   className="absolute bottom-2 left-4 text-xs text-muted-foreground"
                 >
-                  <Link href={`/perfil/${item.autor_nombre}`} className="text-sm hover:underline" style={{ color: item.autor_color || 'inherit' }}>
-                    {item.autor_nombre || item.autor}
+                  <Link href={`/perfil/${item.autor.username}`} className="text-sm hover:underline" style={{ color: item.autor.color || 'inherit' }}>
+                    {item.autor.username}
                   </Link>
                 </span>
               )}

@@ -35,7 +35,7 @@ export default function Providers({
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <SessionContextProvider supabaseClient={supabaseClient} initialSession={session}>
-        <AuthProvider initialSession={session}>
+        <AuthProvider>
           {children}
           <Toaster />
         </AuthProvider>

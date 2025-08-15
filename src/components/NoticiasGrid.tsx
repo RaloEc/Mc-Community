@@ -90,22 +90,20 @@ export default function NoticiasGrid({
               <div className="relative h-48 w-full overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
                 <Image
-                  src={noticia.imagen_portada || 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+News'}
+                  src={noticia.imagen_url || 'https://placehold.co/600x400/1a1a1a/44bd32?text=Minecraft+News'}
                   alt={noticia.titulo}
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {noticia.categorias && noticia.categorias.length > 0 ? (
+                {noticia.categoria ? (
                   <div className="absolute top-4 right-4 z-20 flex flex-wrap gap-1 justify-end">
-                    {noticia.categorias.map((cat) => (
-                      <Badge 
-                        key={cat.id}
-                        className="text-xs bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
-                        variant="default"
-                      >
-                        {cat.nombre}
-                      </Badge>
-                    ))}
+                    <Badge 
+                      key={noticia.categoria.id}
+                      className="text-xs bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
+                      variant="default"
+                    >
+                      {noticia.categoria.nombre}
+                    </Badge>
                   </div>
                 ) : (
                   <Badge 
@@ -121,7 +119,7 @@ export default function NoticiasGrid({
                 <div className="flex items-center text-sm text-muted-foreground">
                   <CalendarIcon className="mr-1 h-3 w-3" />
                   <time>
-                    {new Date(noticia.fecha_publicacion || noticia.created_at || Date.now()).toLocaleDateString('es-ES', {
+                    {new Date(noticia.fecha_publicacion || Date.now()).toLocaleDateString('es-ES', {
                       year: 'numeric',
                       month: 'long',
                       day: 'numeric'

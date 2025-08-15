@@ -112,7 +112,7 @@ function UsuarioDetallesContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'toggle_active',
-          activo: !usuario.activo
+          activo: !(usuario.perfil?.activo ?? false)
         })
       })
 
@@ -120,7 +120,12 @@ function UsuarioDetallesContent() {
 
       if (response.ok) {
         toast.success(data.message)
-        setUsuario(prev => prev ? { ...prev, activo: !prev.activo } : null)
+        setUsuario(prev => {
+          if (!prev) return null
+          if (!prev.perfil) return prev
+          const prevActivo = prev.perfil.activo
+          return { ...prev, perfil: { ...prev.perfil, activo: !prevActivo } }
+        })
       } else {
         toast.error(data.error || 'Error al cambiar estado del usuario')
       }
@@ -257,14 +262,14 @@ function UsuarioDetallesContent() {
           <Card>
             <CardHeader className="flex flex-col items-center gap-4 bg-muted/30 p-6 sm:flex-row">
               <Avatar className="h-24 w-24 border-4 border-background">
-                <AvatarImage src={usuario.avatar_url || undefined} alt={usuario.username} />
-                <AvatarFallback>{usuario.username.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarImage src={usuario.perfil?.avatar_url || undefined} alt={usuario.perfil?.username || 'Usuario'} />
+                <AvatarFallback>{usuario.perfil?.username?.charAt(0).toUpperCase() || '?'}</AvatarFallback>
               </Avatar>
               <div className="text-center sm:text-left">
-                <h1 className="text-3xl font-bold tracking-tight">{usuario.username}</h1>
+                <h1 className="text-3xl font-bold tracking-tight">{usuario.perfil?.username || 'Usuario'}</h1>
                 <div className="mt-2 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                  {getRoleBadge(usuario.role)}
-                  {getStatusBadge(usuario.activo)}
+                  {getRoleBadge(usuario.perfil?.role ?? 'user')}
+                  {getStatusBadge(Boolean(usuario.perfil?.activo))}
                 </div>
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -283,7 +288,7 @@ function UsuarioDetallesContent() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setShowDesactivarConfirm(true)}>
                       <UserX className="mr-2 h-4 w-4" />
-                      <span>{usuario.activo ? 'Desactivar Cuenta' : 'Activar Cuenta'}</span>
+                      <span>{usuario.perfil?.activo ? 'Desactivar Cuenta' : 'Activar Cuenta'}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setShowGenerarPassConfirm(true)}>
                       <KeyRound className="mr-2 h-4 w-4" />
@@ -305,7 +310,7 @@ function UsuarioDetallesContent() {
             <CardContent className="p-6">
               <h2 className="text-xl font-semibold">Biografía</h2>
               <p className="mt-2 text-muted-foreground">
-                {usuario.bio || 'Este usuario aún no ha compartido su biografía.'}
+                {usuario.perfil?.bio || 'Este usuario aún no ha compartido su biografía.'}
               </p>
               <Separator className="my-4" />
               <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
@@ -317,7 +322,7 @@ function UsuarioDetallesContent() {
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-muted-foreground" />
                   <span className="text-muted-foreground">Último acceso:</span>
-                  <span className="font-medium">{usuario.fecha_ultimo_acceso ? formatDate(usuario.fecha_ultimo_acceso) : 'Nunca'}</span>
+                  <span className="font-medium">{usuario.perfil?.fecha_ultimo_acceso ? formatDate(usuario.perfil.fecha_ultimo_acceso) : 'Nunca'}</span>
                 </div>
               </div>
             </CardContent>
@@ -367,9 +372,9 @@ function UsuarioDetallesContent() {
           <AlertDialog open={showDesactivarConfirm} onOpenChange={setShowDesactivarConfirm}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>¿{usuario.activo ? 'Desactivar' : 'Activar'} cuenta?</AlertDialogTitle>
+                <AlertDialogTitle>¿{usuario.perfil?.activo ? 'Desactivar' : 'Activar'} cuenta?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Vas a {usuario.activo ? 'desactivar' : 'activar'} la cuenta de {usuario.username}. ¿Estás seguro?
+                  Vas a {usuario.perfil?.activo ? 'desactivar' : 'activar'} la cuenta de {usuario.perfil?.username || 'Usuario'}. ¿Estás seguro?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -385,7 +390,7 @@ function UsuarioDetallesContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>¿Generar nueva contraseña?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Se creará una contraseña temporal para {usuario.username}. Deberás compartirla de forma segura.
+                  Se creará una contraseña temporal para {usuario.perfil?.username || 'Usuario'}. Deberás compartirla de forma segura.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -417,7 +422,7 @@ function UsuarioDetallesContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>¿Eliminar usuario?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Esta acción es irreversible y eliminará permanentemente a {usuario.username}.
+                  Esta acción es irreversible y eliminará permanentemente a {usuario.perfil?.username || 'Usuario'}.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
