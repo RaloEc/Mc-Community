@@ -19,9 +19,23 @@ export default function HilosLista({ hilos, loading }: { hilos: HiloDTO[]; loadi
       </div>
     )
   }
+  
+  // Eliminar hilos duplicados para evitar errores de claves
+  const hilosSinDuplicados: HiloDTO[] = [];
+  const idsVistos = new Set<string>();
+  
+  hilos.forEach(hilo => {
+    if (!idsVistos.has(hilo.id)) {
+      hilosSinDuplicados.push(hilo);
+      idsVistos.add(hilo.id);
+    } else {
+      console.warn(`HilosLista: Hilo duplicado filtrado: ${hilo.id} - ${hilo.titulo}`);
+    }
+  });
+  
   return (
     <div className="space-y-3">
-      {hilos.map(h => (
+      {hilosSinDuplicados.map(h => (
         <HiloItem key={h.id} hilo={h} />
       ))}
     </div>

@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserInitials } from '@/lib/utils/avatar-utils';
 import type { Database } from '@/lib/database.types';
+import ForoBtnFlotante from './ForoBtnFlotante';
+import ForoFiltrosModal, { ForoFiltersState } from './ForoFiltrosModal';
 
 // Tipos locales para el componente
 type CategoriaDb = Database['public']['Tables']['foro_categorias']['Row'];
@@ -78,7 +80,7 @@ const InvitacionRegistro = () => (
 );
 
 type TabKey = 'recientes' | 'populares' | 'sin_respuesta' | 'siguiendo' | 'mios';
-type TimeRange = '24h' | 'semana';
+type TimeRange = '24h' | '7d';
 
 export default function ForoCliente() {
   const { user, loading: userLoading } = useAuth();
@@ -91,6 +93,12 @@ export default function ForoCliente() {
   const [timeRange, setTimeRange] = useState<TimeRange>('24h');
   const [initialLoaded, setInitialLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Estado para los filtros
+  const [filters, setFilters] = useState<ForoFiltersState>({
+    tab: activeTab,
+    timeRange: timeRange
+  });
 
   const handleVote = async (hiloId: string, valorVoto: 1 | -1) => {
     if (!user) {
@@ -280,6 +288,20 @@ export default function ForoCliente() {
     }
   };
 
+  // Función para aplicar filtros
+  const aplicarFiltros = () => {
+    setActiveTab(filters.tab);
+    setTimeRange(filters.timeRange);
+  };
+
+  // Efecto para sincronizar los filtros con el estado del componente
+  useEffect(() => {
+    setFilters({
+      tab: activeTab,
+      timeRange: timeRange
+    });
+  }, [activeTab, timeRange]);
+
   useEffect(() => {
     loadHilos(activeTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,44 +347,7 @@ export default function ForoCliente() {
         <div className="flex flex-col lg:flex-row gap-8">
           <main className="w-full lg:flex-1">
             <div className="bg-white dark:bg-gray-900 amoled:bg-black p-6 rounded-lg shadow-none border-0 transition-colors duration-300 outline-none ring-0 focus:outline-none focus:ring-0">
-              <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-                <div className="w-full">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <button
-                      className={`px-3 py-1.5 rounded-full text-sm border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${activeTab === 'recientes' ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-gray-700 dark:text-gray-200 amoled:text-gray-300 border-gray-300 dark:border-gray-700'}`}
-                      onClick={() => setActiveTab('recientes')}
-                    >Recientes</button>
-                    <button
-                      className={`px-3 py-1.5 rounded-full text-sm border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${activeTab === 'populares' ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-gray-700 dark:text-gray-200 amoled:text-gray-300 border-gray-300 dark:border-gray-700'}`}
-                      onClick={() => setActiveTab('populares')}
-                    >Populares</button>
-                    <button
-                      className={`px-3 py-1.5 rounded-full text-sm border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${activeTab === 'sin_respuesta' ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-gray-700 dark:text-gray-200 amoled:text-gray-300 border-gray-300 dark:border-gray-700'}`}
-                      onClick={() => setActiveTab('sin_respuesta')}
-                    >Sin respuesta</button>
-                    <button
-                      className={`px-3 py-1.5 rounded-full text-sm border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${activeTab === 'siguiendo' ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-gray-700 dark:text-gray-200 amoled:text-gray-300 border-gray-300 dark:border-gray-700'}`}
-                      onClick={() => setActiveTab('siguiendo')}
-                    >Siguiendo</button>
-                    <button
-                      className={`px-3 py-1.5 rounded-full text-sm border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${activeTab === 'mios' ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-gray-700 dark:text-gray-200 amoled:text-gray-300 border-gray-300 dark:border-gray-700'}`}
-                      onClick={() => setActiveTab('mios')}
-                    >Mis hilos</button>
-                  </div>
-                  {activeTab === 'populares' && (
-                    <div className="mt-3 flex items-center gap-2 text-sm">
-                      <span className="text-gray-600 dark:text-gray-300">Periodo:</span>
-                      <button
-                        className={`px-3 py-1 rounded border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${timeRange === '24h' ? 'bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-600' : 'border-gray-300 dark:border-gray-700'}`}
-                        onClick={() => setTimeRange('24h')}
-                      >24h</button>
-                      <button
-                        className={`px-3 py-1 rounded border outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0 ${timeRange === 'semana' ? 'bg-gray-200 dark:bg-gray-700 border-gray-400 dark:border-gray-600' : 'border-gray-300 dark:border-gray-700'}`}
-                        onClick={() => setTimeRange('semana')}
-                      >Semana</button>
-                    </div>
-                  )}
-                </div>
+              <div className="flex justify-end mb-6">
                 {user && (
                   <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
                     <Link href="/foro/crear-hilo">Crear Nuevo Hilo</Link>
@@ -438,6 +423,16 @@ export default function ForoCliente() {
           </main>
         </div>
       </div>
+      
+      {/* Botón flotante para móvil */}
+      <ForoBtnFlotante 
+        hayFiltrosActivos={activeTab !== 'recientes' || timeRange !== '24h'}
+        onAbrirFiltros={() => {}}
+        usuarioAutenticado={!!user}
+        onCambiarFiltro={setActiveTab}
+        filtroActivo={activeTab}
+      />
+      
     </div>
   );
 }

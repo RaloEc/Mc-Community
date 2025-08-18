@@ -262,24 +262,24 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-3 mb-4">
               {/* Imagen de perfil del autor */}
               <div className="flex-shrink-0">
-                {noticia.autor?.avatar_url ? (
+                {noticia.autor_avatar ? (
                   <div className="size-12 overflow-hidden rounded-full">
                     <img 
-                      src={noticia.autor.avatar_url} 
-                      alt={`Foto de ${noticia.autor?.username || 'Anónimo'}`}
+                      src={noticia.autor_avatar} 
+                      alt={`Foto de ${noticia.autor_nombre || 'Anónimo'}`}
                       className="w-full h-full object-cover"
                       crossOrigin="anonymous"
                       onError={(e) => {
                         // Si hay error al cargar la imagen, mostrar fallback
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.parentElement.classList.add('bg-gray-700');
-                        e.currentTarget.parentElement.innerHTML = `<div class="flex items-center justify-center h-full w-full text-white font-semibold text-lg">${noticia.autor?.username ? noticia.autor.username.charAt(0).toUpperCase() : 'A'}</div>`;
+                        e.currentTarget.parentElement.innerHTML = `<div class="flex items-center justify-center h-full w-full text-white font-semibold text-lg">${noticia.autor_nombre ? noticia.autor_nombre.charAt(0).toUpperCase() : 'A'}</div>`;
                       }}
                     />
                   </div>
                 ) : (
-                  <div className="size-12 flex items-center justify-center rounded-full bg-gray-700 text-white font-semibold text-lg" style={{ backgroundColor: noticia.autor?.color || '#4B5563' }}>
-                    {noticia.autor?.username ? noticia.autor.username.charAt(0).toUpperCase() : 'A'}
+                  <div className="size-12 flex items-center justify-center rounded-full bg-gray-700 text-white font-semibold text-lg" style={{ backgroundColor: noticia.autor_color || '#4B5563' }}>
+                    {noticia.autor_nombre ? noticia.autor_nombre.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
               </div>
@@ -287,7 +287,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               {/* Información del autor */}
               <div>
                 <div className="font-medium">
-                  {noticia.autor?.username || 'Anónimo'}
+                  {noticia.autor_nombre || 'Anónimo'}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   Redactor de Minecraft Community
@@ -392,7 +392,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         </div>
         
         {/* Información del autor */}
-        {noticia.autor?.username && (
+        {noticia.autor_nombre && (
           <div className="max-w-4xl mx-auto border border-border rounded-lg p-6 mb-12">
             <h2 className="text-xl font-semibold mb-4">Acerca del autor</h2>
             
@@ -400,10 +400,10 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               {/* Foto del autor */}
               <div className="flex-shrink-0">
                 <Avatar className="h-24 w-24">
-                  {noticia.autor?.avatar_url ? (
+                  {noticia.autor_avatar ? (
                     <AvatarImage 
-                      src={noticia.autor.avatar_url} 
-                      alt={noticia.autor.username} 
+                      src={noticia.autor_avatar} 
+                      alt={noticia.autor_nombre} 
                       className="object-cover"
                       onError={() => {
                         // Si hay error al cargar la imagen, se mostrará automáticamente el AvatarFallback
@@ -413,9 +413,9 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
                   ) : (
                     <AvatarFallback 
                       className="text-2xl"
-                      style={{ backgroundColor: noticia.autor?.color || '#3b82f6' }}
+                      style={{ backgroundColor: noticia.autor_color || '#3b82f6' }}
                     >
-                      {noticia.autor?.username.charAt(0).toUpperCase()}
+                      {noticia.autor_nombre.charAt(0).toUpperCase()}
                     </AvatarFallback>
                   )}
                 </Avatar>
@@ -423,12 +423,12 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               
               {/* Información del autor */}
               <div className="flex-1 text-center md:text-left">
-                <h3 className="text-lg font-medium mb-1">{noticia.autor?.username}</h3>
+                <h3 className="text-lg font-medium mb-1">{noticia.autor_nombre}</h3>
                 <p className="text-sm text-muted-foreground mb-3">Redactor de Minecraft Community</p>
                 <p className="text-sm mb-4">Autor de contenido en Minecraft Community. Comparte noticias, tutoriales y recursos para la comunidad de Minecraft.</p>
                 
                 <Button variant="outline" size="sm" asChild>
-                  <Link href={`/noticias?autor=${encodeURIComponent(noticia.autor?.username || '')}`}>Ver todos los artículos</Link>
+                  <Link href={`/noticias?autor=${encodeURIComponent(noticia.autor_nombre || '')}`}>Ver todos los artículos</Link>
                 </Button>
               </div>
             </div>

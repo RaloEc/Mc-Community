@@ -102,6 +102,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90 dark:from-amoled-black dark:to-amoled-black/95">
+      
       {/* Hero Section - Solo se muestra si no hay sesión iniciada */}
       {!isAuthenticated && (
         <section className="relative py-20 md:py-32">
@@ -110,10 +111,10 @@ export default function Home() {
             <div className="mx-auto max-w-3xl text-center">
               {/* Etiqueta de versión eliminada */}
               <h1 className="mb-6 text-4xl font-bold tracking-tight text-foreground dark:text-white sm:text-5xl md:text-6xl">
-                Bienvenido a <span className="text-primary">GamersHub</span>
+                Bienvenido a <span className="text-primary">Comunidad MC</span>
               </h1>
               <p className="mb-8 text-lg text-muted-foreground dark:text-gray-300">
-                Únete a nuestra comunidad de gamers. Descubre contenido exclusivo, comparte experiencias y encuentra nuevos compañeros de juego.
+                Explora, conecta y comparte en nuestra vibrante comunidad. Descubre las últimas noticias, participa en debates enriquecedores y forma parte de un espacio donde todas las voces importan.
               </p>
               <div className="flex flex-col sm:flex-row items-center gap-4 justify-center">
                 <Link href="/foro" passHref>
@@ -133,7 +134,14 @@ export default function Home() {
         </section>
       )}
 
-      <main className="container mx-auto px-4 py-12 space-y-16 no-transition">
+      {/* Anuncio rectangular en medio - Siempre visible */}
+      <div className="container mx-auto px-4 py-4">
+        <div className="flex justify-center">
+          <AdRectangle className="my-4" />
+        </div>
+      </div>
+
+      <main className="container mx-auto px-4 py-8 space-y-16 no-transition">
         {/* Sección de noticias */}
         <section>
           <div className="flex justify-between items-center mb-8">
@@ -142,16 +150,9 @@ export default function Home() {
           </div>
           <NoticiasMiniatura limit={4} />
         </section>
-        {/* Banner de anuncios superior */}
-        <AdBanner className="my-4" />
         
         {/* Sección de foros */}
         <ForosBloque limit={5} />
-        
-        {/* Anuncio rectangular después de las noticias */}
-        <div className="flex justify-center">
-          <AdRectangle className="my-4" />
-        </div>
 
         {/* Secciones temporalmente ocultas - Tutoriales, construcciones y mods destacados */}
         {/* 
@@ -173,10 +174,12 @@ export default function Home() {
           <FeaturedMods />
         </section>
         */}
-        
-        {/* Banner de anuncios inferior */}
-        <AdBanner className="my-4" />
       </main>
+      
+      {/* Banner de anuncios inferior - Siempre visible */}
+      <div className="container mx-auto px-4 pb-12">
+        <AdBanner className="my-4" />
+      </div>
     </div>
   );
 }

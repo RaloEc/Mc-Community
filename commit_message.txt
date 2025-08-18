@@ -1,0 +1,6 @@
+Mejoras en la interfaz de usuario:
+
+- Optimización del selector de modo claro/oscuro para mejor experiencia de usuario
+- Mejoras en la página de noticias con mejor rendimiento y visualización
+- Correcciones de estilo y responsividad en componentes principales
+- Optimización de carga de contenido

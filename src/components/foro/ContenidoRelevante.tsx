@@ -40,26 +40,26 @@ export default function ContenidoRelevante({ categoriaSlugOrId }: { categoriaSlu
     : data?.sinResponder || []
 
   return (
-    <div className="bg-card border rounded-lg">
-      <div className="px-4 pt-4">
-        <h3 className="font-semibold">Contenido más relevante</h3>
+    <div className="bg-card border rounded-lg overflow-hidden">
+      <div className="px-4 pt-4 pb-2">
+        <h3 className="font-semibold">Relevantes</h3>
       </div>
-      <div className="px-4 mt-3 flex gap-2 text-sm">
+      <div className="px-4 mt-3 flex flex-wrap gap-2 text-sm">
         <button
           onClick={() => setTab('comentados')}
-          className={`px-3 py-1 rounded-full border ${tab === 'comentados' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+          className={`px-2 py-1 rounded-full border text-xs ${tab === 'comentados' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
         >
           Más comentados
         </button>
         <button
           onClick={() => setTab('votados')}
-          className={`px-3 py-1 rounded-full border ${tab === 'votados' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+          className={`px-2 py-1 rounded-full border text-xs ${tab === 'votados' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
         >
           Más votados
         </button>
         <button
           onClick={() => setTab('sin')}
-          className={`px-3 py-1 rounded-full border ${tab === 'sin' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
+          className={`px-2 py-1 rounded-full border text-xs ${tab === 'sin' ? 'bg-primary text-primary-foreground' : 'bg-transparent'}`}
         >
           Sin responder
         </button>
@@ -74,15 +74,15 @@ export default function ContenidoRelevante({ categoriaSlugOrId }: { categoriaSlu
         ) : items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No hay resultados por ahora.</p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-3 max-w-full">
             {items.map((it) => {
               const href = it.slug ? `/foro/hilos/${it.slug}` : `/foro/hilos/${it.id}`
               return (
-                <li key={it.id} className="group">
-                  <Link href={href} className="text-sm line-clamp-2 group-hover:underline">
+                <li key={it.id} className="group pb-2 border-b border-gray-100 dark:border-gray-800 last:border-0 last:pb-0">
+                  <Link href={href} className="text-sm line-clamp-2 group-hover:underline break-words block max-w-full">
                     {it.titulo}
                   </Link>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground mt-1">
                     💬 {it.respuestas} · ⬆️ {it.votos}
                   </div>
                 </li>

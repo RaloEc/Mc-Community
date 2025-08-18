@@ -25,6 +25,9 @@ module.exports = {
       '2xl': '1536px',
     },
     extend: {
+      transitionTimingFunction: {
+        'bounce': 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+      },
       borderColor: {
         'border-color': 'hsl(var(--border))',
       },

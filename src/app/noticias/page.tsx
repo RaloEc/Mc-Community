@@ -6,6 +6,8 @@ import NoticiasLista from '@/components/NoticiasLista'
 import FiltrosBtnFlotante from '@/components/FiltrosBtnFlotante';
 import FiltrosModal from '@/components/FiltrosModal';
 import FiltrosDesktop from '@/components/FiltrosDesktop';
+import NoticiasDestacadas from '@/components/NoticiasDestacadas';
+import SeccionCategoria from '@/components/SeccionCategoria';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,6 +27,10 @@ export default function Noticias() {
   const [ordenFecha, setOrdenFecha] = useState<'asc' | 'desc'>('desc');
   const [categorias, setCategorias] = useState<{id: string, nombre: string}[]>([]);
   const [filtrosActivosArray, setFiltrosActivosArray] = useState<{tipo: string, valor: string, etiqueta: string}[]>([]);
+  
+  // Estado para controlar la vista
+  const [mostrarListaCompleta, setMostrarListaCompleta] = useState(false);
+  const [categoriasDestacadas, setCategoriasDestacadas] = useState<{id: number, nombre: string}[]>([]);
   
   // Referencia para evitar bucles infinitos
   const categoriaProcesada = useRef(false);
@@ -117,7 +123,40 @@ export default function Noticias() {
     setAutorTemp(autor);
     setCategoriaTemp(categoria);
     setOrdenFechaTemp(ordenFecha);
+    
+    // Si hay algún filtro activo, mostrar la lista completa
+    if (busqueda || autor || categoria || ordenFecha !== 'desc') {
+      setMostrarListaCompleta(true);
+    } else {
+      setMostrarListaCompleta(false);
+    }
   }, [busqueda, autor, categoria, ordenFecha]);
+  
+  // Efecto para cargar las categorías destacadas
+  useEffect(() => {
+    const cargarCategoriasDestacadas = async () => {
+      try {
+        // Usar URL absoluta para evitar problemas con Next.js
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/categorias`);
+        
+        if (!response.ok) {
+          throw new Error(`Error al obtener categorías: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Tomar las primeras 3 categorías como destacadas
+          setCategoriasDestacadas(data.data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Error al cargar categorías destacadas:', err);
+      }
+    };
+    
+    cargarCategoriasDestacadas();
+  }, []);
   
   // Función para eliminar un filtro específico
   const eliminarFiltro = (tipo: string) => {
@@ -168,26 +207,49 @@ export default function Noticias() {
           />
         </div>
         
-        <div className="max-w-[1600px] mx-auto">
-          <NoticiasLista 
-            limit={16} 
-            columnas={3} 
-            mostrarResumen={true} 
-            mostrarFiltros={false}
-            busqueda={busqueda}
-            autor={autor}
-            categoria={categoria}
-            ordenFecha={ordenFecha}
-            onFiltrosActivosChange={(cantidad) => {
-              setFiltrosActivos(cantidad);
-            }}
-            onCategoriasLoaded={(cats) => {
-              setCategorias(cats);
-            }}
-            onFiltrosActivosArrayChange={(filtros) => {
-              setFiltrosActivosArray(filtros);
-            }}
-          />
+        <div className="w-full max-w-[1600px] mx-auto">
+          {mostrarListaCompleta ? (
+            // Mostrar la lista completa con filtros aplicados
+            <NoticiasLista 
+              limit={16} 
+              columnas={3} 
+              mostrarResumen={true} 
+              mostrarFiltros={false}
+              busqueda={busqueda}
+              autor={autor}
+              categoria={categoria}
+              ordenFecha={ordenFecha}
+              onFiltrosActivosChange={(cantidad) => {
+                setFiltrosActivos(cantidad);
+              }}
+              onCategoriasLoaded={(cats) => {
+                setCategorias(cats);
+              }}
+              onFiltrosActivosArrayChange={(filtros) => {
+                setFiltrosActivosArray(filtros);
+              }}
+            />
+          ) : (
+            // Mostrar la nueva estructura de página con secciones
+            <div className="space-y-10 w-full">
+              {/* Sección de noticias destacadas */}
+              <section className="mb-8">
+                <h2 className="text-2xl font-bold mb-4 text-foreground">Últimas Noticias</h2>
+                <NoticiasDestacadas limit={5} />
+              </section>
+              
+              {/* Secciones por categoría */}
+              {categoriasDestacadas.map((cat) => (
+                <section key={cat.id} className="mb-8">
+                  <SeccionCategoria 
+                    categoriaId={cat.id} 
+                    categoriaNombre={cat.nombre} 
+                    limite={4} 
+                  />
+                </section>
+              ))}
+            </div>
+          )}
         </div>
         
         {/* Botón flotante para abrir el modal de filtros */}

@@ -13,7 +13,7 @@ export interface AdminAuthState {
 }
 
 const ADMIN_AUTH_CACHE_KEY = 'admin_auth_state'
-const CACHE_DURATION = 5 * 60 * 1000 // 5 min
+const CACHE_DURATION = 15 * 60 * 1000 // 15 min (aumentado para evitar problemas de recarga)
 
 function readCache(): AdminAuthState | null {
   try {
@@ -23,8 +23,12 @@ function readCache(): AdminAuthState | null {
     if (!cached) return null
     
     const { state, timestamp } = JSON.parse(cached)
-    if (Date.now() - timestamp < CACHE_DURATION) return state
+    if (Date.now() - timestamp < CACHE_DURATION) {
+      console.log('[useAdminAuth] Usando caché válido, expiración en:', new Date(timestamp + CACHE_DURATION).toLocaleTimeString())
+      return state
+    }
     
+    console.log('[useAdminAuth] Caché expirado, eliminando')
     sessionStorage.removeItem(ADMIN_AUTH_CACHE_KEY)
   } catch (err) {
     console.error('Error leyendo caché:', err)
@@ -88,8 +92,12 @@ export function useAdminAuth() {
 
       try {
         if (user) {
+          console.log('[useAdminAuth] Usuario encontrado en contexto:', user.email)
           const profile = await fetchProfile(user.id)
-          if (profile?.role === 'admin') {
+          console.log('[useAdminAuth] Perfil obtenido:', profile ? `role=${profile.role}` : 'null')
+          
+          // Verificar si el rol es exactamente 'admin' (case sensitive)
+          if (profile && profile.role === 'admin') {
             updateState({ isLoading: false, isAdmin: true, user, profile })
             console.log('[useAdminAuth] Usuario admin verificado desde contexto')
           } else {
@@ -117,7 +125,10 @@ export function useAdminAuth() {
         console.log('[useAdminAuth] Sesión activa encontrada:', session.user.email)
 
         const profile = await fetchProfile(session.user.id)
-        if (profile?.role === 'admin') {
+        console.log('[useAdminAuth] Perfil obtenido desde sesión:', profile ? `role=${profile.role}` : 'null')
+        
+        // Verificar si el rol es exactamente 'admin' (case sensitive)
+        if (profile && profile.role === 'admin') {
           updateState({ isLoading: false, isAdmin: true, user: session.user, profile })
           console.log('[useAdminAuth] Usuario admin verificado desde sesión')
         } else {
@@ -143,8 +154,9 @@ export function useAdminAuth() {
   useEffect(() => {
     const cached = readCache()
     if (cached) {
-      console.log('[useAdminAuth] Usando estado en caché')
+      console.log('[useAdminAuth] Usando estado en caché:', cached.isAdmin ? 'admin' : 'no admin')
       setState(cached)
+      // Siempre verificar en segundo plano para mantener datos actualizados
       setTimeout(() => checkAuth(true), 100)
       return
     }
@@ -158,7 +170,7 @@ export function useAdminAuth() {
 
     checkAuth()
     return () => clearTimeout(timeoutId)
-  }, [checkAuth, updateState, state.isLoading])
+  }, [checkAuth, updateState])
 
   return state
 }

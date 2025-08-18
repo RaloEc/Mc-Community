@@ -106,7 +106,7 @@ export default function NoticiasDestacadas({ limit = 5 }: NoticiasDestacadasProp
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full mb-6">
         {/* Primera noticia principal */}
         <div className="w-full">
-          <div className="bg-card rounded-xl overflow-hidden shadow-sm border border-border/50 w-full h-full">
+          <div className="bg-card rounded-xl overflow-hidden shadow-sm border border-border/50 w-full h-full group hover:shadow-md transition-all duration-300">
             <div className="relative h-[350px] w-full">
               <Image 
                 src={noticiaPrincipal1.imagen_portada || noticiaPrincipal1.imagen_url || '/placeholder.jpg'} 
@@ -120,23 +120,23 @@ export default function NoticiasDestacadas({ limit = 5 }: NoticiasDestacadasProp
                 <div className="flex flex-wrap gap-2">
                   {noticiaPrincipal1.categorias ? (
                     noticiaPrincipal1.categorias.map(cat => (
-                      <Badge key={cat.id} variant="secondary" className="bg-primary/90 text-white shadow-md">
+                      <Badge key={cat.id} variant="secondary" className="bg-primary/90 text-white shadow-md backdrop-blur-sm">
                         {cat.nombre}
                       </Badge>
                     ))
                   ) : noticiaPrincipal1.categoria ? (
-                    <Badge variant="secondary" className="bg-primary/90 text-white shadow-md">
+                    <Badge variant="secondary" className="bg-primary/90 text-white shadow-md backdrop-blur-sm">
                       {noticiaPrincipal1.categoria.nombre}
                     </Badge>
                   ) : null}
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent hover:from-black/80 hover:via-black/40 transition-all duration-300 flex flex-col justify-end p-6">
-                <div className="mt-auto">
-                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 drop-shadow-md">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent hover:from-black/80 hover:via-black/40 transition-all duration-300 flex flex-col justify-end p-6 backdrop-blur-[1px]">
+                <div className="mt-auto backdrop-blur-[2px] bg-black/20 p-3 rounded-lg">
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 drop-shadow-lg">
                     {noticiaPrincipal1.titulo}
                   </h2>
-                  <p className="text-white/90 line-clamp-2 mb-3 text-sm max-w-[90%] drop-shadow-md">
+                  <p className="text-white/90 line-clamp-2 mb-3 text-sm max-w-[90%] drop-shadow-lg">
                     {noticiaPrincipal1.resumen || noticiaPrincipal1.contenido.substring(0, 100) + '...'}
                   </p>
                   <div className="flex justify-between items-center text-sm text-white/90">
@@ -169,7 +169,7 @@ export default function NoticiasDestacadas({ limit = 5 }: NoticiasDestacadasProp
 
         {/* Segunda noticia principal */}
         <div className="w-full">
-          <div className="bg-card rounded-xl overflow-hidden shadow-sm border border-border/50 w-full h-full">
+          <div className="bg-card rounded-xl overflow-hidden shadow-sm border border-border/50 w-full h-full group hover:shadow-md transition-all duration-300">
             <div className="relative h-[350px] w-full">
               <Image 
                 src={noticiaPrincipal2.imagen_portada || noticiaPrincipal2.imagen_url || '/placeholder.jpg'} 
@@ -182,23 +182,23 @@ export default function NoticiasDestacadas({ limit = 5 }: NoticiasDestacadasProp
                 <div className="flex flex-wrap gap-2">
                   {noticiaPrincipal2.categorias ? (
                     noticiaPrincipal2.categorias.map(cat => (
-                      <Badge key={cat.id} variant="secondary" className="bg-primary/90 text-white shadow-md">
+                      <Badge key={cat.id} variant="secondary" className="bg-primary/90 text-white shadow-md backdrop-blur-sm">
                         {cat.nombre}
                       </Badge>
                     ))
                   ) : noticiaPrincipal2.categoria ? (
-                    <Badge variant="secondary" className="bg-primary/90 text-white shadow-md">
+                    <Badge variant="secondary" className="bg-primary/90 text-white shadow-md backdrop-blur-sm">
                       {noticiaPrincipal2.categoria.nombre}
                     </Badge>
                   ) : null}
                 </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent hover:from-black/80 hover:via-black/40 transition-all duration-300 flex flex-col justify-end p-6">
-                <div className="mt-auto">
-                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 drop-shadow-md">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent hover:from-black/80 hover:via-black/40 transition-all duration-300 flex flex-col justify-end p-6 backdrop-blur-[1px]">
+                <div className="mt-auto backdrop-blur-[2px] bg-black/20 p-3 rounded-lg">
+                  <h2 className="text-xl md:text-2xl font-bold text-white mb-2 drop-shadow-lg">
                     {noticiaPrincipal2.titulo}
                   </h2>
-                  <p className="text-white/90 line-clamp-2 mb-3 text-sm max-w-[90%] drop-shadow-md">
+                  <p className="text-white/90 line-clamp-2 mb-3 text-sm max-w-[90%] drop-shadow-lg">
                     {noticiaPrincipal2.resumen || noticiaPrincipal2.contenido.substring(0, 100) + '...'}
                   </p>
                   <div className="flex justify-between items-center text-sm text-white/90">
@@ -234,25 +234,25 @@ export default function NoticiasDestacadas({ limit = 5 }: NoticiasDestacadasProp
       {noticiasSecundarias.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {noticiasSecundarias.slice(0, 3).map(noticia => (
-            <div key={noticia.id} className="bg-background rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow border border-border/50 hover:bg-accent/10">
+            <div key={noticia.id} className="bg-background rounded-lg overflow-hidden shadow-sm hover:shadow transition-shadow border border-border/50 hover:bg-accent/10 group">
               <div className="relative h-32">
                 <Image 
                   src={noticia.imagen_portada || noticia.imagen_url || '/placeholder.jpg'} 
                   alt={noticia.titulo}
                   fill
-                  className="object-cover"
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute top-2 left-2">
                   {noticia.categorias && noticia.categorias[0] ? (
-                    <Badge className="bg-primary/80 text-white text-xs">
+                    <Badge className="bg-primary/80 text-white text-xs shadow-sm backdrop-blur-sm">
                       {noticia.categorias[0].nombre}
                     </Badge>
                   ) : noticia.categoria ? (
-                    <Badge className="bg-primary/80 text-white text-xs">
+                    <Badge className="bg-primary/80 text-white text-xs shadow-sm backdrop-blur-sm">
                       {noticia.categoria.nombre}
                     </Badge>
                   ) : (
-                    <Badge className="bg-primary/80 text-white text-xs">
+                    <Badge className="bg-primary/80 text-white text-xs shadow-sm backdrop-blur-sm">
                       General
                     </Badge>
                   )}

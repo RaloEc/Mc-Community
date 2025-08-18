@@ -89,6 +89,8 @@ export type Noticia = {
   // Relaciones
   autor: Perfil | null;
   categoria: CategoriaNoticia | null;
+  // Propiedad para múltiples categorías (añadida por la API)
+  categorias?: Array<{id: number, nombre: string}>;
   // Propiedades adicionales que devuelve la API
   autor_nombre?: string;
   autor_color?: string;

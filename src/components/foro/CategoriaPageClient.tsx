@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import CategoriaHeader from './CategoriaHeader'
-import CategoriaFilters, { CategoriaFiltersState } from './CategoriaFilters'
+import { CategoriaFiltersState } from './CategoriaFilters'
 import SubcategoriasDestacadas from './SubcategoriasDestacadas'
 import HilosLista, { HiloDTO } from './HilosLista'
 import FloatingCreateButton from './FloatingCreateButton'
 import ContenidoRelevante from './ContenidoRelevante'
+import CategoriaFiltrosDesktop from './CategoriaFiltrosDesktop'
+import CategoriaFiltrosBtnFlotante from './CategoriaFiltrosBtnFlotante'
+import CategoriaFiltrosModal from './CategoriaFiltrosModal'
 
 type Categoria = {
   id: string
@@ -42,6 +45,7 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
   const [page, setPage] = useState(0)
   const [isFetchingMore, setIsFetchingMore] = useState(false)
 
+  const [modalFiltrosAbierto, setModalFiltrosAbierto] = useState(false)
   const [filters, setFilters] = useState<CategoriaFiltersState>({
     subcategoriaId: typeof searchParams?.sub === 'string' ? searchParams?.sub : undefined,
     tags: typeof searchParams?.tags === 'string' ? searchParams?.tags.split(',') : [],
@@ -97,10 +101,33 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
       const res = await fetch(`/api/foro/hilos?${queryString}`)
       const json = await res.json()
       const items: HiloDTO[] = json.items || []
+      
+      // Eliminar duplicados antes de actualizar el estado
+      const procesarHilosSinDuplicados = (nuevosHilos: HiloDTO[], hilosExistentes: HiloDTO[] = []) => {
+        const idsVistos = new Set(hilosExistentes.map(h => h.id))
+        const hilosFiltrados = nuevosHilos.filter(hilo => {
+          // Si ya vimos este ID, es un duplicado
+          if (idsVistos.has(hilo.id)) {
+            console.warn(`Hilo duplicado detectado y eliminado: ${hilo.id} - ${hilo.titulo}`)
+            return false
+          }
+          // Si no, lo marcamos como visto y lo mantenemos
+          idsVistos.add(hilo.id)
+          return true
+        })
+        return hilosFiltrados
+      }
+      
       if (reset) {
-        setHilos(items)
+        // En reset, solo filtramos los nuevos items
+        const hilosFiltrados = procesarHilosSinDuplicados(items)
+        setHilos(hilosFiltrados)
       } else {
-        setHilos(prev => [...prev, ...items])
+        // En append, filtramos considerando los hilos que ya tenemos
+        setHilos(prev => {
+          const hilosFiltrados = procesarHilosSinDuplicados(items, prev)
+          return [...prev, ...hilosFiltrados]
+        })
       }
       setHasMore(items.length === 20)
     } catch (e: any) {
@@ -109,6 +136,26 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
       setLoading(false)
       setIsFetchingMore(false)
     }
+  }
+
+  // Función para aplicar filtros
+  const aplicarFiltros = () => {
+    setPage(0)
+    fetchHilos(true)
+  }
+
+  // Función para limpiar filtros
+  const limpiarFiltros = () => {
+    setFilters({
+      subcategoriaId: undefined,
+      tags: [],
+      estado: undefined,
+      popularidad: undefined,
+      fechaFrom: undefined,
+      fechaTo: undefined,
+      destacados: false,
+      orderBy: 'ultimo'
+    })
   }
 
   useEffect(() => {
@@ -145,10 +192,12 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
           <div className="lg:col-span-9 space-y-6">
             <SubcategoriasDestacadas subcategorias={meta?.subcategorias || []} currentId={categoria.id} />
-            <CategoriaFilters
+            <CategoriaFiltrosDesktop
               tags={meta?.tags || []}
               value={filters}
               onChange={setFilters}
+              onAplicarFiltros={aplicarFiltros}
+              onLimpiarFiltros={limpiarFiltros}
             />
             <HilosLista hilos={hilos} loading={loading} />
             <div ref={observerRef} />
@@ -160,6 +209,29 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
         </div>
       </div>
       <FloatingCreateButton categoriaId={categoria.id} />
+      
+      {/* Botón flotante para filtros en móvil */}
+      <CategoriaFiltrosBtnFlotante 
+        modalAbierto={modalFiltrosAbierto}
+        onAbrirModal={() => setModalFiltrosAbierto(true)}
+        hayFiltrosActivos={filters.tags.length > 0 || 
+          filters.estado !== undefined || 
+          filters.popularidad !== undefined || 
+          filters.fechaFrom !== undefined || 
+          filters.fechaTo !== undefined || 
+          filters.destacados === true}
+      />
+      
+      {/* Modal de filtros para móvil */}
+      <CategoriaFiltrosModal
+        isOpen={modalFiltrosAbierto}
+        onClose={() => setModalFiltrosAbierto(false)}
+        tags={meta?.tags || []}
+        value={filters}
+        onChange={setFilters}
+        onAplicarFiltros={aplicarFiltros}
+        onLimpiarFiltros={limpiarFiltros}
+      />
     </div>
   )
 }
