@@ -309,15 +309,27 @@ export default function ForoCliente() {
 
   if ((isLoading && !initialLoaded) || userLoading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-white dark:bg-black">
-        <Loader2 className="h-16 w-16 animate-spin text-gray-900 dark:text-white" />
-        <p className="ml-4 text-gray-900 dark:text-white">Cargando el foro...</p>
+      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-gray-950 amoled:bg-black transition-colors duration-300">
+        <div className="flex items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-gray-900 amoled:bg-black/80 border border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-md">
+          <Loader2 className="h-16 w-16 animate-spin text-sky-600 dark:text-sky-400 amoled:text-sky-500" />
+          <p className="ml-4 text-xl font-medium text-gray-800 dark:text-gray-200 amoled:text-white">Cargando el foro...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
-    return <div className="text-center text-red-500 py-10 bg-white dark:bg-black">{error}</div>;
+    return (
+      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-gray-950 amoled:bg-black transition-colors duration-300">
+        <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-gray-900 amoled:bg-black/80 border border-red-200 dark:border-red-800 amoled:border-red-900 shadow-md max-w-md mx-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 dark:text-red-400 amoled:text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <p className="text-xl font-medium text-gray-800 dark:text-gray-200 amoled:text-white mb-2">Error</p>
+          <p className="text-red-600 dark:text-red-400 amoled:text-red-500 text-center">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (

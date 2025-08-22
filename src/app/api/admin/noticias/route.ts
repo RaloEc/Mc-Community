@@ -1,12 +1,175 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/utils/supabase-service';
 import { revalidatePath } from 'next/cache';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { Database } from '@/types/supabase';
 
 // Función auxiliar para revalidar rutas de noticias
 function revalidarRutasNoticias() {
   revalidatePath('/noticias');
   revalidatePath('/noticias/[id]', 'layout');
   revalidatePath('/');
+  revalidatePath('/admin/noticias');
+  revalidatePath('/admin/noticias/listado');
+}
+
+// Función para verificar si el usuario es administrador
+async function esAdmin(supabase: any) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return false
+
+    const { data: perfil } = await supabase
+      .from('perfiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    return perfil?.role === 'admin'
+  } catch (error) {
+    console.error('Error al verificar rol de administrador:', error)
+    return false
+  }
+}
+
+// GET - Obtener noticias con paginación y filtros
+export async function GET(request: NextRequest) {
+  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const serviceClient = getServiceClient();
+  const searchParams = request.nextUrl.searchParams
+  const admin = searchParams.get('admin') === 'true'
+  
+  // Si es una solicitud de admin, verificar permisos
+  if (admin) {
+    const esUsuarioAdmin = await esAdmin(supabase)
+    if (!esUsuarioAdmin) {
+      return NextResponse.json(
+        { error: 'No autorizado. Se requieren permisos de administrador.' },
+        { status: 403 }
+      )
+    }
+  }
+
+  try {
+    // Obtener parámetros de búsqueda y paginación
+    const id = searchParams.get('id')
+    const pagina = parseInt(searchParams.get('pagina') || '1')
+    const limite = parseInt(searchParams.get('limite') || '10')
+    const busqueda = searchParams.get('busqueda')
+    const categoria = searchParams.get('categoria')
+    const ordenar = searchParams.get('ordenar') || 'fecha_desc'
+    
+    // Si se solicita una noticia específica por ID
+    if (id) {
+      const { data, error } = await serviceClient
+        .from('noticias')
+        .select(`
+          *,
+          autor:perfiles!noticias_autor_id_fkey(username, avatar_url, role),
+          categorias:noticias_categorias!inner(categoria_id, categoria:categorias!inner(nombre, slug, color))
+        `)
+        .eq('id', id)
+        .single()
+
+      if (error) {
+        console.error('Error al obtener noticia:', error)
+        return NextResponse.json(
+          { error: `Error al obtener noticia: ${error.message}` },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json(data)
+    }
+    
+    // Calcular offset para paginación
+    const offset = (pagina - 1) * limite
+    
+    // Construir consulta base
+    let query = serviceClient
+      .from('noticias')
+      .select(`
+        *,
+        autor:perfiles!noticias_autor_id_fkey(username, avatar_url, role),
+        categorias:noticias_categorias!inner(categoria_id, categoria:categorias!inner(nombre, slug, color))
+      `, { count: 'exact' })
+    
+    // Aplicar filtros
+    if (busqueda) {
+      query = query.or(`titulo.ilike.%${busqueda}%,contenido.ilike.%${busqueda}%`)
+    }
+    
+    if (categoria) {
+      query = query.eq('noticias_categorias.categoria_id', categoria)
+    }
+    
+    // Aplicar ordenamiento
+    switch (ordenar) {
+      case 'titulo_asc':
+        query = query.order('titulo', { ascending: true })
+        break
+      case 'titulo_desc':
+        query = query.order('titulo', { ascending: false })
+        break
+      case 'fecha_asc':
+        query = query.order('fecha_publicacion', { ascending: true })
+        break
+      case 'fecha_desc':
+        query = query.order('fecha_publicacion', { ascending: false })
+        break
+      case 'vistas_asc':
+        query = query.order('vistas', { ascending: true })
+        break
+      case 'vistas_desc':
+        query = query.order('vistas', { ascending: false })
+        break
+      default:
+        query = query.order('fecha_publicacion', { ascending: false })
+    }
+    
+    // Aplicar paginación
+    query = query.range(offset, offset + limite - 1)
+    
+    // Ejecutar consulta
+    const { data, error, count } = await query
+    
+    if (error) {
+      console.error('Error al obtener noticias:', error)
+      return NextResponse.json(
+        { error: `Error al obtener noticias: ${error.message}` },
+        { status: 500 }
+      )
+    }
+    
+    // Procesar resultados para el formato esperado
+    const noticias = data.map(noticia => ({
+      ...noticia,
+      categoria_nombre: noticia.categoria?.nombre || null,
+      categoria_slug: noticia.categoria?.slug || null,
+      categoria_color: noticia.categoria?.color || null,
+      autor_nombre: noticia.autor?.username || noticia.autor || 'Anónimo',
+      autor_color: noticia.autor?.rol === 'admin' ? '#ef4444' : 
+                  noticia.autor?.rol === 'moderator' ? '#f59e0b' : '#3b82f6'
+    }))
+    
+    // Calcular total de páginas
+    const totalPaginas = count ? Math.ceil(count / limite) : 1
+    
+    return NextResponse.json({
+      noticias,
+      total: count || 0,
+      pagina_actual: pagina,
+      total_paginas: totalPaginas,
+      limite
+    })
+  } catch (error: any) {
+    console.error('Error al procesar la solicitud:', error)
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    )
+  }
 }
 
 export async function POST(request: Request) {

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { SessionContextProvider } from '@supabase/auth-helpers-react'
 import type { Session } from '@supabase/supabase-js'
+import { createClient } from '@/lib/supabase/client'
 
 export default function SupabaseProvider({
   initialSession,
@@ -12,7 +12,8 @@ export default function SupabaseProvider({
   initialSession: Session | null
   children: React.ReactNode
 }) {
-  const [supabaseClient] = useState(() => createClientComponentClient())
+  // Usar nuestro patrón singleton para evitar múltiples instancias
+  const [supabaseClient] = useState(() => createClient())
 
   return (
     <SessionContextProvider

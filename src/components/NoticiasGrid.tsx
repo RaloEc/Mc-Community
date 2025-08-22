@@ -95,24 +95,74 @@ export default function NoticiasGrid({
                   fill
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                {noticia.categoria ? (
-                  <div className="absolute top-4 right-4 z-20 flex flex-wrap gap-1 justify-end">
+                <div className="absolute top-4 right-4 z-20">
+                  {noticia.categorias && noticia.categorias.length > 0 ? (
+                    (() => {
+                      // Buscar categorías padres (sin parent_id)
+                      const categoriasPadre = noticia.categorias.filter(c => !c.parent_id);
+                      
+                      // Si hay categorías padre, mostrar la primera
+                      if (categoriasPadre.length > 0) {
+                        const cat = categoriasPadre[0];
+                        return (
+                          <Badge 
+                            key={cat.id} 
+                            className={`text-xs ${cat.color ? `border-${cat.color}-500 ` : ''}bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none`}
+                            variant="default"
+                          >
+                            {cat.icono && <span className="mr-1">{cat.icono}</span>}
+                            {cat.nombre}
+                          </Badge>
+                        );
+                      } 
+                      // Si no hay categorías padre, buscar la primera subcategoría y su padre
+                      else {
+                        const primerSubcategoria = noticia.categorias[0];
+                        const categoriaPadre = primerSubcategoria.parent_id ? 
+                          noticia.categorias.find(c => c.id === primerSubcategoria.parent_id) : null;
+                        
+                        if (categoriaPadre) {
+                          return (
+                            <Badge 
+                              key={categoriaPadre.id} 
+                              className={`text-xs ${categoriaPadre.color ? `border-${categoriaPadre.color}-500 ` : ''}bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none`}
+                              variant="default"
+                            >
+                              {categoriaPadre.icono && <span className="mr-1">{categoriaPadre.icono}</span>}
+                              {categoriaPadre.nombre}
+                            </Badge>
+                          );
+                        } else {
+                          return (
+                            <Badge 
+                              key={primerSubcategoria.id} 
+                              className={`text-xs ${primerSubcategoria.color ? `border-${primerSubcategoria.color}-500 ` : ''}bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none`}
+                              variant="default"
+                            >
+                              {primerSubcategoria.icono && <span className="mr-1">{primerSubcategoria.icono}</span>}
+                              {primerSubcategoria.nombre}
+                            </Badge>
+                          );
+                        }
+                      }
+                    })()
+                  ) : noticia.categoria ? (
                     <Badge 
-                      key={noticia.categoria.id}
+                      className={`text-xs ${noticia.categoria.color ? `border-${noticia.categoria.color}-500 ` : ''}bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none`}
+                      variant="default"
+                    >
+                      {noticia.categoria.icono && <span className="mr-1">{noticia.categoria.icono}</span>}
+                      {noticia.categoria.nombre}
+                    </Badge>
+                  ) : (
+                    <Badge 
                       className="text-xs bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
                       variant="default"
                     >
-                      {noticia.categoria.nombre}
+                      General
                     </Badge>
-                  </div>
-                ) : (
-                  <Badge 
-                    className="absolute top-4 right-4 z-20 bg-blue-900 hover:bg-blue-800 text-primary-foreground border-none"
-                    variant="default"
-                  >
-                    General
-                  </Badge>
-                )}
+                  )}
+                </div>
               </div>
               
               <div className="flex flex-col space-y-1.5 p-6">

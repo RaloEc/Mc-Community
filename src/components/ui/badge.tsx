@@ -27,10 +27,12 @@ export interface BadgeProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-function Badge({ className, variant, ...props }: BadgeProps) {
+const Badge = React.forwardRef<HTMLDivElement, BadgeProps>((
+  { className, variant, ...props }, ref
+) => {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant }), className)} ref={ref} {...props} />
   )
-}
+})
 
 export { Badge, badgeVariants }

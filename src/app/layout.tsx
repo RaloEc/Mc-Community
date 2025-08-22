@@ -18,29 +18,14 @@ export const metadata: Metadata = {
 
 // Script para prevenir FOUC (Flash of Unstyled Content)
 const ThemeScript = () => {
+  // Script simplificado para evitar problemas de hidratación
   const themeScript = `
     (function() {
-      // Función para obtener el tema guardado o la preferencia del sistema
-      function getInitialTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) return savedTheme;
-        
-        // Verificar la preferencia del sistema
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return prefersDark ? 'dark' : 'light';
-      }
-      
-      // Aplicar el tema inicial
-      const theme = getInitialTheme();
-      const root = document.documentElement;
-      
-      // Asegurar que solo haya una clase de tema a la vez
-      root.classList.remove('light', 'dark', 'amoled');
-      root.classList.add(theme);
-      
-      // Si es amoled, asegurarse de que herede de dark
-      if (theme === 'amoled') {
-        root.classList.add('dark');
+      try {
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        document.documentElement.classList.add(savedTheme);
+      } catch (e) {
+        document.documentElement.classList.add('dark');
       }
     })();
   `;
@@ -53,8 +38,15 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = createServerClient()
-  const { data: { session } } = await supabase.auth.getSession()
+  // Usamos try/catch para manejar posibles errores en la obtención de la sesión
+  let session = null;
+  try {
+    const supabase = createServerClient()
+    const { data } = await supabase.auth.getSession()
+    session = data.session
+  } catch (error) {
+    console.error('Error al obtener la sesión:', error)
+  }
 
   // Obtener el ID de cliente de AdSense desde las variables de entorno
   const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '';

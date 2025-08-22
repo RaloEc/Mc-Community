@@ -14,18 +14,7 @@ const PUBLIC_ROUTES = [
   '/register',
   '/logout',
   '/reset-password',
-]
-
-// Rutas que requieren autenticación de admin
-const ADMIN_ROUTES = [
-  '/admin/dashboard',
-  '/admin/noticias',
-  '/admin/usuarios',
-  '/admin/foro',
-  '/admin/servidores',
-  '/admin/mods',
-  '/admin/recursos',
-  '/admin/sync'
+  '/clear-cache.html'
 ]
 
 export async function middleware(req: NextRequest) {
@@ -35,55 +24,66 @@ export async function middleware(req: NextRequest) {
   }
 
   // Verificar si la ruta actual es una ruta de admin
-  const isAdminRoute = ADMIN_ROUTES.some(route => 
-    req.nextUrl.pathname.startsWith(route)
-  )
-
-  // Si no es una ruta de admin, no necesitamos verificar nada
-  if (!isAdminRoute) {
-    return NextResponse.next()
-  }
-
-  const res = NextResponse.next()
-  
-  try {
-    const supabase = createMiddlewareClient({ req, res })
-
-    // Obtener la sesión del usuario solo para rutas de admin
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-
-    // Si es una ruta de admin y no hay sesión, redirigir a login
-    if (!session) {
-      const redirectUrl = new URL('/login', req.url)
-      redirectUrl.searchParams.set('redirect', req.nextUrl.pathname)
-      return NextResponse.redirect(redirectUrl)
-    }
-
-    // Verificar el rol solo si es necesario (ruta de admin y hay sesión)
+  if (req.nextUrl.pathname.startsWith('/admin')) {
     try {
-      const { data: profile, error } = await supabase
-        .from('perfiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single()
-
-      // Si hay error al obtener el perfil o el usuario no es admin
-      if (error || !profile || profile.role !== 'admin') {
-        // Redirigir a la página principal
-        return NextResponse.redirect(new URL('/', req.url))
+      console.log('[Middleware] Verificando acceso a ruta admin:', req.nextUrl.pathname)
+      
+      // Crear cliente de Supabase para el middleware
+      const res = NextResponse.next()
+      const supabase = createMiddlewareClient({ req, res })
+      
+      // Verificar si hay sesión activa
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        console.log('[Middleware] No hay sesión activa, redirigiendo a login')
+        const redirectUrl = new URL('/login', req.url)
+        return NextResponse.redirect(redirectUrl)
+      }
+      
+      // Verificar si el usuario tiene rol de administrador
+      try {
+        // Consulta directa y simple
+        const { data: perfil, error } = await supabase
+          .from('perfiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single()
+        
+        // Log detallado para depuración
+        console.log('[Middleware] Resultado consulta perfil:', {
+          userId: session.user.id,
+          perfilData: perfil,
+          error: error?.message,
+          timestamp: new Date().toISOString()
+        })
+        
+        if (error) {
+          console.error('[Middleware] Error al obtener perfil:', error.message)
+          return NextResponse.redirect(new URL('/login', req.url))
+        }
+        
+        // Verificación estricta del rol admin
+        if (!perfil || perfil.role !== 'admin') {
+          console.log('[Middleware] Usuario no es admin:', perfil?.role || 'sin rol')
+          return NextResponse.redirect(new URL('/', req.url))
+        }
+        
+        console.log('[Middleware] Acceso admin verificado para:', session.user.email)
+        return res
+      } catch (perfilError) {
+        console.error('[Middleware] Excepción al verificar perfil admin:', perfilError)
+        return NextResponse.redirect(new URL('/login', req.url))
       }
     } catch (error) {
-      console.error('Error verificando rol de admin:', error)
-      return res
+      console.error('[Middleware] Error general en middleware:', error)
+      const redirectUrl = new URL('/login', req.url)
+      return NextResponse.redirect(redirectUrl)
     }
-  } catch (error) {
-    console.error('Error en middleware:', error)
-    return res
   }
 
-  return res
+  // Para rutas no admin, permitir acceso
+  return NextResponse.next()
 }
 
 export const config = {

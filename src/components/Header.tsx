@@ -13,7 +13,7 @@ import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare } from 'l
 
 export default function Header() {
   const router = useRouter()
-  const { session, user: authUser } = useAuth()
+  const { session, user: authUser, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -118,11 +118,30 @@ export default function Header() {
   }, [])
 
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setIsUserMenuOpen(false);
-    setIsMenuOpen(false);
-    router.refresh();
+    console.log('[Header] handleLogout: inicio')
+    try {
+      await logout()
+      console.log('[Header] handleLogout: logout() del contexto OK')
+    } catch (e) {
+      console.warn('[Header] handleLogout: error en logout() del contexto, intento fallback directo', e)
+      try {
+        const sb = createClient()
+        await sb.auth.signOut()
+        console.log('[Header] handleLogout: fallback signOut OK')
+      } catch (e2) {
+        console.error('[Header] handleLogout: fallback signOut falló', e2)
+      }
+    }
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('auth_session_cache')
+        localStorage.removeItem('auth_user_cache')
+      }
+    } catch {}
+    setIsUserMenuOpen(false)
+    setIsMenuOpen(false)
+    try { router.push('/login') } catch {}
+    try { router.refresh() } catch {}
   }
 
   const closeAllMenus = () => {

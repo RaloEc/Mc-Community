@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { CalendarIcon, ArrowRightIcon, StarIcon, XIcon, FilterIcon, ChevronUpIcon, ChevronDownIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Noticia } from '@/types';
+import { Noticia, CategoriaNoticia } from '@/types';
 import AdBanner from '@/components/ads/AdBanner';
 import AdRectangle from '@/components/ads/AdRectangle';
 
@@ -17,10 +17,8 @@ type FiltroActivo = {
   etiqueta: string;
 };
 
-type Categoria = {
-  id: string;
-  nombre: string;
-};
+// Usamos el tipo CategoriaNoticia importado
+type Categoria = CategoriaNoticia;
 
 // Tipo para anuncios
 type Anuncio = {
@@ -259,35 +257,57 @@ export default function NoticiasLista({
     // No ejecutamos esto en la primera carga
     if (initialMount.current) return;
     
-    // Verificamos si las props han cambiado realmente
-    const propsHanCambiado = 
-      propsRef.current.busqueda !== busqueda ||
-      propsRef.current.autor !== autor ||
-      propsRef.current.categoria !== categoria ||
-      propsRef.current.ordenFecha !== ordenFecha;
+    // Si cambian las props, actualizamos los filtros locales
+    if (busqueda !== busquedaLocal) setBusquedaLocal(busqueda);
+    if (autor !== autorLocal) setAutorLocal(autor);
+    if (categoria !== categoriaLocal) setCategoriaLocal(categoria);
+    if (ordenFecha !== ordenFechaLocal) setOrdenFechaLocal(ordenFecha);
     
-    if (propsHanCambiado) {
-      // Actualizamos la referencia de props anteriores
-      propsRef.current = { busqueda, autor, categoria, ordenFecha };
-      
-      // Actualizamos los estados locales con los valores de las props
-      setBusquedaLocal(busqueda);
-      setAutorLocal(autor);
-      setCategoriaLocal(categoria);
-      setOrdenFechaLocal(ordenFecha);
-      
-      // Actualizamos los filtros aplicados y los filtros activos
-      setFiltrosAplicados({
-        busqueda,
-        autor,
-        categoria,
-        ordenFecha
-      });
-      
-      // Marcamos que cambiaron los filtros para saber que debemos recargar las noticias
-      filtersChanged.current = true;
-    }
-  }, [busqueda, autor, categoria, ordenFecha]);
+    // Y también actualizamos los filtros aplicados
+    setFiltrosAplicados({
+      busqueda,
+      autor,
+      categoria,
+      ordenFecha
+    });
+    
+    // Actualizamos los filtros activos
+    actualizarFiltrosActivos(busqueda, autor, categoria, ordenFecha);
+    
+    // Marcamos que cambiaron los filtros para saber que debemos recargar las noticias
+    filtersChanged.current = true;
+  }, [busqueda, autor, categoria, ordenFecha, actualizarFiltrosActivos]);
+  
+  // Efecto para cargar las categorías al montar el componente
+  useEffect(() => {
+    const cargarCategorias = async () => {
+      try {
+        const response = await fetch('/api/categorias');
+        if (!response.ok) throw new Error('Error al cargar categorías');
+        const data = await response.json();
+        
+        // Ordenar categorías jerárquicamente (primero las que no tienen padre)
+        const categoriasOrdenadas = [...data].sort((a, b) => {
+          // Primero por parent_id (null primero)
+          if (!a.parent_id && b.parent_id) return -1;
+          if (a.parent_id && !b.parent_id) return 1;
+          // Luego por orden si existe
+          if (a.orden !== undefined && b.orden !== undefined) {
+            return a.orden - b.orden;
+          }
+          // Finalmente por nombre
+          return a.nombre.localeCompare(b.nombre);
+        });
+        
+        setCategorias(categoriasOrdenadas);
+        if (onCategoriasLoaded) onCategoriasLoaded(categoriasOrdenadas);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    };
+    
+    cargarCategorias();
+  }, [onCategoriasLoaded]);
   
   // Función para aplicar los filtros con debounce
   const aplicarFiltros = useCallback(() => {
@@ -311,12 +331,14 @@ export default function NoticiasLista({
   }, [busquedaLocal, autorLocal, categoriaLocal, ordenFechaLocal]);
 
   // Función para manejar cambios en los campos de búsqueda con debounce
-  const handleInputChange = useCallback((valor: string, tipo: 'busqueda' | 'autor') => {
+  const handleInputChange = useCallback((valor: string, tipo: 'busqueda' | 'autor' | 'categoria') => {
     // Actualizamos el estado local
     if (tipo === 'busqueda') {
       setBusquedaLocal(valor);
     } else if (tipo === 'autor') {
       setAutorLocal(valor);
+    } else if (tipo === 'categoria') {
+      setCategoriaLocal(valor);
     }
 
     // Si el usuario borra el campo, aplicamos el filtro inmediatamente
@@ -497,6 +519,69 @@ export default function NoticiasLista({
           ) : (
             <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative">
               <div className="relative h-48 overflow-hidden">
+                {/* Categorías en la esquina superior izquierda */}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {item.categorias && item.categorias.length > 0 ? (
+                    (() => {
+                      // Buscar categorías padres (sin parent_id)
+                      const categoriasPadre = item.categorias.filter(c => !c.parent_id);
+                      
+                      // Si hay categorías padre, mostrar la primera
+                      if (categoriasPadre.length > 0) {
+                        const cat = categoriasPadre[0];
+                        return (
+                          <Badge 
+                            key={cat.id} 
+                            className={`text-xs ${cat.color ? `border-${cat.color}-500 ` : ''}`}
+                            variant="outline"
+                          >
+                            {cat.icono && <span className="mr-1">{cat.icono}</span>}
+                            {cat.nombre}
+                          </Badge>
+                        );
+                      } 
+                      // Si no hay categorías padre, buscar la primera subcategoría y su padre
+                      else {
+                        const primerSubcategoria = item.categorias[0];
+                        const categoriaPadre = primerSubcategoria.parent_id ? 
+                          item.categorias.find(c => c.id === primerSubcategoria.parent_id) : null;
+                        
+                        if (categoriaPadre) {
+                          return (
+                            <Badge 
+                              key={categoriaPadre.id} 
+                              className={`text-xs ${categoriaPadre.color ? `border-${categoriaPadre.color}-500 ` : ''}`}
+                              variant="outline"
+                            >
+                              {categoriaPadre.icono && <span className="mr-1">{categoriaPadre.icono}</span>}
+                              {categoriaPadre.nombre}
+                            </Badge>
+                          );
+                        } else {
+                          return (
+                            <Badge 
+                              key={primerSubcategoria.id} 
+                              className={`text-xs ${primerSubcategoria.color ? `border-${primerSubcategoria.color}-500 ` : ''}`}
+                              variant="outline"
+                            >
+                              {primerSubcategoria.icono && <span className="mr-1">{primerSubcategoria.icono}</span>}
+                              {primerSubcategoria.nombre}
+                            </Badge>
+                          );
+                        }
+                      }
+                    })()
+                  ) : item.categoria ? (
+                    <Badge 
+                      className={`text-xs ${item.categoria.color ? `border-${item.categoria.color}-500 ` : ''}`}
+                      variant="outline"
+                    >
+                      {item.categoria.icono && <span className="mr-1">{item.categoria.icono}</span>}
+                      {item.categoria.nombre}
+                    </Badge>
+                  ) : null}
+                </div>
+                
                 {(item.imagen_url || (item as any).imagen_portada) ? (
                   <Image 
                     src={item.imagen_url || (item as any).imagen_portada} 
@@ -603,6 +688,31 @@ export default function NoticiasLista({
                   Ordenar por
                 </label>
                 {renderOrdenSelector()}
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <label htmlFor="categoria" className="block text-sm font-medium text-gray-700 mb-1">
+                  Filtrar por categoría
+                </label>
+                <select
+                  id="categoria"
+                  value={categoriaLocal}
+                  onChange={(e) => {
+                    setCategoriaLocal(e.target.value);
+                    // No aplicamos el filtro inmediatamente, esperamos a que el usuario haga clic en "Aplicar"
+                  }}
+                  className="block w-full rounded-md border border-gray-300 py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map(cat => (
+                    <option key={cat.id} value={cat.id}>
+                      {/* Mostrar jerarquía con sangría para subcategorías */}
+                      {cat.parent_id ? '— ' : ''}{cat.nombre} {cat.icono ? cat.icono : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

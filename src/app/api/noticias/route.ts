@@ -110,13 +110,21 @@ export async function GET(request: Request) {
           try {
             const { data: categoriasData, error: errorCategorias } = await serviceClient
               .from('categorias')
-              .select('id, nombre')
+              .select('id, nombre, parent_id, slug, color, icono, orden')
               .in('id', categoriaIds);
               
             if (!errorCategorias && categoriasData) {
-              // Crear un mapa de id -> nombre para fácil acceso
-              const categoriasMap = categoriasData.reduce((map: Record<string, string>, cat) => {
-                map[cat.id] = cat.nombre;
+              // Crear un mapa de categorías completo para acceso fácil
+              const categoriasMap = categoriasData.reduce((map: Record<string, any>, cat) => {
+                map[cat.id] = {
+                  id: cat.id,
+                  nombre: cat.nombre,
+                  parent_id: cat.parent_id,
+                  slug: cat.slug,
+                  color: cat.color,
+                  icono: cat.icono,
+                  orden: cat.orden
+                };
                 return map;
               }, {});
               
@@ -126,10 +134,7 @@ export async function GET(request: Request) {
                   categoriasPorNoticia[rel.noticia_id] = [];
                 }
                 if (categoriasMap[rel.categoria_id]) {
-                  categoriasPorNoticia[rel.noticia_id].push({
-                    id: rel.categoria_id,
-                    nombre: categoriasMap[rel.categoria_id]
-                  });
+                  categoriasPorNoticia[rel.noticia_id].push(categoriasMap[rel.categoria_id]);
                 }
               });
             }
@@ -190,15 +195,77 @@ export async function GET(request: Request) {
         console.log('No se pudieron cargar los perfiles de autores, continuando sin ellos');
       }
       
-      // Si hay filtro de categoría, filtrar las noticias que tienen esa categoría
+      // Obtener todas las categorías para construir un mapa de jerarquía
+      let categoriasHijas: Record<string, string[]> = {};
+      
       if (filtrarPorCategoria && noticias.length > 0) {
-        noticias = noticias.filter(noticia => {
-          const categoriasDeLaNoticia = categoriasPorNoticia[noticia.id] || [];
-          return categoriasDeLaNoticia.some(cat => 
-            cat.id.toString() === categoria || 
-            cat.nombre.toLowerCase() === categoria.toLowerCase()
-          );
-        });
+        try {
+          // Obtener todas las categorías para construir el árbol jerárquico
+          const { data: todasCategorias, error: errorTodasCategorias } = await serviceClient
+            .from('categorias')
+            .select('id, parent_id');
+            
+          if (!errorTodasCategorias && todasCategorias) {
+            // Construir mapa de categorías padre -> hijas
+            todasCategorias.forEach(cat => {
+              if (cat.parent_id) {
+                if (!categoriasHijas[cat.parent_id]) {
+                  categoriasHijas[cat.parent_id] = [];
+                }
+                categoriasHijas[cat.parent_id].push(cat.id);
+              }
+            });
+            
+            // Función recursiva para obtener todas las subcategorías
+            const obtenerTodasLasSubcategorias = (categoriaId: string): string[] => {
+              const resultado = [categoriaId];
+              const hijas = categoriasHijas[categoriaId] || [];
+              
+              hijas.forEach(hijaId => {
+                resultado.push(...obtenerTodasLasSubcategorias(hijaId));
+              });
+              
+              return resultado;
+            };
+            
+            // Encontrar la categoría por ID o nombre
+            let categoriaId = categoria;
+            if (!todasCategorias.some(cat => cat.id === categoria)) {
+              // Si no es un ID, buscar por nombre o slug
+              const { data: catPorNombre } = await serviceClient
+                .from('categorias')
+                .select('id')
+                .or(`nombre.ilike.${categoria},slug.ilike.${categoria}`)
+                .limit(1);
+                
+              if (catPorNombre && catPorNombre.length > 0) {
+                categoriaId = catPorNombre[0].id;
+              }
+            }
+            
+            // Obtener todas las categorías y subcategorías que coinciden
+            const categoriasAFiltrar = obtenerTodasLasSubcategorias(categoriaId);
+            
+            // Filtrar noticias que tienen alguna de estas categorías
+            noticias = noticias.filter(noticia => {
+              const categoriasDeLaNoticia = categoriasPorNoticia[noticia.id] || [];
+              return categoriasDeLaNoticia.some(cat => 
+                categoriasAFiltrar.includes(cat.id)
+              );
+            });
+          }
+        } catch (error) {
+          console.log('Error al procesar la jerarquía de categorías:', error);
+          
+          // Fallback al filtrado simple si hay error
+          noticias = noticias.filter(noticia => {
+            const categoriasDeLaNoticia = categoriasPorNoticia[noticia.id] || [];
+            return categoriasDeLaNoticia.some(cat => 
+              cat.id.toString() === categoria || 
+              cat.nombre.toLowerCase() === categoria.toLowerCase()
+            );
+          });
+        }
       }
       
       // Mapear las noticias con sus categorías y datos de autor

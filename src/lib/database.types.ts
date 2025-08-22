@@ -64,18 +64,36 @@ export type Database = {
           id: string
           nombre: string
           tipo: string
+          parent_id: string | null
+          slug: string | null
+          descripcion: string | null
+          orden: number | null
+          color: string | null
+          icono: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           nombre: string
           tipo: string
+          parent_id?: string | null
+          slug?: string | null
+          descripcion?: string | null
+          orden?: number | null
+          color?: string | null
+          icono?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           nombre?: string
           tipo?: string
+          parent_id?: string | null
+          slug?: string | null
+          descripcion?: string | null
+          orden?: number | null
+          color?: string | null
+          icono?: string | null
         }
         Relationships: [
           {

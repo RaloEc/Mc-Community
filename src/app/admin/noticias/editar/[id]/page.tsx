@@ -43,6 +43,14 @@ import AdminProtection from '@/components/AdminProtection'
 type Categoria = {
   id: string;
   nombre: string;
+  parent_id?: string | null;
+  slug?: string | null;
+  descripcion?: string | null;
+  orden?: number | null;
+  color?: string | null;
+  icono?: string | null;
+  tipo?: string;
+  hijos?: Categoria[];
 }
 
 // Esquema de validación
@@ -87,13 +95,59 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
     },
   })
 
+  // Función para renderizar categorías jerárquicas
+  const renderCategoriasJerarquicas = (categorias: Categoria[], field: any, isMobile: boolean, nivel: number = 0) => {
+    return (
+      <div className={`${nivel > 0 ? 'ml-4 border-l-2 pl-2 border-gray-200 dark:border-gray-700' : ''}`}>
+        {categorias.map((categoria) => {
+          const isSelected = field.value?.includes(categoria.id);
+          const tieneHijos = categoria.hijos && categoria.hijos.length > 0;
+          
+          return (
+            <div key={categoria.id} className="mb-1">
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  className={`text-sm ${isSelected ? 'bg-primary text-primary-foreground' : ''} ${categoria.color ? `border-${categoria.color}-500` : ''}`}
+                  onClick={() => {
+                    if (isSelected) {
+                      const updatedCategories = field.value.filter((id: string) => id !== categoria.id);
+                      field.onChange(updatedCategories);
+                    } else if (field.value.length < 4) {
+                      field.onChange([...field.value, categoria.id]);
+                    }
+                  }}
+                >
+                  {categoria.icono && (
+                    <span className="mr-1">{categoria.icono}</span>
+                  )}
+                  {categoria.nombre}
+                </Button>
+                
+                {categoria.descripcion && (
+                  <span className="text-xs text-muted-foreground hidden md:inline">{categoria.descripcion}</span>
+                )}
+              </div>
+              
+              {tieneHijos && (
+                renderCategoriasJerarquicas(categoria.hijos!, field, isMobile, nivel + 1)
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Cargar categorías al iniciar
   useEffect(() => {
     async function cargarCategorias() {
       try {
         setCargandoCategorias(true)
         
-        // Usar la API Route en lugar del cliente regular de Supabase
+        // Usar la API Route con soporte para jerarquía
         const response = await fetch('/api/admin/categorias')
         
         if (!response.ok) {
@@ -525,62 +579,14 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
                           <div className="text-sm text-muted-foreground">Cargando categorías...</div>
                         ) : categorias.length > 0 ? (
                           <div className="w-full">
-                            {/* Versión móvil con 3 líneas de categorías */}
-                            <div className="md:hidden flex flex-wrap gap-2 w-full max-h-[120px] overflow-y-auto pb-2">
-                              {categorias.map((categoria) => {
-                                const isSelected = field.value?.includes(categoria.id);
-                                return (
-                                  <Button
-                                    key={categoria.id}
-                                    type="button"
-                                    variant={isSelected ? "default" : "outline"}
-                                    className={`text-sm ${isSelected ? 'bg-primary text-primary-foreground' : ''} mb-1`}
-                                    onClick={() => {
-                                      if (isSelected) {
-                                        // Si ya está seleccionado, lo quitamos
-                                        const updatedCategories = field.value.filter((id: string) => id !== categoria.id);
-                                        field.onChange(updatedCategories);
-                                      } else {
-                                        // Si no está seleccionado y no hemos llegado al límite, lo añadimos
-                                        if (field.value.length < 4) {
-                                          field.onChange([...field.value, categoria.id]);
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    {categoria.nombre}
-                                  </Button>
-                                );
-                              })}
+                            {/* Versión móvil con estructura jerárquica */}
+                            <div className="md:hidden flex flex-col gap-2 w-full max-h-[200px] overflow-y-auto pb-2">
+                              {renderCategoriasJerarquicas(categorias, field, true)}
                             </div>
                             
-                            {/* Versión escritorio con flex-wrap */}
-                            <div className="hidden md:flex flex-wrap gap-2 w-full justify-start">
-                              {categorias.map((categoria) => {
-                                const isSelected = field.value?.includes(categoria.id);
-                                return (
-                                  <Button
-                                    key={categoria.id}
-                                    type="button"
-                                    variant={isSelected ? "default" : "outline"}
-                                    className={`text-sm ${isSelected ? 'bg-primary text-primary-foreground' : ''} mb-2`}
-                                    onClick={() => {
-                                      if (isSelected) {
-                                        // Si ya está seleccionado, lo quitamos
-                                        const updatedCategories = field.value.filter((id: string) => id !== categoria.id);
-                                        field.onChange(updatedCategories);
-                                      } else {
-                                        // Si no está seleccionado y no hemos llegado al límite, lo añadimos
-                                        if (field.value.length < 4) {
-                                          field.onChange([...field.value, categoria.id]);
-                                        }
-                                      }
-                                    }}
-                                  >
-                                    {categoria.nombre}
-                                  </Button>
-                                );
-                              })}
+                            {/* Versión escritorio con estructura jerárquica */}
+                            <div className="hidden md:flex flex-col gap-2 w-full justify-start">
+                              {renderCategoriasJerarquicas(categorias, field, false)}
                             </div>
                             
                             {field.value.length >= 4 && (

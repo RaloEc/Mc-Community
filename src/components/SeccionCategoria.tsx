@@ -155,12 +155,56 @@ export default function SeccionCategoria({
               </div>
               
               {noticia.categorias && noticia.categorias.length > 0 && (
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {noticia.categorias.map((cat: any, idx: number) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {cat.nombre}
-                    </Badge>
-                  ))}
+                <div className="mt-1">
+                  {(() => {
+                    // Buscar categorías padres (sin parent_id)
+                    const categoriasPadre = noticia.categorias.filter((c: any) => !c.parent_id);
+                    
+                    // Si hay categorías padre, mostrar la primera
+                    if (categoriasPadre.length > 0) {
+                      const cat = categoriasPadre[0];
+                      return (
+                        <Badge 
+                          key={cat.id} 
+                          variant="outline" 
+                          className="text-xs"
+                        >
+                          {cat.icono && <span className="mr-1">{cat.icono}</span>}
+                          {cat.nombre}
+                        </Badge>
+                      );
+                    } 
+                    // Si no hay categorías padre, buscar la primera subcategoría y su padre
+                    else {
+                      const primerSubcategoria = noticia.categorias[0];
+                      const categoriaPadre = primerSubcategoria.parent_id ? 
+                        noticia.categorias.find((c: any) => c.id === primerSubcategoria.parent_id) : null;
+                      
+                      if (categoriaPadre) {
+                        return (
+                          <Badge 
+                            key={categoriaPadre.id} 
+                            variant="outline" 
+                            className="text-xs"
+                          >
+                            {categoriaPadre.icono && <span className="mr-1">{categoriaPadre.icono}</span>}
+                            {categoriaPadre.nombre}
+                          </Badge>
+                        );
+                      } else {
+                        return (
+                          <Badge 
+                            key={primerSubcategoria.id} 
+                            variant="outline" 
+                            className="text-xs"
+                          >
+                            {primerSubcategoria.icono && <span className="mr-1">{primerSubcategoria.icono}</span>}
+                            {primerSubcategoria.nombre}
+                          </Badge>
+                        );
+                      }
+                    }
+                  })()}
                 </div>
               )}
             </div>

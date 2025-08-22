@@ -71,9 +71,16 @@ export type Post = {
 // =================================================================
 
 export type CategoriaNoticia = {
-  id: number;
+  id: string | number;
   nombre: string;
   slug: string;
+  parent_id?: string | number | null;
+  descripcion?: string | null;
+  orden?: number | null;
+  color?: string | null;
+  icono?: string | null;
+  tipo?: string;
+  hijos?: CategoriaNoticia[];
 };
 
 export type Noticia = {
@@ -90,7 +97,7 @@ export type Noticia = {
   autor: Perfil | null;
   categoria: CategoriaNoticia | null;
   // Propiedad para múltiples categorías (añadida por la API)
-  categorias?: Array<{id: number, nombre: string}>;
+  categorias?: CategoriaNoticia[];
   // Propiedades adicionales que devuelve la API
   autor_nombre?: string;
   autor_color?: string;

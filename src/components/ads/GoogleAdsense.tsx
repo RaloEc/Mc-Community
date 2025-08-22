@@ -60,15 +60,24 @@ export default function GoogleAdsense({
 // Componente para cargar el script de AdSense en el layout principal
 export function GoogleAdsenseScript({ clientId }: { clientId: string }) {
   return (
-    <Script
-      id="google-adsense"
-      async
-      strategy="afterInteractive"
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`}
-      crossOrigin="anonymous"
-      onError={(e) => {
-        console.error('Error al cargar el script de AdSense:', e);
-      }}
-    />
+    <>
+      {/* Solo usar preconnect que es más apropiado y no genera advertencias */}
+      <link 
+        rel="preconnect" 
+        href="https://pagead2.googlesyndication.com" 
+        crossOrigin="anonymous" 
+      />
+      {/* Usar Script con beforeInteractive para asegurar carga temprana */}
+      <Script
+        id="google-adsense"
+        async
+        strategy="beforeInteractive"
+        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`}
+        crossOrigin="anonymous"
+        onError={(e) => {
+          console.error('Error al cargar el script de AdSense:', e);
+        }}
+      />
+    </>
   );
 }

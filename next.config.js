@@ -1,19 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  reactStrictMode: false, // Desactivar modo estricto para evitar problemas de hidratación
   // Aumentar el timeout para la carga de chunks
   experimental: {
     // Mejoras para evitar errores de carga de chunks
     optimizePackageImports: ['@supabase/auth-helpers-react', '@supabase/auth-helpers-nextjs'],
     // Mejorar la estabilidad del servidor de desarrollo
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
+    // La opción serverActions ya está disponible por defecto en Next.js 14+
   },
   // Configuración para mejorar la estabilidad
   onDemandEntries: {
     // Periodo de tiempo en ms que una página permanecerá en el buffer
     maxInactiveAge: 60 * 60 * 1000, // 1 hora en lugar de 25 segundos predeterminados
     // Número de páginas que se mantendrán en memoria
-    pagesBufferLength: 5,
+    pagesBufferLength: 10, // Aumentado para mejor rendimiento
   },
   images: {
     domains: [
@@ -58,29 +59,28 @@ const nextConfig = {
       
       // Aumentar el tiempo de espera para la carga de chunks
       config.watchOptions = {
-        aggregateTimeout: 300,
-        poll: 1000, // Comprobar cambios cada segundo
+        aggregateTimeout: 1000, // Aumentado para dar más tiempo
+        poll: 2000, // Comprobar cambios cada 2 segundos
       }
       
-      // Optimizar la división de código
+      // Configurar el timeout para la carga de chunks
+      config.output.chunkLoadTimeout = 60000; // 60 segundos
+      
+      // Optimizar la división de código - simplificada para evitar problemas
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxInitialRequests: 25, // Aumentar el límite de solicitudes iniciales
+        minSize: 20000, // Tamaño mínimo para crear un chunk
+        maxSize: 200000, // Tamaño máximo para un chunk
         cacheGroups: {
-          default: false,
-          vendors: false,
-          // Agrupar las dependencias comunes
-          commons: {
-            name: 'commons',
-            chunks: 'all',
+          default: {
             minChunks: 2,
+            priority: -20,
             reuseExistingChunk: true,
           },
-          // Crear un chunk separado para los módulos de Supabase
-          supabase: {
-            test: /[\\/]node_modules[\\/](@supabase)[\\/]/,
-            name: 'supabase-vendors',
-            chunks: 'all',
-            priority: 10,
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            priority: -10,
           },
         },
       }
