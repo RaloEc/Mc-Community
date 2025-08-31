@@ -1,0 +1,58 @@
+/* Animaciones para la tabla de categorías */
+
+/* Contenedor con animaciones */
+.animate-table-container {
+  position: relative;
+}
+
+/* Animación para elementos que se están creando */
+.categoria-item.creating {
+  animation: fadeInSlideDown 0.5s ease-out;
+}
+
+/* Animación para elementos que se están eliminando */
+.categoria-item.deleting {
+  animation: fadeOutSlideRight 0.3s ease-out forwards;
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+/* Animación para elementos destacados (recién creados o actualizados) */
+.categoria-item.highlight {
+  animation: highlightPulse 2s ease-out;
+}
+
+/* Definición de animaciones */
+@keyframes fadeInSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOutSlideRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(59, 130, 246, 0);
+  }
+  30% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    background-color: rgba(59, 130, 246, 0);
+  }
+}
