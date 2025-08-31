@@ -21,7 +21,7 @@ interface ComentariosProps {
 }
 
 export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: ComentariosProps) {
-  const { session, user: authUser } = useAuth()
+  const { session, user: authUser, profile } = useAuth()
   const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -398,8 +398,8 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0">
                               <Avatar className="w-8 h-8">
-                                <AvatarImage src={authUser?.avatar_url || undefined} alt={authUser?.username || 'Usuario'} />
-                                <AvatarFallback>{getUserInitials(authUser?.username, 1, 'U')}</AvatarFallback>
+                                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username || 'Usuario'} />
+                                <AvatarFallback>{getUserInitials(profile?.username, 1, 'U')}</AvatarFallback>
                               </Avatar>
                             </div>
                             <div className="flex-1">
@@ -520,8 +520,8 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
           <div className="flex gap-3">
             <div className="flex-shrink-0">
               <Avatar className="w-8 h-8">
-                <AvatarImage src={authUser?.avatar_url || undefined} alt={authUser?.username || 'Usuario'} />
-                <AvatarFallback>{getUserInitials(authUser?.username, 1, 'U')}</AvatarFallback>
+                <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.username || 'Usuario'} />
+                <AvatarFallback>{getUserInitials(profile?.username, 1, 'U')}</AvatarFallback>
               </Avatar>
             </div>
             <div className="flex-1">

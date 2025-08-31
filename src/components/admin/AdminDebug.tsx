@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 
 export default function AdminDebug() {
   // Obtener datos del contexto de autenticación global
-  const { session, user, loading, authInitialized } = useAuth()
+  const { session, user, loading } = useAuth()
   
   // Obtener datos del hook de autenticación de admin
   const { isAdmin, isLoading, user: adminUser, profile } = useAdminAuth()
@@ -21,7 +21,7 @@ export default function AdminDebug() {
     console.log('AuthContext - user:', user ? 'Existe' : 'No existe')
     console.log('AuthContext - user.role:', user?.role)
     console.log('AuthContext - loading:', loading)
-    console.log('AuthContext - authInitialized:', authInitialized)
+    // La propiedad authInitialized ya no existe en el tipo AuthState
     
     // Datos del hook de autenticación de admin
     console.log('useAdminAuth - isAdmin:', isAdmin)
@@ -82,7 +82,7 @@ export default function AdminDebug() {
     
     verificarSesionDirecta()
     console.log('======== FIN ADMIN DEBUG COMPONENT ========')
-  }, [session, user, loading, authInitialized, isAdmin, isLoading, adminUser, profile])
+  }, [session, user, loading, isAdmin, isLoading, adminUser, profile])
 
   // Este componente no renderiza nada visible
   return null

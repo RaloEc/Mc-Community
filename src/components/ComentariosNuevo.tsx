@@ -21,7 +21,7 @@ interface ComentariosProps {
 export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: ComentariosProps) {
   const comentariosListaRef = useRef<HTMLDivElement>(null)
   const [mostrarIndicador, setMostrarIndicador] = useState(false)
-  const { session, user: authUser } = useAuth()
+  const { session, user: authUser, profile } = useAuth()
   const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -331,9 +331,9 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
           <div className="flex items-center gap-4">
             <div className="flex-shrink-0 self-start mt-3">
               <Avatar className="w-10 h-10 border-2 border-blue-400 dark:border-blue-600">
-                <AvatarImage src={authUser?.avatar_url || undefined} alt="Tu avatar" crossOrigin="anonymous" />
+                <AvatarImage src={profile?.avatar_url || undefined} alt="Tu avatar" crossOrigin="anonymous" />
                 <AvatarFallback className="bg-primary text-white font-bold">
-                  {getUserInitials(authUser?.username, 1, 'U')}
+                  {getUserInitials(profile?.username, 1, 'U')}
                 </AvatarFallback>
               </Avatar>
             </div>

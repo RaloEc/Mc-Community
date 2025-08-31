@@ -206,10 +206,19 @@ export default function PerfilPage() {
   }
 
   const handleSignOut = async () => {
-        cargarEstadisticasUsuario(session.user.id);
-      }
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/login')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      toast({
+        title: "Error",
+        description: "No se pudo cerrar la sesión."
+      })
     }
-  }, [authLoading, session, user, router])
+  }
   
   async function cargarEstadisticasUsuario(userId: string) {
     try {

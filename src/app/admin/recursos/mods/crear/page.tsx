@@ -43,7 +43,7 @@ const minecraftVersions = [
 
 export default function CrearModPage() {
   const router = useRouter();
-  const { session, user, loading: authLoading } = useAuth();
+  const { session, user, profile, loading: authLoading } = useAuth();
   
   const [categorias, setCategorias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +237,7 @@ export default function CrearModPage() {
         enlace_modrinth: formData.enlace_modrinth || null,
         enlace_directo: formData.enlace_directo || null,
         enlace_otro: formData.enlace_otro || null,
-        autor: user?.username || 'Usuario',
+        autor: profile?.username || 'Usuario',
         imagen_url,
         categorias: formData.categorias_seleccionadas,
         user_id: user?.id

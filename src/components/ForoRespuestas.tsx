@@ -101,7 +101,7 @@ function RespuestaContenido({ contenido }: RespuestaContenidoProps) {
   const { theme } = useTheme();
   
   // Determinar el color del texto basado en el tema actual
-  const textColor = theme === 'light' ? '#000000' : theme === 'amoled' ? '#ffffff' : '#e5e7eb';
+  const textColor = theme === 'light' ? '#000000' : '#ffffff'; // Solo hay temas 'light' y 'dark'
   
   // Crear un estilo personalizado para el contenido
   const customStyle = {
@@ -141,7 +141,7 @@ const MAX_CARACTERES_RESPUESTA = 1000;
 export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasProps) {
   const respuestasListaRef = useRef<HTMLDivElement>(null)
   const [mostrarIndicador, setMostrarIndicador] = useState(false)
-  const { session, user: authUser } = useAuth()
+  const { session, user: authUser, profile } = useAuth()
   const [respuestas, setRespuestas] = useState<PostConAutor[]>([])
   const [cargando, setCargando] = useState(true)
   const [cargandoMas, setCargandoMas] = useState(false)
@@ -520,12 +520,12 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
             <div className="flex-shrink-0 self-start mt-3">
               <Avatar className="w-10 h-10 border-2 border-blue-400 dark:border-blue-600">
                 <AvatarImage 
-                  src={authUser.avatar_url ?? undefined} 
+                  src={profile?.avatar_url ?? undefined} 
                   alt="Tu avatar" 
                   className="object-cover object-center" 
                   crossOrigin="anonymous" 
                 />
-                <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
+                <AvatarFallback>{getUserInitials(profile?.username, 1, 'U')}</AvatarFallback>
               </Avatar>
             </div>
             <div className="flex-1">

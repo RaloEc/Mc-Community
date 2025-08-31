@@ -75,7 +75,7 @@ function CrearNoticiaContent() {
   const [cargandoCategorias, setCargandoCategorias] = useState(true)
   const [nombreUsuario, setNombreUsuario] = useState('Admin') // Valor predeterminado
   const router = useRouter()
-  const { user, session } = useAuth() // Usar el contexto de autenticación
+  const { user, session, profile } = useAuth() // Usar el contexto de autenticación
   
   // Estado para controlar categorías expandidas
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -215,14 +215,14 @@ function CrearNoticiaContent() {
           return
         }
         
-        console.log('Usuario autenticado desde contexto:', user.id, user.email || user.username)
+        console.log('Usuario autenticado desde contexto:', user.id, user.email)
         // Guardar el ID del usuario
         setUsuarioId(user.id)
         
         // Usar la información del perfil que ya tenemos en el contexto
-        if (user.username) {
-          console.log('Usando nombre de usuario del contexto:', user.username)
-          setNombreUsuario(user.username)
+        if (profile && profile.username) {
+          console.log('Usando nombre de usuario del perfil:', profile.username)
+          setNombreUsuario(profile.username)
         } else if (user.email) {
           console.log('Usando email del contexto:', user.email)
           setNombreUsuario(user.email)

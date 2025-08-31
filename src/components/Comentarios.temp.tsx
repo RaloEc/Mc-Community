@@ -15,7 +15,7 @@ interface ComentariosProps {
 }
 
 export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: ComentariosProps) {
-  const { session, user: authUser } = useAuth()
+  const { session, user: authUser, profile } = useAuth()
   const [comentarios, setComentarios] = useState<Comentario[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -212,9 +212,9 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
         <div className="bg-background dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-border">
           <div className="flex items-start gap-3">
             <div className="flex-shrink-0">
-              {authUser.avatar_url ? (
+              {profile?.avatar_url ? (
                 <img
-                  src={authUser.avatar_url}
+                  src={profile.avatar_url}
                   alt="Tu avatar"
                   width="32"
                   height="32"
@@ -222,7 +222,7 @@ export default function Comentarios({ tipoEntidad, entidadId, limite = 10 }: Com
                 />
               ) : (
                 <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center">
-                  {authUser.username?.charAt(0).toUpperCase()}
+                  {profile?.username?.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>

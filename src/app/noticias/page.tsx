@@ -8,6 +8,7 @@ import FiltrosModal from '@/components/FiltrosModal';
 import FiltrosDesktop from '@/components/FiltrosDesktop';
 import NoticiasDestacadas from '@/components/NoticiasDestacadas';
 import SeccionCategoria from '@/components/SeccionCategoria';
+import { CategoriaNoticia } from '@/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -20,13 +21,21 @@ export default function Noticias() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [filtrosActivos, setFiltrosActivos] = useState(0);
   
-  // Estados para los filtros
+  // Estado para los filtros
   const [busqueda, setBusqueda] = useState('');
   const [autor, setAutor] = useState('');
   const [categoria, setCategoria] = useState('');
   const [ordenFecha, setOrdenFecha] = useState<'asc' | 'desc'>('desc');
   const [categorias, setCategorias] = useState<{id: string, nombre: string}[]>([]);
   const [filtrosActivosArray, setFiltrosActivosArray] = useState<{tipo: string, valor: string, etiqueta: string}[]>([]);
+  
+  // Función para adaptar categorías del tipo CategoriaNoticia[] a {id: string, nombre: string}[]
+  const adaptarCategorias = (cats: CategoriaNoticia[]): {id: string, nombre: string}[] => {
+    return cats.map(cat => ({
+      id: String(cat.id), // Convertir id a string explícitamente
+      nombre: cat.nombre
+    }));
+  };
   
   // Estado para controlar la vista
   const [mostrarListaCompleta, setMostrarListaCompleta] = useState(false);
@@ -223,7 +232,8 @@ export default function Noticias() {
                 setFiltrosActivos(cantidad);
               }}
               onCategoriasLoaded={(cats) => {
-                setCategorias(cats);
+                // Usar la función adaptadora para convertir CategoriaNoticia[] a {id: string, nombre: string}[]
+                setCategorias(adaptarCategorias(cats));
               }}
               onFiltrosActivosArrayChange={(filtros) => {
                 setFiltrosActivosArray(filtros);
