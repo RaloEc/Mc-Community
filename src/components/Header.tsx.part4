@@ -1,0 +1,198 @@
+      <div 
+        className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] transition-opacity duration-300" 
+        onClick={() => setIsMenuOpen(false)} 
+        style={{ position: 'fixed', top: '0', left: '0', right: '0', bottom: '0', width: '100vw', height: '100vh', visibility: isMenuOpen ? 'visible' : 'hidden', opacity: isMenuOpen ? 1 : 0, pointerEvents: isMenuOpen ? 'auto' : 'none' }} 
+      />
+      
+      <div className={`md:hidden fixed right-0 top-0 w-72 h-screen overflow-y-auto shadow-xl z-[1000] transition-all duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'} border-l border-gray-200 dark:border-gray-800`} style={{ paddingTop: '1.5rem', paddingBottom: '6rem' }}>
+        <nav className="flex flex-col h-full relative">
+          <div className="absolute top-2 right-2 p-1">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsMenuOpen(false)} 
+              aria-label="Cerrar menú"
+              className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-2 focus:ring-blue-500"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className={`p-4 pt-10 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
+            {authUser ? (
+              <div className="flex items-center">
+                <Avatar className="w-14 h-14">
+                  <AvatarImage 
+                    src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
+                    alt={profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || 'Usuario'} 
+                  />
+                  <AvatarFallback>{getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col">
+                  <span className="ml-2 text-sm">
+                    {profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'Usuario'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{profile?.role || 'user'}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <Button variant="outline" className="w-full" onClick={() => openAuthModal('login')}>Iniciar Sesión</Button>
+                <Button className="w-full" onClick={() => openAuthModal('register')}>Registrarse</Button>
+              </div>
+            )}
+          </div>
+
+          {/* Barra de búsqueda móvil */}
+          <div className={`p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black`}>
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Buscar noticias, hilos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-full"
+              />
+            </form>
+          </div>
+
+          <ul className="flex-grow p-4 space-y-3 overflow-y-auto">
+            <li>
+              <div className="flex items-center justify-between">
+                <Link href="/noticias" className={`flex items-center gap-2 p-2 rounded-md flex-grow ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                  <Newspaper size={18} /> Noticias
+                </Link>
+                <button 
+                  className={`p-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                  onClick={() => {
+                    // Aquí podrías añadir lógica para mostrar un submenú de noticias en móvil
+                    // Similar a como lo haces con el foro
+                  }}
+                >
+                  <ChevronDown size={18} />
+                </button>
+              </div>
+            </li>
+            <li>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                onClick={() => setForoMobileOpen(v => !v)}
+              >
+                <span className="flex items-center gap-2"><MessageSquare size={18} /> Foro</span>
+                <span className="text-xs">{foroMobileOpen ? '−' : '+'}</span>
+              </button>
+              {foroMobileOpen && (
+                <div className="mt-1 ml-2">
+                  {/* <Link href="/foro" className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    Ver todo el foro
+                  </Link> */}
+                  {foroCategorias.map(cat => {
+                    const hasSubcats = cat.subcategorias && cat.subcategorias.length > 0;
+                    const isExpanded = expandedCategories[cat.id] || false;
+                    
+                    return (
+                      <div key={cat.id} className="mt-1">
+                        <div className="flex items-center justify-between">
+                          <Link
+                            href={`/foro/categoria/${cat.slug}`}
+                            className={`flex-grow px-4 py-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
+                            onClick={closeAllMenus}
+                            style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : undefined}
+                          >
+                            {cat.nombre}
+                          </Link>
+                          {hasSubcats && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setExpandedCategories(prev => ({
+                                  ...prev,
+                                  [cat.id]: !prev[cat.id]
+                                }));
+                              }}
+                              className={`p-2 rounded-full ${currentTheme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gray-800'}`}
+                            >
+                              <ChevronDown 
+                                className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} 
+                              />
+                            </button>
+                          )}
+                        </div>
+                        {hasSubcats && (
+                          <div 
+                            className={`overflow-hidden transition-all duration-300 ease-in-out transform ${isExpanded ? 'max-h-96 opacity-100 scale-100' : 'max-h-0 opacity-0 scale-95'}`}
+                            style={{ transitionProperty: 'max-height, opacity, transform', transformOrigin: 'top' }}
+                          >
+                            <div className="ml-4 mt-1 border-l border-gray-200 dark:border-gray-800">
+                              {cat.subcategorias.map(subcat => (
+                                <Link
+                                  key={subcat.id}
+                                  href={`/foro/categoria/${subcat.slug}`}
+                                  className={`block px-4 py-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800'}`}
+                                  onClick={closeAllMenus}
+                                  style={subcat.color ? { borderLeft: `3px solid ${subcat.color}` } : undefined}
+                                >
+                                  {subcat.nombre}
+                                </Link>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </li>
+          </ul>
+
+          {isAdmin && (
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
+              <p className={`text-sm font-semibold mb-2 ${currentTheme === 'light' ? 'text-gray-500' : 'text-gray-400'}`}>Administración</p>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/admin/dashboard" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <Shield size={18} /> Dashboard
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/foro" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <MessageSquare size={18} /> Admin Foro
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/noticias" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <Newspaper size={18} /> Admin Noticias
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/admin/usuarios" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <User size={18} /> Admin Usuarios
+                  </Link>
+                </li>
+                
+              </ul>
+            </div>
+          )}
+
+          {authUser && (
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
+              <Link href="/perfil" className={`flex items-center gap-2 p-2 rounded-md w-full text-left ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}><User size={18} /> Mi Perfil</Link>
+              <button onClick={handleLogout} className="flex items-center gap-2 p-2 rounded-md hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut size={18} /> Cerrar Sesión</button>
+            </div>
+          )}
+        </nav>
+      </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode={authModalMode}
+        redirectTo={authRedirectTo}
+      />
+    </header>
+  )
+}

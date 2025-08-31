@@ -1,0 +1,132 @@
+'use client'
+
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ModeToggle } from '@/components/mode-toggle'
+import { createClient } from '@/lib/supabase/client'
+import { useAuth } from '@/context/AuthContext'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getUserInitials } from '@/lib/utils/avatar-utils';
+import { saveCurrentUrlForRedirect } from '@/lib/utils/auth-utils';
+import { AuthModal } from '@/components/auth/AuthModal'
+import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare, Plus, PenSquare, ChevronDown, Search, X } from 'lucide-react'
+
+export default function Header() {
+  const router = useRouter()
+  const { session, user: authUser, profile, signOut } = useAuth()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [currentTheme, setCurrentTheme] = useState('light');
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
+  const adminMenuRef = useRef<HTMLLIElement | null>(null)
+  // Foro menu state
+  const [isForoMenuOpen, setIsForoMenuOpen] = useState(false)
+  const foroMenuRef = useRef<HTMLLIElement | null>(null)
+  // Noticias menu state
+  const [isNoticiasMenuOpen, setIsNoticiasMenuOpen] = useState(false)
+  const noticiasMenuRef = useRef<HTMLLIElement | null>(null)
+  // Estado para categorías expandidas
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  // Auth modal state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login')
+  const [authRedirectTo, setAuthRedirectTo] = useState<string | undefined>(undefined)
+  const [searchQuery, setSearchQuery] = useState('')
+  type ForoCategoria = {
+    id: string
+    nombre: string
+    slug: string
+    parent_id: string | null
+    nivel: number | null
+    color: string | null
+    subcategorias?: ForoCategoria[]
+  }
+  type ApiForoCategoria = {
+    id: string
+    nombre: string
+    slug: string
+    parent_id: string | null
+    nivel: number | null
+    color: string | null
+  }
+  const [foroCategorias, setForoCategorias] = useState<ForoCategoria[]>([])
+  const [foroMobileOpen, setForoMobileOpen] = useState(false)
+
+  useEffect(() => {
+    const detectTheme = () => {
+      const htmlElement = document.documentElement;
+      if (htmlElement.classList.contains('dark')) {
+        setCurrentTheme('dark'); // AMOLED mode (mantenemos 'dark' como valor para compatibilidad)
+      } else {
+        setCurrentTheme('light');
+      }
+    };
+
+    detectTheme();
+    const observer = new MutationObserver(detectTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect();
+  }, [])
+
+  useEffect(() => {
+    if (authUser && session && profile) {
+      setIsAdmin(profile.role === 'admin');
+    } else {
+      setIsAdmin(false);
+    }
+  }, [authUser, session, profile])
+
+  // Cerrar submenús al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+        setIsAdminMenuOpen(false)
+      }
+      if (foroMenuRef.current && !foroMenuRef.current.contains(e.target as Node)) {
+        setIsForoMenuOpen(false)
+      }
+      if (noticiasMenuRef.current && !noticiasMenuRef.current.contains(e.target as Node)) {
+        setIsNoticiasMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Cargar categorías de foro y construir jerarquía
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await fetch('/api/foro/categorias')
+        if (!res.ok) return
+        const json = await res.json()
+        const flat: ForoCategoria[] = ((json?.data || []) as ApiForoCategoria[]).map((c) => ({
+          id: c.id,
+          nombre: c.nombre,
+          slug: c.slug,
+          parent_id: c.parent_id ?? null,
+          nivel: c.nivel ?? 0,
+          color: c.color ?? null,
+        }))
+        const map = new Map<string, ForoCategoria>()
+        flat.forEach(c => map.set(c.id, { ...c, subcategorias: [] }))
+        const roots: ForoCategoria[] = []
+        flat.forEach(c => {
+          if (c.parent_id && map.has(c.parent_id)) {
+            map.get(c.parent_id)!.subcategorias!.push(map.get(c.id)!)
+          } else {
+            roots.push(map.get(c.id)!)
+          }
+        })
+        setForoCategorias(roots)
+      } catch (e) {
+        // noop
+      }
+    }
+    fetchCategorias()
+  }, [])
