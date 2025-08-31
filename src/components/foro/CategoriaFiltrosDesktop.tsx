@@ -44,7 +44,7 @@ export default function CategoriaFiltrosDesktop({
     value.destacados === true;
 
   return (
-    <div className="hidden md:block bg-card rounded-lg border border-border mb-6 p-3">
+    <div className="hidden md:block bg-card dark:bg-black rounded-lg border border-border mb-6 p-3">
       <div className="flex flex-wrap items-center gap-2">
         {/* Título con icono */}
         <div className="flex items-center mr-2">

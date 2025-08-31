@@ -41,7 +41,7 @@ export default function ContenidoRelevante({ categoriaSlugOrId }: { categoriaSlu
 
   return (
     <div className="bg-card border rounded-lg overflow-hidden">
-ñ      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-4 pb-2">
         <h3 className="font-semibold">Relevantes</h3>
       </div>
       <div className="px-4 mt-3 flex flex-wrap gap-2 text-sm">

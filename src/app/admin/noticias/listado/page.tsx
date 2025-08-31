@@ -70,12 +70,20 @@ type Noticia = {
   autor_id: string
   autor_nombre?: string
   autor_color?: string
-  categoria_id: string
+  categoria_id?: string
   categoria_nombre?: string
   slug: string
   vistas: number
   destacada: boolean
   es_activa: boolean
+  categorias?: {
+    categoria_id: string
+    categoria: {
+      nombre: string
+      slug: string
+      color: string
+    }
+  }[]
 }
 
 // Tipo para las categorías
@@ -350,13 +358,13 @@ export default function ListadoNoticiasPage() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {noticia.categoria_nombre ? (
+                          {noticia.categorias && noticia.categorias.length > 0 ? (
                             <div className="flex items-center">
                               <div 
                                 className="w-3 h-3 rounded-full mr-2" 
-                                style={{ backgroundColor: categorias.find(c => c.id === noticia.categoria_id)?.color || '#3b82f6' }}
+                                style={{ backgroundColor: noticia.categorias[0].categoria?.color || '#3b82f6' }}
                               />
-                              <span>{noticia.categoria_nombre}</span>
+                              <span>{noticia.categorias[0].categoria?.nombre || 'Sin nombre'}</span>
                             </div>
                           ) : (
                             <span className="text-muted-foreground">Sin categoría</span>
@@ -370,8 +378,8 @@ export default function ListadoNoticiasPage() {
                         </TableCell>
                         <TableCell>{noticia.vistas || 0}</TableCell>
                         <TableCell>
-                          <Badge variant={noticia.es_activa ? "default" : "outline"}>
-                            {noticia.es_activa ? "Activa" : "Inactiva"}
+                          <Badge variant={noticia.es_activa !== false ? "default" : "outline"}>
+                            {noticia.es_activa !== false ? "Activa" : "Inactiva"}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">

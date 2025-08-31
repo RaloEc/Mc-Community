@@ -112,7 +112,7 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
         votos_conteo:foro_votos_hilos(count),
         respuestas_conteo:foro_posts(count),
         perfiles:autor_id(username, rol:role, avatar_url),
-        foro_categorias(nombre, color)
+        foro_categorias:categoria_id(nombre, color)
       `;
 
       let query = supabase.from('foro_hilos').select(baseSelect);
@@ -186,9 +186,45 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
   // Cargar datos de la pestaña activa cuando cambia (solo en móvil)
   useEffect(() => {
     if (!isDesktop) {
-      cargarHilos(activeTab);
+      let isMounted = true;
+      let timeoutId: NodeJS.Timeout;
+      
+      const cargarDatosConTimeout = async () => {
+        try {
+          // Establecer un timeout para la carga
+          const timeoutPromise = new Promise<void>((_, reject) => {
+            timeoutId = setTimeout(() => {
+              reject(new Error(`Tiempo de espera agotado al cargar ${activeTab}`));
+            }, 8000); // 8 segundos de timeout
+          });
+          
+          // Intentar cargar los datos con un tiempo límite
+          await Promise.race([
+            cargarHilos(activeTab),
+            timeoutPromise
+          ]);
+          
+          // Limpiar el timeout ya que la carga se completó
+          clearTimeout(timeoutId);
+        } catch (err) {
+          console.error(`Error en ForosBloque al cargar ${activeTab}:`, err);
+          // Solo actualizar el estado si el componente sigue montado
+          if (isMounted) {
+            setErrors(prev => ({ ...prev, [activeTab]: `Error al cargar los hilos de ${activeTab}` }));
+            setLoading(prev => ({ ...prev, [activeTab]: false }));
+          }
+        }
+      };
+      
+      cargarDatosConTimeout();
+      
+      // Limpiar al desmontar o cambiar de pestaña
+      return () => {
+        isMounted = false;
+        clearTimeout(timeoutId);
+      };
     }
-  }, [activeTab, limit, isDesktop]);
+  }, [activeTab, isDesktop]);
 
   // Renderizar un hilo
   const renderHilo = (hilo: Hilo) => (

@@ -17,3 +17,32 @@
   margin: 0;
   pointer-events: none;
 }
+
+/* Estado cuando se está creando una categoría */
+.categoria-item.creating {
+  animation: fadeInSlideDown 0.5s ease forwards;
+}
+
+@keyframes fadeInSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 100px;
+  }
+}
+
+/* Efecto de resaltado para categorías recién creadas o actualizadas */
+.categoria-item.highlight {
+  animation: highlightPulse 1.5s ease;
+}
+
+@keyframes highlightPulse {
+  0% { background-color: transparent; }
+  30% { background-color: rgba(59, 130, 246, 0.1); }
+  100% { background-color: transparent; }
+}

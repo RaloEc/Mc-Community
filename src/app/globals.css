@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Prevenir scroll horizontal */
+.overflow-x-clip {
+  overflow-x: clip;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(-10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -10,25 +21,8 @@
 /* Transición suave entre temas - optimizada para rendimiento */
 .theme-transition {
   transition-property: background-color; /* color; */
-  transition-duration: 0.1s;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Aplicar solo a elementos principales que cambian visualmente */
-.theme-transition .card,
-.theme-transition button,
-.theme-transition nav,
-.theme-transition header,
-.theme-transition footer,
-.theme-transition main,
-.theme-transition section,
-.theme-transition aside,
-.theme-transition .dropdown-menu,
-.theme-transition .alert,
-.theme-transition .badge {
-  transition-property: background-color, border-color; /* color; */
-  transition-duration: 0.1s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
 /* Excepciones para elementos que no deberían tener transición */
@@ -40,13 +34,14 @@
 }
 
 .dropdown-animation {
-  
+  animation: fadeIn 0.2s ease-out;
+  transform-origin: top center;
 }
 
 /* Estilos de Swapy eliminados */
 
-@layer base {
-  :root {
+/* Definición de variables y estilos base */
+:root {
     /* Colores base */
     --blue: 217 91% 60%;     /* Azul principal */
     --green: 120 60% 50%;    /* Verde hierba */
@@ -86,38 +81,6 @@
   }
 
     .dark {
-    /* Tema Oscuro */
-    --background: 222 47% 11%;
-    --foreground: 0 0% 95%;
-
-    --card: 222 47% 8%;
-    --card-foreground: 0 0% 95%;
-
-    --popover: 222 47% 8%;
-    --popover-foreground: 0 0% 95%;
-
-    --primary: 217 91% 65%;   /* Azul un poco más claro */
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 120 60% 45%;  /* Verde hierba más oscuro */
-    --secondary-foreground: 0 0% 100%;
-
-    --muted: 222 32% 15%;
-    --muted-foreground: 25 5% 65%; /* Gris piedra más claro */
-
-    --accent: 217 91% 60%;    /* Azul principal */
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 63%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 222 32% 20%;
-    --input: 222 32% 20%;
-    --ring: 217 91% 65%;     /* Igual que primary */
-  }
-
-
-  .amoled {
     /* Tema AMOLED - Negro puro con acentos vibrantes */
     --background: 0 0% 0%;
     --foreground: 0 0% 95%;
@@ -148,29 +111,19 @@
     --input: 0 0% 12%;
     --ring: 217 91% 65%;     /* Igual que primary */
   }
-}
 
-@layer base {
+
+  /* La clase .amoled ha sido eliminada y sus estilos se han movido a .dark */
   * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    padding-top: 64px; /* Compensar el header fijo */
   }
-}
 
 /* Animaciones y efectos */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 /* Animación de respiración suave para el indicador */
 @keyframes suaveRespirar {
@@ -231,33 +184,33 @@
 }
 
 /* AMOLED: Estilos para tema AMOLED */
-.amoled .servidor-header-title,
-.amoled .servidor-header-description,
-.amoled .servidor-header-badge,
-.amoled .status-text,
-.amoled .server-name,
-.amoled .server-desc,
-.amoled .label,
-.amoled .value,
-.amoled .ip {
+.dark .servidor-header-title,
+.dark .servidor-header-description,
+.dark .servidor-header-badge,
+.dark .status-text,
+.dark .server-name,
+.dark .server-desc,
+.dark .label,
+.dark .value,
+.dark .ip {
   color: #e0e0e0 !important;
 }
 
-.amoled .servidor-card {
+.dark .servidor-card {
   background-color: #000000;
   border-color: #1e1e1e;
 }
 
-.amoled .servidor-card.destacado {
+.dark .servidor-card.destacado {
   border-left-color: var(--primary) !important;
 }
 
-.amoled .icon-container {
+.dark .icon-container {
   background-color: rgba(33, 150, 243, 0.15);
 }
 
-.amoled .ip-container,
-.amoled .motd {
+.dark .ip-container,
+.dark .motd {
   background-color: #121212;
   border-color: #1e1e1e;
 }
@@ -274,7 +227,7 @@
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Estilos para tema oscuro AMOLED */
+/* Estilos para tema AMOLED */
 .dark .amoled-black {
   background-color: #000000;
 }
@@ -297,10 +250,6 @@
 }
 
 /* Estilos para menús desplegables */
-.dropdown-animation {
-  
-  transform-origin: top center;
-}
 
 /* Estilos para botones con efecto hover */
 .button-hover-effect {

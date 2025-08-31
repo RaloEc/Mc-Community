@@ -35,7 +35,7 @@ async function getCategorias() {
 export default async function ForoLayout({ children }: { children: React.ReactNode }) {
   const categorias = await getCategorias()
   return (
-    <div className="bg-white dark:bg-gray-950 amoled:bg-black min-h-screen">
+    <div className="bg-white dark:bg-black amoled:bg-black min-h-screen">
       <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-6 lg:py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <ForoSidebar categorias={categorias} />

@@ -27,7 +27,7 @@ function formatDate(dateStr?: string | null) {
 export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
   const href = hilo.slug ? `/foro/hilos/${hilo.slug}` : `/foro/hilos/${hilo.id}`
   return (
-    <article className="flex gap-3 p-3 rounded-lg border bg-card">
+    <article className="flex gap-3 p-3 rounded-lg border bg-card dark:bg-black">
       {hilo.media_preview_url && (
         <div className="relative w-24 h-16 rounded overflow-hidden border hidden sm:block">
           <Image src={hilo.media_preview_url} alt={hilo.titulo} fill className="object-cover" />

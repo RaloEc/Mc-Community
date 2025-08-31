@@ -18,19 +18,29 @@ export const metadata: Metadata = {
 
 // Script para prevenir FOUC (Flash of Unstyled Content)
 const ThemeScript = () => {
-  // Script simplificado para evitar problemas de hidratación
+  // Script que se ejecuta antes de la hidratación para evitar parpadeo
+  // Solo soporta modo claro y AMOLED puro (#000000)
   const themeScript = `
     (function() {
       try {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        document.documentElement.classList.add(savedTheme);
+        const savedTheme = localStorage.getItem('theme');
+        // Solo permitir 'light' o 'dark' (AMOLED)
+        if (savedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          // Por defecto AMOLED (dark con #000000 puro)
+          document.documentElement.classList.add('dark');
+          document.documentElement.style.setProperty('--amoled-black', '#000000');
+        }
       } catch (e) {
+        // Fallback a AMOLED
         document.documentElement.classList.add('dark');
+        document.documentElement.style.setProperty('--amoled-black', '#000000');
       }
     })();
   `;
 
-  return <script dangerouslySetInnerHTML={{ __html: themeScript }} />;
+  return <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeScript }} />;
 };
 
 export default async function RootLayout({
@@ -58,7 +68,7 @@ export default async function RootLayout({
         <ThemeScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
       </head>
-      <body className={`${nunito.className} min-h-screen`}>
+      <body className={`${nunito.className} min-h-screen bg-white dark:bg-black transition-colors duration-300 overflow-x-hidden max-w-[100vw]`}>
         <Providers session={session}>
           <Header />
           <main>

@@ -7,6 +7,7 @@ import type { Noticia } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import TiptapEditor, { processEditorContent } from '@/components/TiptapEditor' // Importamos processEditorContent
+import { ChevronDown, ChevronRight, X } from 'lucide-react'
 import { 
   Card, 
   CardContent, 
@@ -95,6 +96,18 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
     },
   })
 
+  // Estado para controlar qué categorías están expandidas
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+  // Función para alternar la expansión de una categoría
+  const toggleCategory = (categoryId: string) => {
+    if (expandedCategories.includes(categoryId)) {
+      setExpandedCategories(expandedCategories.filter(id => id !== categoryId));
+    } else {
+      setExpandedCategories([...expandedCategories, categoryId]);
+    }
+  };
+
   // Función para renderizar categorías jerárquicas
   const renderCategoriasJerarquicas = (categorias: Categoria[], field: any, isMobile: boolean, nivel: number = 0) => {
     return (
@@ -102,10 +115,26 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
         {categorias.map((categoria) => {
           const isSelected = field.value?.includes(categoria.id);
           const tieneHijos = categoria.hijos && categoria.hijos.length > 0;
+          const isExpanded = expandedCategories.includes(categoria.id);
           
           return (
             <div key={categoria.id} className="mb-1">
               <div className="flex items-center gap-1">
+                {tieneHijos && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="p-0 h-6 w-6"
+                    onClick={() => toggleCategory(categoria.id)}
+                  >
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant={isSelected ? "default" : "outline"}
@@ -131,7 +160,7 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
                 )}
               </div>
               
-              {tieneHijos && (
+              {tieneHijos && isExpanded && (
                 renderCategoriasJerarquicas(categoria.hijos!, field, isMobile, nivel + 1)
               )}
             </div>
@@ -579,14 +608,65 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
                           <div className="text-sm text-muted-foreground">Cargando categorías...</div>
                         ) : categorias.length > 0 ? (
                           <div className="w-full">
-                            {/* Versión móvil con estructura jerárquica */}
-                            <div className="md:hidden flex flex-col gap-2 w-full max-h-[200px] overflow-y-auto pb-2">
-                              {renderCategoriasJerarquicas(categorias, field, true)}
+                            {/* Instrucciones para el usuario */}
+                            <div className="text-xs text-muted-foreground mb-2">
+                              <p>Haz clic en las flechas para expandir o colapsar las categorías. Puedes seleccionar hasta 4 categorías.</p>
                             </div>
-                            
-                            {/* Versión escritorio con estructura jerárquica */}
-                            <div className="hidden md:flex flex-col gap-2 w-full justify-start">
-                              {renderCategoriasJerarquicas(categorias, field, false)}
+
+                            {/* Categorías seleccionadas */}
+                            {field.value && field.value.length > 0 && (
+                              <div className="mb-3 p-2 border rounded-md bg-muted/30">
+                                <p className="text-xs font-medium mb-1">Categorías seleccionadas:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {field.value.map((catId: string) => {
+                                    // Buscar la categoría por ID (función recursiva)
+                                    const findCategoriaById = (cats: Categoria[], id: string): Categoria | undefined => {
+                                      for (const cat of cats) {
+                                        if (cat.id === id) return cat;
+                                        if (cat.hijos && cat.hijos.length > 0) {
+                                          const found = findCategoriaById(cat.hijos, id);
+                                          if (found) return found;
+                                        }
+                                      }
+                                      return undefined;
+                                    };
+                                    
+                                    const categoria = findCategoriaById(categorias, catId);
+                                    
+                                    return categoria ? (
+                                      <div key={catId} className="flex items-center bg-primary/10 rounded-full px-2 py-1">
+                                        {categoria.icono && <span className="mr-1">{categoria.icono}</span>}
+                                        <span className="text-xs">{categoria.nombre}</span>
+                                        <Button 
+                                          type="button" 
+                                          variant="ghost" 
+                                          size="sm" 
+                                          className="h-4 w-4 p-0 ml-1"
+                                          onClick={() => {
+                                            const updatedCategories = field.value.filter((id: string) => id !== catId);
+                                            field.onChange(updatedCategories);
+                                          }}
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Área con borde para la lista de categorías */}
+                            <div className="border rounded-md p-3 max-h-[300px] overflow-y-auto">
+                              {/* Versión móvil con estructura jerárquica */}
+                              <div className="md:hidden flex flex-col gap-2 w-full">
+                                {renderCategoriasJerarquicas(categorias, field, true)}
+                              </div>
+                              
+                              {/* Versión escritorio con estructura jerárquica */}
+                              <div className="hidden md:flex flex-col gap-2 w-full justify-start">
+                                {renderCategoriasJerarquicas(categorias, field, false)}
+                              </div>
                             </div>
                             
                             {field.value.length >= 4 && (

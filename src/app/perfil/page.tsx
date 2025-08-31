@@ -1,501 +1,450 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Separator } from '@/components/ui/separator'
-import { Loader2, UserCircle, ShieldAlert, Settings, FileText, Server } from 'lucide-react'
-import Image from 'next/image'
+import { useToast } from '@/hooks/use-toast'
 import ImageUploader from '@/components/ImageUploader'
+import ProfileHeader from '@/components/perfil/profile-header'
+import ProfileStats from '@/components/perfil/profile-stats'
+import ActivityFeed from '@/components/perfil/activity-feed'
+import MembershipInfo from '@/components/perfil/membership-info'
+import { 
+  Card, 
+  CardBody,
+  Button, 
+  Input,
+  Textarea,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Spinner,
+  Divider
+} from '@nextui-org/react'
+import { 
+  LogOut
+} from 'lucide-react'
 
-interface Perfil {
+interface PerfilCompleto {
   id: string
   username: string
-  role: string
+  role: 'user' | 'admin' | 'moderator'
   email?: string
+  avatar_url: string
+  color: string
+  bio?: string
+  ubicacion?: string
+  sitio_web?: string
+  activo?: boolean
+  ultimo_acceso?: string
   created_at?: string
-  avatar_url?: string
-  color?: string
+  updated_at?: string
 }
 
 export default function PerfilPage() {
   const router = useRouter()
-  const { session, loading: authLoading, user } = useAuth()
-  const [perfil, setPerfil] = useState<Perfil | null>(null)
-  const [loading, setLoading] = useState(false) // Ya no necesitamos iniciar con loading=true
+  const { user, session, profile, loading: authLoading, refreshAuth, refreshProfile } = useAuth()
+  const { toast } = useToast()
+  const { isOpen, onOpen, onClose } = useDisclosure()
+
+  const [perfil, setPerfil] = useState<PerfilCompleto | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [username, setUsername] = useState('')
-  const [userColor, setUserColor] = useState('#3b82f6') // Color por defecto (azul)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [saveError, setSaveError] = useState<string | null>(null)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-  const [estadisticas, setEstadisticas] = useState({
-    noticias: 0,
-    comentarios: 0
+  const [estadisticas, setEstadisticas] = useState({ noticias: 0, comentarios: 0, hilos: 0, respuestas: 0 })
+
+  // Estados para el modal de edición
+  const [editData, setEditData] = useState({
+    username: '',
+    bio: '',
+    ubicacion: '',
+    sitio_web: '',
+    color: '#3b82f6',
+    avatar_url: ''
   })
 
   useEffect(() => {
-    // Si estamos cargando la autenticación, no hacemos nada aún
-    if (authLoading) return;
+    if (authLoading) return
     
-    // Si no hay sesión después de cargar, redirigimos al login
-    if (!session && !authLoading) {
-      router.push('/login');
-      return;
+    if (!session) {
+      router.push('/login')
+      return
     }
+
+    if (!user) return
+
+    // Construir perfil completo
+    const userMetadata = user.user_metadata || {}
+    const roleValue = (profile as any)?.role || 'user'
+    const validRole = ['user', 'admin', 'moderator'].includes(roleValue) 
+      ? roleValue as 'user' | 'admin' | 'moderator'
+      : 'user'
+
+    const perfilCompleto: PerfilCompleto = {
+      id: user.id,
+      username: (profile as any)?.username || userMetadata.full_name || userMetadata.name || 'Usuario',
+      role: validRole,
+      email: session.user.email || '',
+      avatar_url: (profile as any)?.avatar_url || userMetadata.avatar_url || userMetadata.picture || '/images/default-avatar.png',
+      color: (profile as any)?.color || '#3b82f6',
+      bio: (profile as any)?.bio || '',
+      ubicacion: (profile as any)?.ubicacion || '',
+      sitio_web: (profile as any)?.sitio_web || '',
+      activo: (profile as any)?.activo ?? true,
+      ultimo_acceso: (profile as any)?.ultimo_acceso || new Date().toISOString(),
+      created_at: session.user.created_at || new Date().toISOString(),
+      updated_at: (profile as any)?.updated_at || new Date().toISOString()
+    }
+
+    setPerfil(perfilCompleto)
     
-    // Si tenemos usuario del contexto, lo utilizamos
-    if (user && session) {
-      const perfilCompleto = {
-        ...user,
-        email: session.user.email,
-        created_at: session.user.created_at
-      };
-      
-      setPerfil(perfilCompleto);
-      setUsername(perfilCompleto.username || '');
-      
-      // Cargar el avatar si existe
-      if (perfilCompleto.avatar_url) {
-        setAvatarUrl(perfilCompleto.avatar_url);
-      }
-      
-      // Cargar el color del usuario
-      if (perfilCompleto) {
-        // Usar acceso seguro con operador de encadenamiento opcional
-        const userColor = (perfilCompleto as any).color;
-        if (userColor) {
-          setUserColor(userColor);
-        }
-      } else {
-        try {
-          // Intentar cargar desde localStorage como respaldo
-          const savedColor = localStorage.getItem('userColor');
-          if (savedColor) {
-            setUserColor(savedColor);
-          }
-        } catch (e) {
-          console.error('Error al cargar el color del usuario:', e);
-        }
-      }
-      
-      // Cargar estadísticas si es usuario normal
-      if (perfilCompleto.role !== 'admin' && session.user.id) {
-        cargarEstadisticasUsuario(session.user.id);
-      }
-    }
-  }, [authLoading, session, user, router])
-  
-  async function cargarEstadisticasUsuario(userId: string) {
+    // Configurar datos para edición
+    setEditData({
+      username: perfilCompleto.username,
+      bio: perfilCompleto.bio || '',
+      ubicacion: perfilCompleto.ubicacion || '',
+      sitio_web: perfilCompleto.sitio_web || '',
+      color: perfilCompleto.color,
+      avatar_url: perfilCompleto.avatar_url
+    })
+
+    setLoading(false)
+    
+    // Cargar estadísticas
+    cargarEstadisticas()
+  }, [authLoading, session, user, profile, router])
+
+  const cargarEstadisticas = async () => {
+    if (!user) return
+
     try {
-      // Contar noticias del usuario
-      const { count: noticiasCount, error: noticiasError } = await supabase
-        .from('noticias')
-        .select('*', { count: 'exact', head: true })
-        .eq('autor', userId)
-      
-      if (noticiasError) throw noticiasError
-      
-      // Contar comentarios (asumiendo que existe una tabla de comentarios)
-      // Si no existe, puedes eliminar esta parte
-      const { count: comentariosCount, error: comentariosError } = await supabase
-        .from('comentarios')
-        .select('*', { count: 'exact', head: true })
-        .eq('usuario_id', userId)
-      
-      if (comentariosError && comentariosError.code !== 'PGRST116') {
-        // PGRST116 es el error cuando la tabla no existe, lo ignoramos
-        throw comentariosError
-      }
-      
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+
+      const [noticiasResult, comentariosResult, hilosResult, respuestasResult] = await Promise.all([
+        supabase.from('noticias').select('id', { count: 'exact' }).eq('autor_id', user.id),
+        supabase.from('comentarios').select('id', { count: 'exact' }).eq('usuario_id', user.id),
+        supabase.from('foro_hilos').select('id', { count: 'exact' }).eq('autor_id', user.id),
+        supabase.from('foro_posts').select('id', { count: 'exact' }).eq('autor_id', user.id)
+      ])
+
       setEstadisticas({
-        noticias: noticiasCount || 0,
-        comentarios: comentariosCount || 0
+        noticias: noticiasResult.count || 0,
+        comentarios: comentariosResult.count || 0,
+        hilos: hilosResult.count || 0,
+        respuestas: respuestasResult.count || 0
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error cargando estadísticas:', error)
-      // No mostramos error al usuario para no interrumpir la experiencia
     }
   }
   
-  async function handleGuardarCambios() {
+  // Función para cargar actividades con paginación
+  const fetchActividades = useCallback(async (page: number, limit: number) => {
+    if (!user) return []
+    
     try {
-      setIsSaving(true)
-      setSaveError(null)
-      setSaveSuccess(false)
-      
-      if (!perfil) return
-      
-      console.log('[Perfil] Guardando cambios para usuario:', perfil.id)
-      console.log('[Perfil] Nuevos valores - Username:', username, 'Color:', userColor)
-      
-      // Intentar actualizar usando API para evitar problemas de RLS
-      const response = await fetch('/api/perfil/actualizar', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: perfil.id,
-          username: username,
-          color: userColor
-        }),
-      })
-      
-      const result = await response.json()
+      const response = await fetch(`/api/perfil/actividades?userId=${user.id}&page=${page}&limit=${limit}`)
       
       if (!response.ok) {
-        console.error('[Perfil] Error al actualizar perfil via API:', result.error)
-        throw new Error(result.error || 'Error al guardar los cambios')
+        throw new Error('Error al cargar actividades')
       }
       
-      console.log('[Perfil] Perfil actualizado correctamente via API:', result)
-      
-      // Actualizar estado local
-      setPerfil({
-        ...perfil,
-        username,
-        color: userColor
+      const data = await response.json()
+      return data.items || []
+    } catch (error) {
+      console.error('Error al cargar actividades:', error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar las actividades recientes."
       })
-      
-      // Guardar también en localStorage como respaldo
-      try {
-        localStorage.setItem('userColor', userColor)
-      } catch (e) {
-        console.warn('[Perfil] No se pudo guardar el color en localStorage:', e)
+      return []
+    }
+  }, [user, toast])
+
+  const handleSave = async () => {
+    if (!perfil) return
+
+    setSaving(true)
+    setError(null)
+
+    try {
+      // Guardar datos actuales para actualización inmediata
+      const datosActualizados = {
+        username: editData.username,
+        bio: editData.bio,
+        ubicacion: editData.ubicacion,
+        sitio_web: editData.sitio_web,
+        color: editData.color,
+        avatar_url: editData.avatar_url
       }
       
-      setSaveSuccess(true)
+      // Cerrar el modal inmediatamente
+      onClose()
       
-      // Ocultar mensaje de éxito después de 3 segundos
-      setTimeout(() => {
-        setSaveSuccess(false)
-      }, 3000)
-    } catch (error: any) {
-      console.error('[Perfil] Error guardando cambios:', error)
-      setSaveError(error.message || 'Error al guardar los cambios')
+      // Actualizar la interfaz inmediatamente para mejor experiencia de usuario
+      // Importante: Crear un nuevo objeto para forzar la re-renderización
+      const perfilActualizado = {
+        ...perfil,
+        ...datosActualizados
+      }
+      
+      // Actualizar el estado local inmediatamente
+      setPerfil(perfilActualizado)
+      
+      // Enviar datos al servidor
+      const response = await fetch('/api/perfil/actualizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: perfil.id,
+          ...datosActualizados
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar perfil')
+      }
+
+      // Obtener los datos actualizados del servidor
+      const resultado = await response.json()
+      
+      // Limpiar la caché y forzar la actualización del perfil
+      await refreshProfile()
+      
+      // Actualizar el estado local nuevamente con los datos más recientes
+      if (resultado && resultado.data) {
+        setPerfil(prev => ({
+          ...prev!,
+          ...resultado.data
+        }))
+      }
+      
+      // También actualizamos el contexto de autenticación
+      await refreshAuth()
+      
+      // Mostrar notificación de éxito
+      toast({
+        title: "Perfil actualizado",
+        description: "Los cambios se han guardado correctamente."
+      })
+    } catch (error) {
+      console.error('Error:', error)
+      setError('Error al actualizar el perfil')
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el perfil."
+      })
     } finally {
-      setIsSaving(false)
+      setSaving(false)
     }
   }
-  
-  if (loading) {
+
+  const handleSignOut = async () => {
+    try {
+      const { createClient } = await import('@/lib/supabase/client')
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push('/')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+    }
+  }
+
+
+  if (authLoading || loading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner size="lg" />
       </div>
     )
   }
-  
-  if (error) {
-    return (
-      <div className="container max-w-4xl py-8">
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      </div>
-    )
-  }
-  
+
   if (!perfil) {
     return (
-      <div className="container max-w-4xl py-8">
-        <Alert variant="destructive">
-          <AlertDescription>No se pudo cargar la información del perfil</AlertDescription>
-        </Alert>
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md bg-white dark:bg-black amoled:bg-black">
+          <CardBody className="text-center">
+            <p>No se pudo cargar el perfil</p>
+            <Button onClick={() => router.push('/')} className="mt-4">
+              Volver al inicio
+            </Button>
+          </CardBody>
+        </Card>
       </div>
     )
   }
-  
-  const isAdmin = perfil.role === 'admin'
-  
+
   return (
-    <div className="container max-w-4xl py-8">
-      <h1 className="text-3xl font-bold mb-6">Mi Perfil</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Tarjeta de información básica */}
-        <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserCircle className="h-5 w-5" />
-              Información
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex justify-center mb-4">
-              {avatarUrl ? (
-                <div className="size-24 overflow-hidden rounded-full">
-                  <img 
-                    src={avatarUrl}
-                    alt={perfil.username || 'Avatar'}
-                    className="w-full h-full object-cover"
-                    crossOrigin="anonymous"
-                  />
-                </div>
-              ) : (
-                <div className="size-24 flex items-center justify-center bg-primary text-white text-4xl font-bold rounded-full">
-                  {perfil.username?.charAt(0).toUpperCase() || perfil.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
-              )}
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-900 dark:from-black dark:to-black amoled:from-black amoled:to-black">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Header del perfil */}
+        <div className="mb-8">
+          <ProfileHeader 
+            perfil={{
+              username: perfil.username,
+              role: perfil.role,
+              avatar_url: perfil.avatar_url,
+              color: perfil.color
+            }}
+            onEditClick={onOpen}
+          />
+        </div>
+
+        {/* Biografía */}
+        {perfil.bio && (
+          <div className="mb-8">
+            <Card className="bg-white dark:bg-black amoled:bg-black">
+              <CardBody className="p-6">
+                <p className="text-gray-700 dark:text-gray-300 amoled:text-gray-300 leading-relaxed text-center text-lg">
+                  "{perfil.bio}"
+                </p>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Estadísticas */}
+        <div className="mb-8">
+          <ProfileStats estadisticas={estadisticas} />
+        </div>
+
+        {/* Grid principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Columna izquierda - Feed de actividad */}
+          <div className="lg:col-span-2">
+            <ActivityFeed 
+              fetchActivities={fetchActividades}
+              initialPage={1}
+              itemsPerPage={5}
+            />
+          </div>
+
+          {/* Columna derecha - Información de membresía */}
+          <div className="lg:col-span-1">
+            <MembershipInfo 
+              perfil={{
+                created_at: perfil.created_at,
+                ultimo_acceso: perfil.ultimo_acceso,
+                activo: perfil.activo,
+                role: perfil.role
+              }}
+              estadisticas={estadisticas}
+            />
             
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Nombre de usuario</p>
-              <p className="font-medium" style={{ color: perfil.color || '#3b82f6' }}>{perfil.username || 'No establecido'}</p>
-            </div>
-            
-            <Separator />
-            
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Correo electrónico</p>
-              <p className="font-medium break-words">{perfil.email}</p>
-            </div>
-            
-            <Separator />
-            
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Rol</p>
-              <p className="font-medium flex items-center justify-center gap-1">
-                {isAdmin ? (
-                  <>
-                    <ShieldAlert className="h-4 w-4 text-primary" />
-                    Administrador
-                  </>
-                ) : 'Usuario'}
-              </p>
-            </div>
-            
-            <Separator />
-            
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Miembro desde</p>
-              <p className="font-medium">
-                {perfil.created_at 
-                  ? new Date(perfil.created_at).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })
-                  : 'Desconocido'}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* Contenido principal */}
-        <div className="md:col-span-2">
-          <Tabs defaultValue="configuracion">
-            <TabsList className="mb-4">
-              <TabsTrigger value="configuracion" className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                Configuración
-              </TabsTrigger>
-              
-              {isAdmin && (
-                <TabsTrigger value="admin" className="flex items-center gap-1">
-                  <ShieldAlert className="h-4 w-4" />
-                  Panel Admin
-                </TabsTrigger>
-              )}
-              
-              {!isAdmin && (
-                <TabsTrigger value="actividad" className="flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
-                  Mi Actividad
-                </TabsTrigger>
-              )}
-            </TabsList>
-            
-            <TabsContent value="configuracion">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Configuración de la cuenta</CardTitle>
-                  <CardDescription>
-                    Actualiza la información de tu perfil
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Sección de imagen de perfil */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Imagen de perfil</h3>
-                    <ImageUploader
-                      currentImageUrl={avatarUrl || undefined}
-                      userId={perfil.id}
-                      onImageUploaded={(url) => {
-                        setAvatarUrl(url);
-                        // Actualizar el objeto de perfil
-                        if (perfil) {
-                          setPerfil({
-                            ...perfil,
-                            avatar_url: url
-                          });
-                        }
-                        setSaveSuccess(true);
-                        setTimeout(() => setSaveSuccess(false), 3000);
-                      }}
-                      className="mb-4"
-                    />
-                    <p className="text-xs text-muted-foreground text-center">Sube una imagen para personalizar tu perfil (máx. 2MB)</p>
-                  </div>
-                  
-                  <Separator />
-                  
-                  {/* Sección de nombre de usuario y color */}
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium mb-4">Información de usuario</h3>
-                    <div className="flex justify-between items-center">
-                      <Label htmlFor="username">Nombre de usuario</Label>
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor="userColor" className="text-sm">Color</Label>
-                        <div 
-                          className="size-6 rounded-md border cursor-pointer overflow-hidden"
-                          style={{ backgroundColor: userColor }}
-                        >
-                          <Input
-                            id="userColor"
-                            type="color"
-                            value={userColor}
-                            onChange={(e) => setUserColor(e.target.value)}
-                            className="opacity-0 w-full h-full cursor-pointer"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">El color seleccionado se aplicará a tu nombre de usuario en todo el sitio</p>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Tu nombre de usuario"
-                    />
-                    <div className="mt-2 p-2 border rounded-md bg-muted/30 dark:bg-zinc-800/30 amoled:bg-zinc-900/50">
-                      <p className="text-xs text-muted-foreground">Vista previa:</p>
-                      <p className="font-medium" style={{ color: userColor }}>
-                        {username || 'Tu nombre de usuario'}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col items-start space-y-2">
-                  {saveError && (
-                    <Alert variant="destructive" className="w-full">
-                      <AlertDescription>{saveError}</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  {saveSuccess && (
-                    <Alert className="w-full bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400 amoled:bg-green-950/30 amoled:text-green-400">
-                      <AlertDescription>Cambios guardados correctamente</AlertDescription>
-                    </Alert>
-                  )}
-                  
-                  <Button 
-                    onClick={handleGuardarCambios} 
-                    disabled={isSaving || (username === perfil.username && userColor === (perfil.color || '#3b82f6'))}
-                  >
-                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-            
-            {isAdmin && (
-              <TabsContent value="admin">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Acceso rápido al panel de administración</CardTitle>
-                    <CardDescription>
-                      Gestiona el contenido del sitio
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <Button 
-                        variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
-                        onClick={() => router.push('/admin/dashboard')}
-                      >
-                        <Server className="h-6 w-6" />
-                        <span>Dashboard</span>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
-                        onClick={() => router.push('/admin/noticias')}
-                      >
-                        <FileText className="h-6 w-6" />
-                        <span>Gestionar Noticias</span>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
-                        onClick={() => router.push('/admin/servidores')}
-                      >
-                        <Server className="h-6 w-6" />
-                        <span>Gestionar Servidores</span>
-                      </Button>
-                      
-                      <Button 
-                        variant="outline" 
-                        className="h-auto py-4 flex flex-col items-center justify-center gap-2 amoled:bg-black amoled:border-zinc-900 amoled:hover:bg-zinc-900/50"
-                        onClick={() => router.push('/admin/recursos')}
-                      >
-                        <FileText className="h-6 w-6" />
-                        <span>Gestionar Recursos</span>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-            
-            {!isAdmin && (
-              <TabsContent value="actividad">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Mi actividad en la comunidad</CardTitle>
-                    <CardDescription>
-                      Resumen de tu participación
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          <span>Noticias publicadas</span>
-                        </div>
-                        <span className="font-bold">{estadisticas.noticias}</span>
-                      </div>
-                      
-                      <Separator />
-                      
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-primary" />
-                          <span>Comentarios realizados</span>
-                        </div>
-                        <span className="font-bold">{estadisticas.comentarios}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            )}
-          </Tabs>
+            {/* Botón de cerrar sesión */}
+            <Card className="bg-white dark:bg-black amoled:bg-black mt-6">
+              <CardBody>
+                <Button
+                  color="danger"
+                  variant="light"
+                  startContent={<LogOut className="w-4 h-4" />}
+                  onPress={handleSignOut}
+                  className="w-full"
+                >
+                  Cerrar Sesión
+                </Button>
+              </CardBody>
+            </Card>
+          </div>
         </div>
       </div>
+
+      {/* Modal de edición */}
+      <Modal 
+        isOpen={isOpen} 
+        onClose={onClose}
+        size="2xl"
+        scrollBehavior="inside"
+      >
+        <ModalContent>
+          <ModalHeader>
+            <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">Editar Perfil</h2>
+          </ModalHeader>
+          <ModalBody className="space-y-4">
+            {error && (
+              <div className="p-3 bg-red-100 dark:bg-red-900/20 amoled:bg-red-900/20 border border-red-300 dark:border-red-800 amoled:border-red-800 text-red-700 dark:text-red-300 amoled:text-red-300 rounded-lg">
+                {error}
+              </div>
+            )}
+            
+            {/* Sección de imagen de perfil */}
+            <div className="mb-4">
+              <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200 amoled:text-gray-200">Imagen de perfil</h3>
+              <ImageUploader
+                currentImageUrl={editData.avatar_url}
+                userId={perfil?.id || ''}
+                onImageUploaded={(url) => setEditData(prev => ({ ...prev, avatar_url: url }))}
+                className="mb-2"
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 amoled:text-gray-400 mt-1">
+                Sube una imagen de perfil (máx. 2MB)
+              </p>
+            </div>
+            
+            <Divider className="my-4" />
+            
+            <Input
+              label="Nombre de usuario"
+              value={editData.username}
+              onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
+              placeholder="Tu nombre de usuario"
+            />
+            
+            <Textarea
+              label="Biografía"
+              value={editData.bio}
+              onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
+              placeholder="Cuéntanos sobre ti..."
+              maxRows={4}
+            />
+            
+            <Input
+              label="Ubicación"
+              value={editData.ubicacion}
+              onChange={(e) => setEditData(prev => ({ ...prev, ubicacion: e.target.value }))}
+              placeholder="Tu ubicación"
+            />
+            
+            <Input
+              label="Sitio web"
+              value={editData.sitio_web}
+              onChange={(e) => setEditData(prev => ({ ...prev, sitio_web: e.target.value }))}
+              placeholder="https://tu-sitio.com"
+            />
+            
+            <div>
+              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300 amoled:text-gray-300">Color del perfil</label>
+              <input
+                type="color"
+                value={editData.color}
+                onChange={(e) => setEditData(prev => ({ ...prev, color: e.target.value }))}
+                className="w-full h-10 rounded-lg border border-gray-300 dark:border-gray-600 amoled:border-gray-600 cursor-pointer"
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="danger"
+              variant="light"
+              onPress={onClose}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button
+              color="primary"
+              onPress={handleSave}
+              isLoading={saving}
+            >
+              Guardar Cambios
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   )
 }

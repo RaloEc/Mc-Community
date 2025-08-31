@@ -62,17 +62,17 @@ const InvitacionRegistro = () => (
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5 }}
-    className="bg-white dark:bg-gradient-to-r dark:from-gray-900 dark:via-gray-800 dark:to-black amoled:bg-black p-8 rounded-lg text-center my-8 border border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-lg"
+    className="bg-white dark:bg-black p-8 rounded-lg text-center my-8 border border-gray-200 dark:border-gray-800 shadow-lg"
   >
-    <h2 className="text-3xl font-bold text-gray-900 dark:text-white amoled:text-white mb-4">Únete a la Discusión</h2>
-    <p className="text-gray-600 dark:text-gray-300 amoled:text-gray-200 mb-6 max-w-2xl mx-auto">
+    <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">Únete a la Discusión</h2>
+    <p className="text-gray-600 dark:text-gray-200 mb-6 max-w-2xl mx-auto">
       Regístrate para crear tus propios hilos, responder a otros, votar en las publicaciones y ser parte activa de nuestra creciente comunidad.
     </p>
     <div className="flex justify-center gap-4">
       <Link href="/foro/crear-hilo" className="inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 shadow h-9 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
         Crear Nuevo Hilo
       </Link>
-      <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:border-gray-500 dark:text-gray-200 dark:hover:bg-gray-700 amoled:border-gray-700 amoled:text-white amoled:hover:bg-gray-800 font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">
+      <Button asChild variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100 dark:bg-black dark:border-gray-700 dark:text-white dark:hover:bg-black font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105">
         <Link href="/login">Iniciar Sesión</Link>
       </Button>
     </div>
@@ -309,10 +309,10 @@ export default function ForoCliente() {
 
   if ((isLoading && !initialLoaded) || userLoading) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-gray-950 amoled:bg-black transition-colors duration-300">
-        <div className="flex items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-gray-900 amoled:bg-black/80 border border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-md">
-          <Loader2 className="h-16 w-16 animate-spin text-sky-600 dark:text-sky-400 amoled:text-sky-500" />
-          <p className="ml-4 text-xl font-medium text-gray-800 dark:text-gray-200 amoled:text-white">Cargando el foro...</p>
+      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-black transition-colors duration-300">
+        <div className="flex items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 shadow-md">
+          <Loader2 className="h-16 w-16 animate-spin text-sky-600 dark:text-sky-500" />
+          <p className="ml-4 text-xl font-medium text-gray-800 dark:text-white">Cargando el foro...</p>
         </div>
       </div>
     );
@@ -320,20 +320,20 @@ export default function ForoCliente() {
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-gray-950 amoled:bg-black transition-colors duration-300">
-        <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-gray-900 amoled:bg-black/80 border border-red-200 dark:border-red-800 amoled:border-red-900 shadow-md max-w-md mx-auto">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 dark:text-red-400 amoled:text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-black transition-colors duration-300">
+        <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-black border border-red-200 dark:border-red-900 shadow-md max-w-md mx-auto">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-red-500 dark:text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
-          <p className="text-xl font-medium text-gray-800 dark:text-gray-200 amoled:text-white mb-2">Error</p>
-          <p className="text-red-600 dark:text-red-400 amoled:text-red-500 text-center">{error}</p>
+          <p className="text-xl font-medium text-gray-800 dark:text-white mb-2">Error</p>
+          <p className="text-red-600 dark:text-red-500 text-center">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-950 amoled:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-300">
+    <div className="bg-white dark:bg-black text-gray-900 dark:text-gray-100 transition-colors duration-300">
       <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-8">
         <header className="mb-8 text-left">
           <motion.h1 
@@ -348,7 +348,7 @@ export default function ForoCliente() {
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }} 
             transition={{ duration: 0.5, delay: 0.2, ease: "easeOut" }} 
-            className="mt-3 max-w-xl text-base text-gray-600 dark:text-gray-400 amoled:text-gray-300"
+            className="mt-3 max-w-xl text-base text-gray-600 dark:text-gray-300"
           >
             Un espacio para discutir, compartir y aprender con la comunidad.
           </motion.p>
@@ -358,7 +358,7 @@ export default function ForoCliente() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <main className="w-full lg:flex-1">
-            <div className="bg-white dark:bg-gray-900 amoled:bg-black p-6 rounded-lg shadow-none border-0 transition-colors duration-300 outline-none ring-0 focus:outline-none focus:ring-0">
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-none border-0 transition-colors duration-300 outline-none ring-0 focus:outline-none focus:ring-0">
               <div className="flex justify-end mb-6">
                 {user && (
                   <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
@@ -381,9 +381,9 @@ export default function ForoCliente() {
                       initial={initialLoaded ? false : { opacity: 0, y: 4 }}
                       animate={initialLoaded ? undefined : { opacity: 1, y: 0 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="bg-gray-50 dark:bg-gray-800/60 amoled:bg-gray-900/70 rounded-lg flex border border-gray-200 dark:border-gray-700 amoled:border-gray-800 hover:border-sky-500/50 transition-all duration-300"
+                      className="bg-gray-50 dark:bg-black rounded-lg flex border border-gray-200 dark:border-gray-800 hover:border-sky-500/50 transition-all duration-300"
                     >
-                      <div className="flex flex-col items-center p-2 bg-gray-100 dark:bg-gray-900/50 amoled:bg-black/50 rounded-l-lg transition-colors duration-300">
+                      <div className="flex flex-col items-center p-2 bg-gray-100 dark:bg-black rounded-l-lg transition-colors duration-300">
                         <button onClick={() => handleVote(hilo.id, 1)} className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors">
                           <ArrowBigUp className={`h-5 w-5 ${hilo.voto_usuario === 1 ? 'text-orange-500' : 'text-gray-400 hover:text-orange-500'}`} />
                         </button>
@@ -405,7 +405,7 @@ export default function ForoCliente() {
                               />
                               <AvatarFallback>{getUserInitials(hilo.perfiles?.username, 1, 'A')}</AvatarFallback>
                             </Avatar>
-                            <span className="font-semibold text-gray-700 dark:text-gray-300 amoled:text-white">{hilo.perfiles?.username || 'Anónimo'}</span>
+                            <span className="font-semibold text-gray-700 dark:text-white">{hilo.perfiles?.username || 'Anónimo'}</span>
                             <span className="hidden sm:inline">•</span>
                             <span>{formatDate(hilo.created_at)}</span>
                           </div>
@@ -419,7 +419,7 @@ export default function ForoCliente() {
                         <Link href={`/foro/hilos/${hilo.slug ?? hilo.id}`} className="text-lg font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300 transition-colors duration-200">
                           {hilo.titulo}
                         </Link>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 amoled:text-gray-300 mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: stripHtml(hilo.contenido) || '' }} />
+                        <div className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: stripHtml(hilo.contenido) || '' }} />
                         <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500 dark:text-gray-400">
                           <div className="flex items-center space-x-1">
                             <MessageSquare className="h-4 w-4" />

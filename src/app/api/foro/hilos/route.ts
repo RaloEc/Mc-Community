@@ -1,12 +1,39 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getServiceClient } from '@/lib/supabase/service';
+import { NextRequest, NextResponse } from 'next/server';
+import { getServiceClient } from '@/utils/supabase-service';
 
-export async function GET(request: Request) {
+// Interfaces para tipar correctamente los datos
+interface Autor {
+  username?: string;
+  role?: string;
+  avatar_url?: string;
+}
+
+interface Categoria {
+  nombre?: string;
+  slug?: string;
+  color?: string;
+}
+
+interface HiloForo {
+  id: string;
+  titulo: string;
+  contenido?: string;
+  autor_id?: string;
+  created_at: string;
+  ultimo_post_at?: string;
+  vistas?: number;
+  votos_conteo: any;
+  respuestas_conteo: any;
+  autor?: Autor;
+  categoria?: Categoria;
+}
+
+export async function GET(request: NextRequest) {
   try {
     // Obtener parámetros de la URL
     const url = new URL(request.url);
     const tipo = url.searchParams.get('tipo') || 'destacados';
+    const buscar = url.searchParams.get('buscar') || '';
     const limit = parseInt(url.searchParams.get('limit') || '5', 10);
     const categoriaSlug = url.searchParams.get('categoriaSlug') || null;
     
@@ -37,13 +64,15 @@ export async function GET(request: Request) {
     const baseSelect = `
       id, 
       titulo, 
+      contenido,
       autor_id,
       created_at,
       ultimo_post_at,
+      vistas,
       votos_conteo:foro_votos_hilos(count),
       respuestas_conteo:foro_posts(count),
-      perfiles:autor_id(username, rol:role, avatar_url),
-      foro_categorias!inner(nombre, color)
+      autor:perfiles!autor_id(username, role, avatar_url),
+      categoria:foro_categorias!categoria_id(nombre, slug, color)
     `;
 
     let query = supabase.from('foro_hilos').select(baseSelect);
@@ -51,6 +80,11 @@ export async function GET(request: Request) {
     // Filtrar por categoría si se especificó
     if (categoriaId) {
       query = query.eq('categoria_id', categoriaId);
+    }
+
+    // Aplicar búsqueda si se especificó
+    if (buscar) {
+      query = query.or(`titulo.ilike.%${buscar}%,contenido.ilike.%${buscar}%,perfiles!autor_id(username).ilike.%${buscar}%`);
     }
 
     // Configurar la consulta según el tipo
@@ -79,12 +113,13 @@ export async function GET(request: Request) {
       console.error('Error al obtener hilos del foro:', error);
       return NextResponse.json({ 
         success: false, 
-        error: 'Error al obtener hilos del foro' 
+        error: 'Error al obtener hilos del foro',
+        errorDetails: error.message
       }, { status: 500 });
     }
 
-    // Normalizar los conteos (convertir de objetos a números)
-    let hilosNormalizados = data?.map(hilo => {
+    // Normalizar los conteos y estructurar los datos para el frontend
+    let hilosNormalizados = data?.map((hilo: any) => {
       const votos = Array.isArray(hilo.votos_conteo) 
         ? (hilo.votos_conteo[0]?.count ?? 0) 
         : (hilo.votos_conteo as any)?.count ?? 0;
@@ -93,10 +128,26 @@ export async function GET(request: Request) {
         ? (hilo.respuestas_conteo[0]?.count ?? 0) 
         : (hilo.respuestas_conteo as any)?.count ?? 0;
       
+      // Asegurar que los datos del autor estén en el formato esperado
+      const autor = {
+        username: hilo.autor?.username || 'Anónimo',
+        avatar_url: hilo.autor?.avatar_url,
+        rol: hilo.autor?.role // Mapear 'role' a 'rol' para el frontend
+      };
+      
+      // Asegurar que los datos de categoría estén en el formato esperado
+      const categoria = hilo.categoria ? {
+        nombre: hilo.categoria.nombre || 'Sin categoría',
+        slug: hilo.categoria.slug || '',
+        color: hilo.categoria.color || '#3b82f6'
+      } : undefined;
+      
       return { 
         ...hilo, 
         votos_conteo: votos, 
-        respuestas_conteo: respuestas 
+        respuestas_conteo: respuestas,
+        autor,
+        categoria
       };
     }) || [];
     

@@ -3,7 +3,7 @@
 :root {
   --primary-rgb: 59, 130, 246; /* Color azul predeterminado, se ajustará al tema de la aplicación */
   --line-color: #e5e7eb; /* Color de la línea conectora en modo claro */
-  --line-color-dark: #374151; /* Color de la línea conectora en modo oscuro */
+  --line-color-dark: #374151; /* Color de la línea conectora en modo AMOLED */
 }
 
 @keyframes fadeIn {
@@ -67,11 +67,11 @@
   z-index: 1;
 }
 
-/* Ajustes para modo oscuro */
+/* Ajustes para modo AMOLED */
 @media (prefers-color-scheme: dark) {
   .comentario-respuesta .linea-conectora,
   .comentario-respuesta-form .linea-conectora {
-    border-color: #ef4444; /* Mantener el rojo en modo oscuro */
+    border-color: #ef4444; /* Mantener el rojo en modo AMOLED */
   }
 }
 
@@ -86,15 +86,15 @@
   box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.2);
 }
 
-/* Estilo para el scrollbar en modo oscuro */
-.comentario.scrollbar-thumb-primary/30:hover {
+/* Estilo para el scrollbar en modo AMOLED */
+.comentario.scrollbar-thumb-primary\/30:hover {
   --tw-scrollbar-thumb: hsl(var(--primary) / 0.5);
 }
 
-.dark .scrollbar-thumb-primary/30 {
-  --tw-scrollbar-thumb: #4a4a4a; /* Un gris más oscuro para el modo oscuro */
+.dark .scrollbar-thumb-primary\/30 {
+  --tw-scrollbar-thumb: #4a4a4a; /* Un gris más oscuro para el modo AMOLED */
 }
 
-.dark .scrollbar-thumb-primary/30:hover {
-  --tw-scrollbar-thumb: #6a6a6a; /* Un gris más claro para el hover en modo oscuro */
+.dark .scrollbar-thumb-primary\/30:hover {
+  --tw-scrollbar-thumb: #6a6a6a; /* Un gris más claro para el hover en modo AMOLED */
 }

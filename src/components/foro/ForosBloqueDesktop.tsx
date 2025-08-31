@@ -80,14 +80,36 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       sin_respuestas: null
     });
     
-    // Cargar cada pestaña
-    for (const tab of tabs) {
-      await cargarHilos(tab);
+    // Cargar cada pestaña con un timeout de seguridad
+    try {
+      // Crear promesas para todas las pestañas
+      const promesas = tabs.map(tab => {
+        // Promesa con timeout para cada pestaña
+        return Promise.race([
+          cargarHilos(tab),
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error(`Tiempo de espera agotado al cargar ${tab}`));
+            }, 8000); // 8 segundos de timeout
+          })
+        ]);
+      });
+      
+      // Ejecutar todas las promesas en paralelo
+      await Promise.allSettled(promesas);
+    } catch (error) {
+      console.error('Error al cargar los hilos:', error);
+      // Los errores individuales ya se manejan en cargarHilos
     }
   };
 
   // Cargar hilos para una pestaña específica
   const cargarHilos = async (tab: TabKey) => {
+    // Si ya tenemos datos para esta pestaña y no estamos cargando, no hacer nada
+    if (hilos[tab].length > 0 && !loading[tab]) {
+      return;
+    }
+    
     const supabase = createClient();
     
     try {
@@ -101,7 +123,7 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
         votos_conteo:foro_votos_hilos(count),
         respuestas_conteo:foro_posts(count),
         perfiles:autor_id(username, rol:role, avatar_url),
-        foro_categorias(nombre, color)
+        foro_categorias:categoria_id(nombre, color)
       `;
 
       let query = supabase.from('foro_hilos').select(baseSelect);
@@ -164,7 +186,51 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
 
   // Cargar datos al montar el componente
   useEffect(() => {
-    cargarTodosLosHilos();
+    let isMounted = true;
+    let timeoutId: NodeJS.Timeout;
+    
+    const cargarDatos = async () => {
+      try {
+        // Establecer un timeout global para toda la carga
+        const timeoutPromise = new Promise<void>((_, reject) => {
+          timeoutId = setTimeout(() => {
+            reject(new Error('Tiempo de espera global agotado al cargar los foros'));
+          }, 10000); // 10 segundos de timeout global
+        });
+        
+        // Intentar cargar los datos con un tiempo límite global
+        await Promise.race([
+          cargarTodosLosHilos(),
+          timeoutPromise
+        ]);
+        
+        // Limpiar el timeout ya que la carga se completó
+        clearTimeout(timeoutId);
+      } catch (err) {
+        console.error('Error global en ForosBloqueDesktop:', err);
+        // Solo actualizar el estado si el componente sigue montado
+        if (isMounted) {
+          setErrors({
+            destacados: 'Error al cargar los foros',
+            recientes: 'Error al cargar los foros',
+            sin_respuestas: 'Error al cargar los foros'
+          });
+          setLoading({
+            destacados: false,
+            recientes: false,
+            sin_respuestas: false
+          });
+        }
+      }
+    };
+    
+    cargarDatos();
+    
+    // Limpiar al desmontar
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+    };
   }, [limit]);
 
   // Renderizar un hilo

@@ -73,7 +73,10 @@ export async function GET(request: NextRequest) {
       // Obtener una categoría específica
       const { data, error } = await supabase
         .from('categorias')
-        .select('*, categoria_padre:categoria_padre_id(id, nombre)')
+        .select(`
+          *,
+          categoria_padre:categorias!parent_id(id, nombre)
+        `)
         .eq('id', id)
         .single()
 
@@ -84,7 +87,10 @@ export async function GET(request: NextRequest) {
       // Obtener todas las categorías con información de categoría padre
       const { data, error } = await supabase
         .from('categorias')
-        .select('*, categoria_padre:categoria_padre_id(id, nombre)')
+        .select(`
+          *,
+          categoria_padre:categorias!parent_id(id, nombre)
+        `)
         .order('orden', { ascending: true })
 
       if (error) {
@@ -147,9 +153,12 @@ export async function POST(request: NextRequest) {
         orden: body.orden || 0,
         color: body.color || '#3b82f6',
         tipo: 'noticia', // Campo requerido según el esquema
-        categoria_padre_id: body.categoria_padre_id || null // Nuevo campo para subcategorías
+        parent_id: body.parent_id || null // Campo para subcategorías
       })
-      .select('*, categoria_padre:categoria_padre_id(id, nombre)')
+      .select(`
+        *,
+        categoria_padre:categorias!parent_id(id, nombre)
+      `)
       .single()
 
     if (error) throw error
@@ -215,10 +224,13 @@ export async function PUT(request: NextRequest) {
         orden: body.orden || 0,
         color: body.color || '#3b82f6',
         // No actualizamos el campo 'tipo' para mantener su valor original
-        categoria_padre_id: body.categoria_padre_id || null // Nuevo campo para subcategorías
+        parent_id: body.parent_id || null // Campo para subcategorías
       })
       .eq('id', id)
-      .select('*, categoria_padre:categoria_padre_id(id, nombre)')
+      .select(`
+        *,
+        categoria_padre:categorias!parent_id(id, nombre)
+      `)
       .single()
 
     if (error) throw error

@@ -11,10 +11,36 @@ export default async function CrearHiloPage() {
     redirect('/login?message=Debes iniciar sesión para crear un hilo.');
   }
 
-  const { data: categorias, error } = await supabase
+  // Obtener todas las categorías con datos completos
+  const { data: categoriasPlanas, error } = await supabase
     .from('foro_categorias')
-    .select('id, nombre')
-    .order('nombre', { ascending: true });
+    .select('id, nombre, descripcion, color, parent_id, nivel, orden, icono')
+    .order('orden', { ascending: true });
+    
+  // Convertir la lista plana en estructura jerárquica
+  const categorias = [];
+  const categoriasMap = {};
+  
+  // Primero crear un mapa de todas las categorías
+  if (categoriasPlanas) {
+    categoriasPlanas.forEach(cat => {
+      categoriasMap[cat.id] = {
+        ...cat,
+        hijos: []
+      };
+    });
+    
+    // Luego organizar en estructura jerárquica
+    categoriasPlanas.forEach(cat => {
+      if (cat.parent_id && categoriasMap[cat.parent_id]) {
+        // Es una subcategoría, agregarla a su padre
+        categoriasMap[cat.parent_id].hijos.push(categoriasMap[cat.id]);
+      } else {
+        // Es categoría principal
+        categorias.push(categoriasMap[cat.id]);
+      }
+    });
+  }
 
   if (error) {
     console.error('Error fetching categories:', error);
@@ -25,7 +51,7 @@ export default async function CrearHiloPage() {
     <div className="container mx-auto max-w-4xl py-8 px-4 sm:px-6 lg:px-8">
       <div className="bg-gray-800/50 backdrop-blur-md border border-gray-700/50 rounded-lg shadow-lg p-6">
         <h1 className="text-3xl font-bold text-white mb-6 border-b border-gray-700 pb-4">Crear Nuevo Hilo</h1>
-        <CrearHiloForm categorias={categorias as any[] || []} userId={user.id} />
+        <CrearHiloForm categorias={categorias || []} userId={user.id} />
       </div>
     </div>
   );

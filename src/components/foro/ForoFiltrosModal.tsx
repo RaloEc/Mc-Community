@@ -35,7 +35,7 @@ const TabButton = ({ children, active, onClick, className = '' }: TabButtonProps
         'px-3 py-2 text-sm font-medium rounded-md transition-colors',
         active
           ? 'bg-primary text-white'
-          : 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-gray-700 dark:text-gray-300 amoled:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 amoled:hover:bg-gray-800',
+          : 'bg-gray-100 dark:bg-black text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800',
         className
       )}
     >
@@ -84,7 +84,7 @@ export default function ForoFiltrosModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 dark:bg-black/70 amoled:bg-black/80 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 dark:bg-black/80 z-50 flex items-center justify-center p-4"
             onClick={onClose}
           />
 
@@ -94,7 +94,7 @@ export default function ForoFiltrosModal({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="fixed bottom-0 w-full sm:w-[95%] max-w-md rounded-t-xl sm:rounded-xl bg-white dark:bg-gray-800 amoled:bg-black rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden border border-gray-200 dark:border-gray-700 amoled:border-gray-800"
+            className="fixed bottom-0 w-full sm:w-[95%] max-w-md rounded-t-xl sm:rounded-xl bg-white dark:bg-black rounded-lg shadow-lg w-full max-w-md mx-auto overflow-hidden border border-gray-200 dark:border-gray-800"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Encabezado */}
@@ -115,8 +115,8 @@ export default function ForoFiltrosModal({
             <div className="p-4 max-h-[70vh] overflow-y-auto">
               <div className="space-y-6">
                 {/* Sección de pestañas */}
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 amoled:border-gray-800">
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 amoled:text-gray-200">Filtrar hilos</h2>
+                <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-200">Filtrar hilos</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <TabButton
@@ -155,7 +155,7 @@ export default function ForoFiltrosModal({
               {/* Opciones de tiempo para populares */}
               {tempFilters.tab === 'populares' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 amoled:text-gray-400">Periodo de tiempo:</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-400">Periodo de tiempo:</label>
                   <div className="grid grid-cols-2 gap-2">
                     <TabButton
                       active={tempFilters.timeRange === '24h'}
@@ -175,10 +175,10 @@ export default function ForoFiltrosModal({
             </div>
 
             {/* Botones de acción */}
-            <div className="p-4 border-t border-gray-200 dark:border-gray-700 amoled:border-gray-800 flex justify-end space-x-2">
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 flex justify-end space-x-2">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 amoled:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 amoled:border-gray-800"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-800"
               >
                 Cancelar
               </button>

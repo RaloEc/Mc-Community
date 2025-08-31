@@ -194,6 +194,13 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
           });
         }
         
+        // Depurar información del autor
+        console.log('Información del autor recibida:', {
+          nombre: resultado.data.autor_nombre,
+          color: resultado.data.autor_color,
+          avatar: resultado.data.autor_avatar
+        });
+        
         setNoticia(resultado.data)
       } catch (error) {
         console.error('Error al cargar la noticia:', error);
@@ -263,13 +270,15 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               {/* Imagen de perfil del autor */}
               <div className="flex-shrink-0">
                 {noticia.autor_avatar ? (
-                  <div className="size-12 overflow-hidden rounded-full">
+                  <div className="size-16 overflow-hidden rounded-full">
                     <img 
                       src={noticia.autor_avatar} 
                       alt={`Foto de ${noticia.autor_nombre || 'Anónimo'}`}
                       className="w-full h-full object-cover"
+                      referrerPolicy="no-referrer"
                       crossOrigin="anonymous"
                       onError={(e) => {
+                        console.log('Error al cargar imagen de perfil:', noticia.autor_avatar);
                         // Si hay error al cargar la imagen, mostrar fallback
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.parentElement.classList.add('bg-gray-700');
@@ -278,7 +287,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
                     />
                   </div>
                 ) : (
-                  <div className="size-12 flex items-center justify-center rounded-full bg-gray-700 text-white font-semibold text-lg" style={{ backgroundColor: noticia.autor_color || '#4B5563' }}>
+                  <div className="size-16 flex items-center justify-center rounded-full bg-gray-700 text-white font-semibold text-lg" style={{ backgroundColor: noticia.autor_color || '#4B5563' }}>
                     {noticia.autor_nombre ? noticia.autor_nombre.charAt(0).toUpperCase() : 'A'}
                   </div>
                 )}
@@ -345,7 +354,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         
         {/* Contenido de la noticia */}
         <div 
-          className="prose prose-lg dark:prose-invert max-w-4xl mx-auto [&_img]:w-full md:[&_img]:max-w-[85%] [&_img]:mx-auto mb-8 noticia-contenido dark:[&_*]:!text-green-400 [.amoled_&]:[&_*]:!text-white dark:prose-a:!text-white" 
+          className="prose prose-lg dark:prose-invert max-w-4xl mx-auto [&_img]:w-full md:[&_img]:max-w-[85%] [&_img]:mx-auto mb-8 noticia-contenido [.amoled_&]:[&_*]:!text-white"
           dangerouslySetInnerHTML={{ __html: procesarContenido(noticia.contenido) }} 
         />
         
@@ -399,15 +408,16 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
               {/* Foto del autor */}
               <div className="flex-shrink-0">
-                <Avatar className="h-24 w-24">
+                <Avatar className="h-32 w-32">
                   {noticia.autor_avatar ? (
                     <AvatarImage 
                       src={noticia.autor_avatar} 
                       alt={noticia.autor_nombre} 
                       className="object-cover"
-                      onError={() => {
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
                         // Si hay error al cargar la imagen, se mostrará automáticamente el AvatarFallback
-                        console.log('Error al cargar avatar del autor');
+                        console.log('Error al cargar avatar del autor en sección Acerca del autor:', noticia.autor_avatar);
                       }}
                     />
                   ) : (

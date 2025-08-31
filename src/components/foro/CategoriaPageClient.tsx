@@ -186,11 +186,11 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
   }, [page])
 
   return (
-    <div className="bg-white dark:bg-gray-950 amoled:bg-black min-h-screen">
+    <div className="bg-white dark:bg-black amoled:bg-black min-h-screen">
       <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-6 lg:py-8">
         <CategoriaHeader categoria={meta?.categoria || categoria} />
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
-          <div className="lg:col-span-9 space-y-6">
+          <div className="lg:col-span-9 space-y-6 bg-white dark:bg-black amoled:bg-black rounded-lg">
             <SubcategoriasDestacadas subcategorias={meta?.subcategorias || []} currentId={categoria.id} />
             <CategoriaFiltrosDesktop
               tags={meta?.tags || []}

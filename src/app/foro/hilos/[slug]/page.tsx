@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Comentarios from '@/components/ComentariosNuevo';
-import { MessageSquare, Share2, Star, Lock, CheckCircle2, Plus } from 'lucide-react';
+import { MessageSquare, Share2, Star, Lock, CheckCircle2, Plus, Calendar, Clock, Eye, MessageCircle } from 'lucide-react';
 
 async function getHiloPorSlugOId(slugOrId: string) {
   const supabase = createServerComponentClient({ cookies });
@@ -108,8 +108,8 @@ export default async function HiloPage({ params }: { params: { slug: string } })
           </nav>
 
           {/* Encabezado del hilo */}
-          <article className="bg-white dark:bg-gray-900 amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-sm">
-            <header className="p-5 border-b border-gray-200 dark:border-gray-700 amoled:border-gray-800">
+          <article className="bg-white dark:bg-black amoled:bg-black rounded-lg border-b border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-sm">
+            <header className="p-5">
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 {catFull?.nombre && (
                   <span className="text-xs font-semibold px-2 py-1 rounded-full text-white" style={{ backgroundColor: catFull.color || '#6c757d' }}>{catFull.nombre}</span>
@@ -135,25 +135,41 @@ export default async function HiloPage({ params }: { params: { slug: string } })
               </div>
 
               {/* Metadatos autor */}
-              <div className="mt-4 flex items-center gap-3 text-sm text-gray-600 dark:text-gray-300 amoled:text-gray-200">
-                <Avatar className="h-9 w-9">
+              <div className="mt-4 flex gap-3 text-sm text-gray-600 dark:text-gray-300 amoled:text-gray-200">
+                <Avatar className="h-14 w-14">
                   <AvatarImage src={hilo.autor?.avatar_url ?? undefined} alt={hilo.autor?.username ?? 'Autor'} />
                   <AvatarFallback>{hilo.autor?.username?.substring(0, 2).toUpperCase() ?? 'A'}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <div className="flex flex-col">
                   <span className="font-semibold">{hilo.autor?.username ?? 'Autor desconocido'}</span>
-                  <span>•</span>
-                  <time>Creado el {format(new Date(hilo.created_at), "d 'de' MMM yyyy, HH:mm", { locale: es })}</time>
-                  {hilo.updated_at && (
-                    <>
-                      <span>•</span>
-                      <time>Última edición {format(new Date(hilo.updated_at), "d MMM, HH:mm", { locale: es })}</time>
-                    </>
-                  )}
-                  <span>•</span>
-                  <span>{(hilo.vistas ?? 0)} vistas</span>
-                  <span>•</span>
-                  <span>{respuestas.length} respuestas</span>
+                  
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-1 text-xs">
+                    {/* Fecha de creación */}
+                    <div className="flex items-center gap-1">
+                      <Calendar size={14} className="flex-shrink-0" />
+                      <time className="truncate">{format(new Date(hilo.created_at), "d MMM yyyy", { locale: es })}</time>
+                    </div>
+                    
+                    {/* Última edición */}
+                    {hilo.updated_at && (
+                      <div className="flex items-center gap-1">
+                        <Clock size={14} className="flex-shrink-0" />
+                        <time className="truncate">{format(new Date(hilo.updated_at), "d MMM, HH:mm", { locale: es })}</time>
+                      </div>
+                    )}
+                    
+                    {/* Vistas */}
+                    <div className="flex items-center gap-1">
+                      <Eye size={14} className="flex-shrink-0" />
+                      <span className="truncate">{(hilo.vistas ?? 0)} vistas</span>
+                    </div>
+                    
+                    {/* Respuestas */}
+                    <div className="flex items-center gap-1">
+                      <MessageCircle size={14} className="flex-shrink-0" />
+                      <span className="truncate">{respuestas.length} respuestas</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </header>
@@ -175,7 +191,7 @@ export default async function HiloPage({ params }: { params: { slug: string } })
         {/* Sidebar */}
         <aside className="lg:col-span-4 space-y-6">
           {/* Módulo: Relacionados */}
-          <div className="bg-white dark:bg-gray-900 amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 p-4">
+          <div className="bg-white dark:bg-black amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 p-4">
             <h3 className="font-semibold mb-3">Más en {catFull?.nombre || 'la categoría'}</h3>
             <ul className="space-y-2">
               {(relacionados || []).map((r: any) => (
@@ -190,7 +206,7 @@ export default async function HiloPage({ params }: { params: { slug: string } })
           </div>
 
           {/* Módulo: Reglas rápidas */}
-          <div className="bg-white dark:bg-gray-900 amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 p-4">
+          <div className="bg-white dark:bg-black amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 p-4">
             <h3 className="font-semibold mb-2">Reglas de la categoría</h3>
             <ul className="text-sm list-disc pl-5 text-gray-700 dark:text-gray-300 amoled:text-gray-200 space-y-1">
               <li>Respeta a los demás usuarios.</li>

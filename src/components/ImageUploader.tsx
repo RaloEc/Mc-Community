@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Loader2, Upload, X } from 'lucide-react';
-// No es necesario importar Image de Next.js
+import UserAvatar from '@/components/UserAvatar';
 
 interface ImageUploaderProps {
   currentImageUrl?: string;
@@ -39,10 +39,14 @@ export default function ImageUploader({
       return;
     }
 
-    // Mostrar vista previa
+    // Mostrar vista previa inmediatamente
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
     setError(null);
+    
+    // Actualizar la interfaz inmediatamente con la vista previa
+    // Esto permite al usuario ver su imagen antes de que se complete la subida
+    onImageUploaded(objectUrl);
 
     // Subir la imagen
     setIsUploading(true);
@@ -62,11 +66,13 @@ export default function ImageUploader({
         throw new Error(result.error || 'Error al subir la imagen');
       }
 
-      // Llamar al callback con la URL de la imagen
+      // Actualizar con la URL permanente del servidor
       onImageUploaded(result.data.url);
     } catch (err: any) {
       console.error('Error al subir la imagen:', err);
       setError(err.message || 'Error al subir la imagen');
+      // Si hay error, volver al estado anterior
+      setPreviewUrl(currentImageUrl || null);
     } finally {
       setIsUploading(false);
     }
@@ -95,11 +101,11 @@ export default function ImageUploader({
 
       {previewUrl ? (
         <div className="relative w-32 h-32 mx-auto">
-          <img
-            src={previewUrl}
-            alt="Vista previa"
-            className="w-full h-full object-cover rounded-full"
-            crossOrigin="anonymous"
+          <UserAvatar
+            username={userId}
+            avatarUrl={previewUrl}
+            size="lg"
+            className="w-full h-full"
           />
           <button
             onClick={handleRemoveImage}
@@ -110,8 +116,12 @@ export default function ImageUploader({
           </button>
         </div>
       ) : (
-        <div className="w-32 h-32 bg-muted rounded-full flex items-center justify-center mx-auto">
-          <Upload className="h-8 w-8 text-muted-foreground" />
+        <div className="w-32 h-32 mx-auto">
+          <UserAvatar
+            username={userId}
+            size="lg"
+            className="w-full h-full"
+          />
         </div>
       )}
 

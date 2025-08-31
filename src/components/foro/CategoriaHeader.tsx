@@ -43,7 +43,7 @@ export default function CategoriaHeader({ categoria }: Props) {
           <span className="hidden md:inline-flex h-8 w-8 rounded-full border" style={{ backgroundColor: categoria.color }} />
         )}
       </div>
-      <div className="rounded-md border bg-card p-3">
+      <div className="rounded-md border bg-card dark:bg-black p-3">
         <p className="text-sm">
           <span className="font-semibold">Información / Reglas:</span>{' '}
           En esta categoría comparte contenido relevante. Respeta las normas y usa etiquetas apropiadas. Si tu post es una pregunta, añade detalles para recibir mejores respuestas.

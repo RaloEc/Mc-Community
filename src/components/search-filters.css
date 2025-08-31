@@ -157,7 +157,7 @@
   color: #0c4a6e;
 }
 
-/* Estilos para el modo oscuro */
+/* Estilos para el modo AMOLED */
 @media (prefers-color-scheme: dark) {
   .search-filters {
     background-color: #1e293b;

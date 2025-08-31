@@ -4,25 +4,40 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ModeToggle } from '@/components/mode-toggle'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserInitials } from '@/lib/utils/avatar-utils';
-import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare } from 'lucide-react'
+import { saveCurrentUrlForRedirect } from '@/lib/utils/auth-utils';
+import { AuthModal } from '@/components/auth/AuthModal'
+import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare, Plus, PenSquare, ChevronDown, Search, X } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
-  const { session, user: authUser, logout } = useAuth()
+  const { session, user: authUser, profile, signOut } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const [currentTheme, setCurrentTheme] = useState('light');
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false)
   const adminMenuRef = useRef<HTMLLIElement | null>(null)
+  const userMenuRef = useRef<HTMLDivElement | null>(null)
+  const userButtonRef = useRef<HTMLButtonElement | null>(null)
   // Foro menu state
   const [isForoMenuOpen, setIsForoMenuOpen] = useState(false)
   const foroMenuRef = useRef<HTMLLIElement | null>(null)
+  // Noticias menu state
+  const [isNoticiasMenuOpen, setIsNoticiasMenuOpen] = useState(false)
+  const noticiasMenuRef = useRef<HTMLLIElement | null>(null)
+  // Estado para categorías expandidas
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({})
+  // Auth modal state
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login')
+  const [authRedirectTo, setAuthRedirectTo] = useState<string | undefined>(undefined)
+  const [searchQuery, setSearchQuery] = useState('')
   type ForoCategoria = {
     id: string
     nombre: string
@@ -42,14 +57,13 @@ export default function Header() {
   }
   const [foroCategorias, setForoCategorias] = useState<ForoCategoria[]>([])
   const [foroMobileOpen, setForoMobileOpen] = useState(false)
+  const [noticiasMobileOpen, setNoticiasMobileOpen] = useState(false)
 
   useEffect(() => {
     const detectTheme = () => {
       const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains('amoled')) {
-        setCurrentTheme('amoled');
-      } else if (htmlElement.classList.contains('dark')) {
-        setCurrentTheme('dark');
+      if (htmlElement.classList.contains('dark')) {
+        setCurrentTheme('dark'); // AMOLED mode (mantenemos 'dark' como valor para compatibilidad)
       } else {
         setCurrentTheme('light');
       }
@@ -63,26 +77,45 @@ export default function Header() {
   }, [])
 
   useEffect(() => {
-    if (authUser && session) {
-      setIsAdmin(authUser.role === 'admin');
+    if (authUser && session && profile) {
+      setIsAdmin(profile.role === 'admin');
     } else {
       setIsAdmin(false);
     }
-  }, [authUser, session])
+  }, [authUser, session, profile])
 
-  // Cerrar submenú Admin al hacer clic fuera
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
+    const checkIfClickedOutside = (e: MouseEvent) => {
+      if (isAdminMenuOpen && adminMenuRef.current && !adminMenuRef.current.contains(e.target as Node)) {
         setIsAdminMenuOpen(false)
       }
-      if (foroMenuRef.current && !foroMenuRef.current.contains(e.target as Node)) {
-        setIsForoMenuOpen(false)
+      
+      // Cerrar el menú de usuario al hacer clic fuera de él
+      if (isUserMenuOpen && userMenuRef.current && userButtonRef.current && 
+          !userMenuRef.current.contains(e.target as Node) && 
+          !userButtonRef.current.contains(e.target as Node)) {
+        setIsUserMenuOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+
+    document.addEventListener('mousedown', checkIfClickedOutside)
+    return () => {
+      document.removeEventListener('mousedown', checkIfClickedOutside)
+    }
+  }, [isAdminMenuOpen, isUserMenuOpen])
+
+  // Evitar scroll del body cuando el menú móvil está abierto
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen])
 
   // Cargar categorías de foro y construir jerarquía
   useEffect(() => {
@@ -120,10 +153,10 @@ export default function Header() {
   const handleLogout = async () => {
     console.log('[Header] handleLogout: inicio')
     try {
-      await logout()
-      console.log('[Header] handleLogout: logout() del contexto OK')
+      await signOut()
+      console.log('[Header] handleLogout: signOut() del contexto OK')
     } catch (e) {
-      console.warn('[Header] handleLogout: error en logout() del contexto, intento fallback directo', e)
+      console.warn('[Header] handleLogout: error en signOut() del contexto, intento fallback directo', e)
       try {
         const sb = createClient()
         await sb.auth.signOut()
@@ -150,73 +183,58 @@ export default function Header() {
     setIsAdminMenuOpen(false);
   }
 
+  const openAuthModal = (mode: 'login' | 'register', redirectTo?: string) => {
+    // Guardar la URL actual para redirección después del login
+    saveCurrentUrlForRedirect()
+    
+    setAuthModalMode(mode)
+    setAuthRedirectTo(redirectTo)
+    setIsAuthModalOpen(true)
+    closeAllMenus()
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+    }
+  }
+
   return (
-    <header className="bg-background dark:bg-amoled-black sticky top-0 z-50 border-b border-border/40 dark:border-gray-800 text-gray-900 dark:text-white amoled:text-white">
-      <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex-1 md:flex md:items-center md:gap-12">
-            <Link className="block" href="/" onClick={closeAllMenus}>
-              <span className="sr-only">Inicio</span>
-              <img src="/images/logo.png" alt="MC Community Logo" className="h-10 w-10" />
+    <header className="bg-white/95 dark:bg-black/95 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-2 md:gap-4">
+          {/* Logo */}
+          <div className="flex items-center flex-shrink-0">
+            <Link className="flex items-center gap-3" href="/" onClick={closeAllMenus}>
+              <img src="/images/logo.png" alt="MC Community Logo" className="h-8 w-8" />
+              <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
+                MC Community
+              </span>
             </Link>
           </div>
 
-          <div className="md:flex md:items-center md:gap-12">
-            <nav aria-label="Global" className="hidden md:block">
-              <ul className="flex items-center gap-1 text-sm">
-                <li><Link href="/noticias" className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>Noticias</Link></li>
-                <li className="relative" ref={foroMenuRef}>
-                  <button
-                    type="button"
-                    aria-haspopup="menu"
-                    aria-expanded={isForoMenuOpen}
-                    className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}
-                    onClick={() => setIsForoMenuOpen(v => !v)}
+          {/* Navegación principal - Solo Desktop */}
+          <nav aria-label="Global" className="hidden lg:block">
+            <ul className="flex items-center gap-1 text-sm">
+                <li>
+                  <Link 
+                    href="/noticias" 
+                    className="px-4 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                    onClick={closeAllMenus}
+                  >
+                    Noticias
+                  </Link>
+                </li>
+                <li>
+                  <Link 
+                    href="/foro" 
+                    className="px-4 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
+                    onClick={closeAllMenus}
                   >
                     Foro
-                  </button>
-                  <div
-                    className={`absolute ${isForoMenuOpen ? 'block' : 'hidden'} top-full left-0 mt-1 w-72 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}
-                  >
-                    <ul className="py-2 text-sm max-h-[70vh] overflow-auto">
-                      <li>
-                        <Link
-                          href="/foro"
-                          className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
-                          onClick={() => setIsForoMenuOpen(false)}
-                        >
-                          Ver todo el foro
-                        </Link>
-                      </li>
-                      {foroCategorias.map(cat => (
-                        <li key={cat.id} className="px-2 py-1">
-                          <Link
-                            href={`/foro/categoria/${cat.slug}`}
-                            className={`block rounded px-2 py-1 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
-                            onClick={() => setIsForoMenuOpen(false)}
-                            style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : undefined}
-                          >
-                            {cat.nombre}
-                          </Link>
-                          {cat.subcategorias && cat.subcategorias.length > 0 && (
-                            <ul className="mt-1 ml-3 border-l border-gray-200 dark:border-gray-700">
-                              {cat.subcategorias.map(sub => (
-                                <li key={sub.id}>
-                                  <Link
-                                    href={`/foro/categoria/${sub.slug}`}
-                                    className={`block rounded px-2 py-1 ml-2 ${currentTheme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
-                                    onClick={() => setIsForoMenuOpen(false)}
-                                  >
-                                    {sub.nombre}
-                                  </Link>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  </Link>
                 </li>
                 {isAdmin && (
                   <li className="relative" ref={adminMenuRef}>
@@ -230,7 +248,7 @@ export default function Header() {
                       Admin
                     </button>
                     <div
-                      className={`absolute ${isAdminMenuOpen ? 'block' : 'hidden'} top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}
+                      className={`absolute top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-800'} transition-all duration-200 ease-in-out transform origin-top-left ${isAdminMenuOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
                     >
                       <ul className="py-2 text-sm">
                         <li>
@@ -276,134 +294,331 @@ export default function Header() {
               </ul>
             </nav>
 
-            <div className="flex items-center gap-4">
-              <ModeToggle />
-              
-              <div className="hidden md:flex items-center gap-4">
-                {authUser ? (
-                  <div className="relative">
-                    <button type="button" className="overflow-hidden rounded-full border border-gray-700 shadow-inner" onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}>
-                      <span className="sr-only">Abrir menú de usuario</span>
-                      <Avatar className="w-8 h-8">
-                        <AvatarImage src={authUser.avatar_url || undefined} alt={authUser.username || 'Usuario'} />
-                        <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
-                      </Avatar>
-                    </button>
-                    {isUserMenuOpen && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setIsUserMenuOpen(false)} />
-                        <div className={`absolute end-0 z-20 mt-2 w-64 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-700'}`}>
-                          <div className="p-2">
-                             <div className={`flex items-center px-4 py-3 border-b mb-2 ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-                                <div className="flex-1">
-                                  <span className={`font-medium ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}>{authUser.username || 'Usuario'}</span>
-                                  <span className={`block text-xs ${currentTheme === 'light' ? 'text-gray-600' : 'text-gray-400'}`}>{authUser.email}</span>
-                                </div>
-                             </div>
-                            <Link href="/perfil" className={`flex w-full items-center gap-2 rounded-lg px-4 py-2 text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={() => setIsUserMenuOpen(false)}><User className="h-4 w-4" />Mi Perfil</Link>
-                            <button onClick={handleLogout} className="flex w-full items-center gap-2 rounded-lg hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut className="h-4 w-4" />Cerrar sesión</button>
+          {/* Barra de búsqueda centrada - solo desktop */}
+          <div className="flex-1 max-w-md mx-4 hidden md:block">
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Buscar noticias, hilos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-full"
+              />
+            </form>
+          </div>
+
+          {/* Controles de usuario */}
+          <div className="flex items-center gap-1 md:gap-3">
+            <ModeToggle />
+            
+            {/* Botones de creación */}
+            <div className="hidden lg:flex items-center gap-2">
+              {isAdmin && (
+                <Link href="/admin/noticias/crear">
+                  <Button size="sm" variant="outline" className="text-xs flex items-center gap-1">
+                    <PenSquare className="h-3.5 w-3.5" />
+                    <span className="hidden xl:inline">Crear Noticia</span>
+                  </Button>
+                </Link>
+              )}
+              <Link href={authUser ? "/foro/crear" : "/login?redirect=/foro/crear"}>
+                <Button size="sm" variant="outline" className="text-xs flex items-center gap-1">
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span className="hidden xl:inline">Crear Hilo</span>
+                </Button>
+              </Link>
+            </div>
+
+            <div className="hidden md:flex items-center gap-4">
+                
+              {authUser ? (
+                <div className="relative">
+                  <button 
+                    ref={userButtonRef}
+                    type="button" 
+                    className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" 
+                    onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  >
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage 
+                        src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
+                        alt={profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || 'Usuario'} 
+                      />
+                      <AvatarFallback className="text-xs">{getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}</AvatarFallback>
+                    </Avatar>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </button>
+                  <div
+                    className={`fixed inset-0 z-10 bg-black/40 transition-all duration-200 ${isUserMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                    onClick={() => setIsUserMenuOpen(false)}
+                    style={{
+                      backdropFilter: isUserMenuOpen ? 'blur(8px)' : 'none',
+                      WebkitBackdropFilter: isUserMenuOpen ? 'blur(8px)' : 'none'
+                    }}
+                  />
+                  <div
+                    ref={userMenuRef}
+                    className={`fixed md:absolute right-4 md:right-0 top-16 md:top-auto md:mt-2 z-20 w-64 rounded-xl border shadow-lg bg-white/95 dark:bg-black border-gray-200/50 dark:border-gray-800/50 transition-all duration-200 ease-in-out transform origin-top-right ${isUserMenuOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
+                  >
+                        <div className="p-3">
+                          <div className="flex items-center px-3 py-3 border-b border-gray-200/50 dark:border-gray-800/50 mb-2">
+                            <Avatar className="w-10 h-10 mr-3">
+                              <AvatarImage 
+                                src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
+                                alt={profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || 'Usuario'} 
+                              />
+                              <AvatarFallback>{getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900 dark:text-white text-sm">
+                                {profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'Usuario'}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">{authUser.email}</p>
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Link 
+                              href="/perfil" 
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" 
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <User className="h-4 w-4" />Mi Perfil
+                            </Link>
+                            {isAdmin && (
+                              <Link 
+                                href="/admin/dashboard" 
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" 
+                                onClick={() => setIsUserMenuOpen(false)}
+                              >
+                                <Shield className="h-4 w-4" />Panel Admin
+                              </Link>
+                            )}
+                            <button 
+                              onClick={handleLogout} 
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
+                            >
+                              <LogOut className="h-4 w-4" />Cerrar sesión
+                            </button>
                           </div>
                         </div>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Link href="/login" onClick={closeAllMenus}><Button variant="outline" size="sm">Iniciar Sesión</Button></Link>
-                    <Link href="/register" onClick={closeAllMenus}><Button size="sm">Registrarse</Button></Link>
-                  </div>
-                )}
-              </div>
+                      </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => openAuthModal('login')}>Iniciar Sesión</Button>
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => openAuthModal('register')}>Registrarse</Button>
+                </div>
+              )}
+            </div>
 
-              <div className="block md:hidden">
-                <Button variant="ghost" size="icon" onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="Menú principal">
-                  <Menu />
-                </Button>
-              </div>
+            {/* Botón de menú móvil */}
+            <div className="block md:hidden">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setIsMenuOpen(true)} 
+                aria-label="Menú principal" 
+                className="ml-1 focus:ring-2 focus:ring-blue-500"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
             </div>
           </div>
         </div>
       </div>
 
-      {isMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setIsMenuOpen(false)} />
-      )}
+      <div 
+        className="md:hidden fixed inset-0 bg-black/40 z-[999] transition-all duration-300 backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-xl" 
+        onClick={() => setIsMenuOpen(false)} 
+        style={{ 
+          position: 'fixed', 
+          top: '0', 
+          left: '0', 
+          right: '0', 
+          bottom: '0', 
+          width: '100vw', 
+          height: '100vh', 
+          visibility: isMenuOpen ? 'visible' : 'hidden', 
+          opacity: isMenuOpen ? 1 : 0, 
+          pointerEvents: isMenuOpen ? 'auto' : 'none', 
+          backdropFilter: isMenuOpen ? 'blur(100px)' : 'none',
+          WebkitBackdropFilter: isMenuOpen ? 'blur(100px)' : 'none'
+        }} 
+      />
       
-      <div className={`md:hidden fixed right-0 top-0 w-72 h-full overflow-y-auto shadow-lg z-50 transition-transform duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'} amoled:text-white`}>
-        <nav className="flex flex-col h-full">
-          <div className={`p-4 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+      <div className={`md:hidden fixed right-0 top-0 w-72 h-screen overflow-y-auto shadow-xl z-[1000] transition-all duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'} border-l border-gray-200 dark:border-gray-800`} style={{ position: 'fixed', paddingTop: '1.5rem', paddingBottom: '6rem', height: '100vh', top: '0', bottom: '0' }}>
+        <div className="flex flex-col h-full relative">
+          <div className="absolute top-2 right-2 p-1">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setIsMenuOpen(false)} 
+              aria-label="Cerrar menú"
+              className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 z-[1001]"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className={`p-4 pt-10 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
             {authUser ? (
-              <div className="flex items-center">
-                <Avatar className="w-8 h-8">
-                  <AvatarImage src={authUser.avatar_url || undefined} alt={authUser.username || 'Usuario'} />
-                  <AvatarFallback>{getUserInitials(authUser.username, 1, 'U')}</AvatarFallback>
+              <div className="flex items-center gap-3">
+                <Avatar className="w-16 h-16">
+                  <AvatarImage 
+                    src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
+                    alt={profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || 'Usuario'} 
+                  />
+                  <AvatarFallback>{getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
-                  <span className="font-medium">{authUser.username}</span>
-                  <span className="text-xs text-muted-foreground">{authUser.role}</span>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-base truncate">
+                      {profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'Usuario'}
+                    </span>
+                    <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${currentTheme === 'light' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-blue-950/40 text-blue-300 border border-blue-900/60'}`}>
+                      {profile?.role || 'user'}
+                    </span>
+                  </div>
+                  {authUser.email && (
+                    <span className="text-xs text-muted-foreground truncate">{authUser.email}</span>
+                  )}
                 </div>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                <Link href="/login" onClick={closeAllMenus}><Button variant="outline" className="w-full">Iniciar Sesión</Button></Link>
-                <Link href="/register" onClick={closeAllMenus}><Button className="w-full">Registrarse</Button></Link>
+                <Button variant="outline" className="w-full" onClick={() => openAuthModal('login')}>Iniciar Sesión</Button>
+                <Button className="w-full" onClick={() => openAuthModal('register')}>Registrarse</Button>
               </div>
             )}
           </div>
 
-          <ul className="flex-grow p-4 space-y-2">
+          {/* Barra de búsqueda móvil */}
+          <div className={`p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black`}>
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                type="search"
+                placeholder="Buscar noticias, hilos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-full"
+              />
+            </form>
+          </div>
+
+          <ul className="flex-grow p-4 space-y-3 overflow-y-auto">
             <li>
-              <Link href="/noticias" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
-                <Newspaper size={18} /> Noticias
-              </Link>
+              <button
+                type="button"
+                className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                aria-expanded={noticiasMobileOpen}
+                onClick={() => setNoticiasMobileOpen(v => !v)}
+              >
+                <span className="flex items-center gap-2"><Newspaper size={18} /> Noticias</span>
+                <ChevronDown size={18} className={`transition-transform ${noticiasMobileOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div 
+                className={`mt-1 ml-2 overflow-hidden transition-all duration-200 ease-out ${noticiasMobileOpen ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+                aria-hidden={!noticiasMobileOpen}
+              >
+                <Link 
+                  href="/noticias" 
+                  className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} 
+                  onClick={closeAllMenus}
+                >
+                  Ver noticias
+                </Link>
+                <Link 
+                  href="/noticias?tipo=recientes" 
+                  className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} 
+                  onClick={closeAllMenus}
+                >
+                  Recientes
+                </Link>
+                <Link 
+                  href="/noticias?tipo=destacadas" 
+                  className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} 
+                  onClick={closeAllMenus}
+                >
+                  Destacadas
+                </Link>
+              </div>
             </li>
             <li>
               <button
                 type="button"
                 className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
+                aria-expanded={foroMobileOpen}
                 onClick={() => setForoMobileOpen(v => !v)}
               >
                 <span className="flex items-center gap-2"><MessageSquare size={18} /> Foro</span>
-                <span className="text-xs">{foroMobileOpen ? '−' : '+'}</span>
+                <ChevronDown size={18} className={`transition-transform ${foroMobileOpen ? 'rotate-180' : ''}`} />
               </button>
-              {foroMobileOpen && (
-                <div className="mt-1 ml-2">
-                  <Link href="/foro" className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} onClick={closeAllMenus}>
-                    Ver todo el foro
-                  </Link>
-                  {foroCategorias.map(cat => (
+              <div 
+                className={`mt-1 ml-2 overflow-hidden transition-all duration-200 ease-out ${foroMobileOpen ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`} 
+                aria-hidden={!foroMobileOpen}
+              >
+                {/* <Link href="/foro" className={`block p-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                  Ver todo el foro
+                </Link> */}
+                {foroCategorias.map(cat => {
+                  const hasSubcats = cat.subcategorias && cat.subcategorias.length > 0;
+                  const isExpanded = expandedCategories[cat.id] || false;
+                  
+                  return (
                     <div key={cat.id} className="mt-1">
-                      <Link
-                        href={`/foro/categoria/${cat.slug}`}
-                        className={`block rounded px-3 py-2 text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
-                        onClick={closeAllMenus}
+                      <div className="flex items-center justify-between">
+                        <Link
+                          href={`/foro/categoria/${cat.slug}`}
+                          className={`flex-grow px-4 py-2 rounded-md text-sm ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
+                          onClick={closeAllMenus}
+                          style={cat.color ? { borderLeft: `3px solid ${cat.color}` } : undefined}
+                        >
+                          {cat.nombre}
+                        </Link>
+                        {hasSubcats && (
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setExpandedCategories(prev => ({
+                                ...prev,
+                                [cat.id]: !prev[cat.id]
+                              }));
+                            }}
+                            className={`p-2 rounded-full ${currentTheme === 'light' ? 'hover:bg-gray-100' : 'hover:bg-gray-800'}`}
+                          >
+                            <ChevronDown 
+                              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} 
+                            />
+                          </button>
+                        )}
+                      </div>
+                      <div 
+                        className={`ml-4 mt-1 space-y-1 overflow-hidden transition-all duration-200 ease-out ${isExpanded && hasSubcats ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+                        aria-hidden={!(isExpanded && hasSubcats)}
                       >
-                        {cat.nombre}
-                      </Link>
-                      {cat.subcategorias && cat.subcategorias.length > 0 && (
-                        <div className="ml-3">
-                          {cat.subcategorias.map(sub => (
-                            <Link
-                              key={sub.id}
-                              href={`/foro/categoria/${sub.slug}`}
-                              className={`block rounded px-3 py-1.5 text-sm ${currentTheme === 'light' ? 'text-gray-600 hover:bg-gray-100' : 'text-gray-400 hover:bg-gray-800'}`}
-                              onClick={closeAllMenus}
-                            >
-                              {sub.nombre}
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+                        {cat.subcategorias?.map(subcat => (
+                          <Link
+                            key={subcat.id}
+                            href={`/foro/categoria/${subcat.slug}`}
+                            className={`block px-4 py-2 rounded-md text-xs ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-300 hover:bg-gray-800'}`}
+                            onClick={closeAllMenus}
+                            style={subcat.color ? { borderLeft: `3px solid ${subcat.color}` } : undefined}
+                          >
+                            {subcat.nombre}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                })}
+              </div>
             </li>
           </ul>
 
           {isAdmin && (
-            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
-              <p className={`text-sm font-semibold mb-2 ${currentTheme === 'light' ? 'text-gray-500' : 'text-gray-400'} amoled:text-gray-300`}>Administración</p>
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
               <ul className="space-y-2">
                 <li>
                   <Link href="/admin/dashboard" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
@@ -431,13 +646,21 @@ export default function Header() {
           )}
 
           {authUser && (
-            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-700'}`}>
+            <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
               <Link href="/perfil" className={`flex items-center gap-2 p-2 rounded-md w-full text-left ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}><User size={18} /> Mi Perfil</Link>
               <button onClick={handleLogout} className="flex items-center gap-2 p-2 rounded-md hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut size={18} /> Cerrar Sesión</button>
             </div>
           )}
-        </nav>
+        </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode={authModalMode}
+        redirectTo={authRedirectTo}
+      />
     </header>
   )
 }

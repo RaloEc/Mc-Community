@@ -77,6 +77,17 @@ function CrearNoticiaContent() {
   const router = useRouter()
   const { user, session } = useAuth() // Usar el contexto de autenticación
   
+  // Estado para controlar categorías expandidas
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Función para alternar la expansión de una categoría
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
   // Función para renderizar categorías jerárquicas
   const renderCategoriasJerarquicas = (categorias: Categoria[], field: any, isMobile: boolean, nivel: number = 0) => {
     return (
@@ -84,10 +95,33 @@ function CrearNoticiaContent() {
         {categorias.map((categoria) => {
           const isSelected = field.value?.includes(categoria.id);
           const tieneHijos = categoria.hijos && categoria.hijos.length > 0;
+          const isExpanded = expandedCategories[categoria.id] || false;
           
           return (
             <div key={categoria.id} className="mb-1">
               <div className="flex items-center gap-1">
+                {tieneHijos && (
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(categoria.id)}
+                    className="text-muted-foreground hover:text-foreground focus:outline-none"
+                  >
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="16" 
+                      height="16" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                    >
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+                )}
                 <Button
                   type="button"
                   variant={isSelected ? "default" : "outline"}
@@ -113,7 +147,7 @@ function CrearNoticiaContent() {
                 )}
               </div>
               
-              {tieneHijos && (
+              {tieneHijos && isExpanded && (
                 renderCategoriasJerarquicas(categoria.hijos!, field, isMobile, nivel + 1)
               )}
             </div>
@@ -568,15 +602,61 @@ function CrearNoticiaContent() {
                             <div className="text-sm text-muted-foreground">Cargando categorías...</div>
                           ) : categorias.length > 0 ? (
                             <>
-                              <div className="md:hidden flex flex-col gap-2 w-full max-h-[200px] overflow-y-auto pb-2">
+                              <div className="md:hidden flex flex-col gap-2 w-full max-h-[200px] overflow-y-auto pb-2 border rounded-md p-3">
+                                <p className="text-xs text-muted-foreground mb-2">Toca las flechas para expandir/colapsar categorías</p>
                                 {renderCategoriasJerarquicas(categorias, field, true)}
                               </div>
-                              <div className="hidden md:flex flex-col gap-2 w-full justify-start">
+                              <div className="hidden md:flex flex-col gap-2 w-full justify-start border rounded-md p-3">
+                                <p className="text-xs text-muted-foreground mb-2">Haz clic en las flechas para expandir/colapsar categorías</p>
                                 {renderCategoriasJerarquicas(categorias, field, false)}
                               </div>
                             </>
                           ) : (
                             <div className="text-sm text-muted-foreground">No hay categorías disponibles</div>
+                          )}
+                          {field.value.length > 0 && (
+                            <div className="mt-3 p-2 bg-muted/50 rounded-md">
+                              <p className="text-sm font-medium mb-2">Categorías seleccionadas:</p>
+                              <div className="flex flex-wrap gap-2">
+                                {field.value.map((catId: string) => {
+                                  // Buscar la categoría por ID (función recursiva)
+                                  const findCategoria = (cats: Categoria[]): Categoria | undefined => {
+                                    for (const cat of cats) {
+                                      if (cat.id === catId) return cat;
+                                      if (cat.hijos?.length) {
+                                        const found = findCategoria(cat.hijos);
+                                        if (found) return found;
+                                      }
+                                    }
+                                    return undefined;
+                                  };
+                                  
+                                  const categoria = findCategoria(categorias);
+                                  
+                                  return categoria ? (
+                                    <div 
+                                      key={catId} 
+                                      className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-xs"
+                                    >
+                                      {categoria.nombre}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const updatedCategories = field.value.filter((id: string) => id !== catId);
+                                          field.onChange(updatedCategories);
+                                        }}
+                                        className="ml-1 hover:text-destructive focus:outline-none"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  ) : null;
+                                })}
+                              </div>
+                            </div>
                           )}
                           {field.value.length >= 4 && (
                             <p className="text-xs text-amber-500 mt-2">Has alcanzado el límite de 4 categorías</p>

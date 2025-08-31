@@ -1,193 +1,150 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { createClient, createNonPersistentClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import { z } from 'zod'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Loader2 } from 'lucide-react'
+import { OAuthButtons } from '@/components/auth/OAuthButtons'
+import { Separator } from '@/components/ui/separator'
+
+// Esquema de validación con zod
+const loginSchema = z.object({
+  email: z.string().email('Ingresa un correo electrónico válido'),
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
+})
+
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [logoutLogs, setLogoutLogs] = useState<string[]>([])
-  const [showLogoutInfo, setShowLogoutInfo] = useState(false)
-  const redirectUrl = searchParams.get('redirect')
-  const freshLogin = searchParams.get('fresh') === 'true'
+  const redirectTo = searchParams.get('redirect') || '/'
+  const [isLoading, setIsLoading] = useState(false)
 
-  // Verificar si hay logs de cierre de sesión en sessionStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedLogs = sessionStorage.getItem('logout_logs')
-        const timestamp = sessionStorage.getItem('logout_timestamp')
-        
-        if (storedLogs && timestamp) {
-          // Solo mostrar logs si son recientes (menos de 30 segundos)
-          const logTime = parseInt(timestamp)
-          const now = Date.now()
-          
-          if (now - logTime < 30000) { // 30 segundos
-            setLogoutLogs(JSON.parse(storedLogs))
-            setShowLogoutInfo(true)
-            
-            // Limpiar después de mostrarlos
-            setTimeout(() => {
-              sessionStorage.removeItem('logout_logs')
-              sessionStorage.removeItem('logout_timestamp')
-            }, 1000)
-          } else {
-            // Limpiar logs antiguos
-            sessionStorage.removeItem('logout_logs')
-            sessionStorage.removeItem('logout_timestamp')
-          }
-        }
-      } catch (e) {
-        console.error('Error al recuperar logs de cierre de sesión:', e)
-      }
+  // Configurar react-hook-form con validación zod
+  const {
+    register,
+    handleSubmit,
+    formState: { errors }
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
     }
-    
-    // Verificar y limpiar cualquier sesión fantasma al cargar la página
-    async function checkAndClearGhostSession() {
-      try {
-        // Usar cliente sin persistencia para verificar sesión sin restaurarla
-        const nonPersistentClient = createNonPersistentClient()
-        const { data } = await nonPersistentClient.auth.getSession()
-        
-        if (data.session) {
-          console.log('Detectada sesión fantasma en página de login, limpiando...')
-          await nonPersistentClient.auth.signOut({ scope: 'global' })
-        }
-      } catch (e) {
-        console.error('Error al verificar sesión fantasma:', e)
-      }
-    }
-    
-    // Solo ejecutar la limpieza si es un login fresco (después de logout)
-    if (freshLogin) {
-      checkAndClearGhostSession()
-    }
-  }, [])
+  })
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
-
+  // Manejar envío del formulario
+  const onSubmit = async (data: LoginFormValues) => {
     try {
-      // Crear un nuevo cliente para cada login
-      // Esto evita problemas con sesiones anteriores
-      const supabase = createClient();
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      setIsLoading(true)
+      const supabase = createClient()
+      
+      const { error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
       })
 
-      if (error) throw error
-
-      // Manejar redirección después del login
-      if (data.session) {
-        // Si hay una URL de redirección, usarla
-        if (redirectUrl) {
-          router.push(redirectUrl)
-        } else {
-          // Si no hay redirección específica, verificar si es admin
-          const { data: perfil } = await supabase
-            .from('perfiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single()
-
-          if (perfil && perfil.role === 'admin') {
-            router.push('/admin/dashboard')
-          } else {
-            router.push('/') // Redirigir a la página principal para usuarios normales
-          }
-        }
+      if (error) {
+        toast.error(error.message || 'Error al iniciar sesión')
+        return
       }
-    } catch (error: any) {
-      setError(error.message || 'Error al iniciar sesión')
+
+      // Éxito - mostrar toast y redirigir
+      toast.success('Inicio de sesión exitoso')
+      router.push(redirectTo)
+      router.refresh()
+    } catch (error) {
+      console.error('Error de login:', error)
+      toast.error('Ocurrió un error inesperado')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Iniciar sesión</CardTitle>
+    <div className="container flex h-screen items-center justify-center">
+      <Card className="mx-auto w-full max-w-md">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
           <CardDescription>
-            Ingresa tus credenciales para acceder
+            Ingresa tus credenciales para acceder a tu cuenta
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleLogin}>
-          <CardContent className="space-y-4">
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            {showLogoutInfo && logoutLogs.length > 0 && (
-              <Alert className="bg-green-50 border-green-200">
-                <AlertDescription>
-                  <p className="font-medium text-green-800 mb-2">Sesión cerrada correctamente</p>
-                  <Accordion type="single" collapsible className="w-full">
-                    <AccordionItem value="logout-logs">
-                      <AccordionTrigger className="text-xs text-muted-foreground">
-                        Ver detalles del cierre de sesión
-                      </AccordionTrigger>
-                      <AccordionContent>
-                        <div className="bg-slate-50 p-2 rounded text-xs font-mono max-h-40 overflow-y-auto">
-                          {logoutLogs.map((log, i) => (
-                            <div key={i} className="py-0.5">{log}</div>
-                          ))}
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                </AlertDescription>
-              </Alert>
-            )}
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="email">Correo Electrónico</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                placeholder="tu@ejemplo.com"
+                {...register('email')}
+                disabled={isLoading}
               />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email.message}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Contraseña</Label>
+                <Link
+                  href="/reset-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                placeholder="••••••••"
+                autoComplete="current-password"
+                {...register('password')}
+                disabled={isLoading}
               />
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password.message}</p>
+              )}
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col space-y-2">
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Iniciando sesión...
+                </>
+              ) : (
+                'Iniciar Sesión'
+              )}
             </Button>
-            <div className="text-sm text-center text-muted-foreground">
-              ¿No tienes una cuenta? <a href="/register" className="underline">Regístrate</a>
-            </div>
-          </CardFooter>
-        </form>
+          </form>
+        </CardContent>
+        <CardFooter className="flex flex-col space-y-4">
+          <div className="flex items-center gap-2 py-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">O continúa con</span>
+            <Separator className="flex-1" />
+          </div>
+          
+          <OAuthButtons redirectTo={redirectTo} />
+          
+          <div className="text-center text-sm">
+            ¿No tienes una cuenta?{' '}
+            <Link href="/register" className="text-primary hover:underline">
+              Regístrate
+            </Link>
+          </div>
+        </CardFooter>
       </Card>
     </div>
   )

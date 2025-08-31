@@ -376,6 +376,7 @@ function EditarUsuarioContent() {
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 className="bg-gray-800 border-gray-700 text-white"
                 placeholder="Dejar vacío para mantener la actual"
+                autoComplete="new-password"
                 minLength={6}
               />
               <p className="text-gray-500 text-sm mt-1">

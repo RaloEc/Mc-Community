@@ -149,19 +149,27 @@ export async function GET(
     // Determinar el ID del autor (puede estar en autor_id o en autor si es UUID)
     let autorId = null;
     
+    // Verificar si tenemos autor_id o si autor es un UUID
     if (noticia.autor_id && typeof noticia.autor_id === 'string') {
       autorId = noticia.autor_id;
       console.log(`Usando autor_id: ${autorId}`);
-    } else if (typeof noticia.autor === 'string' && 
-               /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(noticia.autor)) {
-      autorId = noticia.autor;
-      console.log(`Autor parece ser un UUID: ${autorId}`);
+    } else if (typeof noticia.autor === 'string') {
+      // Verificar si autor es un UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(noticia.autor.trim())) {
+        autorId = noticia.autor.trim();
+        console.log(`Autor parece ser un UUID: ${autorId}`);
+        console.log('IMPORTANTE: Esta noticia tiene el UUID en el campo autor en lugar de autor_id');
+      } else {
+        console.log(`No se encontró un ID válido. Autor original: ${noticia.autor}`);
+      }
     } else {
-      console.log(`No se encontró un ID válido. Autor original: ${noticia.autor}`);
+      console.log(`No se encontró un ID válido. Autor es de tipo: ${typeof noticia.autor}`);
     }
     
     // Si tenemos un ID de autor, buscar su perfil
     if (autorId) {
+      // Primero buscamos en la tabla perfiles
       const { data: perfil, error: errorPerfil } = await serviceClient
         .from('perfiles')
         .select('username, role, color, avatar_url')
@@ -172,14 +180,54 @@ export async function GET(
         console.error(`Error al buscar perfil para ID ${autorId}:`, errorPerfil);
       }
       
+      // Si no encontramos avatar_url en perfiles, buscar en auth.users
+      if (perfil && (!perfil.avatar_url || perfil.avatar_url.trim() === '')) {
+        try {
+          // Buscar en la tabla auth.users para obtener user_metadata
+          const { data: authUser, error: authError } = await serviceClient
+            .from('users')
+            .select('raw_user_meta_data')
+            .eq('id', autorId)
+            .single();
+            
+          if (authError) {
+            console.error(`Error al buscar en auth.users para ID ${autorId}:`, authError);
+          } else if (authUser && authUser.raw_user_meta_data) {
+            // Extraer avatar_url o picture de user_metadata
+            const metadata = authUser.raw_user_meta_data;
+            if (metadata.avatar_url || metadata.picture) {
+              console.log('Encontrado avatar en auth.users:', metadata.avatar_url || metadata.picture);
+              // Actualizar el perfil con esta información
+              perfil.avatar_url = metadata.avatar_url || metadata.picture;
+            }
+          }
+        } catch (authLookupError) {
+          console.error('Error al buscar en auth.users:', authLookupError);
+        }
+      }
+      
       if (perfil) {
         console.log(`Perfil encontrado para ID ${autorId}:`, perfil);
-        autorNombre = typeof perfil.username === 'string' ? perfil.username : 'Usuario';
+        console.log(`Username del perfil: ${perfil.username}`);
+        console.log(`Tipo de username: ${typeof perfil.username}`);
+        console.log(`Avatar URL del perfil: ${perfil.avatar_url}`);
+        console.log(`Tipo de avatar_url: ${typeof perfil.avatar_url}`);
+        
+        // Usar el username del perfil, no el campo 'autor' de la noticia
+        if (perfil.username && typeof perfil.username === 'string' && perfil.username.trim().length > 0) {
+          autorNombre = perfil.username.trim();
+          console.log(`Usando username del perfil: ${autorNombre}`);
+        } else {
+          autorNombre = 'Usuario';
+          console.log('Username vacío o inválido, usando fallback: Usuario');
+        }
         
         // Guardar URL de avatar si existe
-        if (perfil.avatar_url && typeof perfil.avatar_url === 'string') {
-          autorAvatar = perfil.avatar_url;
-          console.log(`Avatar encontrado: ${autorAvatar}`);
+        if (perfil.avatar_url && typeof perfil.avatar_url === 'string' && perfil.avatar_url.trim().length > 0) {
+          autorAvatar = perfil.avatar_url.trim();
+          console.log(`Avatar encontrado en perfil: ${autorAvatar}`);
+        } else {
+          console.log('No se encontró avatar_url válido en el perfil, se generará uno automáticamente');
         }
         
         // Usar color personalizado si existe
@@ -196,7 +244,8 @@ export async function GET(
             autorColor = '#f59e0b'; // Ámbar para moderadores
             console.log('Color establecido a ámbar para moderador');
           } else {
-            console.log('Rol no reconocido, usando color por defecto');
+            autorColor = '#3b82f6'; // Azul para usuarios normales
+            console.log('Color establecido a azul para usuario normal');
           }
         }
         console.log(`Color final del autor: ${autorColor}`);
@@ -204,28 +253,69 @@ export async function GET(
         console.log(`No se encontró perfil para ID ${autorId}`);
       }
     } 
-    // Si no tenemos ID pero tenemos un correo, usar la parte antes del @ como nombre
-    else if (typeof noticia.autor === 'string' && noticia.autor.includes('@')) {
-      const correo = noticia.autor as string;
-      // Usar la parte del correo antes del @ como nombre de usuario
-      const nombreUsuario = correo.split('@')[0];
-      console.log(`Usando parte del correo como nombre de usuario: ${nombreUsuario}`);
-      autorNombre = nombreUsuario;
+    // Si no tenemos ID pero tenemos un valor en 'autor'
+    else if (typeof noticia.autor === 'string' && noticia.autor.trim().length > 0) {
+      const valorAutor = noticia.autor.trim();
+      if (valorAutor.includes('@')) {
+        const correo = valorAutor;
+        // Usar la parte del correo antes del @ como nombre de usuario
+        const nombreUsuario = correo.split('@')[0];
+        console.log(`Usando parte del correo como nombre de usuario: ${nombreUsuario}`);
+        autorNombre = nombreUsuario;
+      } else if (valorAutor === 'Desconocido') {
+        // Caso especial para autor 'Desconocido'
+        console.log('Autor marcado como Desconocido, aplicando estilo especial');
+        autorNombre = 'Desconocido';
+        autorColor = '#6b7280'; // Gris para autor desconocido
+      } else {
+        // Usar directamente el valor almacenado en 'autor' como nombre público
+        console.log(`Usando texto de 'autor' como nombre público: ${valorAutor}`);
+        autorNombre = valorAutor;
+      }
     }
 
     
+    // Depurar información del autor antes de devolverla
+    console.log('=== INFORMACIÓN DEL AUTOR QUE SE VA A DEVOLVER ===');
+    console.log('autor_nombre:', autorNombre);
+    console.log('autor_color:', autorColor);
+    console.log('autor_avatar:', autorAvatar);
+    
+    // Generar URL de avatar para autores sin imagen de perfil
+    if (!autorAvatar) {
+      // Si el autor es Desconocido o no tiene avatar, generar un avatar con DiceBear
+      // Usar el nombre del autor como semilla para generar un avatar consistente
+      const seed = autorNombre || 'desconocido';
+      
+      // Usar DiceBear para generar un avatar (compatible con CORS)
+      // Opciones: https://www.dicebear.com/styles
+      autorAvatar = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${autorColor?.replace('#', '') || '6b7280'}&fontSize=50&bold=true`;
+      console.log(`Generando avatar con semilla "${seed}" y color ${autorColor?.replace('#', '') || '6b7280'}`);
+      console.log('URL de avatar generado:', autorAvatar);
+    }
+    
     // Devolver la noticia con sus categorías y datos del autor
+    const responseData = {
+      ...noticia,
+      // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
+      imagen_url: noticia.imagen_url || noticia.imagen_portada || null,
+      categorias: categorias || [],
+      autor_nombre: autorNombre || noticia.autor || 'Desconocido',
+      autor_color: autorColor || '#6b7280', // Gris por defecto
+      autor_avatar: autorAvatar || null
+    };
+    
+    // Logs adicionales para depuración
+    console.log('=== DATOS FINALES DEL AUTOR ===');
+    console.log('autor_nombre final:', responseData.autor_nombre);
+    console.log('autor_color final:', responseData.autor_color);
+    console.log('autor_avatar final:', responseData.autor_avatar);
+    
+    console.log('autor_avatar en la respuesta:', responseData.autor_avatar);
+    
     return NextResponse.json({
       success: true, 
-      data: {
-        ...noticia,
-        // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
-        imagen_url: noticia.imagen_url || noticia.imagen_portada || null,
-        categorias: categorias || [],
-        autor_nombre: autorNombre,
-        autor_color: autorColor,
-        autor_avatar: autorAvatar
-      }
+      data: responseData
     });
   } catch (error) {
     console.error('Error al procesar la solicitud:', error);

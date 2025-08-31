@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createServerClient } from '@/utils/supabase-server';
-import { getServiceClient } from '@/utils/supabase-service';
+import { getServiceClient } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(request: Request) {
   try {
@@ -60,6 +60,7 @@ export async function POST(request: Request) {
     }
     
     // Subir el archivo a Supabase Storage
+    console.log(`[API] Subiendo imagen a profiles/${filePath}`);
     const { data, error: uploadError } = await serviceClient.storage
       .from('profiles')
       .upload(filePath, fileBuffer, {
@@ -76,42 +77,44 @@ export async function POST(request: Request) {
       );
     }
     
-    // Intentar obtener una URL firmada (con tiempo de expiración largo) en lugar de una URL pública
-    // Esto puede evitar problemas de permisos
-    const { data: signedUrlData } = await serviceClient.storage
-      .from('profiles')
-      .createSignedUrl(filePath, 60 * 60 * 24 * 365); // URL válida por 1 año
-      
-    // También obtenemos la URL pública como respaldo
+    // Obtener la URL pública directamente
     const { data: { publicUrl } } = serviceClient.storage
       .from('profiles')
       .getPublicUrl(filePath);
       
-    // Usar la URL firmada si está disponible, de lo contrario usar la URL pública
-    const imageUrl = signedUrlData?.signedUrl || publicUrl;
-    console.log('URL de imagen generada:', imageUrl);
+    // Usar la URL pública para el avatar
+    const imageUrl = publicUrl;
+    console.log('[API] URL de imagen generada:', imageUrl);
     
-    // Verificar si podemos hacer la imagen pública
-    try {
-      // Actualizar la política de acceso público si es necesario
-      // Nota: Esto requiere permisos de administrador en Supabase
-      // y normalmente se haría desde la consola de Supabase
+    // Verificar si el perfil existe antes de actualizarlo
+    const { data: perfilExistente, error: perfilError } = await serviceClient
+      .from('perfiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
       
-      // En su lugar, vamos a intentar actualizar los metadatos del archivo
-      await serviceClient.storage.from('profiles').update(
-        filePath,
-        fileBuffer,
-        {
-          contentType: file.type,
-          upsert: true,
-          cacheControl: '3600'
-        }
-      );
+    if (perfilError || !perfilExistente) {
+      console.log(`[API] Perfil ${userId} no encontrado, creando uno nuevo`);
       
-      console.log('Archivo actualizado con éxito');
-    } catch (e) {
-      console.error('Error al actualizar el archivo:', e);
-      // Continuamos aunque falle
+      // Crear el perfil si no existe
+      const { error: createError } = await serviceClient
+        .from('perfiles')
+        .insert({
+          id: userId,
+          avatar_url: imageUrl,
+          role: 'user',
+          activo: true
+        });
+        
+      if (createError) {
+        console.error('[API] Error al crear perfil:', createError);
+        return NextResponse.json(
+          { error: `Error al crear el perfil: ${createError.message}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.log(`[API] Perfil ${userId} encontrado, actualizando avatar_url`);
     }
     
     // Actualizar el perfil del usuario con la nueva URL de avatar

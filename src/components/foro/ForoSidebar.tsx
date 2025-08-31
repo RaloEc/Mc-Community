@@ -131,7 +131,7 @@ export default function ForoSidebar({ categorias }: ForoSidebarProps) {
       className={
         `sticky top-[var(--header-height)] h-[calc(100vh-var(--header-height))] ` +
         `hidden lg:flex lg:flex-col w-60 xl:w-64 flex-shrink-0 ` +
-        `bg-white dark:bg-gray-900 amoled:bg-black ` +
+        `bg-white dark:bg-black ` +
         `border-r border-gray-200 dark:border-gray-800`
       }
     >

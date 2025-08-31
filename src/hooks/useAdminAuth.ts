@@ -22,6 +22,7 @@ export function useAdminAuth() {
   const router = useRouter()
   const isMounted = useRef(true)
   const checkingRef = useRef(false)
+  const completedRef = useRef(false)
 
   // Función para verificar autenticación directamente con Supabase
   async function checkAdminAuth() {
@@ -125,12 +126,16 @@ export function useAdminAuth() {
       console.log(`[useAdminAuth] Detalles completos del perfil:`, JSON.stringify(profile, null, 2))
       
       if (isMounted.current) {
-        setState({
+        const newState = {
           isLoading: false,
           isAdmin: finalIsAdmin,
           user: session.user,
           profile
-        })
+        }
+        setState(newState)
+        completedRef.current = true
+        console.log('[useAdminAuth] Estado establecido:', JSON.stringify(newState, null, 2))
+        console.log('[useAdminAuth] Verificación completada exitosamente')
         
         // No redirigir automáticamente, solo establecer el estado
         // Esto permite que las páginas decidan qué hacer basado en isAdmin
@@ -144,6 +149,7 @@ export function useAdminAuth() {
           user: null,
           profile: null
         })
+        completedRef.current = true
         
         // No redirigir automáticamente en caso de error
         // Solo actualizar el estado
@@ -152,7 +158,6 @@ export function useAdminAuth() {
       if (isMounted.current) {
         checkingRef.current = false
         console.log('[useAdminAuth] ========== FIN VERIFICACIÓN ADMIN ==========');
-        console.log('[useAdminAuth] Estado final:', JSON.stringify(state, null, 2));
       }
     }
   }
@@ -164,20 +169,20 @@ export function useAdminAuth() {
     // Verificar inmediatamente
     checkAdminAuth()
     
-    // Timeout de seguridad (2 segundos)
+    // Timeout de seguridad (5 segundos) - solo si realmente no se ha completado
     const timeoutId = setTimeout(() => {
-      if (isMounted.current && state.isLoading) {
-        console.log('[useAdminAuth] Timeout alcanzado, forzando resolución')
+      if (isMounted.current && !completedRef.current) {
+        console.log('[useAdminAuth] Timeout alcanzado, forzando resolución por falta de respuesta')
         setState({
           isLoading: false,
           isAdmin: false,
           user: null,
           profile: null
         })
-        // No redirigir si el timeout se alcanza
-        // Solo actualizar el estado
+        checkingRef.current = false
+        completedRef.current = true
       }
-    }, 2000)
+    }, 5000)
     
     // Verificar cada 30 segundos para mantener actualizado
     const intervalId = setInterval(() => {

@@ -284,8 +284,8 @@ function AdminUsuariosContent() {
                   <TableRow key={usuario.id} className="hover:bg-muted/50">
                     <TableCell>
                       <img
-                        src={usuario.perfil?.avatar_url || '/images/default-avatar.png'}
-                        alt={usuario.perfil?.username || 'Usuario'}
+                        src={usuario.perfil?.avatar_url || usuario.user_metadata?.avatar_url || usuario.user_metadata?.picture || '/images/default-avatar.png'}
+                        alt={usuario.perfil?.username || usuario.user_metadata?.full_name || usuario.user_metadata?.name || 'Usuario'}
                         className="w-12 h-12 rounded-full object-cover"
                       />
                     </TableCell>
@@ -349,8 +349,8 @@ function AdminUsuariosContent() {
                 >
                   <div className="flex items-center space-x-3">
                     <img
-                      src={usuario.perfil?.avatar_url || '/images/default-avatar.png'}
-                      alt={usuario.perfil?.username || 'Usuario'}
+                      src={usuario.perfil?.avatar_url || usuario.user_metadata?.avatar_url || usuario.user_metadata?.picture || '/images/default-avatar.png'}
+                      alt={usuario.perfil?.username || usuario.user_metadata?.full_name || usuario.user_metadata?.name || 'Usuario'}
                       className="w-14 h-14 rounded-full object-cover"
                     />
                     <div className="flex-grow">

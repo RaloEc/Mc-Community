@@ -37,17 +37,17 @@ export default function ForoBtnFlotante({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="absolute bottom-16 right-0 bg-white dark:bg-gray-800 amoled:bg-black rounded-lg shadow-lg p-2 mb-2 min-w-[160px] border border-gray-200 dark:border-gray-700 amoled:border-gray-800"
+            className="absolute bottom-16 right-0 bg-white dark:bg-black rounded-lg shadow-lg p-2 mb-2 min-w-[160px] border border-gray-200 dark:border-gray-800"
           >
-            <div className="border-b border-gray-200 dark:border-gray-700 amoled:border-gray-800 pb-2 mb-2">
-              <div className="px-4 py-1 text-sm font-medium text-gray-500 dark:text-gray-400 amoled:text-gray-500">Filtros</div>
+            <div className="border-b border-gray-200 dark:border-gray-800 pb-2 mb-2">
+              <div className="px-4 py-1 text-sm font-medium text-gray-500 dark:text-gray-400">Filtros</div>
               
               <button
                 onClick={() => {
                   if (onCambiarFiltro) onCambiarFiltro('recientes');
                   setMenuAbierto(false);
                 }}
-                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'recientes' ? 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-primary' : 'text-gray-700 dark:text-gray-200 amoled:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md`}
+                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'recientes' ? 'bg-gray-100 dark:bg-black text-primary' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
               >
                 <Clock size={16} className="mr-2" />
                 <span>Recientes</span>
@@ -58,7 +58,7 @@ export default function ForoBtnFlotante({
                   if (onCambiarFiltro) onCambiarFiltro('populares');
                   setMenuAbierto(false);
                 }}
-                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'populares' ? 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-primary' : 'text-gray-700 dark:text-gray-200 amoled:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md`}
+                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'populares' ? 'bg-gray-100 dark:bg-black text-primary' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
               >
                 <TrendingUp size={16} className="mr-2" />
                 <span>Populares</span>
@@ -69,7 +69,7 @@ export default function ForoBtnFlotante({
                   if (onCambiarFiltro) onCambiarFiltro('sin_respuesta');
                   setMenuAbierto(false);
                 }}
-                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'sin_respuesta' ? 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-primary' : 'text-gray-700 dark:text-gray-200 amoled:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md`}
+                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'sin_respuesta' ? 'bg-gray-100 dark:bg-black text-primary' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
               >
                 <MessageSquare size={16} className="mr-2" />
                 <span>Sin respuesta</span>
@@ -80,7 +80,7 @@ export default function ForoBtnFlotante({
                   if (onCambiarFiltro) onCambiarFiltro('siguiendo');
                   setMenuAbierto(false);
                 }}
-                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'siguiendo' ? 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-primary' : 'text-gray-700 dark:text-gray-200 amoled:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md`}
+                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'siguiendo' ? 'bg-gray-100 dark:bg-black text-primary' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
               >
                 <Star size={16} className="mr-2" />
                 <span>Siguiendo</span>
@@ -91,7 +91,7 @@ export default function ForoBtnFlotante({
                   if (onCambiarFiltro) onCambiarFiltro('mios');
                   setMenuAbierto(false);
                 }}
-                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'mios' ? 'bg-gray-100 dark:bg-gray-700 amoled:bg-gray-900 text-primary' : 'text-gray-700 dark:text-gray-200 amoled:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md`}
+                className={`flex items-center w-full px-4 py-2 text-left ${filtroActivo === 'mios' ? 'bg-gray-100 dark:bg-black text-primary' : 'text-gray-700 dark:text-gray-300'} hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md`}
               >
                 <User size={16} className="mr-2" />
                 <span>Mis hilos</span>
@@ -102,7 +102,7 @@ export default function ForoBtnFlotante({
             {usuarioAutenticado ? (
               <Link 
                 href="/foro/crear-hilo"
-                className="flex items-center w-full px-4 py-2 text-left text-gray-700 dark:text-gray-200 amoled:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 amoled:hover:bg-gray-900 rounded-md"
+                className="flex items-center w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
               >
                 <PlusIcon size={18} className="mr-2" />
                 <span>Crear hilo</span>
@@ -112,13 +112,13 @@ export default function ForoBtnFlotante({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <div 
-                      className="flex items-center w-full px-4 py-2 text-left text-gray-400 dark:text-gray-500 amoled:text-gray-600 bg-gray-50 dark:bg-gray-800 amoled:bg-gray-950 rounded-md cursor-not-allowed"
+                      className="flex items-center w-full px-4 py-2 text-left text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-black rounded-md cursor-not-allowed"
                     >
                       <PlusIcon size={18} className="mr-2" />
                       <span>Crear hilo</span>
                     </div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs bg-gray-800 dark:bg-gray-700 amoled:bg-black text-white border-gray-700">
+                  <TooltipContent side="top" className="text-xs bg-gray-800 dark:bg-black text-white border-gray-700">
                     Inicia sesión para crear
                   </TooltipContent>
                 </Tooltip>

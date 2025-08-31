@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import type { Database } from '@/lib/database.types';
 
 type CategoriaForo = Database['public']['Tables']['foro_categorias']['Row'] & {
-  subcategorias?: CategoriaForo[];
+  hijos?: CategoriaForo[];
 };
 import TiptapEditor from '@/components/tiptap-editor';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,17 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  
+  // Estado para controlar categorías expandidas
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+
+  // Función para alternar la expansión de una categoría
+  const toggleCategory = (categoryId: string) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
 
   useEffect(() => {
     setIsClient(true);
@@ -92,53 +103,6 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <label htmlFor="categoria" className="text-sm font-medium">Categoría</label>
-        <Select onValueChange={setCategoriaId} value={categoriaId}>
-          <SelectTrigger id="categoria">
-            <SelectValue placeholder="Selecciona una categoría" />
-          </SelectTrigger>
-          <SelectContent>
-            {categorias.map((cat) => (
-              <SelectGroup key={cat.id}>
-                <SelectLabel className="flex items-center gap-2 font-bold">
-                  <div 
-                    className="w-3 h-3 rounded-full flex-shrink-0" 
-                    style={{ backgroundColor: cat.color || '#3b82f6' }}
-                  />
-                  {cat.nombre}
-                </SelectLabel>
-                {/* La categoría principal también es seleccionable */}
-                <SelectItem 
-                  value={cat.id} 
-                  className="pl-6 text-sm flex items-center gap-2"
-                >
-                   <div 
-                      className="w-2 h-2 rounded-full flex-shrink-0 bg-gray-400" 
-                    />
-                  General
-                </SelectItem>
-
-                {/* Subcategorías */}
-                {cat.subcategorias?.map((subcat) => (
-                  <SelectItem 
-                    key={subcat.id} 
-                    value={subcat.id}
-                    className="pl-6 text-sm flex items-center gap-2"
-                  >
-                    <div 
-                      className="w-2 h-2 rounded-full flex-shrink-0" 
-                      style={{ backgroundColor: subcat.color || '#3b82f6' }}
-                    />
-                    {subcat.nombre}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
         <label htmlFor="titulo" className="text-sm font-medium">Título del Hilo</label>
         <Input
           id="titulo"
@@ -160,6 +124,103 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
             placeholder="Escribe el contenido de tu hilo aquí..."
           />
         </div>
+      </div>
+      
+      <div className="mb-6">
+        <label htmlFor="categoria" className="block text-sm font-medium text-gray-200 mb-2">
+          Categoría
+        </label>
+        <div className="bg-gray-800 border border-gray-700 rounded-md p-4 max-h-[300px] overflow-y-auto">
+          {categoriaId && (
+            <div className="mb-4 pb-2 border-b border-gray-700">
+              <p className="text-sm text-gray-400">Categoría seleccionada:</p>
+              <div className="flex items-center mt-1">
+                <div 
+                  className="w-3 h-3 rounded-full mr-2" 
+                  style={{ backgroundColor: categorias.find(c => c.id === categoriaId)?.color || 
+                                   categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.color || 
+                                   '#7c3aed' }}
+                />
+                <span className="font-medium text-white">
+                  {categorias.find(c => c.id === categoriaId)?.nombre || 
+                   categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.nombre}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="ml-auto text-gray-400 hover:text-white"
+                  onClick={() => setCategoriaId('')}
+                >
+                  Cambiar
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {!categoriaId && (
+            <div>
+              <p className="text-sm text-gray-400 mb-2">Selecciona una categoría:</p>
+              <div className="space-y-2">
+                {categorias.map((categoria) => (
+                  <div key={categoria.id} className="space-y-1">
+                    <div className="flex items-center">
+                      {categoria.hijos && categoria.hijos.length > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="p-0 h-6 w-6 mr-1"
+                          onClick={() => toggleCategory(categoria.id)}
+                        >
+                          <span className="text-gray-400">
+                            {expandedCategories[categoria.id] ? '▼' : '►'}
+                          </span>
+                        </Button>
+                      )}
+                      <Button 
+                        variant="ghost" 
+                        className="justify-start p-2 h-auto w-full text-left"
+                        onClick={() => setCategoriaId(categoria.id)}
+                      >
+                        <div className="flex items-center">
+                          <div 
+                            className="w-3 h-3 rounded-full mr-2" 
+                            style={{ backgroundColor: categoria.color || '#7c3aed' }}
+                          />
+                          <span>{categoria.nombre}</span>
+                        </div>
+                      </Button>
+                    </div>
+                    
+                    {/* Subcategorías */}
+                    {categoria.hijos && categoria.hijos.length > 0 && expandedCategories[categoria.id] && (
+                      <div className="ml-6 pl-2 border-l border-gray-700 space-y-1">
+                        {categoria.hijos.map((subcat) => (
+                          <Button 
+                            key={subcat.id}
+                            variant="ghost" 
+                            className="justify-start p-2 h-auto w-full text-left"
+                            onClick={() => setCategoriaId(subcat.id)}
+                          >
+                            <div className="flex items-center">
+                              <div 
+                                className="w-3 h-3 rounded-full mr-2" 
+                                style={{ backgroundColor: subcat.color || '#7c3aed' }}
+                              />
+                              <span>{subcat.nombre}</span>
+                            </div>
+                          </Button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+        {categoriaId === '' && (
+          <p className="text-red-500 text-sm mt-1">Debes seleccionar una categoría</p>
+        )}
       </div>
 
       <div className="flex justify-end">

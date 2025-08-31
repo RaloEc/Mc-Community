@@ -23,7 +23,7 @@ export default function SubcategoriasDestacadas({ subcategorias, currentId }: Pr
           <Link
             key={s.id}
             href={href}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors ${active ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-foreground border-border hover:bg-muted'}`}
+            className={`shrink-0 px-3 py-1.5 rounded-full text-sm border transition-colors ${active ? 'bg-sky-600 text-white border-sky-600' : 'bg-transparent text-foreground border-border hover:bg-muted dark:hover:bg-gray-800 amoled:hover:bg-gray-900'}`}
             style={active && s.color ? { backgroundColor: s.color } : undefined}
           >
             {s.nombre}

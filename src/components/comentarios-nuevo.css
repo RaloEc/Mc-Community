@@ -82,7 +82,7 @@
   transform: translateY(2px);
 }
 
-/* Ajuste para modo oscuro */
+/* Ajustes para modo AMOLED */
 @media (prefers-color-scheme: dark) {
   .comentarios-lista::-webkit-scrollbar-track {
     background: var(--comentario-bg-dark);
@@ -94,7 +94,7 @@
   }
 }
 
-/* Ajustes para modo oscuro */
+/* Ajustes para modo AMOLED */
 @media (prefers-color-scheme: dark) {
   .comentarios-container {
     --comentario-bg: var(--comentario-bg-dark);
@@ -119,7 +119,7 @@
   border-left: 2px solid #f3f4f6; /* Borde sutil para indicar jerarquía */
 }
 
-/* Ajuste para modo oscuro */
+/* Ajuste para modo AMOLED */
 @media (prefers-color-scheme: dark) {
   .comentario-item .ml-10 {
     border-left-color: #1f2937;

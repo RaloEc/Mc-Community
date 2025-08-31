@@ -20,6 +20,12 @@ export type UsuarioCompleto = {
   email: string | undefined;
   created_at: string;
   perfil: Perfil | null;
+  user_metadata?: {
+    avatar_url?: string;
+    picture?: string;
+    full_name?: string;
+    name?: string;
+  };
 };
 
 // =================================================================

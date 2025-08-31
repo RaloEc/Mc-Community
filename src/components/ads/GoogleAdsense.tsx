@@ -67,13 +67,14 @@ export function GoogleAdsenseScript({ clientId }: { clientId: string }) {
         href="https://pagead2.googlesyndication.com" 
         crossOrigin="anonymous" 
       />
-      {/* Usar Script con beforeInteractive para asegurar carga temprana */}
+      {/* Usar Script con afterInteractive para evitar problemas de hidratación */}
       <Script
         id="google-adsense"
         async
-        strategy="beforeInteractive"
+        strategy="afterInteractive"
         src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`}
         crossOrigin="anonymous"
+        suppressHydrationWarning
         onError={(e) => {
           console.error('Error al cargar el script de AdSense:', e);
         }}

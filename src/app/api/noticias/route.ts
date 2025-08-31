@@ -60,8 +60,8 @@ export async function GET(request: Request) {
       
     // Aplicar filtros de búsqueda si existen
     if (busqueda) {
-      // Buscar en título o autor
-      query = query.or(`titulo.ilike.%${busqueda}%,autor.ilike.%${busqueda}%`);
+      // Buscar en título, contenido o autor
+      query = query.or(`titulo.ilike.%${busqueda}%,contenido.ilike.%${busqueda}%,autor.ilike.%${busqueda}%`);
     }
     
     if (autor) {
@@ -84,6 +84,7 @@ export async function GET(request: Request) {
       
     if (error) {
       // En lugar de mostrar un error, devolver un array vacío
+      // usando el formato esperado por los componentes (success y data)
       return NextResponse.json({
         success: true,
         data: []
@@ -165,7 +166,7 @@ export async function GET(request: Request) {
         if (autorIds.length > 0) {
           const { data: perfiles, error: errorPerfiles } = await serviceClient
             .from('perfiles')
-            .select('id, username, role, color')
+            .select('id, username, role, color, avatar_url')
             .in('id', autorIds);
           
           if (!errorPerfiles && perfiles && perfiles.length > 0) {
@@ -184,7 +185,8 @@ export async function GET(request: Request) {
               
               map[perfil.id] = {
                 username: perfil.username || 'Usuario',
-                color: color
+                color: color,
+                avatar_url: perfil.avatar_url || null
               };
               return map;
             }, {});
@@ -283,6 +285,7 @@ export async function GET(request: Request) {
         // Valores predeterminados
         let autorNombre = noticia.autor || 'Anónimo';
         let autorColor = '#3b82f6'; // Color por defecto
+        let autorAvatar = null; // URL del avatar del autor
         
         // Si tenemos un ID válido y encontramos un perfil, usar su username
         if (autorId && perfilesAutores[autorId]) {
@@ -292,6 +295,7 @@ export async function GET(request: Request) {
           if (perfil.username) {
             autorNombre = perfil.username;
             autorColor = perfil.color;
+            autorAvatar = perfil.avatar_url || null;
             perfilEncontrado = true;
           }
         }
@@ -314,12 +318,15 @@ export async function GET(request: Request) {
           // Añadir información del autor
           autor_nombre: autorNombre,
           autor_color: autorColor,
+          autor_avatar: autorAvatar,
           // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
           imagen_url: noticia.imagen_url || noticia.imagen_portada || null
         };
       });
     }
 
+    // Asegurar que la respuesta use el formato esperado por los componentes
+    // que esperan un objeto con propiedades 'success' y 'data'
     const respuestaExitosa = NextResponse.json({ 
       success: true, 
       data: noticiasData 
@@ -327,6 +334,7 @@ export async function GET(request: Request) {
     return configurarCORS(respuestaExitosa);
   } catch (error) {
     // Manejar silenciosamente cualquier error y devolver un array vacío
+    // usando el formato esperado por los componentes (success y data)
     const respuestaError = NextResponse.json({
       success: true,
       data: []
