@@ -32,7 +32,8 @@ export async function GET(request: NextRequest) {
   try {
     // Obtener parámetros de la URL
     const url = new URL(request.url);
-    const tipo = url.searchParams.get('tipo') || 'destacados';
+    const rawTipo = url.searchParams.get('tipo') || 'destacados';
+    const tipo = rawTipo.replace(/-/g, '_');
     const buscar = url.searchParams.get('buscar') || '';
     const limit = parseInt(url.searchParams.get('limit') || '5', 10);
     const categoriaSlug = url.searchParams.get('categoriaSlug') || null;
@@ -84,14 +85,40 @@ export async function GET(request: NextRequest) {
 
     // Aplicar búsqueda si se especificó
     if (buscar) {
-      query = query.or(`titulo.ilike.%${buscar}%,contenido.ilike.%${buscar}%,perfiles!autor_id(username).ilike.%${buscar}%`);
+      // Separar las condiciones de búsqueda para evitar problemas de sintaxis
+      query = query.or(
+        `titulo.ilike.%${buscar}%,contenido.ilike.%${buscar}%`
+      );
+      
+      // Buscar también por nombre de usuario (en una consulta separada)
+      try {
+        // Primero obtenemos los IDs de autores que coinciden con la búsqueda
+        const { data: perfilesCoincidentes } = await supabase
+          .from('perfiles')
+          .select('id')
+          .ilike('username', `%${buscar}%`);
+          
+        // Si encontramos perfiles coincidentes, añadimos sus IDs a la búsqueda
+        if (perfilesCoincidentes && perfilesCoincidentes.length > 0) {
+          const autorIds = perfilesCoincidentes.map(p => p.id);
+          query = query.or(`autor_id.in.(${autorIds.join(',')})`);
+        }
+      } catch (error) {
+        console.error('Error al buscar perfiles por username:', error);
+        // Continuamos con la búsqueda principal aunque falle esta parte
+      }
     }
 
     // Configurar la consulta según el tipo
     switch (tipo) {
       case 'destacados':
-        // Hilos con más votos y respuestas (combinamos ambos criterios)
+      case 'mas_votados':
+        // Hilos con más votos
         query = query.order('votos_conteo', { ascending: false });
+        break;
+      case 'mas_vistos':
+        // Hilos con más vistas
+        query = query.order('vistas', { ascending: false });
         break;
       case 'recientes':
         // Hilos más recientes
@@ -99,7 +126,9 @@ export async function GET(request: NextRequest) {
         break;
       case 'sin_respuestas':
         // Hilos sin respuestas
-        query = query.eq('respuestas_conteo', 0).order('created_at', { ascending: false });
+        // No podemos filtrar directamente por respuestas_conteo ya que es una relación
+        // Primero obtenemos todos los hilos y luego filtramos por los que tienen 0 respuestas
+        query = query.order('created_at', { ascending: false });
         break;
       default:
         // Por defecto, mostrar los más recientes
@@ -150,6 +179,16 @@ export async function GET(request: NextRequest) {
         categoria
       };
     }) || [];
+    
+    // Filtrar hilos sin respuestas si es necesario
+    if (tipo === 'sin_respuestas') {
+      hilosNormalizados = hilosNormalizados.filter(hilo => hilo.respuestas_conteo === 0);
+      
+      // Si después del filtrado tenemos menos hilos que el límite, intentamos obtener más
+      if (hilosNormalizados.length < limit && data && data.length >= limit) {
+        console.log(`Se filtraron hilos sin respuestas: ${hilosNormalizados.length} de ${data.length}`);
+      }
+    }
     
     // Verificar si hay IDs duplicados
     const idsMap = new Map();

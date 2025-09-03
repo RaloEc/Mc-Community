@@ -1,15 +1,18 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'next/navigation';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Comentarios from '@/components/ComentariosNuevo';
+import ComentariosNuevo from '../../../../components/ComentariosNuevo';
 import { MessageSquare, Share2, Star, Lock, CheckCircle2, Plus, Calendar, Clock, Eye, MessageCircle } from 'lucide-react';
 
 async function getHiloPorSlugOId(slugOrId: string) {
-  const supabase = createServerComponentClient({ cookies });
+  const supabase = createClientComponentClient();
   // Primero por slug
   let { data: hilo, error } = await supabase
     .from('foro_hilos')
@@ -44,42 +47,107 @@ async function getHiloPorSlugOId(slugOrId: string) {
   return hilo;
 }
 
-export default async function HiloPage({ params }: { params: { slug: string } }) {
-  const supabase = createServerComponentClient({ cookies });
-  const hilo = await getHiloPorSlugOId(params.slug);
+export default function HiloPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hilo, setHilo] = useState<any>(null);
+  const [catFull, setCatFull] = useState<any>(null);
+  const [etiquetasRel, setEtiquetasRel] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [relacionados, setRelacionados] = useState<any[]>([]);
+  const [parentCat, setParentCat] = useState<any>(null);
 
-  // Datos auxiliares: categoría padre, etiquetas, respuestas, relacionados
-  const [{ data: catFull }, { data: etiquetasRel }, { data: posts } , { data: relacionados }] = await Promise.all([
-    supabase
-      .from('foro_categorias')
-      .select('id, nombre, color, slug, parent_id')
-      .eq('id', hilo.categoria_id)
-      .single(),
-    supabase
-      .from('foro_hilos_etiquetas')
-      .select('etiqueta:foro_etiquetas ( id, nombre, color )')
-      .eq('hilo_id', hilo.id),
-    supabase
-      .from('foro_posts')
-      .select('id, contenido, autor:perfiles(username, avatar_url), created_at')
-      .eq('hilo_id', hilo.id)
-      .order('created_at', { ascending: true }),
-    supabase
-      .from('foro_hilos')
-      .select('id, slug, titulo')
-      .eq('categoria_id', hilo.categoria_id)
-      .neq('id', hilo.id)
-      .order('created_at', { ascending: false })
-      .limit(5),
-  ]);
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Obtener el hilo
+        const hiloData = await getHiloPorSlugOId(slug);
+        setHilo(hiloData);
+        
+        // Crear cliente de Supabase
+        const supabase = createClientComponentClient();
+        
+        // Obtener datos auxiliares
+        const [catFullRes, etiquetasRelRes, postsRes, relacionadosRes] = await Promise.all([
+          supabase
+            .from('foro_categorias')
+            .select('id, nombre, color, slug, parent_id')
+            .eq('id', hiloData.categoria_id)
+            .single(),
+          supabase
+            .from('foro_hilos_etiquetas')
+            .select('etiqueta:foro_etiquetas ( id, nombre, color )')
+            .eq('hilo_id', hiloData.id),
+          supabase
+            .from('foro_posts')
+            .select('id, contenido, autor:perfiles(username, avatar_url), created_at')
+            .eq('hilo_id', hiloData.id)
+            .order('created_at', { ascending: true }),
+          supabase
+            .from('foro_hilos')
+            .select('id, slug, titulo')
+            .eq('categoria_id', hiloData.categoria_id)
+            .neq('id', hiloData.id)
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ]);
+        
+        setCatFull(catFullRes.data);
+        setEtiquetasRel(etiquetasRelRes.data || []);
+        setPosts(postsRes.data || []);
+        setRelacionados(relacionadosRes.data || []);
+        
+        // Obtener categoría padre si existe
+        if (catFullRes.data?.parent_id) {
+          const parentCatRes = await supabase
+            .from('foro_categorias')
+            .select('id, nombre, slug')
+            .eq('id', catFullRes.data.parent_id)
+            .single();
+          setParentCat(parentCatRes.data);
+        }
+      } catch (err: any) {
+        console.error('Error al cargar datos:', err.message);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+  }, [slug]);
 
-  const parentCat = catFull?.parent_id
-    ? (await supabase.from('foro_categorias').select('id, nombre, slug').eq('id', catFull.parent_id).single()).data
-    : null;
+  // Manejar estados de carga y error
+  if (loading) {
+    return (
+      <div className="container mx-auto py-6 px-3 lg:px-0 text-center">
+        <p className="text-lg">Cargando hilo...</p>
+      </div>
+    );
+  }
+
+  if (error || !hilo) {
+    return (
+      <div className="container mx-auto py-6 px-3 lg:px-0 text-center">
+        <p className="text-lg text-red-500">Error: {error || 'No se pudo cargar el hilo'}</p>
+      </div>
+    );
+  }
 
   const etiquetas = (etiquetasRel || []).map((r: any) => r.etiqueta).filter(Boolean) as { id: string; nombre: string; color?: string | null }[];
   const respuestas = posts || [];
   const esResuelto = false; // pendiente: calcular cuando exista soporte de "mejor respuesta"
+
+  // Añadir logs para depurar
+  console.log('Renderizando hilo:', { 
+    hiloId: hilo.id,
+    hiloIdType: typeof hilo.id
+  });
 
   return (
     <div className="container mx-auto py-6 px-3 lg:px-0">
@@ -184,7 +252,7 @@ export default async function HiloPage({ params }: { params: { slug: string } })
 
           {/* Comentarios (idéntico a noticias) */}
           <section className="mt-6">
-            <Comentarios tipoEntidad="hilo" entidadId={hilo.id} limite={10} />
+            <ComentariosNuevo contentType="hilo" contentId={hilo.id.toString()} limit={10} />
           </section>
         </div>
 

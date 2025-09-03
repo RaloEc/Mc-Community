@@ -517,7 +517,7 @@ export default function NoticiasLista({
               )}
             </div>
           ) : (
-            <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative">
+            <div key={item.id} className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative dark:data-[theme=amoled]:bg-black">
               <div className="relative h-48 overflow-hidden">
                 {/* Categorías en la esquina superior izquierda */}
                 <div className="flex flex-wrap gap-1 mb-2">

@@ -1,0 +1,38 @@
+{
+  "name": "Sistema de Comentarios",
+  "version": "1.0.0",
+  "description": "Sistema completo de comentarios con respuestas estilo WhatsApp, diseño plano y funcionalidad de scroll suave",
+  "author": "Desarrollador Frontend",
+  "features": [
+    "Comentarios principales y respuestas anidadas",
+    "Bloque citado clickeable estilo WhatsApp",
+    "Diseño de hilo plano sin indentación",
+    "Scroll suave y resaltado de comentarios",
+    "Soporte completo para modo oscuro",
+    "Interfaz moderna con Tailwind CSS",
+    "Componentes reutilizables de UI"
+  ],
+  "technologies": [
+    "React",
+    "TypeScript",
+    "Tailwind CSS"
+  ],
+  "structure": {
+    "components": {
+      "ui": [
+        "Avatar.tsx",
+        "Button.tsx", 
+        "Card.tsx",
+        "Input.tsx"
+      ],
+      "main": [
+        "CommentCard.tsx",
+        "CommentForm.tsx",
+        "CommentSystem.tsx"
+      ]
+    },
+    "types": "types.ts",
+    "entry": "index.tsx",
+    "app": "App.tsx"
+  }
+}

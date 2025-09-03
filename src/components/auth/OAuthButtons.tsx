@@ -23,7 +23,14 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
     try {
       setIsLoading(provider)
       // Usar URL absoluta completa para evitar problemas de redirección
-      const redirectUrl = new URL('/auth/callback', window.location.origin)
+      // Usar NEXT_PUBLIC_SITE_URL si está disponible, de lo contrario usar window.location.origin
+      const baseUrl = typeof process !== 'undefined' && process.env.NEXT_PUBLIC_SITE_URL 
+        ? process.env.NEXT_PUBLIC_SITE_URL 
+        : window.location.origin
+      
+      console.log('Base URL para redirección OAuth:', baseUrl)
+      
+      const redirectUrl = new URL('/auth/callback', baseUrl)
       // Obtener la URL guardada para redirección o usar la página principal
       const targetRedirect = getRedirectUrl('/')
       redirectUrl.searchParams.set('redirect', targetRedirect)

@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronRight, MessageSquare, Loader2 } from 'lucide-react';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { getUserInitials } from '@/lib/utils/avatar-utils';
 import ForosBloqueDesktop from './ForosBloqueDesktop';
+import HiloItem, { HiloDTO } from './HiloItem';
 
 // Tipos
 type ConteoItem = {
@@ -226,48 +225,59 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
     }
   }, [activeTab, isDesktop]);
 
-  // Renderizar un hilo
+  // Convertir el tipo Hilo al tipo HiloDTO para usar con HiloItem
+  const convertirAHiloDTO = (hilo: Hilo): HiloDTO => {
+    // Extraer el valor numérico de votos_conteo
+    let votos = 0;
+    if (hilo.votos_conteo !== null) {
+      if (Array.isArray(hilo.votos_conteo) && hilo.votos_conteo.length > 0 && hilo.votos_conteo[0]) {
+        votos = (hilo.votos_conteo[0] as any).count ?? 0;
+      } else if (typeof hilo.votos_conteo === 'object' && 'count' in hilo.votos_conteo) {
+        votos = (hilo.votos_conteo as any).count ?? 0;
+      } else if (typeof hilo.votos_conteo === 'number') {
+        votos = hilo.votos_conteo;
+      }
+    }
+    
+    // Extraer el valor numérico de respuestas_conteo
+    let respuestas = 0;
+    if (hilo.respuestas_conteo !== null) {
+      if (Array.isArray(hilo.respuestas_conteo) && hilo.respuestas_conteo.length > 0 && hilo.respuestas_conteo[0]) {
+        respuestas = (hilo.respuestas_conteo[0] as any).count ?? 0;
+      } else if (typeof hilo.respuestas_conteo === 'object' && 'count' in hilo.respuestas_conteo) {
+        respuestas = (hilo.respuestas_conteo as any).count ?? 0;
+      } else if (typeof hilo.respuestas_conteo === 'number') {
+        respuestas = hilo.respuestas_conteo;
+      }
+    }
+    
+    return {
+      id: hilo.id,
+      titulo: hilo.titulo,
+      created_at: hilo.created_at,
+      ultima_respuesta_at: hilo.ultimo_post_at,
+      respuestas_count: respuestas,
+      vistas: 0, // No tenemos este dato en el tipo Hilo
+      votos: votos,
+      subcategoria: hilo.foro_categorias ? {
+        id: '', // No tenemos este dato en el tipo Hilo
+        nombre: hilo.foro_categorias.nombre,
+        slug: null,
+        color: hilo.foro_categorias.color
+      } : null,
+      autor: hilo.perfiles ? {
+        id: hilo.autor_id,
+        username: hilo.perfiles.username,
+        avatar_url: hilo.perfiles.avatar_url
+      } : null
+    };
+  };
+  
+  // Renderizar un hilo usando el componente HiloItem
   const renderHilo = (hilo: Hilo) => (
-    <Link 
-      href={`/foro/hilo/${hilo.id}`} 
-      key={hilo.id}
-      className="block p-4 rounded-lg transition-all hover:bg-accent/50 border border-border/50 mb-2"
-    >
-      <div className="flex justify-between items-start gap-3">
-        <Avatar className="h-8 w-8 flex-shrink-0">
-          <AvatarImage src={hilo.perfiles?.avatar_url || undefined} alt={hilo.perfiles?.username || 'Usuario'} />
-          <AvatarFallback>
-            {getUserInitials(hilo.perfiles?.username || 'Usuario')}
-          </AvatarFallback>
-        </Avatar>
-        <div className="flex-1">
-          <h3 className="font-medium text-foreground line-clamp-1">{hilo.titulo}</h3>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-            <span>Por {hilo.perfiles?.username || 'Usuario'}</span>
-            <span>•</span>
-            <span>{formatearFecha(hilo.ultimo_post_at || hilo.created_at)}</span>
-            {hilo.foro_categorias && (
-              <>
-                <span>•</span>
-                <span 
-                  className="px-2 py-0.5 rounded-full text-xs" 
-                  style={{ 
-                    backgroundColor: hilo.foro_categorias.color || '#4f46e5',
-                    color: 'white'
-                  }}
-                >
-                  {hilo.foro_categorias.nombre}
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <MessageSquare className="h-4 w-4" />
-          <span className="text-xs">{typeof hilo.respuestas_conteo === 'number' ? hilo.respuestas_conteo : 0}</span>
-        </div>
-      </div>
-    </Link>
+    <div key={hilo.id} className="mb-3">
+      <HiloItem hilo={convertirAHiloDTO(hilo)} />
+    </div>
   );
 
   // Renderizar contenido de pestaña
@@ -305,7 +315,7 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
     }
 
     return (
-      <div className="space-y-2">
+      <div className="space-y-3">
         {hilos[tab].map(renderHilo)}
       </div>
     );

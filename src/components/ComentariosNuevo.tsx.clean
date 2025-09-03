@@ -1,0 +1,21 @@
+'use client'
+
+import React from 'react'
+
+interface ComentariosNuevoProps {
+  tipoEntidad: string
+  entidadId: string
+  limitePorPagina?: number
+  mostrarFormulario?: boolean
+  className?: string
+}
+
+export default function ComentariosNuevo({
+  tipoEntidad,
+  entidadId,
+  limitePorPagina = 10,
+  mostrarFormulario = true,
+  className = ''
+}: ComentariosNuevoProps) {
+  return <div className={className}>Componente de comentarios desactivado</div>
+}

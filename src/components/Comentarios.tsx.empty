@@ -1,0 +1,17 @@
+'use client'
+
+import React from 'react'
+
+interface ComentariosProps {
+  tipoEntidad: string
+  entidadId: string
+  limite?: number
+}
+
+export default function Comentarios({
+  tipoEntidad,
+  entidadId,
+  limite = 10
+}: ComentariosProps) {
+  return <div>Componente de comentarios desactivado</div>
+}

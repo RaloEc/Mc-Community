@@ -2,10 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Eye, Clock, User, TrendingUp, Flame } from 'lucide-react';
+import { Clock, Flame, TrendingUp, User, MessageSquare, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SwipeableTabs } from '@/components/ui/swipeable-tabs';
+import { useResponsive } from '@/hooks/useResponsive';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -42,7 +44,7 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
     categoriaAleatoria: []
   });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('mas-vistas');
+  const { isMobile, isLoaded } = useResponsive();
 
   useEffect(() => {
     const fetchNoticias = async () => {
@@ -54,15 +56,15 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
         ]);
 
         const [masVistasData, ultimasData, categoriaData] = await Promise.all([
-          masVistasRes.ok ? masVistasRes.json() : { items: [] },
-          ultimasRes.ok ? ultimasRes.json() : { items: [] },
-          categoriaRes.ok ? categoriaRes.json() : { items: [] }
+          masVistasRes.ok ? masVistasRes.json() : { data: [] },
+          ultimasRes.ok ? ultimasRes.json() : { data: [] },
+          categoriaRes.ok ? categoriaRes.json() : { data: [] }
         ]);
 
         setNoticias({
-          masVistas: masVistasData.items || [],
-          ultimas: ultimasData.items || [],
-          categoriaAleatoria: categoriaData.items || []
+          masVistas: masVistasData.data || [],
+          ultimas: ultimasData.data || [],
+          categoriaAleatoria: categoriaData.data || []
         });
       } catch (error) {
         console.error('Error al cargar noticias:', error);
@@ -83,7 +85,7 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
 
   const NoticiaCard = ({ noticia }: { noticia: Noticia }) => (
     <Link href={`/noticias/${noticia.id}`}>
-      <article className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-[1.01] group">
+      <article className="bg-white dark:bg-gray-900 dark:data-[theme=amoled]:bg-black rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-[1.01] group">
         <div className="flex">
           {/* Imagen */}
           <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 overflow-hidden">
@@ -159,31 +161,69 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
     </Link>
   );
 
-  if (loading) {
+  if (!isLoaded) {
     return (
       <div className={`space-y-6 ${className}`}>
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
             Noticias
           </h2>
+          <Link href="/noticias">
+            <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+              Ver todas
+            </Button>
+          </Link>
         </div>
-        <div className="space-y-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden animate-pulse">
-              <div className="flex">
-                <div className="w-24 h-24 bg-gray-200 dark:bg-gray-800" />
-                <div className="flex-1 p-4 space-y-2">
-                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
-                  <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-full" />
-                  <div className="h-3 bg-gray-200 dark:bg-gray-800 rounded w-1/2" />
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="animate-pulse space-y-4">
+          <div className="h-10 bg-gray-200 dark:bg-gray-800 rounded" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-64 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
+
+  const tabsData = [
+    {
+      id: 'mas-vistas',
+      label: 'Más Vistas',
+      icon: <Flame className="h-4 w-4" />,
+      content: (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {noticias.masVistas.map((noticia) => (
+            <NoticiaCard key={noticia.id} noticia={noticia} />
+          ))}
+        </div>
+      )
+    },
+    {
+      id: 'ultimas',
+      label: 'Últimas',
+      icon: <Clock className="h-4 w-4" />,
+      content: (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {noticias.ultimas.map((noticia) => (
+            <NoticiaCard key={noticia.id} noticia={noticia} />
+          ))}
+        </div>
+      )
+    },
+    {
+      id: 'categoria-aleatoria',
+      label: 'Destacadas',
+      icon: <TrendingUp className="h-4 w-4" />,
+      content: (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {noticias.categoriaAleatoria.map((noticia) => (
+            <NoticiaCard key={noticia.id} noticia={noticia} />
+          ))}
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -198,49 +238,50 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
         </Link>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-gray-100 dark:bg-gray-800">
-          <TabsTrigger value="mas-vistas" className="flex items-center gap-2">
-            <Flame className="h-4 w-4" />
-            <span className="hidden sm:inline">Más Vistas</span>
-            <span className="sm:hidden">Populares</span>
-          </TabsTrigger>
-          <TabsTrigger value="ultimas" className="flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            <span className="hidden sm:inline">Últimas</span>
-            <span className="sm:hidden">Recientes</span>
-          </TabsTrigger>
-          <TabsTrigger value="categoria" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            <span className="hidden sm:inline">Destacadas</span>
-            <span className="sm:hidden">Destacadas</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="mas-vistas" className="mt-6">
-          <div className="space-y-4">
-            {noticias.masVistas.map((noticia) => (
-              <NoticiaCard key={noticia.id} noticia={noticia} />
-            ))}
+      {isMobile ? (
+        <SwipeableTabs tabs={tabsData} defaultTab="ultimas" />
+      ) : (
+        <div className="space-y-12">
+          {/* Sección Más Vistas */}
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <Flame className="h-5 w-5 text-orange-500" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Más Vistas</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {noticias.masVistas.map((noticia) => (
+                <NoticiaCard key={noticia.id} noticia={noticia} />
+              ))}
+            </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="ultimas" className="mt-6">
-          <div className="space-y-4">
-            {noticias.ultimas.map((noticia) => (
-              <NoticiaCard key={noticia.id} noticia={noticia} />
-            ))}
+          {/* Sección Últimas */}
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <Clock className="h-5 w-5 text-blue-500" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Últimas Noticias</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {noticias.ultimas.map((noticia) => (
+                <NoticiaCard key={noticia.id} noticia={noticia} />
+              ))}
+            </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="categoria" className="mt-6">
-          <div className="space-y-4">
-            {noticias.categoriaAleatoria.map((noticia) => (
-              <NoticiaCard key={noticia.id} noticia={noticia} />
-            ))}
+          {/* Sección Destacadas */}
+          <div>
+            <div className="flex items-center gap-2 mb-6">
+              <TrendingUp className="h-5 w-5 text-green-500" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Destacadas</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {noticias.categoriaAleatoria.map((noticia) => (
+                <NoticiaCard key={noticia.id} noticia={noticia} />
+              ))}
+            </div>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 }

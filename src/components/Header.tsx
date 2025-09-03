@@ -194,12 +194,19 @@ export default function Header() {
   }
 
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchQuery('')
+      const trimmedQuery = searchQuery.trim();
+      // Usar router.push con la URL formateada correctamente
+      router.push(`/buscar?q=${encodeURIComponent(trimmedQuery)}`);
+      // Limpiar el campo de búsqueda después de enviar
+      setSearchQuery('');
+      // Cerrar el menú móvil si está abierto
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+      }
     }
-  }
+  };
 
   return (
     <header className="bg-white/95 dark:bg-black/95 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full">
@@ -352,10 +359,6 @@ export default function Header() {
                   <div
                     className={`fixed inset-0 z-10 bg-black/40 transition-all duration-200 ${isUserMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                     onClick={() => setIsUserMenuOpen(false)}
-                    style={{
-                      backdropFilter: isUserMenuOpen ? 'blur(8px)' : 'none',
-                      WebkitBackdropFilter: isUserMenuOpen ? 'blur(8px)' : 'none'
-                    }}
                   />
                   <div
                     ref={userMenuRef}
@@ -433,12 +436,12 @@ export default function Header() {
         onClick={() => setIsMenuOpen(false)} 
         style={{ 
           position: 'fixed', 
-          top: '0', 
+          top: '64px', /* Altura del header para que el blur no afecte al header */
           left: '0', 
           right: '0', 
           bottom: '0', 
           width: '100vw', 
-          height: '100vh', 
+          height: 'calc(100vh - 64px)', /* Restamos la altura del header */
           visibility: isMenuOpen ? 'visible' : 'hidden', 
           opacity: isMenuOpen ? 1 : 0, 
           pointerEvents: isMenuOpen ? 'auto' : 'none', 

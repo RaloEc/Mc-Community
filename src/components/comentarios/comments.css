@@ -1,0 +1,96 @@
+/*Estilos para el sistema de comentarios*/
+
+.comment-container {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  margin-bottom: 0;
+  transition: background-color 0.2s ease;
+}
+
+.comment-container:target {
+  animation: highlight-comment 2s ease;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
+.comment-date {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.comment-content {
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.comment-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.comment-replies {
+  margin-top: 0;
+  padding-left: 0;
+  border-left: none;
+}
+
+.reply-quote {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background-color: var(--muted);
+  position: relative;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.reply-quote:hover {
+  background-color: var(--accent);
+}
+
+.reply-quote-indicator {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: var(--primary);
+}
+
+.reply-quote-author {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.reply-quote-text {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+}
+
+.comment-form {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Animación para resaltar un comentario cuando se navega a él */
+@keyframes highlight-comment {
+  0% {
+    background-color: var(--accent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}

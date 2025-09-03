@@ -192,3 +192,27 @@ export type Mod = RecursoBase & {
   tipo: 'forge' | 'fabric' | 'rift' | 'otro';
   dependencias: string | null;
 };
+
+// =================================================================
+// COMENTARIOS
+// =================================================================
+
+export interface Comentario {
+  id: string;
+  content_type: 'noticia' | 'hilo';
+  content_id: string;
+  author_id: string;
+  text: string;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+  // Relaciones
+  autor: Perfil | null;
+  replies: Comentario[];
+  // Información de respuesta citada
+  repliedTo?: {
+    id: string;
+    author: string;
+    text: string;
+  };
+}

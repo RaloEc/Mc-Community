@@ -195,7 +195,7 @@ export default function NoticiasDestacadasSection({
             whileHover={{ y: -2, transition: { duration: 0.2 } }}
           >
             <Link href={`/noticias/${noticia.id}`}>
-              <Card className="h-full overflow-hidden bg-white/80 backdrop-blur-sm border-gray-200 dark:bg-black/80 dark:border-gray-800 hover:shadow-lg transition-all duration-300 rounded-xl">
+              <Card className="h-full overflow-hidden bg-white/80 backdrop-blur-sm border-gray-200 dark:bg-black/80 dark:data-[theme=amoled]:bg-black dark:border-gray-800 hover:shadow-lg transition-all duration-300 rounded-xl">
                 <div className="flex h-28">
                   {noticia.imagen_url && (
                     <div className="relative w-24 flex-shrink-0">

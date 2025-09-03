@@ -29,14 +29,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
-      {/* Banner publicitario superior */}
-      <div className="container mx-auto px-4 pt-4">
-        <BannerPublicitario 
-          variant="horizontal" 
-          className="w-full max-w-4xl mx-auto" 
-          closeable 
-        />
-      </div>
+      
 
       <main className="container mx-auto px-4 py-8">
         <motion.div

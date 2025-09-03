@@ -264,7 +264,7 @@ export default function NoticiasMiniatura({
             <div className="flex -ml-4">
               {noticias.map((noticia) => (
                 <div key={noticia.id} className="flex-none w-full px-4 sm:w-1/2 md:w-1/3 lg:w-1/4">
-                  <article className="h-full overflow-hidden transition-all duration-300 bg-card rounded-lg border border-border shadow-sm hover:shadow-md group">
+                  <article className="h-full overflow-hidden transition-all duration-300 bg-card rounded-lg border border-border shadow-sm hover:shadow-md group <dark:data-[theme=amoled]:bg-black>">
                     {/* Imagen de la noticia */}
                     <div className="relative h-40 overflow-hidden bg-card/50 dark:bg-muted/30">
                       <img
@@ -345,7 +345,7 @@ export default function NoticiasMiniatura({
         tabIndex={0}
         onKeyDown={(e) => e.key === 'Enter' && handleCardClick(e as any)}
       >
-        <article className="h-full flex flex-col rounded-lg border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300">
+        <article className="h-full flex flex-col rounded-lg border border-border/50 overflow-hidden hover:shadow-md transition-shadow duration-300 dark:data-[theme=amoled]:bg-black">
           {/* Imagen con tamaño fijo */}
           <div className="w-full h-48 bg-muted/50 overflow-hidden relative">
             {noticia.imagen_url ? (

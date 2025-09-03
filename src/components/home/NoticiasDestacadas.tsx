@@ -40,7 +40,7 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
         const response = await fetch('/api/noticias?limit=3&tipo=destacadas');
         if (response.ok) {
           const data = await response.json();
-          setNoticias(data.items || []);
+          setNoticias(data.data || []);
         }
       } catch (error) {
         console.error('Error al cargar noticias destacadas:', error);
@@ -99,7 +99,7 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {noticias.map((noticia) => (
           <Link key={noticia.id} href={`/noticias/${noticia.id}`}>
-            <article className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col">
+            <article className="bg-white dark:bg-gray-900 dark:data-[theme=amoled]:bg-black rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-lg dark:hover:shadow-gray-900/20 transition-all duration-300 hover:scale-[1.02] group h-full flex flex-col">
               {/* Imagen */}
               <div className="relative h-48 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 overflow-hidden">
                 {noticia.imagen_url ? (

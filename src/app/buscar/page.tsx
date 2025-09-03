@@ -54,18 +54,22 @@ export default function BuscarPage() {
     setLoading(true);
     try {
       const [noticiasRes, hilosRes] = await Promise.all([
-        fetch(`/api/noticias?buscar=${encodeURIComponent(searchQuery)}&limit=20`),
+        fetch(`/api/noticias?busqueda=${encodeURIComponent(searchQuery)}&limit=20`),
         fetch(`/api/foro/hilos?buscar=${encodeURIComponent(searchQuery)}&limit=20`)
       ]);
 
       const [noticiasData, hilosData] = await Promise.all([
-        noticiasRes.ok ? noticiasRes.json() : { items: [] },
-        hilosRes.ok ? hilosRes.json() : { items: [] }
+        noticiasRes.ok ? noticiasRes.json() : { data: [], items: [] },
+        hilosRes.ok ? hilosRes.json() : { data: [], items: [] }
       ]);
 
+      // La API de noticias devuelve los resultados en data, mientras que la API de hilos los devuelve en items
+      const noticiasItems = noticiasData.data || [];
+      const hilosItems = hilosData.items || [];
+
       setResultados({
-        noticias: (noticiasData.items || []).map((item: any) => ({ ...item, tipo: 'noticia' as const })),
-        hilos: (hilosData.items || []).map((item: any) => ({ ...item, tipo: 'hilo' as const }))
+        noticias: noticiasItems.map((item: any) => ({ ...item, tipo: 'noticia' as const })),
+        hilos: hilosItems.map((item: any) => ({ ...item, tipo: 'hilo' as const }))
       });
     } catch (error) {
       console.error('Error en la búsqueda:', error);
@@ -77,9 +81,14 @@ export default function BuscarPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      buscar(query.trim());
-      // Actualizar URL sin recargar la página
-      window.history.pushState({}, '', `/buscar?q=${encodeURIComponent(query.trim())}`);
+      const trimmedQuery = query.trim();
+      buscar(trimmedQuery);
+      
+      // Actualizar URL sin recargar la página usando el router de Next.js
+      // para mantener consistencia con el resto de la aplicación
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', trimmedQuery);
+      window.history.pushState({}, '', url.toString());
     }
   };
 

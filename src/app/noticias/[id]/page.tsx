@@ -37,7 +37,7 @@ function procesarContenido(contenido: string): string {
 }
 import { CalendarIcon, ArrowLeftIcon, MessageSquareIcon, ThumbsUpIcon, Pencil, Trash } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import Comentarios from '@/components/ComentariosNuevo'
+import { CommentSystem } from '@/components/comentarios/CommentSystem'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -384,16 +384,6 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
           <Separator className="my-4" />
         </div>
         
-        {/* Sección de comentarios */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <div className="mt-10">
-            <Comentarios 
-              tipoEntidad="noticia" 
-              entidadId={params.id} 
-              limite={10} 
-            />
-          </div>
-        </div>
         
         {/* Divisor antes de información del autor */}
         <div className="max-w-4xl mx-auto mb-8">
@@ -444,6 +434,14 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
             </div>
           </div>
         )}
+
+        {/* Sección de comentarios */}
+        <div className="max-w-4xl mx-auto">
+          <CommentSystem 
+            contentType="noticia" 
+            contentId={noticia.id.toString()} 
+          />
+        </div>
       </main>
     </div>
   )

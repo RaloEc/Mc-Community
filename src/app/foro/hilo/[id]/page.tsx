@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import AdBanner from '@/components/ads/AdBanner';
-import ForoRespuestas from '@/components/ForoRespuestas';
+import ComentariosNuevo from '@/components/ComentariosNuevo';
 import { 
   Breadcrumb, 
   BreadcrumbItem, 
@@ -112,6 +112,9 @@ function PostItem({ post, isInitial = false }: { post: PostConAutor | HiloConDet
 export default function HiloPage() {
   const params = useParams();
   const id = params.id as string;
+  
+  // Log para depurar el valor del ID
+  console.log('ID del hilo:', id, 'Tipo:', typeof id);
 
   const [hilo, setHilo] = useState<HiloConDetalles | null>(null);
   const [posts, setPosts] = useState<PostConAutor[]>([]);
@@ -201,7 +204,7 @@ export default function HiloPage() {
       </div>
       
       {!hilo.es_cerrado ? (
-        <ForoRespuestas hiloId={id} limite={10} />
+        <ComentariosNuevo contentType="hilo" contentId={id.toString()} />
       ) : (
         <div className="bg-card border border-border rounded-lg p-6 text-center mt-8">
           <p>Este hilo está cerrado y no acepta nuevas respuestas.</p>
