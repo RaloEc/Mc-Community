@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import type { Comentario } from '@/types'
+import type { Comment } from './comentarios/types'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { CommentForm } from './comentarios/CommentForm'
 import { CommentCard } from './comentarios/CommentCard'
@@ -22,6 +23,30 @@ export default function ComentariosNuevo({ contentType, contentId }: Comentarios
   const [submitting, setSubmitting] = useState(false)
   const [replyLoading, setReplyLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Mapea un comentario del tipo API/Dominio (Comentario) al tipo de UI (Comment)
+  const mapComentarioToUI = useCallback((c: Comentario): Comment => {
+    const isEdited = c.updated_at && c.updated_at !== c.created_at;
+    return {
+      id: c.id,
+      author: c.autor?.username || 'Usuario',
+      authorId: c.author_id,
+      avatarUrl: c.autor?.avatar_url || '',
+      timestamp: c.created_at,
+      text: c.text,
+      replies: (c.replies || []).map((r: Comentario) => mapComentarioToUI(r)),
+      authorColor: c.autor?.color || undefined,
+      isEdited: Boolean(isEdited),
+      editedAt: c.updated_at,
+      repliedTo: c.repliedTo
+        ? {
+            id: c.repliedTo.id,
+            author: c.repliedTo.author,
+            text: c.repliedTo.text,
+          }
+        : undefined,
+    }
+  }, [])
 
   // Función recursiva para agregar respuestas
   const addReplyToComment = useCallback((comments: Comentario[], parentId: string, newReply: Comentario): Comentario[] => {
@@ -161,13 +186,13 @@ export default function ComentariosNuevo({ contentType, contentId }: Comentarios
 
   // Renderizar hilo de comentarios con estructura anidada
   const renderThread = (comment: Comentario) => {
+    const uiComment = mapComentarioToUI(comment)
     return (
       <div key={comment.id} id={`comment-${comment.id}`} className="comment-container">
         <CommentCard 
           key={comment.id} 
-          comment={comment} 
+          comment={uiComment} 
           onReply={handleAddReply}
-          replyLoading={replyLoading}
           onQuotedReplyClick={handleQuotedReplyClick}
         />
       </div>
