@@ -16,8 +16,8 @@ type Hilo = {
   autor_id: string;
   created_at: string;
   ultimo_post_at: string;
-  votos_conteo: number;
-  respuestas_conteo: number;
+  votos_conteo: number | null | { count?: number } | any[];
+  respuestas_conteo: number | null | { count?: number } | any[];
   perfiles: {
     username: string;
     rol: string;
@@ -239,8 +239,8 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
     if (hilo.votos_conteo !== null) {
       if (Array.isArray(hilo.votos_conteo) && hilo.votos_conteo.length > 0 && hilo.votos_conteo[0]) {
         votos = (hilo.votos_conteo[0] as any).count ?? 0;
-      } else if (typeof hilo.votos_conteo === 'object' && 'count' in hilo.votos_conteo) {
-        votos = (hilo.votos_conteo as any).count ?? 0;
+      } else if (hilo.votos_conteo !== null && typeof hilo.votos_conteo === 'object' && 'count' in (hilo.votos_conteo as any)) {
+        votos = ((hilo.votos_conteo as any).count ?? 0) as number;
       } else if (typeof hilo.votos_conteo === 'number') {
         votos = hilo.votos_conteo;
       }
@@ -251,8 +251,8 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
     if (hilo.respuestas_conteo !== null) {
       if (Array.isArray(hilo.respuestas_conteo) && hilo.respuestas_conteo.length > 0 && hilo.respuestas_conteo[0]) {
         respuestas = (hilo.respuestas_conteo[0] as any).count ?? 0;
-      } else if (typeof hilo.respuestas_conteo === 'object' && 'count' in hilo.respuestas_conteo) {
-        respuestas = (hilo.respuestas_conteo as any).count ?? 0;
+      } else if (hilo.respuestas_conteo !== null && typeof hilo.respuestas_conteo === 'object' && 'count' in (hilo.respuestas_conteo as any)) {
+        respuestas = ((hilo.respuestas_conteo as any).count ?? 0) as number;
       } else if (typeof hilo.respuestas_conteo === 'number') {
         respuestas = hilo.respuestas_conteo;
       }
