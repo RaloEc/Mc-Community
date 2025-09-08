@@ -111,11 +111,11 @@ export const CommentCard: React.FC<CommentCardProps> = ({
     <div className="mb-6">
       <div 
         id={`comment-${comment.id}`} 
-        className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden"
+        className="bg-white dark:bg-black border border-blue-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden"
         aria-labelledby={`comment-author-${comment.id}`}
-      >
+      >  
         {/* Cabecera del comentario con autor y fecha */}
-        <div className="bg-gray-50 dark:bg-gray-900 px-4 py-2 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+        <div className="bg-gray-200 dark:bg-gray-900 px-4 py-2 border-b border-blue-200 dark:border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Avatar src={comment.avatarUrl} alt={comment.author} />
             <div>

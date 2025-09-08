@@ -263,8 +263,8 @@ html, body {
 
 /* Estilos para secciones con fondo difuminado */
 .blur-backdrop {
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 /* Estilos para iconos con animación */
@@ -414,6 +414,33 @@ a {
 .tiptap:focus {
   outline: none;
 }
+
+/* Efecto de desenfoque para el contenido principal cuando el menú móvil está abierto */
+body.menu-open > #__next,
+body.menu-open > main {
+  filter: blur(4px); /* Aumentado de 4px a 6px para más intensidad */
+  transition: filter 0.3s ease;
+  pointer-events: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Asegurar que el menú no tenga desenfoque */
+#mobile-menu,
+.mobile-menu {
+  filter: none !important;
+  pointer-events: auto !important;
+}
+
+/* Mejorar rendimiento del desenfoque */
+@supports (backdrop-filter: blur(4px)) {
+  body.menu-open > #__next,
+  body.menu-open > main {
+    backdrop-filter: blur(4px); /* Aumentado de 4px a 6px */
+    -webkit-backdrop-filter: blur(4px); /* Aumentado de 4px a 6px */
+  }
+}
+
 .tiptap > * + * {
   margin-top: 0.75em;
 }
@@ -511,7 +538,7 @@ a {
   border-radius: 8px;
   padding: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(5px);
   border: 1px solid rgba(59, 130, 246, 0.2);
 }
 

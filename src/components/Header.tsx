@@ -104,16 +104,28 @@ export default function Header() {
     }
   }, [isAdminMenuOpen, isUserMenuOpen])
 
-  // Evitar scroll del body cuando el menú móvil está abierto
+  // Efecto para manejar el scroll y el blur del contenido principal
   useEffect(() => {
+    const mainContent = document.querySelector('main');
+    const appContent = document.getElementById('__next');
+    
     if (isMenuOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.classList.add('menu-open');
+      if (mainContent) mainContent.classList.add('menu-open-blur');
+      if (appContent) appContent.classList.add('menu-open-blur');
     } else {
       document.body.style.overflow = '';
+      document.body.classList.remove('menu-open');
+      if (mainContent) mainContent.classList.remove('menu-open-blur');
+      if (appContent) appContent.classList.remove('menu-open-blur');
     }
     
     return () => {
       document.body.style.overflow = '';
+      document.body.classList.remove('menu-open');
+      if (mainContent) mainContent.classList.remove('menu-open-blur');
+      if (appContent) appContent.classList.remove('menu-open-blur');
     };
   }, [isMenuOpen])
 
@@ -225,7 +237,7 @@ export default function Header() {
           {/* Navegación principal - Solo Desktop */}
           <nav aria-label="Global" className="hidden lg:block">
             <ul className="flex items-center gap-1 text-sm">
-                <li>
+                <li className="menu-item">
                   <Link 
                     href="/noticias" 
                     className="px-4 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
@@ -234,7 +246,7 @@ export default function Header() {
                     Noticias
                   </Link>
                 </li>
-                <li>
+                <li className="menu-item">
                   <Link 
                     href="/foro" 
                     className="px-4 py-2 rounded-lg transition-colors hover:bg-blue-50 dark:hover:bg-blue-950/30 hover:text-blue-600 dark:hover:text-blue-400 font-medium"
@@ -258,7 +270,7 @@ export default function Header() {
                       className={`absolute top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-800'} transition-all duration-200 ease-in-out transform origin-top-left ${isAdminMenuOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
                     >
                       <ul className="py-2 text-sm">
-                        <li>
+                        <li className="menu-item">
                           <Link
                             href="/admin/dashboard"
                             className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -267,7 +279,7 @@ export default function Header() {
                             Dashboard
                           </Link>
                         </li>
-                        <li>
+                        <li className="menu-item">
                           <Link
                             href="/admin/noticias"
                             className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -276,7 +288,7 @@ export default function Header() {
                             Admin Noticias
                           </Link>
                         </li>
-                        <li>
+                        <li className="menu-item">
                           <Link
                             href="/admin/usuarios"
                             className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -285,7 +297,7 @@ export default function Header() {
                             Admin Usuarios
                           </Link>
                         </li>
-                        <li>
+                        <li className="menu-item">
                           <Link
                             href="/admin/foro"
                             className={`block px-4 py-2 ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -357,10 +369,6 @@ export default function Header() {
                     <ChevronDown className="h-4 w-4 text-gray-500" />
                   </button>
                   <div
-                    className={`fixed inset-0 z-10 bg-black/40 transition-all duration-200 ${isUserMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                    onClick={() => setIsUserMenuOpen(false)}
-                  />
-                  <div
                     ref={userMenuRef}
                     className={`fixed md:absolute right-4 md:right-0 top-16 md:top-auto md:mt-2 z-20 w-64 rounded-xl border shadow-lg bg-white/95 dark:bg-black border-gray-200/50 dark:border-gray-800/50 transition-all duration-200 ease-in-out transform origin-top-right ${isUserMenuOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
                   >
@@ -418,54 +426,86 @@ export default function Header() {
             {/* Botón de menú móvil */}
             <div className="block md:hidden">
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="icon" 
-                onClick={() => setIsMenuOpen(true)} 
-                aria-label="Menú principal" 
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label={isMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
                 className="ml-1 focus:ring-2 focus:ring-blue-500"
+                aria-expanded={isMenuOpen}
               >
-                <Menu className="h-5 w-5" />
+                {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Overlay semitransparente - comienza debajo del header */}
       <div 
-        className="md:hidden fixed inset-0 bg-black/40 z-[999] transition-all duration-300 backdrop-blur-xl supports-[backdrop-filter]:backdrop-blur-xl" 
-        onClick={() => setIsMenuOpen(false)} 
-        style={{ 
-          position: 'fixed', 
-          top: '64px', /* Altura del header para que el blur no afecte al header */
-          left: '0', 
-          right: '0', 
-          bottom: '0', 
-          width: '100vw', 
-          height: 'calc(100vh - 64px)', /* Restamos la altura del header */
-          visibility: isMenuOpen ? 'visible' : 'hidden', 
-          opacity: isMenuOpen ? 1 : 0, 
-          pointerEvents: isMenuOpen ? 'auto' : 'none', 
-          backdropFilter: isMenuOpen ? 'blur(100px)' : 'none',
-          WebkitBackdropFilter: isMenuOpen ? 'blur(100px)' : 'none'
+        className={`md:hidden fixed left-0 right-0 z-[998] transition-all duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsMenuOpen(false)}
+        style={{
+          position: 'fixed',
+          top: '64px', /* Altura del header */
+          left: '0',
+          right: '0',
+          bottom: '0',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          zIndex: 998
         }} 
       />
       
-      <div className={`md:hidden fixed right-0 top-0 w-72 h-screen overflow-y-auto shadow-xl z-[1000] transition-all duration-300 ease-in-out ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-black text-white'} border-l border-gray-200 dark:border-gray-800`} style={{ position: 'fixed', paddingTop: '1.5rem', paddingBottom: '6rem', height: '100vh', top: '0', bottom: '0' }}>
-        <div className="flex flex-col h-full relative">
-          <div className="absolute top-2 right-2 p-1">
-            <Button 
-              variant="outline" 
-              size="icon" 
-              onClick={() => setIsMenuOpen(false)} 
-              aria-label="Cerrar menú"
-              className="h-8 w-8 rounded-full border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 focus:ring-2 focus:ring-blue-500 z-[1001]"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className={`p-4 pt-10 border-b ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
+      {/* Menú desplegable con animación desde el botón */}
+      <div 
+        className="md:hidden fixed top-16 right-4 z-[999]"
+        style={{
+          transformOrigin: 'top right',
+          transform: isMenuOpen ? 'scale(1)' : 'scale(0.1)',
+          opacity: isMenuOpen ? 1 : 0,
+          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1.1)',
+          transitionProperty: 'transform, opacity',
+          pointerEvents: isMenuOpen ? 'auto' : 'none',
+        }}
+      >
+        <style jsx global>{`
+          @keyframes scaleIn {
+            from {
+              opacity: 0;
+              transform: scale(0.8) translateY(8px);
+            }
+            to {
+              opacity: 1;
+              transform: scale(1) translateY(0);
+            }
+          }
+          .menu-item {
+            animation: scaleIn 0.2s cubic-bezier(0.4, 0, 0.2, 1.1) forwards;
+            opacity: 0;
+            transform-origin: top center;
+          }
+          .menu-item:nth-child(1) { animation-delay: 50ms; }
+          .menu-item:nth-child(2) { animation-delay: 80ms; }
+          .menu-item:nth-child(3) { animation-delay: 110ms; }
+          .menu-item:nth-child(4) { animation-delay: 140ms; }
+          .menu-item:nth-child(5) { animation-delay: 170ms; }
+          .menu-item:nth-child(6) { animation-delay: 200ms; }
+          .menu-item:nth-child(7) { animation-delay: 230ms; }
+          .menu-item:nth-child(8) { animation-delay: 260ms; }
+          .menu-item:nth-child(9) { animation-delay: 290ms; }
+          .menu-item:nth-child(10) { animation-delay: 320ms; }
+        `}</style>
+        <div 
+          className={`w-72 rounded-lg shadow-2xl overflow-hidden ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'}`}
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: currentTheme === 'light' ? '#9ca3af #e5e7eb' : '#4b5563 #1f2937',
+            maxHeight: 'calc(100vh - 6rem)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          }}
+        >
+          <div className="border-t border-gray-200 dark:border-gray-800">
             {authUser ? (
-              <div className="flex items-center gap-3">
+              <div className="menu-item flex items-center gap-3">
                 <Avatar className="w-16 h-16">
                   <AvatarImage 
                     src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
@@ -475,7 +515,7 @@ export default function Header() {
                 </Avatar>
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-base truncate">
+                    <span className="font-medium text-base truncate menu-item">
                       {profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || authUser?.email?.split('@')[0] || 'Usuario'}
                     </span>
                     <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${currentTheme === 'light' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-blue-950/40 text-blue-300 border border-blue-900/60'}`}>
@@ -496,7 +536,7 @@ export default function Header() {
           </div>
 
           {/* Barra de búsqueda móvil */}
-          <div className={`p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black`}>
+          <div className={`menu-item p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black`}>
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -510,7 +550,8 @@ export default function Header() {
           </div>
 
           <ul className="flex-grow p-4 space-y-3 overflow-y-auto">
-            <li>
+            {/* Aplicar clase menu-item a cada elemento de la lista */}
+            <li className="menu-item">
               <button
                 type="button"
                 className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -547,7 +588,7 @@ export default function Header() {
                 </Link>
               </div>
             </li>
-            <li>
+            <li className="menu-item">
               <button
                 type="button"
                 className={`w-full flex items-center justify-between gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`}
@@ -623,22 +664,22 @@ export default function Header() {
           {isAdmin && (
             <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
               <ul className="space-y-2">
-                <li>
+                <li className="menu-item">
                   <Link href="/admin/dashboard" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
                     <Shield size={18} /> Dashboard
                   </Link>
                 </li>
-                <li>
+                <li className="menu-item">
                   <Link href="/admin/foro" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
                     <MessageSquare size={18} /> Admin Foro
                   </Link>
                 </li>
-                <li>
+                <li className="menu-item">
                   <Link href="/admin/noticias" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
                     <Newspaper size={18} /> Admin Noticias
                   </Link>
                 </li>
-                <li>
+                <li className="menu-item">
                   <Link href="/admin/usuarios" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
                     <User size={18} /> Admin Usuarios
                   </Link>

@@ -150,10 +150,10 @@ export default function HiloPage() {
   });
 
   return (
-    <div className="container mx-auto py-6 px-3 lg:px-0">
+    <div className="container mx-auto py-6 px-0 lg:px-0">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Contenido principal */}
-        <div className="lg:col-span-8">
+        <div className="lg:col-span-9">
           {/* Breadcrumbs */}
           <nav className="text-sm mb-3 text-gray-600 dark:text-gray-300 amoled:text-gray-200">
             <ol className="flex flex-wrap items-center gap-1">
@@ -244,7 +244,7 @@ export default function HiloPage() {
 
               {/* Contenido del post inicial */}
               <div className="p-5">
-              <div className="prose max-w-none prose-headings:my-4 prose-p:my-3 prose-strong:text-gray-900 dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]">
+              <div className="prose max-w-none prose-headings:my-4 prose-p:my-3 prose-strong:text-gray-900 dark:prose-invert dark:prose-strong:text-white amoled:prose-invert amoled:prose-strong:text-white amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]">
                 <div dangerouslySetInnerHTML={{ __html: hilo.contenido ?? '' }} />
               </div>
               </div>

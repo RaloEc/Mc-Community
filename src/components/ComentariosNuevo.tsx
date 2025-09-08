@@ -48,7 +48,7 @@ export default function ComentariosNuevo({
   
   if (error) {
     return (
-      <div className="w-full max-w-4xl mx-auto mt-8">
+      <div className="w-full max-w-3xl mx-auto mt-8">
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
           <p className="text-red-600">Error: {error}</p>
         </div>
@@ -58,7 +58,7 @@ export default function ComentariosNuevo({
   
   if (!validProps) {
     return (
-      <div className="w-full max-w-4xl mx-auto mt-8">
+      <div className="w-full max-w-full mx-auto mt-8">
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-md">
           <p className="text-gray-600">Cargando sistema de comentarios...</p>
         </div>
@@ -67,8 +67,7 @@ export default function ComentariosNuevo({
   }
   
   return (
-    <div className="w-full max-w-4xl mx-auto mt-8">
-      <h3 className="text-xl font-semibold mb-4">Comentarios</h3>
+    <div className="w-full max-w-full mx-auto mt-8">
       <CommentSystem 
         contentType={contentType}
         contentId={contentId}

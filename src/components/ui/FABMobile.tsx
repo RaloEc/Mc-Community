@@ -37,26 +37,18 @@ export default function FABMobile() {
           <Link
             href="/admin/noticias/crear"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-full px-4 py-3 text-base font-semibold shadow-lg border
-                       bg-white text-gray-900 border-gray-200 hover:bg-gray-50
-                       dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800
-                       amoled:bg-black amoled:text-zinc-100 amoled:border-zinc-800 amoled:hover:bg-zinc-900
-                       hover:shadow-xl active:scale-[0.98]"
+            className="flex items-center gap-3 rounded-full px-6 py-3 text-base font-semibold shadow-lg border bg-white text-gray-900 border-gray-200 hover:bg-gray-50 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800 amoled:bg-black amoled:text-zinc-100 amoled:border-zinc-800 amoled:hover:bg-zinc-900 hover:shadow-xl active:scale-[0.98] whitespace-nowrap"
           >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600 text-white text-lg">📰</span>
+            {/*    */}
             <span>Crear noticia</span>
           </Link>
 
           <Link
             href="/foro/crear"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-full px-4 py-3 text-base font-semibold shadow-lg border
-                       bg-white text-gray-900 border-gray-200 hover:bg-gray-50
-                       dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800
-                       amoled:bg-black amoled:text-zinc-100 amoled:border-zinc-800 amoled:hover:bg-zinc-900
-                       hover:shadow-xl active:scale-[0.98]"
+            className="flex items-center gap-3 rounded-full px-6 py-3 text-base font-semibold shadow-lg border bg-white text-gray-900 border-gray-200 hover:bg-gray-50 dark:bg-zinc-900 dark:text-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800 amoled:bg-black amoled:text-zinc-100 amoled:border-zinc-800 amoled:hover:bg-zinc-900 hover:shadow-xl active:scale-[0.98] whitespace-nowrap"
           >
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white text-lg">💬</span>
+            {/* <span className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-sky-600 text-white text-lg">💬</span> */}
             <span>Crear hilo</span>
           </Link>
         </div>
