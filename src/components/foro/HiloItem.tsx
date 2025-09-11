@@ -2,7 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getUserInitials } from '@/lib/utils/avatar-utils'
-import { ArrowUp, ArrowDown, MessageSquare, Eye } from 'lucide-react'
+import { MessageSquare, Eye } from 'lucide-react'
+import { Votacion } from '@/components/ui/Votacion'
+import { useState, useEffect } from 'react'
 
 export type HiloDTO = {
   id: string
@@ -42,23 +44,23 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
   // Determinar el color de la categoría o usar un color por defecto
   const categoriaColor = hilo.subcategoria?.color || '#4f46e5'
   
-  // Determinar si el hilo tiene votos positivos para mostrar flecha hacia arriba o abajo
-  const votosPositivos = (hilo.votos ?? 0) >= 0
+  // Estado local de votos (total)
+  const [totalVotos, setTotalVotos] = useState<number>(hilo.votos ?? 0)
+  
+  // Sincronizar con el contador inicial
+  useEffect(() => {
+    setTotalVotos(hilo.votos ?? 0);
+  }, [hilo.votos]);
   
   return (
     <article className="flex gap-3 p-0 rounded-lg border border-border/50 bg-card dark:bg-black/90 overflow-hidden">
-      {/* Columna de votos */}
-      <div className="flex flex-col items-center justify-center py-2 px-3 bg-accent/30 dark:bg-black min-w-[42px] text-center">
-        <ArrowUp 
-          className={`h-4 w-4 ${votosPositivos ? 'text-green-500' : 'text-muted-foreground'}`} 
-          strokeWidth={3}
-        />
-        <span className={`text-base font-bold my-1 ${votosPositivos ? 'text-green-500' : 'text-red-500'}`}>
-          {Math.abs(hilo.votos ?? 0)}
-        </span>
-        <ArrowDown 
-          className={`h-4 w-4 ${!votosPositivos ? 'text-red-500' : 'text-muted-foreground'}`}
-          strokeWidth={3}
+      {/* Componente de votación */}
+      <div className="flex flex-col items-center justify-center py-2 px-3 bg-accent/30 dark:bg-black min-w-[42px]">
+        <Votacion 
+          id={hilo.id}
+          tipo="hilo"
+          votosIniciales={hilo.votos ?? 0}
+          size="md"
         />
       </div>
       

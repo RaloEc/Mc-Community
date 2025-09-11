@@ -49,8 +49,8 @@ function HiloHeader({ hilo, numRespuestas }: { hilo: HiloConDetalles; numRespues
   return (
     <header>
       <div className="flex items-center gap-2 mb-2">
-        {hilo.es_fijado && <Badge variant="default">Fijado</Badge>}
-        {hilo.es_cerrado && <Badge variant="destructive">Cerrado</Badge>}
+        {hilo.es_importante && <Badge variant="default">Destacado</Badge>}
+        {hilo.estado === 'cerrado' && <Badge variant="destructive">Cerrado</Badge>}
       </div>
       <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{hilo.titulo}</h1>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
@@ -61,10 +61,10 @@ function HiloHeader({ hilo, numRespuestas }: { hilo: HiloConDetalles; numRespues
           </Avatar>
           <span className="font-semibold">{hilo.autor.username}</span>
         </div>
-        <span>Publicado {new Date(hilo.created_at!).toLocaleDateString()}</span>
+        <span>Publicado {new Date(hilo.creado_en).toLocaleDateString()}</span>
         <div className="flex items-center gap-1">
           <Eye className="h-4 w-4" />
-          <span>{hilo.vistas}</span>
+          <span>{hilo.visitas}</span>
         </div>
         <div className="flex items-center gap-1">
           <MessageSquare className="h-4 w-4" />
@@ -76,25 +76,25 @@ function HiloHeader({ hilo, numRespuestas }: { hilo: HiloConDetalles; numRespues
 }
 
 function PostItem({ post, isInitial = false }: { post: PostConAutor | HiloConDetalles; isInitial?: boolean }) {
-  const fecha = post.created_at ? new Date(post.created_at).toLocaleString() : '';
+  const fecha = 'creado_en' in post ? new Date(post.creado_en).toLocaleString() : '';
   return (
     <div className={`flex gap-4 ${isInitial ? 'bg-card/50 p-4 rounded-lg' : ''}`}>
       {!isInitial && (
         <Avatar className="hidden sm:block mt-1">
-        <AvatarImage src={post.autor.avatar_url ?? undefined} alt={post.autor.username ?? ''} />
+          <AvatarImage src={post.autor.avatar_url ?? undefined} alt={post.autor.username ?? ''} />
           <AvatarFallback>{post.autor.username?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
       <div className="flex-1">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-1">
-            {'es_solucion' in post && post.es_solucion && (
+            {'es_respuesta' in post && post.es_respuesta && (
               <Badge variant="success" className="mr-2">
-                <ShieldCheck className="h-3 w-3 mr-1" /> Solución
+                <ShieldCheck className="h-3 w-3 mr-1" /> Respuesta
               </Badge>
             )}
-
           </div>
+          {fecha && <span className="text-xs text-muted-foreground">{fecha}</span>}
         </div>
         <div
           className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]"
@@ -203,7 +203,7 @@ export default function HiloPage() {
         <PostItem post={hilo} isInitial={true} />
       </div>
       
-      {!hilo.es_cerrado ? (
+      {hilo.estado !== 'cerrado' ? (
         <ComentariosNuevo contentType="hilo" contentId={id.toString()} />
       ) : (
         <div className="bg-card border border-border rounded-lg p-6 text-center mt-8">

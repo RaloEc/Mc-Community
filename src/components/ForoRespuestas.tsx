@@ -82,9 +82,11 @@ const scrollbarStyles = `
 type PostRow = Database['public']['Tables']['foro_posts']['Row'];
 type PerfilRow = Database['public']['Tables']['perfiles']['Row'];
 
-interface PostConAutor extends PostRow {
+interface PostConAutor extends Omit<PostRow, 'created_at' | 'updated_at'> {
   autor: PerfilRow;
   usuario_id?: string; // Añadimos esta propiedad para compatibilidad
+  created_at?: string; // Mantener compatibilidad con código existente
+  updated_at?: string | null; // Mantener compatibilidad con código existente
 }
 
 interface ForoRespuestasProps {
@@ -625,8 +627,8 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
                             )}
                           </div>
                           <span className="text-muted-foreground dark:text-gray-400 text-xs">
-                            {formatearFecha(respuestaItem.created_at)}
-                            {respuestaItem.updated_at !== respuestaItem.created_at && (
+                            {formatearFecha(respuestaItem.creado_en)}
+                            {respuestaItem.actualizado_en && respuestaItem.actualizado_en !== respuestaItem.creado_en && (
                               <span className="ml-1 italic">(editado)</span>
                             )}
                           </span>

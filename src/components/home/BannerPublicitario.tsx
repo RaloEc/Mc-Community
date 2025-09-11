@@ -1,69 +1,86 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import AdBanner from '@/components/ads/AdBanner';
+import AdRectangle from '@/components/ads/AdRectangle';
+import AdInFeed from '@/components/ads/AdInFeed';
 
 interface BannerPublicitarioProps {
   className?: string;
-  variant?: 'horizontal' | 'vertical' | 'square';
+  variant?: 'horizontal' | 'vertical' | 'square' | 'in-feed';
   closeable?: boolean;
+  slotId?: string;
 }
 
 export default function BannerPublicitario({ 
   className = '', 
   variant = 'horizontal',
-  closeable = false 
+  closeable = false,
+  slotId
 }: BannerPublicitarioProps) {
   const [isVisible, setIsVisible] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  if (!isVisible) return null;
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  const getVariantClasses = () => {
-    switch (variant) {
-      case 'horizontal':
-        return 'h-24 md:h-32';
-      case 'vertical':
-        return 'h-64 w-48';
-      case 'square':
-        return 'h-48 w-48';
-      default:
-        return 'h-24 md:h-32';
-    }
-  };
+  if (!isVisible || !isClient) return null;
 
-  return (
-    <div className={`relative ${getVariantClasses()} ${className}`}>
-      <div className="w-full h-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded-xl flex items-center justify-center overflow-hidden">
-        {/* Contenido del banner */}
-        <div className="text-center p-4">
-          <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-            Espacio Publicitario
-          </div>
-          <div className="text-xs text-blue-600 dark:text-blue-400">
-            {variant === 'horizontal' ? '728x90' : variant === 'vertical' ? '160x600' : '300x250'}
+  // Si AdSense no está habilitado o no estamos en el cliente, mostrar placeholder
+  const showPlaceholder = process.env.NEXT_PUBLIC_ADSENSE_ENABLED !== 'true' || 
+                         !process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+
+  if (showPlaceholder) {
+    return (
+      <div className={`relative ${className}`}>
+        <div className="w-full h-full bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 border border-blue-200/50 dark:border-blue-800/50 rounded-xl flex items-center justify-center overflow-hidden">
+          <div className="text-center p-4">
+            <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+              Espacio Publicitario
+            </div>
+            <div className="text-xs text-blue-600 dark:text-blue-400">
+              {variant === 'horizontal' ? '728x90' : 
+               variant === 'vertical' ? '160x600' : 
+               variant === 'in-feed' ? 'In-Feed' : '300x250'}
+            </div>
           </div>
         </div>
-
-        {/* Patrón de fondo sutil */}
-        <div className="absolute inset-0 opacity-5">
-          <div className="w-full h-full bg-repeat" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }} />
-        </div>
-
-        {/* Botón de cerrar */}
-        {closeable && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="absolute top-2 right-2 h-6 w-6 p-0 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
-            onClick={() => setIsVisible(false)}
-          >
-            <X className="h-3 w-3" />
-          </Button>
-        )}
       </div>
+    );
+  }
+
+  // Renderizar el anuncio correspondiente según el tipo
+  return (
+    <div className={`relative ${className}`}>
+      {variant === 'horizontal' && (
+        <AdBanner className="w-full" style={{ minHeight: '90px' }} />
+      )}
+      
+      {variant === 'vertical' && (
+        <AdRectangle className="h-[600px] w-[160px]" />
+      )}
+      
+      {variant === 'square' && (
+        <AdRectangle className="h-[250px] w-[300px]" />
+      )}
+      
+      {variant === 'in-feed' && (
+        <AdInFeed className="w-full" slotId={slotId} style={{ minHeight: '250px' }} />
+      )}
+      
+      {closeable && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-2 right-2 h-6 w-6 p-0 text-foreground/60 hover:text-foreground hover:bg-background/80"
+          onClick={() => setIsVisible(false)}
+        >
+          <X className="h-3 w-3" />
+        </Button>
+      )}
     </div>
   );
 }

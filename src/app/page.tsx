@@ -40,7 +40,7 @@ export default function Home() {
         >
           {/* Noticias destacadas con imágenes grandes */}
           <motion.div variants={fadeInUp}>
-            <NoticiasDestacadas className="mb-12" />
+            <NoticiasDestacadas className="mb-24" />
           </motion.div>
 
           {/* Layout principal estilo Reddit */}

@@ -58,7 +58,6 @@ export default async function RootLayout({
     console.error('Error al obtener la sesión:', error)
   }
 
-  // Obtener el ID de cliente de AdSense desde las variables de entorno
   const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || '';
   const adsenseEnabled = process.env.NEXT_PUBLIC_ADSENSE_ENABLED === 'true';
 
@@ -68,10 +67,10 @@ export default async function RootLayout({
         <ThemeScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
       </head>
-      <body className={`${nunito.className} min-h-screen bg-white dark:bg-black transition-colors duration-300 overflow-x-hidden max-w-[100vw]`}>
+      <body className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}>
         <Providers session={session}>
           <Header />
-          <main>
+          <main className="container mx-auto px-4 py-6">
             {children}
           </main>
         </Providers>

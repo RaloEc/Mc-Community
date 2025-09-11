@@ -22,8 +22,14 @@ export async function GET(request: Request) {
     // Consultar las categorías usando el cliente de servicio
     const { data, error } = await serviceClient
       .from('categorias')
-      .select('id, nombre, parent_id, slug, descripcion, orden, color, icono, tipo, created_at')
+      .select('*')
       .order('orden');
+      
+    // Mapear los campos al formato esperado
+    const categoriasMapeadas = (data || []).map(cat => ({
+      ...cat,
+      parent_id: cat.categoria_padre_id
+    }));
 
     if (error) {
       console.error('Error al cargar categorías:', error);
@@ -34,7 +40,7 @@ export async function GET(request: Request) {
     }
 
     // Filtrar por tipo si se especifica
-    let categoriasFiltradas = data || [];
+    let categoriasFiltradas = categoriasMapeadas || [];
     if (tipo) {
       categoriasFiltradas = categoriasFiltradas.filter(cat => cat.tipo === tipo);
     }
@@ -43,7 +49,7 @@ export async function GET(request: Request) {
     if (plana) {
       return NextResponse.json({ 
         success: true, 
-        data: categoriasFiltradas
+        data: categoriasFiltradas as CategoriaConHijos[]
       });
     }
 
@@ -52,17 +58,24 @@ export async function GET(request: Request) {
     const categoriasRaiz: CategoriaConHijos[] = [];
 
     // Primero, crear un mapa con todas las categorías
-    categoriasFiltradas.forEach(categoria => {
-      categoriasMap.set(categoria.id, { ...categoria, hijos: [] } as CategoriaConHijos);
+    categoriasFiltradas.forEach((categoria: Categoria & { parent_id: string | null }) => {
+      categoriasMap.set(categoria.id, { 
+        ...categoria, 
+        categoria_padre_id: categoria.parent_id,
+        hijos: [] 
+      } as CategoriaConHijos);
     });
 
     // Luego, construir la jerarquía
-    categoriasFiltradas.forEach(categoria => {
+    categoriasFiltradas.forEach((categoria: Categoria & { parent_id: string | null }) => {
       if (categoria.parent_id && categoriasMap.has(categoria.parent_id)) {
         // Es una subcategoría, añadirla a su padre
         const padre = categoriasMap.get(categoria.parent_id);
         if (padre && padre.hijos) {
-          padre.hijos.push(categoriasMap.get(categoria.id)!);
+          const categoriaHijo = categoriasMap.get(categoria.id);
+          if (categoriaHijo) {
+            padre.hijos.push(categoriaHijo);
+          }
         }
       } else {
         // Es una categoría raíz
@@ -81,12 +94,11 @@ export async function GET(request: Request) {
       return categorias;
     };
 
-    const categoriasOrdenadas = ordenarCategorias(categoriasRaiz);
+    ordenarCategorias(categoriasRaiz);
 
-    // Devolver las categorías jerárquicas
-    return NextResponse.json({ 
-      success: true, 
-      data: categoriasOrdenadas
+    return NextResponse.json({
+      success: true,
+      data: categoriasRaiz as CategoriaConHijos[]
     });
   } catch (error) {
     console.error('Error al procesar la solicitud de categorías:', error);
