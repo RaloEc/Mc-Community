@@ -70,7 +70,7 @@ export default async function RootLayout({
       <body className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}>
         <Providers session={session}>
           <Header />
-          <main className="container mx-auto px-4 py-6">
+          <main className="container mx-auto px-4">
             {children}
           </main>
         </Providers>

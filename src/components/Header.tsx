@@ -528,9 +528,20 @@ export default function Header() {
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-2">
-                <Button variant="outline" className="w-full" onClick={() => openAuthModal('login')}>Iniciar Sesión</Button>
-                <Button className="w-full" onClick={() => openAuthModal('register')}>Registrarse</Button>
+              <div className="flex flex-col gap-3 px-3">
+                <Button 
+                  variant="outline" 
+                  className="w-full mx-0" 
+                  onClick={() => openAuthModal('login')}
+                >
+                  Iniciar Sesión
+                </Button>
+                <Button 
+                  className="w-full mx-0" 
+                  onClick={() => openAuthModal('register')}
+                >
+                  Registrarse
+                </Button>
               </div>
             )}
           </div>

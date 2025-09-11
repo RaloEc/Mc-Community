@@ -53,6 +53,12 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login', redirectTo }
     onClose()
   }
 
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      handleClose()
+    }
+  }
+
   const switchMode = (newMode: 'login' | 'register') => {
     setMode(newMode)
     setError('')
@@ -226,46 +232,15 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login', redirectTo }
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-background border-border">
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="w-[calc(100%-2rem)] sm:max-w-[425px] md:max-w-md mx-auto">
         <DialogHeader>
-          <DialogTitle className="text-center text-xl font-bold">
+          <DialogTitle className="text-2xl font-bold text-center">
             {mode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'}
           </DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={handleClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* OAuth Buttons */}
-          <OAuthButtons onSuccess={() => {
-            refreshAuth()
-            setTimeout(() => {
-              handleClose()
-              // Usar la URL guardada para redirección o la página principal
-              const targetRedirect = getRedirectUrl('/')
-              router.push(targetRedirect)
-            }, 1000)
-          }} />
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                O continúa con email
-              </span>
-            </div>
-          </div>
-
-          {/* Form */}
           <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="space-y-4">
             {mode === 'register' && (
               <div className="space-y-2">
@@ -404,6 +379,30 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login', redirectTo }
               </>
             )}
           </div>
+
+          {/* Separador */}
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                O inicia sesión con
+              </span>
+            </div>
+          </div>
+
+          {/* Botones OAuth */}
+          <OAuthButtons 
+            onSuccess={() => {
+              setMessage('¡Inicio de sesión exitoso!')
+              setTimeout(() => {
+                handleClose()
+                const targetRedirect = getRedirectUrl('/')
+                router.push(targetRedirect)
+              }, 1000)
+            }} 
+          />
         </div>
       </DialogContent>
     </Dialog>

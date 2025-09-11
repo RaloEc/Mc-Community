@@ -84,7 +84,9 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
 
   return (
     <div className={`grid grid-cols-2 gap-3 ${className}`}>
-      <Button
+
+      {/*DISCORD*/}
+      {/* <Button
         variant="outline"
         onClick={() => handleOAuthSignIn('discord')}
         disabled={isLoading !== null}
@@ -96,9 +98,10 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
           <span className="font-bold text-indigo-500">D</span>
         )}
         Discord
-      </Button>
+      </Button> */}
       
-      <Button
+      {/*FACEBOOK*/}
+      {/* <Button
         variant="outline"
         onClick={() => handleOAuthSignIn('facebook')}
         disabled={isLoading !== null}
@@ -110,8 +113,9 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
           <span className="font-bold text-blue-600">f</span>
         )}
         Facebook
-      </Button>
+      </Button> */}
       
+      {/*GOOGLE*/}
       <Button
         variant="outline"
         onClick={() => handleOAuthSignIn('google')}
@@ -126,7 +130,8 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
         Google
       </Button>
       
-      <Button
+      {/*TWITCH*/}
+      {/* <Button
         variant="outline"
         onClick={() => handleOAuthSignIn('twitch')}
         disabled={isLoading !== null}
@@ -138,7 +143,7 @@ export function OAuthButtons({ redirectTo = '/', className = '', onSuccess }: OA
           <span className="font-bold text-purple-600">T</span>
         )}
         Twitch
-      </Button>
+      </Button> */}
     </div>
   )
 }
