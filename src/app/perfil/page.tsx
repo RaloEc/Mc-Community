@@ -9,10 +9,10 @@ import ProfileHeader from '@/components/perfil/profile-header'
 import ProfileStats from '@/components/perfil/profile-stats'
 import ActivityFeed from '@/components/perfil/activity-feed'
 import MembershipInfo from '@/components/perfil/membership-info'
-import { 
-  Card, 
+import {
+  Card,
   CardBody,
-  Button, 
+  Button,
   Input,
   Textarea,
   Modal,
@@ -24,7 +24,7 @@ import {
   Spinner,
   Divider
 } from '@nextui-org/react'
-import { 
+import {
   LogOut
 } from 'lucide-react'
 
@@ -62,13 +62,13 @@ export default function PerfilPage() {
     bio: '',
     ubicacion: '',
     sitio_web: '',
-    color: '#3b82f6',
+    color: '#64748B', // Gris azulado por defecto
     avatar_url: ''
   })
 
   useEffect(() => {
     if (authLoading) return
-    
+
     if (!session) {
       router.push('/login')
       return
@@ -79,7 +79,7 @@ export default function PerfilPage() {
     // Construir perfil completo
     const userMetadata = user.user_metadata || {}
     const roleValue = (profile as any)?.role || 'user'
-    const validRole = ['user', 'admin', 'moderator'].includes(roleValue) 
+    const validRole = ['user', 'admin', 'moderator'].includes(roleValue)
       ? roleValue as 'user' | 'admin' | 'moderator'
       : 'user'
 
@@ -100,7 +100,7 @@ export default function PerfilPage() {
     }
 
     setPerfil(perfilCompleto)
-    
+
     // Configurar datos para edición
     setEditData({
       username: perfilCompleto.username,
@@ -112,7 +112,7 @@ export default function PerfilPage() {
     })
 
     setLoading(false)
-    
+
     // Cargar estadísticas
     cargarEstadisticas()
   }, [authLoading, session, user, profile, router])
@@ -141,18 +141,34 @@ export default function PerfilPage() {
       console.error('Error cargando estadísticas:', error)
     }
   }
-  
+
+  // Función para obtener el nombre del color
+  const getColorName = (hex: string): string => {
+    const colors: Record<string, string> = {
+      '#4F46E5': 'Azul',
+      '#10B981': 'Verde',
+      '#EF4444': 'Rojo',
+      '#F59E0B': 'Amarillo',
+      '#8B5CF6': 'Violeta',
+      '#06B6D4': 'Turquesa',
+      '#F97316': 'Naranja',
+      '#EC4899': 'Rosa',
+      '#64748B': 'Gris azulado'
+    }
+    return colors[hex] || 'Personalizado'
+  }
+
   // Función para cargar actividades con paginación
   const fetchActividades = useCallback(async (page: number, limit: number) => {
     if (!user) return []
-    
+
     try {
       const response = await fetch(`/api/perfil/actividades?userId=${user.id}&page=${page}&limit=${limit}`)
-      
+
       if (!response.ok) {
         throw new Error('Error al cargar actividades')
       }
-      
+
       const data = await response.json()
       return data.items || []
     } catch (error) {
@@ -181,20 +197,20 @@ export default function PerfilPage() {
         color: editData.color,
         avatar_url: editData.avatar_url
       }
-      
+
       // Cerrar el modal inmediatamente
       onClose()
-      
+
       // Actualizar la interfaz inmediatamente para mejor experiencia de usuario
       // Importante: Crear un nuevo objeto para forzar la re-renderización
       const perfilActualizado = {
         ...perfil,
         ...datosActualizados
       }
-      
+
       // Actualizar el estado local inmediatamente
       setPerfil(perfilActualizado)
-      
+
       // Enviar datos al servidor
       const response = await fetch('/api/perfil/actualizar', {
         method: 'POST',
@@ -211,10 +227,10 @@ export default function PerfilPage() {
 
       // Obtener los datos actualizados del servidor
       const resultado = await response.json()
-      
+
       // Limpiar la caché y forzar la actualización del perfil
       await refreshProfile()
-      
+
       // Actualizar el estado local nuevamente con los datos más recientes
       if (resultado && resultado.data) {
         setPerfil(prev => ({
@@ -222,10 +238,10 @@ export default function PerfilPage() {
           ...resultado.data
         }))
       }
-      
+
       // También actualizamos el contexto de autenticación
       await refreshAuth()
-      
+
       // Mostrar notificación de éxito
       toast({
         title: "Perfil actualizado",
@@ -279,11 +295,11 @@ export default function PerfilPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-900 dark:from-black dark:to-black amoled:from-black amoled:to-black">
+    <div className="min-h-screen bg-white dark:bg-black amoled:bg-black">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Header del perfil */}
         <div className="mb-8">
-          <ProfileHeader 
+          <ProfileHeader
             perfil={{
               username: perfil.username,
               role: perfil.role,
@@ -316,7 +332,7 @@ export default function PerfilPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Columna izquierda - Feed de actividad */}
           <div className="lg:col-span-2">
-            <ActivityFeed 
+            <ActivityFeed
               fetchActivities={fetchActividades}
               initialPage={1}
               itemsPerPage={5}
@@ -325,7 +341,7 @@ export default function PerfilPage() {
 
           {/* Columna derecha - Información de membresía */}
           <div className="lg:col-span-1">
-            <MembershipInfo 
+            <MembershipInfo
               perfil={{
                 created_at: perfil.created_at,
                 ultimo_acceso: perfil.ultimo_acceso,
@@ -334,7 +350,7 @@ export default function PerfilPage() {
               }}
               estadisticas={estadisticas}
             />
-            
+
             {/* Botón de cerrar sesión */}
             <Card className="bg-white dark:bg-black amoled:bg-black mt-6">
               <CardBody>
@@ -354,8 +370,8 @@ export default function PerfilPage() {
       </div>
 
       {/* Modal de edición */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        isOpen={isOpen}
         onClose={onClose}
         size="2xl"
         scrollBehavior="inside"
@@ -370,7 +386,7 @@ export default function PerfilPage() {
                 {error}
               </div>
             )}
-            
+
             {/* Sección de imagen de perfil */}
             <div className="mb-4">
               <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200 amoled:text-gray-200">Imagen de perfil</h3>
@@ -384,16 +400,16 @@ export default function PerfilPage() {
                 Sube una imagen de perfil (máx. 2MB)
               </p>
             </div>
-            
+
             <Divider className="my-4" />
-            
+
             <Input
               label="Nombre de usuario"
               value={editData.username}
               onChange={(e) => setEditData(prev => ({ ...prev, username: e.target.value }))}
               placeholder="Tu nombre de usuario"
             />
-            
+
             <Textarea
               label="Biografía"
               value={editData.bio}
@@ -401,29 +417,87 @@ export default function PerfilPage() {
               placeholder="Cuéntanos sobre ti..."
               maxRows={4}
             />
-            
+
             <Input
               label="Ubicación"
               value={editData.ubicacion}
               onChange={(e) => setEditData(prev => ({ ...prev, ubicacion: e.target.value }))}
               placeholder="Tu ubicación"
             />
-            
+
             <Input
               label="Sitio web"
               value={editData.sitio_web}
               onChange={(e) => setEditData(prev => ({ ...prev, sitio_web: e.target.value }))}
               placeholder="https://tu-sitio.com"
             />
-            
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300 amoled:text-gray-300">Color del perfil</label>
-              <input
-                type="color"
-                value={editData.color}
-                onChange={(e) => setEditData(prev => ({ ...prev, color: e.target.value }))}
-                className="w-full h-10 rounded-lg border border-gray-300 dark:border-gray-600 amoled:border-gray-600 cursor-pointer"
-              />
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-4 p-3 bg-white/50 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/80 dark:border-gray-700/70">
+                <div 
+                  className="w-10 h-10 rounded-lg shadow-sm transition-all duration-200"
+                  style={{ 
+                    backgroundColor: editData.color,
+                    transform: 'translateY(-1px)'
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                    {getColorName(editData.color)}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                    {editData.color.toUpperCase()}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Paleta de colores */}
+              <div className="p-2 bg-white/30 dark:bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/60">
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    '#4F46E5', // Azul
+                    '#10B981', // Verde
+                    '#EF4444', // Rojo
+                    '#F59E0B', // Amarillo
+                    '#8B5CF6', // Violeta
+                    '#06B6D4', // Turquesa
+                    '#F97316', // Naranja
+                    '#EC4899'  // Rosa
+                  ].map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setEditData(prev => ({ ...prev, color }))}
+                      className={`relative w-full aspect-square rounded-lg transition-all duration-200 flex items-center justify-center
+                        ${editData.color === color 
+                          ? 'ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-gray-800 scale-105 shadow-sm' 
+                          : 'hover:shadow-sm hover:scale-105'}
+                        after:absolute after:inset-0 after:rounded-lg after:transition-all after:duration-200
+                        ${editData.color === color ? 'after:bg-white/10' : 'hover:after:bg-black/5 dark:hover:after:bg-white/5'}
+                      `}
+                      style={{ backgroundColor: color }}
+                      title={getColorName(color)}
+                      aria-label={`Seleccionar color ${getColorName(color)}`}
+                    >
+                      {editData.color === color && (
+                        <svg 
+                          className="w-4 h-4 text-white drop-shadow-md" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          viewBox="0 0 24 24"
+                        >
+                          <path 
+                            strokeLinecap="round" 
+                            strokeLinejoin="round" 
+                            strokeWidth={3} 
+                            d="M5 13l4 4L19 7" 
+                          />
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </ModalBody>
           <ModalFooter>

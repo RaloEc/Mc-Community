@@ -41,6 +41,8 @@ export type Hilo = HiloDb & {
   // Aseguramos que las propiedades opcionales de HiloDb estén aquí si se usan
   contenido: string;
   created_at: string;
+  updated_at: string;
+  ultimo_post_at?: string | null;
 };
 
 const stripHtml = (html: string | null) => {
@@ -190,8 +192,8 @@ export default function ForoCliente() {
         *,
         votos_conteo:foro_votos_hilos(count),
         respuestas_conteo:foro_posts(count),
-        actualizado_en,
-        perfiles:autor_id(username, rol:role, avatar_url),
+        updated_at,
+        perfiles:autor_id(username, role, avatar_url),
         foro_categorias(nombre, color, parent_id, nivel)
       `;
 
@@ -199,7 +201,7 @@ export default function ForoCliente() {
         const { data, error: hErr } = await supabase
           .from('foro_hilos')
           .select(baseSelect)
-          .order('actualizado_en', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(20);
         if (hErr) throw new Error('No se pudieron cargar los hilos.');
         let items = normalizeCounts(data || []);
@@ -211,7 +213,7 @@ export default function ForoCliente() {
           .from('foro_hilos')
           .select(baseSelect)
           .gte('ultimo_post_at', fromIso)
-          .order('actualizado_en', { ascending: false })
+          .order('updated_at', { ascending: false })
           .limit(50);
         if (hErr) throw new Error('No se pudieron cargar los hilos populares.');
         let items = normalizeCounts(data || []);
@@ -221,7 +223,7 @@ export default function ForoCliente() {
             const scoreA = (a.respuestas_conteo ?? 0) * 2 + (a.votos_conteo ?? 0);
             const scoreB = (b.respuestas_conteo ?? 0) * 2 + (b.votos_conteo ?? 0);
             if (scoreB !== scoreA) return scoreB - scoreA;
-            return new Date(b.actualizado_en || b.creado_en).getTime() - new Date(a.actualizado_en || a.creado_en).getTime();
+            return new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
           })
           .slice(0, 20);
         items = await enrichWithUserVotes(items);
@@ -254,7 +256,7 @@ export default function ForoCliente() {
               .from('foro_hilos')
               .select(baseSelect)
               .in('id', ids)
-              .order('actualizado_en', { ascending: false })
+              .order('updated_at', { ascending: false })
               .limit(50);
             if (hErr) throw new Error('No se pudieron cargar los hilos seguidos.');
             let items = normalizeCounts(data || []);
@@ -270,7 +272,7 @@ export default function ForoCliente() {
             .from('foro_hilos')
             .select(baseSelect)
             .eq('autor_id', user.id)
-            .order('actualizado_en', { ascending: false })
+            .order('updated_at', { ascending: false })
             .limit(50);
           if (hErr) throw new Error('No se pudieron cargar tus hilos.');
           let items = normalizeCounts(data || []);
