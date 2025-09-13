@@ -1,11 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import Link from 'next/link';
-import { Eye, Clock, User, ArrowRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ArrowRight, Eye } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { NoticiaMetaInfo } from '../noticias/NoticiaMetaInfo';
+import { getExcerpt } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 
 interface Noticia {
   id: string;
@@ -34,6 +38,7 @@ interface NoticiasDestacadasProps {
 }
 
 export default function NoticiasDestacadas({ className = '' }: NoticiasDestacadasProps) {
+  const { profile } = useAuth();
   const [noticias, setNoticias] = useState<Noticia[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -97,10 +102,12 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
         {noticias.map((noticia) => (
           <div key={noticia.id} className="relative group h-full">
             <Link href={`/noticias/${noticia.id}`} className="block h-full">
-              {/* Contenedor principal con aspect ratio 16:9 */}
-              <article className="relative aspect-[16/9] rounded-2xl overflow-hidden group">
+              {/* Contenedor principal con diseño responsivo */}
+              <article className="relative aspect-[4/3] sm:aspect-video md:aspect-[16/9] rounded-2xl overflow-hidden group isolate">
                 {/* Contenedor de la imagen */}
                 <div className="absolute inset-0 w-full h-full overflow-hidden rounded-2xl">
+                  {/* Botón de acción para móviles */}
+                  <div className="md:hidden absolute inset-0 z-10" aria-hidden="true"></div>
                   {noticia.imagen_url ? (
                     <img
                       src={noticia.imagen_url}
@@ -116,19 +123,19 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                   )}
                 </div>
 
-                {/* Título de la noticia - Se oculta al hacer hover */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-black/80 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-0">
-                  <h3 className="font-bold text-gray-900 dark:text-white line-clamp-2 text-sm md:text-base">
+                {/* Título de la noticia - Siempre visible en móvil, oculto en hover en desktop */}
+                <div className="absolute bottom-0 left-0 right-0 p-4 pt-12 bg-gradient-to-t from-white via-white/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent transition-opacity duration-200 md:group-hover:opacity-0">
+                  <h3 className="font-bold text-gray-900 dark:text-white line-clamp-2 text-sm md:text-base drop-shadow-md dark:drop-shadow-lg">
                     {noticia.titulo}
                   </h3>
                 </div>
 
                 {/* Badge de visualizaciones */}
                 <div className="absolute top-4 right-4">
-                  <div className="flex items-center gap-1 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
-                    <Eye className="h-3 w-3" />
-                    <span>{noticia.vistas}</span>
-                  </div>
+                  <Badge variant="secondary" className="bg-black/60 backdrop-blur-sm text-white hover:bg-black/70">
+                    <Eye className="h-3 w-3 mr-1" />
+                    {noticia.vistas}
+                  </Badge>
                 </div>
 
                 {/* Badge de categoría */}
@@ -147,28 +154,34 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                   </div>
                 )}
 
-                {/* Opción 3: Zoom In con modo oscuro mejorado */}
-                <div className="absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm p-5 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 flex flex-col dark:bg-opacity-80 overflow-hidden rounded-2xl">
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3">
-                    {noticia.titulo}
-                  </h3>
+                {/* Overlay de hover - Solo se muestra en hover en desktop */}
+                <div className="hidden md:block absolute inset-0 bg-white/80 dark:bg-black/80 backdrop-blur-sm p-5 scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300 flex flex-col dark:bg-opacity-80 overflow-hidden rounded-2xl -m-[1px]">
+                  <div className="flex flex-col h-full">
+                    <div className="flex-grow overflow-y-auto pr-2 pb-4">
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-3">
+                        {noticia.titulo}
+                      </h3>
 
-                  <div
-                    className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 prose prose-sm dark:prose-invert max-w-none"
-                    dangerouslySetInnerHTML={{
-                      __html: noticia.contenido
-                        ? getExcerpt(noticia.contenido.replace(/<[^>]*>?/gm, ' '), 200)
-                        : ''
-                    }}
-                  />
-
-                  <NoticiaMetaInfo
-                    autor_nombre={noticia.autor_nombre}
-                    autor_avatar={noticia.autor_avatar}
-                    created_at={noticia.created_at}
-                    comentarios_count={noticia.comentarios_count}
-                    className="mt-auto"
-                  />
+                      <div
+                        className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-3 prose prose-sm dark:prose-invert max-w-none"
+                        dangerouslySetInnerHTML={{
+                          __html: noticia.contenido
+                            ? getExcerpt(noticia.contenido.replace(/<[^>]*>?/gm, ' '), 150)
+                            : ''
+                        }}
+                      />
+                    </div>
+                    <div className="pt-2 mt-auto">
+                      <NoticiaMetaInfo
+                        autor_nombre={noticia.autor_nombre}
+                        autor_avatar={noticia.autor_avatar}
+                        created_at={noticia.created_at}
+                        comentarios_count={noticia.comentarios_count}
+                        className="text-xs [&_p]:leading-none [&_p]:my-0 [&_p]:py-0 [&_div]:gap-1 [&_div]:py-0 [&_div]:m-0 [&_div]:h-6 [&_.avatar]:h-6 [&_.avatar]:w-6 [&_.avatar]:text-[10px]"
+                        userColor={profile?.color || null}
+                      />
+                    </div>
+                  </div>
                 </div>
               </article>
             </Link>

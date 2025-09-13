@@ -80,10 +80,10 @@ export default function Home() {
               <motion.div variants={fadeInUp}>
                 <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white mb-4">
-                    Acerca de MC Community
+                    Acerca de BitArena
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                    La comunidad más grande de Minecraft en español. Comparte noticias, discute en el foro y conecta con otros jugadores.
+                    ¡Bienvenido a BitArena! Tu espacio para estar al día con las últimas noticias sobre tecnología, IA, software, videojuegos y más. Participa en nuestros foros, comparte conocimientos y conéctate con una comunidad apasionada por la innovación tecnológica.
                   </p>
                   <div className="grid grid-cols-2 gap-4 text-center">
                     <div className="bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">

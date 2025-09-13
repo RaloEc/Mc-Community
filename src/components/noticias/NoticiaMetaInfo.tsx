@@ -9,6 +9,7 @@ interface NoticiaMetaInfoProps {
   created_at: string;
   comentarios_count?: number;
   className?: string;
+  userColor?: string | null;
 }
 
 export function NoticiaMetaInfo({ 
@@ -16,16 +17,20 @@ export function NoticiaMetaInfo({
   autor_avatar, 
   created_at, 
   comentarios_count = 0,
-  className = ''
+  className = '',
+  userColor = null
 }: NoticiaMetaInfoProps) {
   return (
-    <div className={`flex items-center justify-between pt-3 border-t border-gray-200 dark:border-white/10 ${className}`}>
+    <div 
+      className={`flex items-center justify-between pt-3 border-t ${className}`}
+      style={userColor ? { borderColor: userColor } : {}}
+    >
       <div className="flex items-center gap-2">
-        <Avatar className="h-8 w-8 border-2 border-gray-200 dark:border-white/20">
+        <Avatar className="h-10 w-10">
           {autor_avatar && (
             <AvatarImage src={autor_avatar} alt={autor_nombre} />
           )}
-          <AvatarFallback className="text-xs bg-gray-100 dark:bg-white/20 text-gray-800 dark:text-white">
+          <AvatarFallback className="text-xs bg-red-900 dark:bg-white/20 text-gray-800 dark:text-white">
             {autor_nombre?.charAt(0) || 'U'}
           </AvatarFallback>
         </Avatar>
