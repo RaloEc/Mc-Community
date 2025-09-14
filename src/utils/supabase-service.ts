@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { cookies } from 'next/headers';
 
 // Cliente de servicio para operaciones administrativas
 export const getServiceClient = () => {
@@ -9,10 +10,30 @@ export const getServiceClient = () => {
     throw new Error('Faltan variables de entorno para el cliente de servicio de Supabase');
   }
   
+  // Solo usar cookies en el servidor
+  const cookieStore = typeof window === 'undefined' ? cookies() : null;
+  
   return createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
-      persistSession: false
-    }
+      persistSession: false,
+      detectSessionInUrl: false,
+      storageKey: 'mc-community-auth',
+      storage: {
+        getItem: async (key: string) => {
+          if (typeof window !== 'undefined') return null; // No usar en el cliente
+          const cookie = cookieStore?.get(key);
+          return cookie?.value || null;
+        },
+        setItem: async (key: string, value: string) => {
+          if (typeof window !== 'undefined') return; // No usar en el cliente
+          cookieStore?.set(key, value, { path: '/' });
+        },
+        removeItem: async (key: string) => {
+          if (typeof window !== 'undefined') return; // No usar en el cliente
+          cookieStore?.delete(key);
+        },
+      },
+    },
   });
 };

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/utils/supabase-service';
 
+// Hacer que la ruta sea dinámica
+export const dynamic = 'force-dynamic';
+
 // Interfaces para tipar correctamente los datos
 interface Autor {
   username?: string;
