@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -195,18 +195,17 @@ export default function Header() {
     setIsAdminMenuOpen(false);
   }
 
-  const openAuthModal = useCallback((mode: 'login' | 'register', redirectTo?: string) => {
+  const openAuthModal = (mode: 'login' | 'register', redirectTo?: string) => {
     // Guardar la URL actual para redirección después del login
-    saveCurrentUrlForRedirect();
+    saveCurrentUrlForRedirect()
     
-    setAuthModalMode(mode);
-    setAuthRedirectTo(redirectTo);
-    setIsAuthModalOpen(true);
-    closeAllMenus();
-  }, [closeAllMenus]);
+    setAuthModalMode(mode)
+    setAuthRedirectTo(redirectTo)
+    setIsAuthModalOpen(true)
+    closeAllMenus()
+  }
 
-  // Función para manejar la búsqueda
-  const handleSearch = useCallback((e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       const trimmedQuery = searchQuery.trim();
@@ -219,7 +218,7 @@ export default function Header() {
         setIsMenuOpen(false);
       }
     }
-  }, [searchQuery, isMenuOpen]);
+  };
 
   return (
     <header className="bg-white/95 dark:bg-black/95 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full">
@@ -230,12 +229,51 @@ export default function Header() {
             <Link className="flex items-center gap-3" href="/" onClick={closeAllMenus}>
               <img src="/images/logo.png" alt="MC Community Logo" className="h-8 w-8" />
               <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
-                BitArena
+                MC Community
               </span>
             </Link>
           </div>
 
-        {/* Navegación principal - Solo Desktop - Ocultar en pantallas menores a 1024px */}
+const openAuthModal = (mode: 'login' | 'register', redirectTo?: string) => {
+  // Guardar la URL actual para redirección después del login
+  saveCurrentUrlForRedirect()
+  
+  setAuthModalMode(mode)
+  setAuthRedirectTo(redirectTo)
+  setIsAuthModalOpen(true)
+  closeAllMenus()
+}
+
+const handleSearch = (e: React.FormEvent) => {
+  e.preventDefault();
+  if (searchQuery.trim()) {
+    const trimmedQuery = searchQuery.trim();
+    // Usar router.push con la URL formateada correctamente
+    router.push(`/buscar?q=${encodeURIComponent(trimmedQuery)}`);
+    // Limpiar el campo de búsqueda después de enviar
+    setSearchQuery('');
+    // Cerrar el menú móvil si está abierto
+    if (isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }
+};
+
+return (
+  <header className="bg-white/95 dark:bg-black/95 backdrop-blur-md fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="flex h-16 items-center justify-between gap-2 md:gap-4">
+        {/* Logo */}
+        <div className="flex items-center flex-shrink-0">
+          <Link className="flex items-center gap-3" href="/" onClick={closeAllMenus}>
+            <img src="/images/logo.png" alt="MC Community Logo" className="h-8 w-8" />
+            <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
+              MC Community
+            </span>
+          </Link>
+        </div>
+
+        {/* Navegación principal - Solo Desktop */}
         <nav aria-label="Global" className="hidden lg:block">
           <ul className="flex items-center gap-1 text-sm">
               <li className="menu-item">
@@ -306,6 +344,7 @@ export default function Header() {
                       <li className="menu-item">
                         <Link
                           href="/admin/dashboard"
+                          className="block px-4 py-2 transition-colors"
                           style={{
                             '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
                             '--hover-text': profile?.color || '#2563eb',
@@ -325,6 +364,7 @@ export default function Header() {
                       <li className="menu-item">
                         <Link
                           href="/admin/noticias"
+                          className="block px-4 py-2 transition-colors"
                           style={{
                             '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
                             '--hover-text': profile?.color || '#2563eb',
@@ -344,6 +384,7 @@ export default function Header() {
                       <li className="menu-item">
                         <Link
                           href="/admin/usuarios"
+                          className="block px-4 py-2 transition-colors"
                           style={{
                             '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
                             '--hover-text': profile?.color || '#2563eb',
@@ -363,6 +404,7 @@ export default function Header() {
                       <li className="menu-item">
                         <Link
                           href="/admin/foro"
+                          className="block px-4 py-2 transition-colors"
                           style={{
                             '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
                             '--hover-text': profile?.color || '#2563eb',
@@ -385,6 +427,104 @@ export default function Header() {
               )}
             </ul>
           </nav>
+                      type="button"
+                      aria-haspopup="menu"
+                      aria-expanded={isAdminMenuOpen}
+                      className={`px-4 py-2 transition hover:text-primary ${currentTheme === 'light' ? 'text-gray-900' : 'text-white'}`}
+                      onClick={() => setIsAdminMenuOpen((v) => !v)}
+                    >
+                      Admin
+                    </button>
+                    <div
+                      className={`absolute top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${currentTheme === 'light' ? 'bg-white border-gray-200' : 'bg-black border-gray-800'} transition-all duration-200 ease-in-out transform origin-top-left ${isAdminMenuOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0 pointer-events-none'}`}
+                    >
+                      <ul className="py-2 text-sm">
+                        <li className="menu-item">
+                          <Link
+                            href="/admin/dashboard"
+                            className="block px-4 py-2 transition-colors"
+                          style={{
+                            '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
+                            '--hover-text': profile?.color || '#2563eb',
+                            '--dark-hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(96, 165, 250, 0.1)',
+                            '--dark-hover-text': profile?.color || '#60a5fa',
+                          } as React.CSSProperties}
+                          className={`block px-4 py-2 transition-colors ${
+                            currentTheme === 'light' 
+                              ? 'text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]' 
+                              : 'text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]'
+                          }`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Dashboard
+                          </Link>
+                        </li>
+                        <li className="menu-item">
+                          <Link
+                            href="/admin/noticias"
+                            className="block px-4 py-2 transition-colors"
+                          style={{
+                            '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
+                            '--hover-text': profile?.color || '#2563eb',
+                            '--dark-hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(96, 165, 250, 0.1)',
+                            '--dark-hover-text': profile?.color || '#60a5fa',
+                          } as React.CSSProperties}
+                          className={`block px-4 py-2 transition-colors ${
+                            currentTheme === 'light' 
+                              ? 'text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]' 
+                              : 'text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]'
+                          }`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Noticias
+                          </Link>
+                        </li>
+                        <li className="menu-item">
+                          <Link
+                            href="/admin/usuarios"
+                            className="block px-4 py-2 transition-colors"
+                          style={{
+                            '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
+                            '--hover-text': profile?.color || '#2563eb',
+                            '--dark-hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(96, 165, 250, 0.1)',
+                            '--dark-hover-text': profile?.color || '#60a5fa',
+                          } as React.CSSProperties}
+                          className={`block px-4 py-2 transition-colors ${
+                            currentTheme === 'light' 
+                              ? 'text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]' 
+                              : 'text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]'
+                          }`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Usuarios
+                          </Link>
+                        </li>
+                        <li className="menu-item">
+                          <Link
+                            href="/admin/foro"
+                            className="block px-4 py-2 transition-colors"
+                          style={{
+                            '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
+                            '--hover-text': profile?.color || '#2563eb',
+                            '--dark-hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(96, 165, 250, 0.1)',
+                            '--dark-hover-text': profile?.color || '#60a5fa',
+                          } as React.CSSProperties}
+                          className={`block px-4 py-2 transition-colors ${
+                            currentTheme === 'light' 
+                              ? 'text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]' 
+                              : 'text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]'
+                          }`}
+                            onClick={() => setIsAdminMenuOpen(false)}
+                          >
+                            Admin Foros
+                          </Link>
+                        </li>
+                      </ul>
+                    </div>
+                  </li>
+                )}
+              </ul>
+            </nav>
 
           {/* Barra de búsqueda centrada - solo desktop */}
           <div className="flex-1 max-w-md mx-4 hidden md:block">
@@ -395,23 +535,17 @@ export default function Header() {
                 placeholder="Buscar noticias, hilos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  '--focus-border-color': profile?.color || '#3b82f6',
-                  '--focus-ring-color': profile?.color ? `${profile.color}40` : 'rgba(59, 130, 246, 0.25)'
-                } as React.CSSProperties}
-                className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 rounded-full
-                  focus:border-[var(--focus-border-color)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]
-                  dark:focus:border-[var(--focus-border-color)] dark:focus-visible:ring-2 dark:focus-visible:ring-[var(--focus-ring-color)]
-                  transition-colors duration-200`}
+                className="pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-full"
               />
             </form>
           </div>
 
           {/* Controles de usuario */}
           <div className="flex items-center gap-1 md:gap-3">
-            {/* Botones de creación - Ocultar en pantallas menores a 1024px */}
+            <ModeToggle />
+            
+            {/* Botones de creación */}
             <div className="hidden lg:flex items-center gap-2">
-              <ModeToggle />
               {isAdmin && (
                 <Link href="/admin/noticias/crear">
                   <Button size="sm" variant="outline" className="text-xs flex items-center gap-1">
@@ -428,7 +562,7 @@ export default function Header() {
               </Link>
             </div>
 
-            <div className="hidden lg:flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
                 
               {authUser ? (
                 <div className="relative">
@@ -502,8 +636,8 @@ export default function Header() {
               )}
             </div>
 
-            {/* Botón de menú móvil - Mostrar en pantallas menores a 1024px */}
-            <div className="block lg:hidden">
+            {/* Botón de menú móvil */}
+            <div className="block md:hidden">
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -519,9 +653,9 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Overlay semitransparente - comienza debajo del header - Mostrar en pantallas menores a 1024px */}
+      {/* Overlay semitransparente - comienza debajo del header */}
       <div 
-        className={`lg:hidden fixed left-0 right-0 z-[998] transition-all duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`md:hidden fixed left-0 right-0 z-[998] transition-all duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         onClick={() => setIsMenuOpen(false)}
         style={{
           position: 'fixed',
@@ -534,9 +668,9 @@ export default function Header() {
         }} 
       />
       
-      {/* Menú desplegable con animación desde el botón - visible en pantallas menores a 1024px */}
+      {/* Menú desplegable con animación desde el botón */}
       <div 
-        className={`lg:hidden fixed top-16 right-4 z-[999] ${isMenuOpen ? 'block' : 'hidden'}`}
+        className="md:hidden fixed top-16 right-4 z-[999]"
         style={{
           transformOrigin: 'top right',
           transform: isMenuOpen ? 'scale(1)' : 'scale(0.1)',
@@ -584,16 +718,13 @@ export default function Header() {
         >
           <div className="border-t border-gray-200 dark:border-gray-800">
             {authUser ? (
-              <div className="menu-item flex items-center gap-3 p-4">
-                <Avatar className="w-12 h-12">
+              <div className="menu-item flex items-center gap-3">
+                <Avatar className="w-16 h-16">
                   <AvatarImage 
                     src={profile?.avatar_url || authUser?.user_metadata?.avatar_url || authUser?.user_metadata?.picture || undefined} 
                     alt={profile?.username || authUser?.user_metadata?.full_name || authUser?.user_metadata?.name || 'Usuario'} 
-                    className="object-cover"
                   />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
-                    {getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}
-                  </AvatarFallback>
+                  <AvatarFallback>{getUserInitials(profile?.username || authUser?.user_metadata?.full_name || '', 1, 'U')}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
@@ -637,14 +768,7 @@ export default function Header() {
                 placeholder="Buscar noticias, hilos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{
-                  '--focus-border-color': profile?.color || '#3b82f6',
-                  '--focus-ring-color': profile?.color ? `${profile.color}40` : 'rgba(59, 130, 246, 0.25)'
-                } as React.CSSProperties}
-                className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 rounded-full
-                  focus:border-[var(--focus-border-color)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]
-                  dark:focus:border-[var(--focus-border-color)] dark:focus-visible:ring-2 dark:focus-visible:ring-[var(--focus-ring-color)]
-                  transition-colors duration-200`}
+                className="pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 focus:border-blue-500 dark:focus:border-blue-400 rounded-full"
               />
             </form>
           </div>

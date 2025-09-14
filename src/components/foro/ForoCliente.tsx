@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { createClient } from '@/lib/supabase/client';
 import { Button } from "@/components/ui/button";
-import { Loader2, MessageSquare, ArrowBigUp, ArrowBigDown } from 'lucide-react';
+import { Loader2, MessageSquare, ArrowBigUp, ArrowBigDown, Clock, TrendingUp, Star, User } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -85,7 +85,7 @@ type TabKey = 'recientes' | 'populares' | 'sin_respuesta' | 'siguiendo' | 'mios'
 type TimeRange = '24h' | '7d';
 
 export default function ForoCliente() {
-  const { user, loading: userLoading } = useAuth();
+  const { user, profile, loading: userLoading } = useAuth();
   const supabase = createClient();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [hilos, setHilos] = useState<Hilo[]>([]);
@@ -343,7 +343,11 @@ export default function ForoCliente() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-sky-500 to-blue-600 dark:from-sky-400 dark:to-blue-500"
+            className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-br from-accent-light to-accent-light/80 dark:from-accent-dark dark:to-accent-dark/80"
+            style={{
+              '--accent-light': profile?.color || '#6366F1',
+              '--accent-dark': profile?.color || '#3730A3'
+            } as React.CSSProperties}
           >
             Foros
           </motion.h1>
@@ -362,10 +366,57 @@ export default function ForoCliente() {
         <div className="flex flex-col lg:flex-row gap-8">
           <main className="w-full lg:flex-1">
             <div className="bg-white dark:bg-black p-6 rounded-lg shadow-none border-0 transition-colors duration-300 outline-none ring-0 focus:outline-none focus:ring-0">
-              <div className="flex justify-end mb-6">
+              <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+                {/* Pestañas de navegación */}
+                <div className="flex flex-wrap gap-1 bg-gray-100 dark:bg-black p-1 rounded-lg">
+                  {[
+                    { id: 'recientes', label: 'Recientes', icon: <Clock className="h-4 w-4 mr-1" /> },
+                    { id: 'populares', label: 'Populares', icon: <TrendingUp className="h-4 w-4 mr-1" /> },
+                    { id: 'sin_respuesta', label: 'Sin respuesta', icon: <MessageSquare className="h-4 w-4 mr-1" /> },
+                    { id: 'siguiendo', label: 'Siguiendo', icon: <Star className="h-4 w-4 mr-1" />, auth: true },
+                    { id: 'mios', label: 'Mis hilos', icon: <User className="h-4 w-4 mr-1" />, auth: true },
+                  ].map(tab => (
+                    (!tab.auth || user) && (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as TabKey)}
+                        style={{
+                          '--accent-light': profile?.color || '#6366F1',
+                          '--accent-dark': profile?.color || '#3730A3'
+                        } as React.CSSProperties}
+                        className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                          activeTab === tab.id 
+                            ? 'bg-white dark:bg-gray-800 shadow-sm text-accent-light dark:text-accent-dark'
+                            : 'text-gray-600 dark:text-gray-300 hover:bg-accent-light/10 dark:hover:bg-accent-dark/20'
+                        }`}
+                      >
+                        {tab.icon}
+                        <span>{tab.label}</span>
+                      </button>
+                    )
+                  ))}
+                </div>
+                
+                {/* Botón de crear hilo */}
                 {user && (
-                  <Button asChild className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
-                    <Link href="/foro/crear-hilo">Crear Nuevo Hilo</Link>
+                  <Button 
+                    asChild 
+                    style={{
+                      '--accent-light': profile?.color || '#6366F1',
+                      '--accent-dark': profile?.color || '#3730A3',
+                    } as React.CSSProperties}
+                    className="font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
+                  >
+                    <Link 
+                      href="/foro/crear-hilo"
+                      className="bg-accent-light hover:bg-accent-light/90 dark:bg-accent-dark dark:hover:bg-accent-dark/90 text-white"
+                      style={{
+                        '--tw-shadow-color': 'var(--accent-light, #6366F1)40',
+                        '--tw-shadow': '0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -1px var(--tw-shadow-color)',
+                      } as React.CSSProperties}
+                    >
+                      Crear Nuevo Hilo
+                    </Link>
                   </Button>
                 )}
               </div>
@@ -384,20 +435,34 @@ export default function ForoCliente() {
                       initial={initialLoaded ? false : { opacity: 0, y: 4 }}
                       animate={initialLoaded ? undefined : { opacity: 1, y: 0 }}
                       transition={{ duration: 0.18, ease: 'easeOut' }}
-                      className="bg-gray-50 dark:bg-black rounded-lg flex border border-gray-200 dark:border-gray-800 hover:border-sky-500/50 transition-all duration-300"
+                      className="bg-gray-50 dark:bg-black rounded-lg flex border border-gray-200 dark:border-gray-800 hover:border-sky-500/50 transition-all duration-300 p-4"
                     >
-                      <div className="flex flex-col items-center p-2 bg-gray-100 dark:bg-black rounded-l-lg transition-colors duration-300">
-                        <button onClick={() => handleVote(hilo.id, 1)} className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors">
-                          <ArrowBigUp className={`h-5 w-5 ${hilo.voto_usuario === 1 ? 'text-orange-500' : 'text-gray-400 hover:text-orange-500'}`} />
+                      <div className="flex flex-col items-center mr-4">
+                        <button 
+                          onClick={() => handleVote(hilo.id, 1)} 
+                          className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                          style={{
+                            '--accent-light': profile?.color || '#6366F1',
+                            '--accent-dark': profile?.color || '#3730A3',
+                          } as React.CSSProperties}
+                        >
+                          <ArrowBigUp className={`h-5 w-5 ${hilo.voto_usuario === 1 ? 'text-accent-light dark:text-accent-dark' : 'text-gray-400 hover:text-accent-light dark:hover:text-accent-dark'}`} />
                         </button>
-                        <span className={`font-bold text-sm my-1 ${hilo.voto_usuario === 1 ? 'text-orange-500' : hilo.voto_usuario === -1 ? 'text-blue-500' : 'text-gray-800 dark:text-gray-200'}`}>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white my-1">
                           {hilo.votos_conteo || 0}
                         </span>
-                        <button onClick={() => handleVote(hilo.id, -1)} className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors">
-                          <ArrowBigDown className={`h-5 w-5 ${hilo.voto_usuario === -1 ? 'text-blue-500' : 'text-gray-400 hover:text-blue-500'}`} />
+                        <button 
+                          onClick={() => handleVote(hilo.id, -1)} 
+                          className="hover:bg-gray-200 dark:hover:bg-gray-700 rounded p-1 transition-colors"
+                          style={{
+                            '--accent-light': profile?.color || '#6366F1',
+                            '--accent-dark': profile?.color || '#3730A3',
+                          } as React.CSSProperties}
+                        >
+                          <ArrowBigDown className={`h-5 w-5 ${hilo.voto_usuario === -1 ? 'text-accent-light dark:text-accent-dark' : 'text-gray-400 hover:text-accent-light dark:hover:text-accent-dark'}`} />
                         </button>
                       </div>
-                      <div className="p-3 flex-1">
+                      <div className="flex-1">
                         <div className="flex justify-between items-center flex-wrap gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
                           <div className="flex items-center gap-x-2">
                             <Avatar className="h-6 w-6 mr-1">
@@ -419,7 +484,14 @@ export default function ForoCliente() {
                             </span>
                           )}
                         </div>
-                        <Link href={`/foro/hilos/${hilo.slug ?? hilo.id}`} className="text-lg font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300 transition-colors duration-200">
+                        <Link 
+                          href={`/foro/hilos/${hilo.slug ?? hilo.id}`} 
+                          className="text-lg font-semibold transition-colors duration-200 text-accent-light hover:text-accent-light/80 dark:text-accent-dark dark:hover:text-accent-dark/80"
+                          style={{
+                            '--accent-light': profile?.color || '#6366F1',
+                            '--accent-dark': profile?.color || '#3730A3',
+                          } as React.CSSProperties}
+                        >
                           {hilo.titulo}
                         </Link>
                         <div className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: stripHtml(hilo.contenido) || '' }} />

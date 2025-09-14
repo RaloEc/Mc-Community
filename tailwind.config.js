@@ -34,6 +34,57 @@ module.exports = {
         'border-color': 'hsl(var(--border))',
       },
       colors: {
+        // Colores base con soporte para temas claro/oscuro
+        accent: {
+          light: 'hsl(var(--accent-light))',
+          dark: 'hsl(var(--accent-dark))',
+          DEFAULT: 'hsl(var(--accent-light))',
+          // Variantes de opacidad para hover, etc.
+          lightHover: 'hsl(var(--accent-light) / 0.8)',
+          darkHover: 'hsl(var(--accent-dark) / 0.8)',
+          lightBg: 'hsl(var(--accent-light) / 0.1)',
+          darkBg: 'hsl(var(--accent-dark) / 0.1)',
+        },
+        // Colores temáticos con sus variantes claro/oscuro
+        theme: {
+          azul: {
+            light: '#6366F1',
+            dark: '#3730A3'
+          },
+          verde: {
+            light: '#34D399',
+            dark: '#065F46'
+          },
+          rojo: {
+            light: '#F87171',
+            dark: '#991B1B'
+          },
+          amarillo: {
+            light: '#FACC15',
+            dark: '#B45309'
+          },
+          violeta: {
+            light: '#A78BFA',
+            dark: '#5B21B6'
+          },
+          turquesa: {
+            light: '#22D3EE',
+            dark: '#0E7490'
+          },
+          naranja: {
+            light: '#FB923C',
+            dark: '#C2410C'
+          },
+          rosa: {
+            light: '#F472B6',
+            dark: '#9D174D'
+          },
+          grisAzulado: {
+            light: '#94A3B8',
+            dark: '#334155'
+          }
+        },
+        // Colores base de la aplicación
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
