@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getGameVersions } from '@/lib/modrinth/api';
 
+
+// Hacer que la ruta sea dinámica
+export const dynamic = 'force-dynamic';
+
 /**
  * Endpoint para obtener las versiones de Minecraft disponibles en Modrinth
  * GET /api/modrinth/versions

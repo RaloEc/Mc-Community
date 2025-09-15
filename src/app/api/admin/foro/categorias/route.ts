@@ -1,4 +1,4 @@
-import { getServiceClient } from '@/lib/supabase';
+import { getServiceClient } from '@/utils/supabase-service';
 import { NextResponse } from 'next/server';
 
 // GET: Obtener todas las categorías

@@ -251,8 +251,23 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
       : color;
   };
 
-  // Detectar si está en modo oscuro
-  const isDarkMode = document.documentElement.classList.contains('dark');
+  // Usamos useState para manejar el modo oscuro
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Detectar el modo oscuro solo en el cliente
+  useEffect(() => {
+    setIsDarkMode(document.documentElement.classList.contains('dark'));
+    
+    // Observar cambios en el tema
+    const observer = new MutationObserver(() => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    });
+    
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    
+    return () => observer.disconnect();
+  }, []);
+  
   const adjustedPrimaryColor = getAdjustedColor(primaryColor, isDarkMode);
   
   const hoverStyles = {

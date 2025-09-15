@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getServiceClient } from '@/lib/supabase';
+import { getServiceClient } from '@/utils/supabase-service';
 
 export async function PUT(request: Request) {
   try {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServiceClient } from '@/lib/supabase'
+import { getServiceClient } from '@/utils/supabase-service'
 
 export async function POST(request: NextRequest) {
   try {

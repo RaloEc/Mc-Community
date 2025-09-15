@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getServiceClient } from '@/lib/supabase';
+import { getServiceClient } from '@/utils/supabase-service';
 import type { Comentario } from '@/types';
 
 // GET para obtener comentarios de una entidad específica

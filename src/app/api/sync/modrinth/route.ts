@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
 import { syncModrinthMod, syncModrinthMods } from '@/lib/modrinth/sync';
-import { getServiceClient } from '@/utils/supabase-service';
-
-// Hacer que la ruta sea dinámica
-export const dynamic = 'force-dynamic';
+import { getServiceClient } from '@/lib/supabase';
 
 /**
  * Endpoint para sincronizar un mod específico de Modrinth
@@ -13,13 +12,12 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   try {
-    // Usar el cliente de servicio para operaciones administrativas
-    const supabase = getServiceClient();
+    // Verificar autenticación
+    const cookieStore = cookies();
+    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const { data: { session } } = await supabase.auth.getSession();
     
-    // Verificar si el usuario es administrador
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
-    if (userError || !user) {
+    if (!session) {
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -27,15 +25,15 @@ export async function GET(request: Request) {
     }
     
     // Verificar si el usuario es administrador
-    const { data: userData, error: profileError } = await supabase
+    const { data: userRoles } = await supabase
       .from('perfiles')
-      .select('role')
-      .eq('id', user.id)
+      .select('rol')
+      .eq('id', session.user.id)
       .single();
       
-    if (profileError || !userData || userData.role !== 'admin') {
+    if (!userRoles || userRoles.rol !== 'admin') {
       return NextResponse.json(
-        { error: 'Acceso denegado. Se requieren privilegios de administrador' },
+        { error: 'Se requieren permisos de administrador para esta operación' },
         { status: 403 }
       );
     }

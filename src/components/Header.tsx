@@ -791,8 +791,24 @@ export default function Header() {
 
           {authUser && (
             <div className={`p-4 border-t ${currentTheme === 'light' ? 'border-gray-200' : 'border-gray-800'}`}>
-              <Link href="/perfil" className={`flex items-center gap-2 p-2 rounded-md w-full text-left ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}><User size={18} /> Mi Perfil</Link>
-              <button onClick={handleLogout} className="flex items-center gap-2 p-2 rounded-md hover:bg-red-500/10 w-full text-left mt-2 text-red-500"><LogOut size={18} /> Cerrar Sesión</button>
+              <div className="flex items-center gap-2">
+                <Link 
+                  href="/perfil" 
+                  className={`flex-1 flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} 
+                  onClick={closeAllMenus}
+                >
+                  <User size={18} /> <span className="truncate">Mi Perfil</span>
+                </Link>
+                <div className="p-1">
+                  <ModeToggle variant="ghost" size="sm" className="h-9 w-9" />
+                </div>
+              </div>
+              <button 
+                onClick={handleLogout} 
+                className="flex items-center gap-2 p-2 rounded-md hover:bg-red-500/10 w-full text-left mt-2 text-red-500"
+              >
+                <LogOut size={18} /> Cerrar Sesión
+              </button>
             </div>
           )}
         </div>

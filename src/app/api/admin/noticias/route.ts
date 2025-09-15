@@ -5,6 +5,10 @@ import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { Database } from '@/types/supabase';
 
+
+// Hacer que la ruta sea dinámica
+export const dynamic = 'force-dynamic';
+
 // Función auxiliar para revalidar rutas de noticias
 function revalidarRutasNoticias() {
   revalidatePath('/noticias');

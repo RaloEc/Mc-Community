@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/utils/supabase-service';
-
-// Hacer que la ruta sea dinámica
-export const dynamic = 'force-dynamic';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(request: Request) {
   try {

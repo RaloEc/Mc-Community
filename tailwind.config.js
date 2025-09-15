@@ -182,6 +182,14 @@ module.exports = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' },
         },
+        "theme-slide-right": {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
+        "theme-slide-down": {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -190,6 +198,8 @@ module.exports = {
         fadeOut: 'fadeOut 0.3s ease-out',
         shimmer: 'shimmer 2s infinite linear',
         pulse: 'pulse 1.5s ease-in-out infinite',
+        "theme-slide-right": 'theme-slide-right 0.7s ease-in-out',
+        "theme-slide-down": 'theme-slide-down 0.7s ease-in-out',
       },
       typography: (theme) => ({
         DEFAULT: {

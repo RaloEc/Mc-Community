@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/lib/supabase/server';
 
+
+// Hacer que la ruta sea dinámica
+export const dynamic = 'force-dynamic';
+
 // GET - Obtener todos los mods
 export async function GET(request: NextRequest) {
   try {

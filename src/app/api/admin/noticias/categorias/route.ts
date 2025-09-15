@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Database } from '@/types/supabase'
-import { getServiceClient } from '@/lib/supabase'
+import { getServiceClient } from '@/utils/supabase-service'
 
 // Función para verificar si el usuario es administrador
 async function esAdmin(supabase: any, request?: NextRequest) {

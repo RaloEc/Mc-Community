@@ -1,6 +1,6 @@
 "use client"
 
-// Este componente ha sido reemplazado por ThemeSwitener
+// Este componente ha sido actualizado para usar el nuevo ThemeTogglerButton
 // Se mantiene para compatibilidad con el código existente
-export { ThemeSwitcher as ModeToggle } from './ThemeSwitcher'
+export { ThemeTogglerButton as ModeToggle } from './ui/theme-toggler-button'
 

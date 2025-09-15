@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServiceClient } from '@/utils/supabase-service'
-
-// Hacer que la ruta sea dinámica
-export const dynamic = 'force-dynamic';
+import { createClient } from '@/lib/supabase/server'
+import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,7 +22,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit
 
     // Crear cliente de Supabase
-    const supabase = getServiceClient()
+    const cookieStore = cookies()
+    const supabase = createClient()
 
     // Verificar sesión
     const { data: { session } } = await supabase.auth.getSession()

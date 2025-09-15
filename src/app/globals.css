@@ -18,6 +18,25 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Animación de barrido para cambio de tema */
+@keyframes theme-sweep {
+  0% {
+    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
+    opacity: 0.95;
+  }
+  5% {
+    opacity: 1;
+  }
+  70% {
+    clip-path: polygon(0 0, 100% 0, 100% 70%, 0 70%);
+    opacity: 0.8;
+  }
+  100% {
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+    opacity: 0;
+  }
+}
+
 /* Transición suave entre temas - optimizada para rendimiento */
 .theme-transition {
   transition-property: background-color; /* color; */
