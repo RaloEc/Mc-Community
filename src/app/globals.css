@@ -310,6 +310,22 @@ a {
   transition: background-color 0.3s ease, /* color 0.3s ease, */ border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
+/* Animación de ping lento para el botón de cambio de tema */
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  75%, 100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
 /* ESTILOS DEL EDITOR TIPTAP */
 /* CONTENEDOR PRINCIPAL */
 .tiptap-container {

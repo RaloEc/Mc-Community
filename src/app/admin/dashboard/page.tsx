@@ -12,7 +12,8 @@ import {
   TrendingUp,
   MessageSquare,
   RefreshCw,
-  Plus
+  Plus,
+  Calendar
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -175,7 +176,8 @@ function DashboardContent() {
   const statCards = [
     { title: 'Noticias', value: stats.noticias, icon: Newspaper, color: 'text-green-500', href: '/admin/noticias' },
     { title: 'Foro', value: stats.foroHilos, icon: MessageSquare, color: 'text-blue-500', href: '/admin/foro', description: `${stats.foroPosts} respuestas` },
-    { title: 'Usuarios', value: stats.usuarios, icon: Users, color: 'text-purple-500', href: '/admin/usuarios' }
+    { title: 'Usuarios', value: stats.usuarios, icon: Users, color: 'text-purple-500', href: '/admin/usuarios' },
+    { title: 'Eventos', value: 0, icon: Calendar, color: 'text-amber-500', href: '/admin/eventos' }
   ]
 
   return (
@@ -256,6 +258,12 @@ function DashboardContent() {
                 <span className="text-sm">Nueva noticia</span>
               </Button>
             </Link>
+            <Link href="/admin/eventos/crear">
+              <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">Nuevo evento</span>
+              </Button>
+            </Link>
             <Link href="/admin/foro">
               <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
                 <MessageSquare className="h-4 w-4" />
@@ -268,22 +276,16 @@ function DashboardContent() {
                 <span className="text-sm">Usuarios</span>
               </Button>
             </Link>
-            <Link href="/admin/wiki">
+            <Link href="/admin/eventos">
               <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
-                <BookOpen className="h-4 w-4" />
-                <span className="text-sm">Wiki</span>
+                <Calendar className="h-4 w-4" />
+                <span className="text-sm">Eventos</span>
               </Button>
             </Link>
             <Link href="/admin/noticias">
               <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
                 <Newspaper className="h-4 w-4" />
                 <span className="text-sm">Noticias</span>
-              </Button>
-            </Link>
-            <Link href="/admin/dashboard">
-              <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-sm">Estadísticas</span>
               </Button>
             </Link>
           </div>

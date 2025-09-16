@@ -6,7 +6,6 @@ import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuthModal } from '@/hooks/useAuthModal';
 import BannerPublicitario from '@/components/home/BannerPublicitario';
 import NoticiasDestacadas from '@/components/home/NoticiasDestacadas';
-import SeccionNoticias from '@/components/home/SeccionNoticias';
 import SeccionForo from '@/components/home/SeccionForo';
 
 export default function Home() {
@@ -43,15 +42,10 @@ export default function Home() {
             <NoticiasDestacadas className="mb-24" />
           </motion.div>
 
-          {/* Layout principal estilo Reddit */}
+          {/* Layout principal */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Columna principal - Contenido */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Sección de noticias organizadas */}
-              <motion.div variants={fadeInUp}>
-                <SeccionNoticias />
-              </motion.div>
-
               {/* Banner publicitario intermedio */}
               <motion.div variants={fadeInUp} className="flex justify-center">
                 <BannerPublicitario 

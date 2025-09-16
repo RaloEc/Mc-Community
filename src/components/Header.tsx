@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserInitials } from '@/lib/utils/avatar-utils';
 import { saveCurrentUrlForRedirect } from '@/lib/utils/auth-utils';
 import { AuthModal } from '@/components/auth/AuthModal'
-import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare, Plus, PenSquare, ChevronDown, Search, X } from 'lucide-react'
+import { Menu, Newspaper, Package, User, LogOut, Shield, MessageSquare, Plus, PenSquare, ChevronDown, Search, X, Calendar } from 'lucide-react'
 
 export default function Header() {
   const router = useRouter()
@@ -379,6 +379,25 @@ export default function Header() {
                           Admin Foros
                         </Link>
                       </li>
+                      <li className="menu-item">
+                        <Link
+                          href="/admin/eventos"
+                          style={{
+                            '--hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(37, 99, 235, 0.1)',
+                            '--hover-text': profile?.color || '#2563eb',
+                            '--dark-hover-bg': profile?.color ? `${profile.color}1a` : 'rgba(96, 165, 250, 0.1)',
+                            '--dark-hover-text': profile?.color || '#60a5fa',
+                          } as React.CSSProperties}
+                          className={`block px-4 py-2 transition-colors ${
+                            currentTheme === 'light' 
+                              ? 'text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]' 
+                              : 'text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]'
+                          }`}
+                          onClick={() => setIsAdminMenuOpen(false)}
+                        >
+                          Admin Eventos
+                        </Link>
+                      </li>
                     </ul>
                   </div>
                 </li>
@@ -574,15 +593,13 @@ export default function Header() {
           .menu-item:nth-child(10) { animation-delay: 320ms; }
         `}</style>
         <div 
-          className={`w-72 rounded-lg shadow-2xl overflow-hidden ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'}`}
+          className={`w-72 rounded-lg shadow-2xl flex flex-col ${currentTheme === 'light' ? 'bg-white text-gray-900' : 'bg-gray-900 text-white'}`}
           style={{
-            scrollbarWidth: 'thin',
-            scrollbarColor: currentTheme === 'light' ? '#9ca3af #e5e7eb' : '#4b5563 #1f2937',
             maxHeight: 'calc(100vh - 6rem)',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
           }}
         >
-          <div className="border-t border-gray-200 dark:border-gray-800">
+          <div className="border-t border-gray-200 dark:border-gray-800 flex-shrink-0">
             {authUser ? (
               <div className="menu-item flex items-center gap-3 p-4">
                 <Avatar className="w-12 h-12">
@@ -629,7 +646,7 @@ export default function Header() {
           </div>
 
           {/* Barra de búsqueda móvil */}
-          <div className={`menu-item p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black`}>
+          <div className={`menu-item p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black flex-shrink-0`}>
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -649,7 +666,10 @@ export default function Header() {
             </form>
           </div>
 
-          <ul className="flex-grow p-4 space-y-3 overflow-y-auto">
+          <ul className="flex-grow p-4 space-y-3 overflow-y-auto" style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: currentTheme === 'light' ? '#9ca3af #e5e7eb' : '#4b5563 #1f2937',
+          }}>
             {/* Aplicar clase menu-item a cada elemento de la lista */}
             <li className="menu-item">
               <button
@@ -782,6 +802,11 @@ export default function Header() {
                 <li className="menu-item">
                   <Link href="/admin/usuarios" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
                     <User size={18} /> Admin Usuarios
+                  </Link>
+                </li>
+                <li className="menu-item">
+                  <Link href="/admin/eventos" className={`flex items-center gap-2 p-2 rounded-md ${currentTheme === 'light' ? 'text-gray-700 hover:bg-gray-100' : 'text-gray-200 hover:bg-gray-800'}`} onClick={closeAllMenus}>
+                    <Calendar size={18} /> Admin Eventos
                   </Link>
                 </li>
                 

@@ -4,7 +4,7 @@ import { Moon, Sun } from "lucide-react"
 import { useTheme } from "@/components/theme-provider"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 
 type Theme = "light" | "dark"
 
@@ -26,6 +26,8 @@ export function ThemeTogglerButton({
   const { theme, setTheme } = useTheme()
   const [isClient, setIsClient] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<Theme>(theme as Theme)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const animationRef = useRef<number>()
 
   // Solo se ejecuta en el cliente
   useEffect(() => {
@@ -34,10 +36,33 @@ export function ThemeTogglerButton({
   }, [theme])
 
   const toggleTheme = useCallback(() => {
+    if (isAnimating) return;
+    
     const nextTheme = currentTheme === 'light' ? 'dark' : 'light'
-    setTheme(nextTheme)
-    setCurrentTheme(nextTheme)
-  }, [currentTheme, setTheme])
+    
+    // Iniciar animación
+    setIsAnimating(true)
+    
+    // Cambiar el tema después de un breve retraso para permitir que la animación comience
+    setTimeout(() => {
+      setTheme(nextTheme)
+      setCurrentTheme(nextTheme)
+      
+      // Restablecer el estado de animación después de que termine
+      setTimeout(() => {
+        setIsAnimating(false)
+      }, 300) // Tiempo de la animación
+    }, 10)
+  }, [currentTheme, setTheme, isAnimating])
+
+  // Limpiar el timeout si el componente se desmonta
+  useEffect(() => {
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [])
 
   // Renderizar un placeholder mientras se monta el componente
   if (!isClient) {
@@ -58,19 +83,53 @@ export function ThemeTogglerButton({
       variant={variant}
       size={size}
       onClick={toggleTheme}
-      className={cn("relative transition-colors duration-200", className)}
+      className={cn(
+        "relative overflow-hidden transition-colors duration-200",
+        className,
+        isAnimating && "pointer-events-none"
+      )}
       aria-label="Cambiar tema"
+      disabled={isAnimating}
     >
-      <div className="relative inline-flex items-center">
-        <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-        <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+      <div className="relative w-5 h-5 flex items-center justify-center">
+        {/* Sol */}
+        <div 
+          className={cn(
+            "absolute inset-0 flex items-center justify-center transition-all duration-300",
+            currentTheme === 'light' 
+              ? 'opacity-100 rotate-0 scale-100' 
+              : 'opacity-0 -rotate-90 scale-75'
+          )}
+        >
+          <Sun className="h-[1.2rem] w-[1.2rem]" />
+        </div>
         
-        {showLabel && (
-          <span className="ml-2">
-            {currentTheme === 'light' ? 'Modo oscuro' : 'Modo claro'}
-          </span>
+        {/* Luna */}
+        <div 
+          className={cn(
+            "absolute inset-0 flex items-center justify-center transition-all duration-300",
+            currentTheme === 'dark' 
+              ? 'opacity-100 rotate-0 scale-100' 
+              : 'opacity-0 rotate-90 scale-75'
+          )}
+        >
+          <Moon className="h-[1.2rem] w-[1.2rem]" />
+        </div>
+        
+        {/* Efecto de destello */}
+        {isAnimating && (
+          <div className={cn(
+            "absolute inset-0 rounded-full bg-white/20",
+            "animate-ping-slow opacity-0"
+          )} />
         )}
       </div>
+      
+      {showLabel && (
+        <span className="ml-2">
+          {currentTheme === 'light' ? 'Modo oscuro' : 'Modo claro'}
+        </span>
+      )}
     </Button>
   )
 }
