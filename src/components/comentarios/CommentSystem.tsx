@@ -22,9 +22,10 @@ const mapApiCommentToUI = (apiComment: any): Comment => {
     authorId: apiComment.autor_id || apiComment.autor?.id || '',
     avatarUrl: apiComment.autor?.avatar_url || '',
     timestamp: apiComment.created_at,
-    text: apiComment.text,
+    text: apiComment.texto || apiComment.text, // Usar texto o text dependiendo de cuál esté disponible
     authorColor: apiComment.autor?.color || '#3b82f6', // Usar color del perfil
-    replies: apiComment.replies ? apiComment.replies.map(mapApiCommentToUI) : [],
+    replies: apiComment.respuestas ? apiComment.respuestas.map(mapApiCommentToUI) : 
+             apiComment.replies ? apiComment.replies.map(mapApiCommentToUI) : [],
     isEdited: apiComment.isEdited || apiComment.editado || false,
     editedAt: apiComment.editado_en || null,
     repliedTo: apiComment.repliedTo ? {

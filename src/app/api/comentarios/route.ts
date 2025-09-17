@@ -28,8 +28,77 @@ export async function GET(request: Request) {
     // Obtener comentarios con información del usuario
     const supabase = getServiceClient();
 
+    // Caso para noticias
+    if (contentType === 'noticia') {
+      console.log('[API Comentarios] Obteniendo comentarios para noticia:', contentId);
+      
+      // Obtener los comentarios usando la función personalizada
+      const { data: comentarios, error: comentariosError } = await supabase
+        .rpc('obtener_comentarios_noticia', {
+          p_noticia_id: contentId,
+          p_limite: limite,
+          p_offset: offset,
+          p_orden: orden
+        });
+      
+      if (comentariosError) {
+        console.error('[API Comentarios] Error al obtener comentarios de noticia:', comentariosError);
+        return NextResponse.json(
+          { success: false, error: `Error al obtener comentarios: ${comentariosError.message}` },
+          { status: 500 }
+        );
+      }
+      
+      // Obtener el conteo total de comentarios
+      const { count, error: countError } = await supabase
+        .from('noticias_comentarios')
+        .select('*', { count: 'exact', head: true })
+        .eq('noticia_id', contentId);
+      
+      if (countError) {
+        console.error('[API Comentarios] Error al contar comentarios:', countError);
+      }
+      
+      // Formatear la respuesta
+      const comentariosFormateados = (comentarios || []).map(comentario => {
+        console.log('[API Comentarios] Comentario a formatear:', {
+          id: comentario.id,
+          texto: comentario.texto,
+          contenido_tipo: typeof comentario.texto
+        });
+        
+        return {
+          id: comentario.id,
+          texto: comentario.texto,
+          text: comentario.texto, // Añadir campo text para compatibilidad
+          created_at: comentario.created_at,
+          autor_id: comentario.autor_id,
+          autor: {
+            id: comentario.autor_id,
+            username: comentario.username,
+            avatar_url: comentario.avatar_url,
+            color: comentario.color,
+            role: comentario.es_admin ? 'admin' : 'usuario',
+            is_author: comentario.es_autor,
+            is_own: comentario.es_propio
+          },
+          respuestas: comentario.respuestas ? comentario.respuestas.map(resp => ({
+            ...resp,
+            text: resp.texto // Asegurar que las respuestas también tengan el campo text
+          })) : []
+        };
+      });
+      
+      console.log(`[API Comentarios] Se encontraron ${comentariosFormateados.length} comentarios`);
+      
+      return NextResponse.json({
+        success: true,
+        comentarios: comentariosFormateados,
+        total: count || 0
+      });
+    }
     // Caso especial: hilos del foro usan foro_posts como fuente de respuestas
-    if (contentType === 'hilo') {
+    else if (contentType === 'hilo') {
       console.log('[API Comentarios] Modo hilo: leyendo desde foro_posts');
       const ascending = orden === 'asc';
       
@@ -489,15 +558,14 @@ export async function DELETE(request: Request) {
     }
     
     console.log('[API Comentarios] Comentario eliminado exitosamente:', id);
-    
     return NextResponse.json({
       success: true,
       message: 'Comentario eliminado exitosamente'
     });
   } catch (error) {
-    console.error('[API Comentarios] Error en la API de eliminación de comentarios:', error);
+    console.error('[API Comentarios] Error al eliminar comentario:', error);
     return NextResponse.json(
-      { success: false, error: `Error interno del servidor: ${error}` },
+      { success: false, error: 'Error interno del servidor al eliminar el comentario' },
       { status: 500 }
     );
   }
@@ -507,8 +575,7 @@ export async function POST(request: Request) {
   try {
     console.log('[API Comentarios] Recibiendo solicitud POST');
     const body = await request.json();
-    const { text, content_type, content_id } = body;
-    
+    const { text, content_type, content_id, parent_id } = body;
     // Obtener usuario autenticado
     const supabase = createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();

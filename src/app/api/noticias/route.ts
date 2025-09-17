@@ -95,6 +95,7 @@ export async function GET(request: Request) {
     let noticiasData: any[] = [];
     let categoriasPorNoticia: Record<string, any[]> = {};
     let perfilesAutores: Record<string, any> = {};
+    let comentariosPorNoticia: Record<string, number> = {};
     
     if (noticias && noticias.length > 0) {
       // Obtener las categorías para todas las noticias
@@ -147,6 +148,53 @@ export async function GET(request: Request) {
       } catch (error) {
         // Manejar silenciosamente el error de relaciones
         console.log('No se pudieron cargar las relaciones de categorías, continuando sin ellas');
+      }
+      
+      // Obtener conteo de comentarios para cada noticia
+      try {
+        // Obtener todos los IDs de noticias como UUIDs
+        const noticiaIds = noticias.map(n => n.id);
+        
+        // Consultar comentarios para estas noticias usando la función RPC específica para UUIDs
+        const { data: comentarios, error: errorComentarios } = await serviceClient
+          .rpc('contar_comentarios_por_noticia_uuid', {
+            noticia_ids: noticiaIds
+          });
+        
+        // Registrar para depuración
+        console.log('IDs de noticias enviados:', noticiaIds);
+        console.log('Respuesta de comentarios:', comentarios);
+        console.log('Error de comentarios:', errorComentarios);
+          
+        if (!errorComentarios && comentarios && comentarios.length > 0) {
+          // Crear un mapa de conteo de comentarios por noticia
+          comentariosPorNoticia = comentarios.reduce((map: Record<string, number>, item) => {
+            // Usar noticia_id y total_comentarios según la nueva estructura
+            map[item.noticia_id] = item.total_comentarios;
+            return map;
+          }, {});
+        }
+        
+        // Si no hay comentarios o hay un error, intentar obtener el conteo uno por uno
+        if ((!comentarios || comentarios.length === 0) && noticiaIds.length > 0) {
+          console.log('Intentando obtener conteo de comentarios uno por uno...');
+          
+          // Crear promesas para obtener el conteo de cada noticia
+          const promesas = noticiaIds.map(async (id) => {
+            const { data, error } = await serviceClient
+              .rpc('obtener_contador_comentarios_uuid', { noticia_id_param: id });
+            
+            if (!error && data !== null) {
+              comentariosPorNoticia[id] = data;
+            }
+          });
+          
+          // Esperar a que todas las promesas se resuelvan
+          await Promise.all(promesas);
+        }
+      } catch (error) {
+        // Manejar silenciosamente el error de conteo de comentarios
+        console.log('No se pudo obtener el conteo de comentarios, continuando sin ellos');
       }
       
       // Intentar obtener información de los autores
@@ -319,6 +367,8 @@ export async function GET(request: Request) {
           autor_nombre: autorNombre,
           autor_color: autorColor,
           autor_avatar: autorAvatar,
+          // Añadir conteo de comentarios
+          comentarios_count: comentariosPorNoticia[noticia.id] || 0,
           // Asegurar que imagen_url siempre esté presente, usando imagen_portada como fallback
           imagen_url: noticia.imagen_url || noticia.imagen_portada || null
         };

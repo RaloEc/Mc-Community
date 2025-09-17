@@ -533,7 +533,12 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
             <div className="lg:w-2/3">
               {/* Noticia destacada */}
               {noticiaPrincipal && (
-                <div className="mb-10">
+                <div className="mb-10 rounded-xl overflow-hidden" 
+                  style={{
+                    backgroundColor: isDarkMode 
+                      ? `color-mix(in srgb, ${userColor || '#3b82f6'} 3%, #0a0a0a)` 
+                      : `color-mix(in srgb, ${userColor || '#3b82f6'} 6%, white)`
+                  }}>
                   <Link href={`/noticias/${noticiaPrincipal.id}`} className="block group">
                     <div className="relative aspect-video rounded-xl overflow-hidden mb-4">
                       {noticiaPrincipal.imagen_url ? (
@@ -549,37 +554,34 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                           </div>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
-                        <div>
-                          <h3 className="text-white text-2xl font-bold mb-2 leading-tight">
-                            {noticiaPrincipal.titulo}
-                          </h3>
-                          <p className="text-gray-200 line-clamp-2">
-                            {getExcerpt(noticiaPrincipal.contenido, 200)}
-                          </p>
-                        </div>
-                      </div>
                       <div className="absolute top-4 left-4">
                         <Badge className="bg-white/90 text-gray-900 hover:bg-white text-xs font-medium">
                           Destacada
                         </Badge>
                       </div>
                     </div>
-                    <div className="px-2">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {noticiaPrincipal.titulo}
+                    <div className="px-4 py-3">
+                      <h3 
+                        className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors"
+                        style={{ '--user-color': userColor || '#3b82f6' } as React.CSSProperties}
+                      >
+                        <span className="group-hover:text-[color:var(--user-color)]">
+                          {noticiaPrincipal.titulo}
+                        </span>
                       </h3>
                       <div className="text-sm text-gray-600 dark:text-gray-300 font-medium">
                         {getExcerpt(noticiaPrincipal.contenido, 150)}
                       </div>
-                      <NoticiaMetaInfo
-                        autor_nombre={noticiaPrincipal.autor_nombre}
-                        autor_avatar={noticiaPrincipal.autor_avatar}
-                        created_at={noticiaPrincipal.created_at}
-                        comentarios_count={noticiaPrincipal.comentarios_count}
-                        className="text-sm"
-                        userColor={profile?.color || null}
-                      />
+                      <div className="mt-3 pt-3 ">
+                        <NoticiaMetaInfo
+                          autor_nombre={noticiaPrincipal.autor_nombre}
+                          autor_avatar={noticiaPrincipal.autor_avatar}
+                          created_at={noticiaPrincipal.created_at}
+                          comentarios_count={noticiaPrincipal.comentarios_count}
+                          className="text-sm"
+                          userColor={profile?.color || null}
+                        />
+                      </div>
                     </div>
                   </Link>
                 </div>
@@ -588,8 +590,13 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
               {/* Grid de noticias secundarias */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {noticiasSecundarias.map((noticia) => (
-                  <div key={noticia.id} className="group">
-                    <Link href={`/noticias/${noticia.id}`} className="block">
+                  <div key={noticia.id} className="group flex flex-col h-full rounded-lg overflow-hidden" 
+                    style={{
+                      backgroundColor: isDarkMode 
+                        ? `color-mix(in srgb, ${userColor || '#3b82f6'} 3%, #0a0a0a)` 
+                        : `color-mix(in srgb, ${userColor || '#3b82f6'} 5%, white)`
+                    }}>
+                    <Link href={`/noticias/${noticia.id}`} className="flex flex-col h-full">
                       <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
                         {noticia.imagen_url ? (
                           <img
@@ -598,18 +605,18 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700 flex items-center justify-center">
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">
                             <div className="text-center text-gray-400 dark:text-gray-600">
-                              <div className="text-4xl">📰</div>
+                              <div className="text-4xl mb-2">📰</div>
                             </div>
                           </div>
                         )}
                         <div 
-    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-    style={{
-      backgroundColor: `hsl(var(--primary) / 0.1)`,
-    }}
-  ></div>
+                          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                          style={{
+                            backgroundColor: `hsl(var(--primary) / 0.1)`,
+                          }}
+                        ></div>
                         <div className="absolute top-2 right-2">
                           <Badge variant="secondary" className="bg-black/60 backdrop-blur-sm text-white text-xs">
                             <Eye className="h-3 w-3 mr-1" />
@@ -617,21 +624,30 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                           </Badge>
                         </div>
                       </div>
-                      <div className="px-1">
-                        <h4 className="font-bold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
-                          {noticia.titulo}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 line-clamp-2">
-                          {getExcerpt(noticia.contenido, 100)}
-                        </p>
-                        <NoticiaMetaInfo
-                          autor_nombre={noticia.autor_nombre}
-                          autor_avatar={noticia.autor_avatar}
-                          created_at={noticia.created_at}
-                          comentarios_count={noticia.comentarios_count}
-                          className="text-xs"
-                          userColor={profile?.color || null}
-                        />
+                      <div className="px-3 py-3 flex flex-col flex-grow">
+                        <div className="mb-2">
+                          <h4 
+                            className="text-lg font-semibold text-gray-900 dark:text-white mb-1 transition-colors"
+                            style={{ '--user-color': userColor || '#3b82f6' } as React.CSSProperties}
+                          >
+                            <span className="group-hover:text-[color:var(--user-color)]">
+                              {noticia.titulo}
+                            </span>
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                            {getExcerpt(noticia.contenido, 100)}
+                          </p>
+                        </div>
+                        <div className="mt-auto pt-2">
+                          <NoticiaMetaInfo
+                            autor_nombre={noticia.autor_nombre}
+                            autor_avatar={noticia.autor_avatar}
+                            created_at={noticia.created_at}
+                            comentarios_count={noticia.comentarios_count}
+                            className="text-xs"
+                            userColor={profile?.color || null}
+                          />
+                        </div>
                       </div>
                     </Link>
                   </div>
