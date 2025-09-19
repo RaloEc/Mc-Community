@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react'
+import { ArbolCategorias } from '@/components/categorias/ArbolCategorias'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -52,6 +53,7 @@ type Categoria = {
   icono?: string | null;
   tipo?: string;
   hijos?: Categoria[];
+  nivel?: number; // Nivel jerárquico (1, 2, 3)
 }
 
 // Esquema de validación
@@ -78,83 +80,60 @@ function CrearNoticiaContent() {
   const { user, session, profile } = useAuth() // Usar el contexto de autenticación
   
   // Estado para controlar categorías expandidas
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Función para alternar la expansión de una categoría
   const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => ({
-      ...prev,
-      [categoryId]: !prev[categoryId]
-    }));
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
+  };
+  
+  // Función para verificar si una categoría tiene hijos
+  const hasChildren = (categoryId: string, categorias: Categoria[]) => {
+    return categorias.some(cat => cat.parent_id === categoryId);
   };
 
-  // Función para renderizar categorías jerárquicas
-  const renderCategoriasJerarquicas = (categorias: Categoria[], field: any, isMobile: boolean, nivel: number = 0) => {
-    return (
-      <div className={`${nivel > 0 ? 'ml-4 border-l-2 pl-2 border-gray-200 dark:border-gray-700' : ''}`}>
-        {categorias.map((categoria) => {
-          const isSelected = field.value?.includes(categoria.id);
-          const tieneHijos = categoria.hijos && categoria.hijos.length > 0;
-          const isExpanded = expandedCategories[categoria.id] || false;
-          
-          return (
-            <div key={categoria.id} className="mb-1">
-              <div className="flex items-center gap-1">
-                {tieneHijos && (
-                  <button
-                    type="button"
-                    onClick={() => toggleCategory(categoria.id)}
-                    className="text-muted-foreground hover:text-foreground focus:outline-none"
-                  >
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      width="16" 
-                      height="16" 
-                      viewBox="0 0 24 24" 
-                      fill="none" 
-                      stroke="currentColor" 
-                      strokeWidth="2" 
-                      strokeLinecap="round" 
-                      strokeLinejoin="round"
-                      className={`transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                    >
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                  </button>
-                )}
-                <Button
-                  type="button"
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  className={`text-sm ${isSelected ? 'bg-primary text-primary-foreground' : ''} ${categoria.color ? `border-${categoria.color}-500` : ''}`}
-                  onClick={() => {
-                    if (isSelected) {
-                      const updatedCategories = field.value.filter((id: string) => id !== categoria.id);
-                      field.onChange(updatedCategories);
-                    } else if (field.value.length < 4) {
-                      field.onChange([...field.value, categoria.id]);
-                    }
-                  }}
-                >
-                  {categoria.icono && (
-                    <span className="mr-1">{categoria.icono}</span>
-                  )}
-                  {categoria.nombre}
-                </Button>
-                
-                {categoria.descripcion && (
-                  <span className="text-xs text-muted-foreground hidden md:inline">{categoria.descripcion}</span>
-                )}
-              </div>
-              
-              {tieneHijos && isExpanded && (
-                renderCategoriasJerarquicas(categoria.hijos!, field, isMobile, nivel + 1)
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
+  // Función para manejar la selección de categorías y expansión
+  const handleSeleccionarCategoria = (field: any, categoriaId: string | number) => {
+    const id = categoriaId.toString();
+    const isSelected = field.value?.includes(id);
+    
+    // Primero, verificar si la categoría tiene hijos para manejar la expansión
+    const findCategoria = (cats: Categoria[], targetId: string): Categoria | undefined => {
+      for (const cat of cats) {
+        if (cat.id.toString() === targetId) return cat;
+        if (cat.hijos?.length) {
+          const found = findCategoria(cat.hijos, targetId);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    
+    const categoria = findCategoria(categorias, id);
+    const tieneHijos = categoria?.hijos && categoria.hijos.length > 0;
+    
+    // Si tiene hijos, manejar la expansión/colapso
+    if (tieneHijos) {
+      toggleCategory(id);
+    }
+    
+    // Luego manejar la selección/deselección
+    if (isSelected) {
+      // Si ya está seleccionada, la quitamos
+      const updatedCategories = field.value.filter((catId: string) => catId !== id);
+      field.onChange(updatedCategories);
+    } else if (field.value.length < 4) {
+      // Si no está seleccionada y no hemos llegado al límite, la añadimos
+      field.onChange([...field.value, id]);
+    }
   };
 
   // Cargar categorías al iniciar
@@ -164,7 +143,7 @@ function CrearNoticiaContent() {
         setCargandoCategorias(true)
         
         // Usar la API Route con soporte para jerarquía
-        const response = await fetch('/api/admin/categorias')
+        const response = await fetch('/api/admin/categorias?jerarquica=true')
         
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`)
@@ -602,13 +581,46 @@ function CrearNoticiaContent() {
                             <div className="text-sm text-muted-foreground">Cargando categorías...</div>
                           ) : categorias.length > 0 ? (
                             <>
-                              <div className="md:hidden flex flex-col gap-2 w-full max-h-[200px] overflow-y-auto pb-2 border rounded-md p-3">
-                                <p className="text-xs text-muted-foreground mb-2">Toca las flechas para expandir/colapsar categorías</p>
-                                {renderCategoriasJerarquicas(categorias, field, true)}
-                              </div>
-                              <div className="hidden md:flex flex-col gap-2 w-full justify-start border rounded-md p-3">
-                                <p className="text-xs text-muted-foreground mb-2">Haz clic en las flechas para expandir/colapsar categorías</p>
-                                {renderCategoriasJerarquicas(categorias, field, false)}
+                              <div className="border rounded-md p-3 max-h-[300px] overflow-y-auto">
+                                <div className="flex justify-between mb-2">
+                                  <button
+                                    type="button"
+                                    className="text-xs text-blue-600 hover:text-blue-800"
+                                    onClick={() => {
+                                      // Obtener todas las categorías que tienen hijos
+                                      const categoriasConHijos = categorias
+                                        .filter(cat => cat.hijos && cat.hijos.length > 0)
+                                        .map(cat => cat.id.toString());
+                                      
+                                      // Si todas están expandidas, colapsar todas
+                                      if (categoriasConHijos.every(id => expandedCategories.has(id))) {
+                                        setExpandedCategories(new Set());
+                                      } else {
+                                        // Si alguna está colapsada, expandir todas
+                                        setExpandedCategories(new Set(categoriasConHijos));
+                                      }
+                                    }}
+                                  >
+                                    {categorias
+                                      .filter(cat => cat.hijos && cat.hijos.length > 0)
+                                      .every(cat => expandedCategories.has(cat.id.toString())) 
+                                      ? 'Colapsar todo' 
+                                      : 'Expandir todo'}
+                                  </button>
+                                </div>
+                                {/* Verificar si hay categorías antes de renderizar */}
+                                {categorias.length > 0 && (
+                                  <ArbolCategorias
+                                    categorias={categorias}
+                                    seleccionadas={field.value || []}
+                                    onSeleccionar={(id) => handleSeleccionarCategoria(field, id)}
+                                    expandirTodo={expandedCategories.size > 0}
+                                    className="max-h-64"
+                                    estiloVisual="arbol"
+                                    mostrarIconos={true}
+                                    colorPorNivel={true}
+                                  />
+                                )}
                               </div>
                             </>
                           ) : (

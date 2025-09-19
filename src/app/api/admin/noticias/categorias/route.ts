@@ -4,6 +4,64 @@ import { cookies } from 'next/headers'
 import { Database } from '@/types/supabase'
 import { getServiceClient } from '@/utils/supabase-service'
 
+// Función para organizar categorías en estructura jerárquica
+function organizarCategoriasJerarquicas(categorias: any[]) {
+  // Mapa para acceso rápido a categorías por ID
+  const categoriasMap = new Map();
+  
+  // Primero, crear un mapa de todas las categorías
+  categorias.forEach(categoria => {
+    categoriasMap.set(categoria.id, {
+      ...categoria,
+      hijos: []
+    });
+  });
+  
+  // Categorías principales (sin parent_id)
+  const categoriasRaiz: any[] = [];
+  
+  // Organizar en estructura jerárquica
+  categorias.forEach(categoria => {
+    const categoriaActual = categoriasMap.get(categoria.id);
+    if (!categoriaActual) return;
+    
+    if (categoria.parent_id && categoriasMap.has(categoria.parent_id)) {
+      // Es una subcategoría, añadirla al padre
+      const padre = categoriasMap.get(categoria.parent_id);
+      if (padre && Array.isArray(padre.hijos)) {
+        // Crear una copia de la categoría para evitar problemas de referencia
+        padre.hijos.push({
+          ...categoriaActual,
+          hijos: [] // Inicializar hijos como array vacío
+        });
+      }
+    } else {
+      // Es una categoría raíz
+      categoriasRaiz.push({
+        ...categoriaActual,
+        hijos: [] // Inicializar hijos como array vacío
+      });
+    }
+  });
+  
+  // Ordenar categorías principales por el campo orden
+  categoriasRaiz.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  
+  // Ordenar subcategorías recursivamente
+  function ordenarSubcategorias(categorias: any[]) {
+    categorias.forEach(cat => {
+      if (cat.hijos && cat.hijos.length > 0) {
+        cat.hijos.sort((a: any, b: any) => (a.orden || 0) - (b.orden || 0));
+        ordenarSubcategorias(cat.hijos);
+      }
+    });
+  }
+  
+  ordenarSubcategorias(categoriasRaiz);
+  
+  return categoriasRaiz;
+}
+
 // Función para verificar si el usuario es administrador
 async function esAdmin(supabase: any, request?: NextRequest) {
   try {
@@ -101,7 +159,17 @@ export async function GET(request: NextRequest) {
         throw error
       }
 
-      return NextResponse.json(data)
+      // Verificar si se solicita la estructura jerárquica
+      const estructuraJerarquica = request.nextUrl.searchParams.get('jerarquica') === 'true';
+      
+      if (estructuraJerarquica) {
+        // Devolver en formato jerárquico
+        const categoriasJerarquicas = organizarCategoriasJerarquicas(data || []);
+        return NextResponse.json(categoriasJerarquicas);
+      } else {
+        // Devolver en formato plano (comportamiento original)
+        return NextResponse.json(data);
+      }
     }
   } catch (error: any) {
     console.error('Error al obtener categorías:', error)

@@ -19,17 +19,39 @@ export async function GET(request: Request) {
     // Obtener el cliente de servicio para saltarse las restricciones RLS
     const serviceClient = getServiceClient();
 
-    // Consultar las categorías usando el cliente de servicio
+    // Consultar las categorías con sus relaciones jerárquicas
     const { data, error } = await serviceClient
       .from('categorias')
-      .select('*')
+      .select(`
+        *,
+        subcategorias:categorias!parent_id(
+          *,
+          subcategorias:categorias!parent_id(*)
+        )
+      `)
+      .is('parent_id', null) // Solo obtener las categorías raíz
       .order('orden');
       
     // Mapear los campos al formato esperado
-    const categoriasMapeadas = (data || []).map(cat => ({
-      ...cat,
-      parent_id: cat.categoria_padre_id
-    }));
+    const categoriasMapeadas = (data || []).map(cat => {
+      // Crear un nuevo objeto con las propiedades básicas
+      const categoriaMapeada = {
+        ...cat,
+        parent_id: cat.categoria_padre_id,
+        // Incluir las subcategorías en la propiedad 'hijos'
+        hijos: (cat.subcategorias || []).map(sub => ({
+          ...sub,
+          parent_id: sub.categoria_padre_id,
+          // Incluir sub-subcategorías si existen
+          hijos: sub.subcategorias || []
+        }))
+      };
+      
+      // Eliminar la propiedad subcategorias para evitar duplicados
+      delete categoriaMapeada.subcategorias;
+      
+      return categoriaMapeada;
+    });
 
     if (error) {
       console.error('Error al cargar categorías:', error);
@@ -53,33 +75,40 @@ export async function GET(request: Request) {
       });
     }
 
-    // Construir estructura jerárquica
+    // Primero, crear un mapa con todas las categorías
     const categoriasMap = new Map<string, CategoriaConHijos>();
     const categoriasRaiz: CategoriaConHijos[] = [];
 
-    // Primero, crear un mapa con todas las categorías
+    // Crear un mapa de categorías sin hijos primero
     categoriasFiltradas.forEach((categoria: Categoria & { parent_id: string | null }) => {
       categoriasMap.set(categoria.id, { 
-        ...categoria, 
+        ...categoria,
         categoria_padre_id: categoria.parent_id,
-        hijos: [] 
-      } as CategoriaConHijos);
+        hijos: []
+      });
     });
 
-    // Luego, construir la jerarquía
+    // Construir la jerarquía
     categoriasFiltradas.forEach((categoria: Categoria & { parent_id: string | null }) => {
+      const categoriaActual = categoriasMap.get(categoria.id);
+      if (!categoriaActual) return;
+      
       if (categoria.parent_id && categoriasMap.has(categoria.parent_id)) {
         // Es una subcategoría, añadirla a su padre
         const padre = categoriasMap.get(categoria.parent_id);
         if (padre && padre.hijos) {
-          const categoriaHijo = categoriasMap.get(categoria.id);
-          if (categoriaHijo) {
-            padre.hijos.push(categoriaHijo);
-          }
+          // Crear una copia de la categoría para evitar problemas de referencia
+          padre.hijos.push({
+            ...categoriaActual,
+            hijos: [] // Inicializar hijos como array vacío
+          });
         }
       } else {
         // Es una categoría raíz
-        categoriasRaiz.push(categoriasMap.get(categoria.id)!);
+        categoriasRaiz.push({
+          ...categoriaActual,
+          hijos: [] // Inicializar hijos como array vacío
+        });
       }
     });
 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import TiptapEditor, { processEditorContent } from '@/components/TiptapEditor' // Importamos processEditorContent
 import { ChevronDown, ChevronRight, X } from 'lucide-react'
+import { ArbolCategorias } from '@/components/categorias/ArbolCategorias'
 import { 
   Card, 
   CardContent, 
@@ -52,6 +53,7 @@ type Categoria = {
   icono?: string | null;
   tipo?: string;
   hijos?: Categoria[];
+  nivel?: number; // Nivel jerárquico (1, 2, 3)
 }
 
 // Esquema de validación
@@ -97,77 +99,60 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
   })
 
   // Estado para controlar qué categorías están expandidas
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
   // Función para alternar la expansión de una categoría
   const toggleCategory = (categoryId: string) => {
-    if (expandedCategories.includes(categoryId)) {
-      setExpandedCategories(expandedCategories.filter(id => id !== categoryId));
-    } else {
-      setExpandedCategories([...expandedCategories, categoryId]);
-    }
+    setExpandedCategories(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(categoryId)) {
+        newSet.delete(categoryId);
+      } else {
+        newSet.add(categoryId);
+      }
+      return newSet;
+    });
   };
 
-  // Función para renderizar categorías jerárquicas
-  const renderCategoriasJerarquicas = (categorias: Categoria[], field: any, isMobile: boolean, nivel: number = 0) => {
-    return (
-      <div className={`${nivel > 0 ? 'ml-4 border-l-2 pl-2 border-gray-200 dark:border-gray-700' : ''}`}>
-        {categorias.map((categoria) => {
-          const isSelected = field.value?.includes(categoria.id);
-          const tieneHijos = categoria.hijos && categoria.hijos.length > 0;
-          const isExpanded = expandedCategories.includes(categoria.id);
-          
-          return (
-            <div key={categoria.id} className="mb-1">
-              <div className="flex items-center gap-1">
-                {tieneHijos && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="p-0 h-6 w-6"
-                    onClick={() => toggleCategory(categoria.id)}
-                  >
-                    {isExpanded ? (
-                      <ChevronDown className="h-4 w-4" />
-                    ) : (
-                      <ChevronRight className="h-4 w-4" />
-                    )}
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant={isSelected ? "default" : "outline"}
-                  size="sm"
-                  className={`text-sm ${isSelected ? 'bg-primary text-primary-foreground' : ''} ${categoria.color ? `border-${categoria.color}-500` : ''}`}
-                  onClick={() => {
-                    if (isSelected) {
-                      const updatedCategories = field.value.filter((id: string) => id !== categoria.id);
-                      field.onChange(updatedCategories);
-                    } else if (field.value.length < 4) {
-                      field.onChange([...field.value, categoria.id]);
-                    }
-                  }}
-                >
-                  {categoria.icono && (
-                    <span className="mr-1">{categoria.icono}</span>
-                  )}
-                  {categoria.nombre}
-                </Button>
-                
-                {categoria.descripcion && (
-                  <span className="text-xs text-muted-foreground hidden md:inline">{categoria.descripcion}</span>
-                )}
-              </div>
-              
-              {tieneHijos && isExpanded && (
-                renderCategoriasJerarquicas(categoria.hijos!, field, isMobile, nivel + 1)
-              )}
-            </div>
-          );
-        })}
-      </div>
-    );
+  // Función para verificar si una categoría tiene hijos
+  const hasChildren = (categoryId: string, categorias: Categoria[]) => {
+    return categorias.some(cat => cat.parent_id === categoryId);
+  };
+
+  // Función para manejar la selección de categorías y expansión
+  const handleSeleccionarCategoria = (field: any, categoriaId: string | number) => {
+    const id = categoriaId.toString();
+    const isSelected = field.value?.includes(id);
+    
+    // Primero, verificar si la categoría tiene hijos para manejar la expansión
+    const findCategoria = (cats: Categoria[], targetId: string): Categoria | undefined => {
+      for (const cat of cats) {
+        if (cat.id.toString() === targetId) return cat;
+        if (cat.hijos?.length) {
+          const found = findCategoria(cat.hijos, targetId);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    };
+    
+    const categoria = findCategoria(categorias, id);
+    const tieneHijos = categoria?.hijos && categoria.hijos.length > 0;
+    
+    // Si tiene hijos, manejar la expansión/colapso
+    if (tieneHijos) {
+      toggleCategory(id);
+    }
+    
+    // Luego manejar la selección/deselección
+    if (isSelected) {
+      // Si ya está seleccionada, la quitamos
+      const updatedCategories = field.value.filter((catId: string) => catId !== id);
+      field.onChange(updatedCategories);
+    } else if (field.value.length < 4) {
+      // Si no está seleccionada y no hemos llegado al límite, la añadimos
+      field.onChange([...field.value, id]);
+    }
   };
 
   // Cargar categorías al iniciar
@@ -658,15 +643,44 @@ function EditarNoticiaContent({ params }: { params: { id: string } }) {
 
                             {/* Área con borde para la lista de categorías */}
                             <div className="border rounded-md p-3 max-h-[300px] overflow-y-auto">
-                              {/* Versión móvil con estructura jerárquica */}
-                              <div className="md:hidden flex flex-col gap-2 w-full">
-                                {renderCategoriasJerarquicas(categorias, field, true)}
+                              <div className="flex justify-between items-center mb-2">
+                                <p className="text-xs text-muted-foreground">Haz clic en una categoría para seleccionarla</p>
+                                <button 
+                                  type="button" 
+                                  className="text-xs text-primary hover:underline"
+                                  onClick={() => {
+                                    // Expandir o colapsar todas las categorías con hijos
+                                    const categoriasConHijos = categorias
+                                      .filter(cat => cat.hijos && cat.hijos.length > 0)
+                                      .map(cat => cat.id.toString());
+                                    
+                                    if (categoriasConHijos.every(id => expandedCategories.has(id))) {
+                                      // Si todas están expandidas, colapsar todas
+                                      setExpandedCategories(new Set());
+                                    } else {
+                                      // Si alguna está colapsada, expandir todas
+                                      setExpandedCategories(new Set(categoriasConHijos));
+                                    }
+                                  }}
+                                >
+                                  {categorias
+                                    .filter(cat => cat.hijos && cat.hijos.length > 0)
+                                    .every(cat => expandedCategories.has(cat.id.toString())) 
+                                    ? 'Colapsar todo' 
+                                    : 'Expandir todo'}
+                                </button>
                               </div>
-                              
-                              {/* Versión escritorio con estructura jerárquica */}
-                              <div className="hidden md:flex flex-col gap-2 w-full justify-start">
-                                {renderCategoriasJerarquicas(categorias, field, false)}
-                              </div>
+                              <ArbolCategorias
+                                categorias={categorias}
+                                seleccionadas={field.value || []}
+                                onSeleccionar={(id) => handleSeleccionarCategoria(field, id)}
+                                soloActivas={true}
+                                expandirTodo={expandedCategories.size > 0}
+                                className="max-h-64"
+                                estiloVisual="arbol"
+                                mostrarIconos={true}
+                                colorPorNivel={true}
+                              />
                             </div>
                             
                             {field.value.length >= 4 && (

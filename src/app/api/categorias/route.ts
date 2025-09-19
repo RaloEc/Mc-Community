@@ -13,7 +13,7 @@ function organizarCategoriasJerarquicas(categorias) {
   categorias.forEach(categoria => {
     categoriasMap[categoria.id] = {
       ...categoria,
-      subcategorias: []
+      hijos: [] // Cambiado de subcategorias a hijos
     };
   });
   
@@ -24,7 +24,7 @@ function organizarCategoriasJerarquicas(categorias) {
   categorias.forEach(categoria => {
     if (categoria.parent_id && categoriasMap[categoria.parent_id]) {
       // Es una subcategoría, añadirla al padre
-      categoriasMap[categoria.parent_id].subcategorias.push(categoriasMap[categoria.id]);
+      categoriasMap[categoria.parent_id].hijos.push(categoriasMap[categoria.id]);
     } else {
       // Es una categoría principal
       categoriasPrincipales.push(categoriasMap[categoria.id]);
@@ -37,9 +37,9 @@ function organizarCategoriasJerarquicas(categorias) {
   // Ordenar subcategorías recursivamente
   function ordenarSubcategorias(categorias) {
     categorias.forEach(cat => {
-      if (cat.subcategorias && cat.subcategorias.length > 0) {
-        cat.subcategorias.sort((a, b) => (a.orden || 0) - (b.orden || 0));
-        ordenarSubcategorias(cat.subcategorias);
+      if (cat.hijos && cat.hijos.length > 0) { // Cambiado de subcategorias a hijos
+        cat.hijos.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+        ordenarSubcategorias(cat.hijos);
       }
     });
   }

@@ -362,23 +362,14 @@ const TiptapEditorBase = ({
           .run();
       }
       
-      // Limpiar el estado del diálogo
-      setLinkUrl('');
-      setLinkText('');
-      setLinkTarget('_blank');
-      
-      // Cerrar el diálogo después de un pequeño retraso
-      setTimeout(() => {
-        setLinkDialogOpen(false);
-        
-        // Usar requestAnimationFrame para asegurar que el DOM esté listo
-        requestAnimationFrame(() => {
-          if (editor) {
-            // Enfocar el editor y mover el cursor al final
-            editor.chain().focus('end').run();
-          }
-        });
-      }, 50);
+      // Mover el cursor al final del enlace y deseleccionar
+      editor
+        .chain()
+        .focus()
+        .setTextSelection(editor.state.selection.to)
+        .run();
+
+      setLinkDialogOpen(false);
     }
   }, [editor, linkUrl, linkTarget, linkText]);
 

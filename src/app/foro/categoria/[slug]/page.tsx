@@ -1,4 +1,5 @@
 import CategoriaPageClient from '@/components/foro/CategoriaPageClient'
+import ForoSidebar from '@/components/foro/ForoSidebar'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
@@ -27,15 +28,34 @@ async function getCategoriaBySlugOrId(slugOrId: string) {
   return categoria
 }
 
+async function getCategorias() {
+  try {
+    const supabase = createServerComponentClient({ cookies })
+    const { data } = await supabase
+      .from('foro_categorias')
+      .select('*')
+    return data || []
+  } catch {
+    return []
+  }
+}
+
 export default async function CategoriaPage({ params, searchParams }: { params: { slug: string }, searchParams: Record<string, string | string[]> }) {
   const categoria = await getCategoriaBySlugOrId(params.slug)
   if (!categoria) notFound()
+  
+  const categorias = await getCategorias()
 
   return (
-    <CategoriaPageClient
-      categoria={categoria}
-      initialFilters={{}}
-      searchParams={searchParams}
-    />
+    <div className="flex flex-col lg:flex-row gap-8">
+      <ForoSidebar categorias={categorias} />
+      <main className="w-full lg:flex-1 min-w-0">
+        <CategoriaPageClient
+          categoria={categoria}
+          initialFilters={{}}
+          searchParams={searchParams}
+        />
+      </main>
+    </div>
   )
 }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { notFound } from 'next/navigation';
+import ForoSidebar from '@/components/foro/ForoSidebar';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -58,6 +59,7 @@ export default function HiloPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [relacionados, setRelacionados] = useState<any[]>([]);
   const [parentCat, setParentCat] = useState<any>(null);
+  const [categorias, setCategorias] = useState<any[]>([]);
 
   useEffect(() => {
     async function fetchData() {
@@ -71,6 +73,12 @@ export default function HiloPage() {
         
         // Crear cliente de Supabase
         const supabase = createClientComponentClient();
+        
+        // Obtener categorías para el sidebar
+        const { data: categoriasData } = await supabase
+          .from('foro_categorias')
+          .select('*');
+        setCategorias(categoriasData || []);
         
         // Obtener datos auxiliares
         const [catFullRes, etiquetasRelRes, postsRes, relacionadosRes] = await Promise.all([
@@ -151,9 +159,12 @@ export default function HiloPage() {
 
   return (
     <div className="container mx-auto py-6 px-0 lg:px-0">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Contenido principal */}
-        <div className="lg:col-span-9">
+      <div className="flex flex-col lg:flex-row gap-8">
+        <ForoSidebar categorias={categorias} />
+        <main className="w-full lg:flex-1 min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Contenido principal */}
+            <div className="lg:col-span-9">
           {/* Breadcrumbs */}
           <nav className="text-sm mb-3 text-gray-600 dark:text-gray-300 amoled:text-gray-200">
             <ol className="flex flex-wrap items-center gap-1">
@@ -284,6 +295,8 @@ export default function HiloPage() {
             </ul>
           </div>
         </aside>
+          </div>
+        </main>
       </div>
     </div>
   );

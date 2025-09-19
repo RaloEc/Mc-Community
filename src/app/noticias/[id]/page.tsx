@@ -386,9 +386,9 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
         
         
         {/* Divisor antes de información del autor */}
-        <div className="max-w-4xl mx-auto mb-8">
+        {/* <div className="max-w-4xl mx-auto mb-8">
           <Separator className="my-4" />
-        </div>
+        </div> */}
         
         {/* Información del autor */}
         {noticia.autor_nombre && (

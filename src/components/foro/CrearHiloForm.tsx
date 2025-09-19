@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useUserTheme } from '@/hooks/useUserTheme';
 import type { Database } from '@/lib/database.types';
 
 type CategoriaForo = Database['public']['Tables']['foro_categorias']['Row'] & {
@@ -29,6 +30,21 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useAuth();
   const router = useRouter();
+  const { userColor } = useUserTheme();
+  
+  // Estilo personalizado para el input con el color del usuario
+  const inputFocusStyle = useMemo(() => ({
+    '--ring': userColor,
+    '--ring-offset-width': '2px',
+    '--ring-offset-color': 'hsl(var(--background))',
+    '--ring-offset-shadow': 'var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
+    '--ring-shadow': 'var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)',
+    '--tw-ring-color': `hsl(${userColor} / var(--tw-ring-opacity, 0.5))`,
+    '--tw-ring-opacity': '0.5',
+    '--tw-ring-offset-shadow': 'var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
+    '--tw-ring-shadow': 'var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color)',
+    'boxShadow': 'var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)',
+  }), [userColor]);
   
   // Estado para controlar categorías expandidas
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
@@ -92,48 +108,65 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
 
   if (!user) {
     return (
-      <div className="text-center py-8 bg-card p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold mb-4">Acceso Restringido</h2>
-        <p className='mb-4'>Debes iniciar sesión para poder crear un nuevo hilo.</p>
-        <Button onClick={() => router.push('/login?redirect=/foro/crear-hilo')}>Ir a Iniciar Sesión</Button>
+      <div className="text-center py-8 bg-white p-6 rounded-lg shadow-md dark:bg-card/80">
+        <h2 className="text-2xl font-semibold mb-4 text-gray-900 dark:text-foreground">Acceso Restringido</h2>
+        <p className='mb-4 text-gray-700 dark:text-muted-foreground'>Debes iniciar sesión para poder crear un nuevo hilo.</p>
+        <Button onClick={() => router.push('/login?redirect=/foro/crear-hilo')}>
+          Ir a Iniciar Sesión
+        </Button>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <label htmlFor="titulo" className="text-sm font-medium">Título del Hilo</label>
-        <Input
-          id="titulo"
-          type="text"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Escribe un título claro y conciso"
-          maxLength={100}
-          required
-        />
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white dark:bg-transparent p-6 px-0 rounded-lg shadow-sm dark:shadow-none">
+      <div className="space-y-1">
+        <label htmlFor="titulo" className="text-sm font-medium text-gray-900 dark:text-foreground">Título del Hilo</label>
+        <div className="relative">
+          <Input
+            id="titulo"
+            type="text"
+            value={titulo}
+            onChange={(e) => setTitulo(e.target.value)}
+            placeholder="Escribe un título claro y conciso"
+            maxLength={100}
+            required
+            className="transition-all duration-200 focus-visible:ring-2 focus-visible:ring-offset-2"
+            style={{
+              '--tw-ring-color': userColor,
+              '--tw-ring-opacity': '0.1',
+              '--tw-ring-offset-width': '0.1px',
+              '--tw-ring-offset-color': 'hsl(var(--background))',
+            } as React.CSSProperties}
+          />
+          {titulo.length > 0 && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+              {titulo.length}/100
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Contenido</label>
-        <div className="min-h-[300px] rounded-md border border-input bg-transparent p-2">
+      <div className="space-y-1">
+        <label className="text-sm font-medium text-gray-900 dark:text-foreground">Contenido</label>
+        <div className="min-h-[300px] rounded-md border border-gray-200 dark:border-input bg-white dark:bg-transparent p-2">
           <TiptapEditor
             value={contenido}
             onChange={setContenido}
             placeholder="Escribe el contenido de tu hilo aquí..."
+            userColor={userColor}
           />
         </div>
       </div>
       
       <div className="mb-6">
-        <label htmlFor="categoria" className="block text-sm font-medium text-gray-200 mb-2">
+        <label htmlFor="categoria" className="block text-sm font-medium text-foreground mb-2">
           Categoría
         </label>
-        <div className="bg-gray-800 border border-gray-700 rounded-md p-4 max-h-[300px] overflow-y-auto">
+        <div className="bg-white border border-gray-200 dark:border-border rounded-md p-4 max-h-[300px] overflow-y-auto">
           {categoriaId && (
-            <div className="mb-4 pb-2 border-b border-gray-700">
-              <p className="text-sm text-gray-400">Categoría seleccionada:</p>
+            <div className="mb-4 pb-2 border-b border-border">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground">Categoría seleccionada:</p>
               <div className="flex items-center mt-1">
                 <div 
                   className="w-3 h-3 rounded-full mr-2" 
@@ -141,14 +174,14 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
                                    categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.color || 
                                    '#7c3aed' }}
                 />
-                <span className="font-medium text-white">
+                <span className="font-medium text-gray-900 dark:text-foreground">
                   {categorias.find(c => c.id === categoriaId)?.nombre || 
                    categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.nombre}
                 </span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="ml-auto text-gray-400 hover:text-white"
+                  className="ml-auto text-gray-500 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground"
                   onClick={() => setCategoriaId('')}
                 >
                   Cambiar
@@ -159,7 +192,7 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
           
           {!categoriaId && (
             <div>
-              <p className="text-sm text-gray-400 mb-2">Selecciona una categoría:</p>
+              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2">Selecciona una categoría:</p>
               <div className="space-y-2">
                 {categorias.map((categoria) => (
                   <div key={categoria.id} className="space-y-1">
@@ -171,7 +204,7 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
                           className="p-0 h-6 w-6 mr-1"
                           onClick={() => toggleCategory(categoria.id)}
                         >
-                          <span className="text-gray-400">
+                          <span className="text-gray-500 dark:text-muted-foreground">
                             {expandedCategories[categoria.id] ? '▼' : '►'}
                           </span>
                         </Button>

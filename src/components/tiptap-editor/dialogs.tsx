@@ -34,10 +34,29 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({
   onSave
 }) => {
   if (!open) return null
+  
+  // Prevenir que el clic en el overlay cierre el diálogo
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+  
+  // Manejar la tecla Escape para cerrar el diálogo
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (open && e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [open, onClose])
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog-content">
+    <div className="dialog-overlay" onClick={handleOverlayClick}>
+      <div className="dialog-content" onClick={e => e.stopPropagation()}>
         <h3 className="dialog-title">
           <LinkIcon className="h-4 w-4 mr-2" />
           Insertar enlace
@@ -52,6 +71,7 @@ export const LinkDialog: React.FC<LinkDialogProps> = ({
               onChange={(e) => onUrlChange(e.target.value)}
               placeholder="https://ejemplo.com"
               className="dialog-input"
+              autoFocus
             />
           </div>
           <div className="dialog-field">
@@ -103,10 +123,29 @@ export const YoutubeDialog: React.FC<YoutubeDialogProps> = ({
   onSave
 }) => {
   if (!open) return null
+  
+  // Prevenir que el clic en el overlay cierre el diálogo
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+  
+  // Manejar la tecla Escape para cerrar el diálogo
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (open && e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [open, onClose])
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog-content">
+    <div className="dialog-overlay" onClick={handleOverlayClick}>
+      <div className="dialog-content" onClick={e => e.stopPropagation()}>
         <h3 className="dialog-title">
           <YoutubeIcon className="h-4 w-4 mr-2" />
           Insertar video de YouTube
@@ -121,6 +160,7 @@ export const YoutubeDialog: React.FC<YoutubeDialogProps> = ({
               onChange={(e) => onUrlChange(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
               className="dialog-input"
+              autoFocus
             />
           </div>
           <p className="dialog-help">
@@ -158,10 +198,29 @@ export const TableDialog: React.FC<TableDialogProps> = ({
   onSave
 }) => {
   if (!open) return null
+  
+  // Prevenir que el clic en el overlay cierre el diálogo
+  const handleOverlayClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose()
+    }
+  }
+  
+  // Manejar la tecla Escape para cerrar el diálogo
+  React.useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (open && e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [open, onClose])
 
   return (
-    <div className="dialog-overlay">
-      <div className="dialog-content">
+    <div className="dialog-overlay" onClick={handleOverlayClick}>
+      <div className="dialog-content" onClick={e => e.stopPropagation()}>
         <h3 className="dialog-title">
           <TableIcon className="h-4 w-4 mr-2" />
           Insertar tabla

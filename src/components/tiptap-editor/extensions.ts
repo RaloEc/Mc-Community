@@ -2,7 +2,6 @@
 
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
 import ImageResize from 'tiptap-extension-resize-image'
 import Underline from '@tiptap/extension-underline'
 import TextStyle from '@tiptap/extension-text-style'
@@ -230,6 +229,22 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
     codeBlock: false,
     // Desactivar horizontalRule en StarterKit para evitar duplicados
     horizontalRule: false,
+    // Habilitar listas
+    bulletList: {
+      HTMLAttributes: {
+        class: 'list-disc pl-6',
+      },
+    },
+    orderedList: {
+      HTMLAttributes: {
+        class: 'list-decimal pl-6',
+      },
+    },
+    listItem: {
+      HTMLAttributes: {
+        class: 'list-item',
+      },
+    },
   }),
   Link.configure({
     protocols: ['http', 'https', 'mailto', 'tel'],
@@ -240,12 +255,11 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
       class: 'editor-link',
     },
   }),
-  Image.configure({
+  ImageResize.configure({
     HTMLAttributes: {
       class: 'editor-image',
     },
   }),
-  ImageResize,
   Underline,
   TextStyle,
   Color,
@@ -259,8 +273,11 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
     width: 640,
     height: 360,
     HTMLAttributes: {
-      class: 'editor-youtube',
+      class: 'editor-youtube resizable-video',
+      'data-resizable': 'true'
     },
+    // Deshabilitar controles de redimensionamiento predeterminados
+    controls: false,
   }),
   FontFamily.configure({
     types: ['textStyle'],
