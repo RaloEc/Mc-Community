@@ -38,14 +38,14 @@ async function getVotesTotalFor(supabase: SupabaseClient<Database>, hiloId: stri
   // Obtenemos el voto del usuario actual
   const { data: userVote } = await supabase
     .from('foro_votos_hilos')
-    .select('valor')
+    .select('valor_voto')
     .eq('hilo_id', hiloId)
     .eq('usuario_id', userId)
     .single();
 
   return { 
     total: hilo?.votos_conteo ?? 0, 
-    userVote: (userVote?.valor as -1 | 0 | 1) ?? 0 
+    userVote: (userVote?.valor_voto as -1 | 0 | 1) ?? 0 
   };
 }
 
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           { 
             hilo_id: hiloId, 
             usuario_id: userId, 
-            valor: body.value
+            valor_voto: body.value
           },
           { 
             onConflict: 'hilo_id,usuario_id',

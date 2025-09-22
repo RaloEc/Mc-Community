@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowUp, ArrowDown } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useUserTheme } from '@/hooks/useUserTheme';
 
 type VotacionProps = {
   id: string;
@@ -10,6 +11,8 @@ type VotacionProps = {
   votosIniciales?: number;
   vertical?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  onClick?: (e: React.MouseEvent) => void;
+  className?: string;
 };
 
 export function Votacion({ 
@@ -17,19 +20,28 @@ export function Votacion({
   tipo, 
   votosIniciales = 0, 
   vertical = true,
-  size = 'md'
+  size = 'md',
+  className = ''
 }: VotacionProps) {
   const { user } = useAuth();
+  const { userColor } = useUserTheme();
   const [votos, setVotos] = useState(votosIniciales);
   const [miVoto, setMiVoto] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Tamaños para los iconos
   const iconSizes = {
-    sm: 'h-3 w-3',
-    md: 'h-4 w-4',
-    lg: 'h-5 w-5',
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-6 w-6',
   };
+
+  // Escala adicional cuando hay voto activo
+  const activeScaleBySize = {
+    sm: 'scale-125',
+    md: 'scale-125',
+    lg: 'scale-125',
+  } as const;
 
   // Cargar el voto del usuario al montar el componente
   useEffect(() => {
@@ -55,7 +67,10 @@ export function Votacion({
     cargarMiVoto();
   }, [id, tipo, user?.id]);
 
-  const manejarVoto = async (valor: number) => {
+  const manejarVoto = async (e: React.MouseEvent, valor: number) => {
+    e.preventDefault(); // Prevenir el comportamiento predeterminado
+    e.stopPropagation(); // Detener la propagación
+    
     if (!user) {
       alert('Debes iniciar sesión para votar');
       return;
@@ -97,52 +112,56 @@ export function Votacion({
 
   const Container = vertical ? 'div' : 'span';
   const containerClasses = vertical 
-    ? 'flex flex-col items-center' 
+    ? 'flex flex-col items-center justify-between h-full py-2' 
     : 'inline-flex items-center gap-1';
 
   const textClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base'
+    sm: 'text-sm',
+    md: 'text-base',
+    lg: 'text-lg font-medium'
   }[size];
 
   return (
-    <Container className={`${containerClasses} ${!vertical ? 'ml-2' : ''}`}>
+    <div className={`flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-0.5 ${className}`}>
+      {/* Botón de voto negativo */}
       <button
-        onClick={() => manejarVoto(1)}
+        onClick={(e) => manejarVoto(e, -1)}
         disabled={isLoading}
-        className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 ${
-          miVoto === 1 
-            ? 'text-green-500' 
-            : 'text-gray-400 hover:text-green-500 dark:text-gray-500 dark:hover:text-green-400'
-        }`}
-        aria-label="Votar positivo"
-      >
-        <ArrowUp className={iconSizes[size]} />
-      </button>
-      
-      <span className={`${textClasses} font-medium mx-1 min-w-[20px] text-center ${
-        votos > 0 
-          ? 'text-green-500' 
-          : votos < 0 
-            ? 'text-red-500' 
-            : 'text-gray-500'
-      }`}>
-        {votos}
-      </span>
-      
-      <button
-        onClick={() => manejarVoto(-1)}
-        disabled={isLoading}
-        className={`p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 ${
-          miVoto === -1 
-            ? 'text-red-500' 
-            : 'text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400'
-        }`}
+        className={`p-1.5 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors ${
+          miVoto === -1 ? 'text-current' : 'text-gray-500 dark:text-gray-400'
+        } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+        style={miVoto === -1 ? { color: userColor } : undefined}
         aria-label="Votar negativo"
+        aria-pressed={miVoto === -1}
       >
-        <ArrowDown className={iconSizes[size]} />
+        <Minus className="h-3 w-3" strokeWidth={miVoto === -1 ? 2.5 : 2} />
       </button>
-    </Container>
+      
+      {/* Contador de votos */}
+      <div 
+        className={`px-1 font-bold text-sm min-w-[24px] text-center ${
+          miVoto !== null ? 'text-current' : 'text-gray-500 dark:text-gray-400'
+        }`}
+        style={miVoto !== null ? { color: userColor } : undefined}
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {votos}
+      </div>
+      
+      {/* Botón de voto positivo */}
+      <button
+        onClick={(e) => manejarVoto(e, 1)}
+        disabled={isLoading}
+        className={`p-1.5 rounded-full hover:bg-white dark:hover:bg-gray-700 transition-colors ${
+          miVoto === 1 ? 'text-current' : 'text-gray-500 dark:text-gray-400'
+        } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+        style={miVoto === 1 ? { color: userColor } : undefined}
+        aria-label="Votar positivo"
+        aria-pressed={miVoto === 1}
+      >
+        <Plus className="h-3 w-3" strokeWidth={miVoto === 1 ? 2.5 : 2} />
+      </button>
+    </div>
   );
 }

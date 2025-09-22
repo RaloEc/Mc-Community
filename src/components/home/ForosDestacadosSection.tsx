@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, MessageSquare, Users, Eye, TrendingUp, Clock, AlertCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { Votacion } from '@/components/ui/Votacion';
+import HiloCard from '@/components/foro/HiloCard';
 
 interface HiloForo {
   id: string;
@@ -87,6 +89,7 @@ export default function ForosDestacadosSection({
               contenido,
               created_at,
               ultimo_post_at,
+              vistas,
               votos_conteo:foro_votos_hilos(count),
               respuestas_conteo:foro_posts(count),
               autor:perfiles!autor_id(username, avatar_url),
@@ -98,7 +101,7 @@ export default function ForosDestacadosSection({
               query = query.order('votos_conteo', { ascending: false });
               break;
             case 'mas-vistos':
-              query = query.order('ultimo_post_at', { ascending: false });
+              query = query.order('vistas', { ascending: false });
               break;
             case 'sin-respuestas':
               query = query.eq('respuestas_conteo', 0).order('created_at', { ascending: false });
@@ -266,63 +269,19 @@ export default function ForosDestacadosSection({
               key={hilo.id}
               whileHover={{ y: -2, transition: { duration: 0.2 } }}
             >
-              <Link href={`/foro/hilo/${hilo.id}`}>
-                <Card className="h-full overflow-hidden bg-white/80 backdrop-blur-sm border-gray-200 dark:bg-black/80 dark:border-gray-800 hover:shadow-lg transition-all duration-300 rounded-xl">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <Badge 
-                        variant="secondary" 
-                        className="text-xs px-2 py-0.5"
-                        style={{ 
-                          backgroundColor: hilo.categoria.color + '20', 
-                          color: hilo.categoria.color 
-                        }}
-                      >
-                        {hilo.categoria.nombre}
-                      </Badge>
-                      {tipo === 'sin-respuestas' && (
-                        <AlertCircle className="h-4 w-4 text-orange-500" />
-                      )}
-                    </div>
-                    
-                    <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 mb-2">
-                      {hilo.titulo}
-                    </h3>
-                    
-                    <p className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
-                      {hilo.contenido.replace(/<[^>]*>/g, '').substring(0, 80)}...
-                    </p>
-                    
-                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {new Date(hilo.fecha_creacion).toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short'
-                        })}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        {tipo === 'mas-votados' && (
-                          <span className="flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            {hilo.votos_conteo || 0}
-                          </span>
-                        )}
-                        {tipo === 'mas-vistos' && (
-                          <span className="flex items-center gap-1">
-                            <Eye className="h-3 w-3" />
-                            {hilo.vistas || 0}
-                          </span>
-                        )}
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          {hilo.respuestas_conteo || 0}
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+              <HiloCard
+                id={hilo.id}
+                href={`/foro/hilo/${hilo.id}`}
+                titulo={hilo.titulo}
+                contenido={hilo.contenido}
+                categoriaNombre={hilo.categoria?.nombre}
+                categoriaColor={hilo.categoria?.color}
+                createdAt={hilo.fecha_creacion}
+                vistas={hilo.vistas || 0}
+                respuestas={hilo.respuestas_conteo || 0}
+                votosIniciales={hilo.votos_conteo || 0}
+                showSinRespuestasAlert={tipo === 'sin-respuestas'}
+              />
             </motion.div>
           ))}
         </div>

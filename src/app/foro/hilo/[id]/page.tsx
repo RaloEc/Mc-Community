@@ -64,7 +64,7 @@ function HiloHeader({ hilo, numRespuestas }: { hilo: HiloConDetalles; numRespues
         <span>Publicado {new Date(hilo.creado_en).toLocaleDateString()}</span>
         <div className="flex items-center gap-1">
           <Eye className="h-4 w-4" />
-          <span>{hilo.visitas}</span>
+          <span>{hilo.vistas}</span>
         </div>
         <div className="flex items-center gap-1">
           <MessageSquare className="h-4 w-4" />

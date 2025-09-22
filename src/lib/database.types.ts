@@ -101,6 +101,7 @@ export interface Database {
           publicada_en: string | null
           creada_en: string
           actualizada_en: string | null
+          vistas: number
         }
         Insert: {
           id?: string
@@ -114,6 +115,7 @@ export interface Database {
           publicada_en?: string | null
           creada_en?: string
           actualizada_en?: string | null
+          vistas?: number
         }
         Update: {
           id?: string
@@ -127,6 +129,7 @@ export interface Database {
           publicada_en?: string | null
           creada_en?: string
           actualizada_en?: string | null
+          vistas?: number
         }
       }
       noticias_categorias: {
@@ -190,7 +193,7 @@ export interface Database {
           categoria_id: string
           estado: 'abierto' | 'cerrado' | 'fijado' | 'oculto'
           es_importante: boolean
-          visitas: number
+          vistas: number
           creado_en: string
           actualizado_en: string | null
           ultimo_post_id: string | null
@@ -204,7 +207,7 @@ export interface Database {
           categoria_id: string
           estado?: 'abierto' | 'cerrado' | 'fijado' | 'oculto'
           es_importante?: boolean
-          visitas?: number
+          vistas?: number
           creado_en?: string
           actualizado_en?: string | null
           ultimo_post_id?: string | null
@@ -218,7 +221,7 @@ export interface Database {
           categoria_id?: string
           estado?: 'abierto' | 'cerrado' | 'fijado' | 'oculto'
           es_importante?: boolean
-          visitas?: number
+          vistas?: number
           creado_en?: string
           actualizado_en?: string | null
           ultimo_post_id?: string | null
@@ -304,6 +307,26 @@ export interface Database {
           hilo_id?: string
           ultima_vista?: string | null
           notificaciones_activas?: boolean
+        }
+      },
+      foro_votos_hilos: {
+        Row: {
+          hilo_id: string
+          usuario_id: string
+          valor_voto: number
+          created_at: string
+        }
+        Insert: {
+          hilo_id: string
+          usuario_id: string
+          valor_voto: number
+          created_at?: string
+        }
+        Update: {
+          hilo_id?: string
+          usuario_id?: string
+          valor_voto?: number
+          created_at?: string
         }
       }
     }

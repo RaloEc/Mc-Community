@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { UsersIcon, ServerIcon, TagIcon, ExternalLinkIcon, RefreshCw } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Servidor } from '@/types'
 import ServidorCard from '@/components/servidores/ServidorCard'
 import ConsultaServidorInline from '@/components/servidores/ConsultaServidorInline'
@@ -15,6 +15,7 @@ import ConsultaServidorInline from '@/components/servidores/ConsultaServidorInli
 const tiposServidores = ['Todos', 'Supervivencia', 'Creativo', 'SkyBlock', 'PvP', 'Mods', 'Factions']
 
 export default function Servidores() {
+  const supabase = createClient()
   const [filtroTipo, setFiltroTipo] = useState('Todos')
   const [busqueda, setBusqueda] = useState('')
   const [servidores, setServidores] = useState<Servidor[]>([])

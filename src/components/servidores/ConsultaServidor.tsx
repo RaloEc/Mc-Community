@@ -7,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, ServerIcon, UsersIcon, AlertCircle, CheckCircle } from 'lucide-react'
 
-import { supabase } from '@/lib/supabase'
-
 // Interfaz para la respuesta de la API de Minecraft
 interface ServerResponse {
   online: boolean;

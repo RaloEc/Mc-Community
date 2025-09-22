@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge'
 import { Palette, Download, ArrowLeft, Star } from 'lucide-react'
 import { Textura } from '@/types'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 
 // Datos de ejemplo para las texturas (se usarán si no hay datos de la base de datos)
 // Definimos los datos de ejemplo con el tipo correcto
@@ -84,6 +84,7 @@ const texturasEjemplo: Textura[] = [
 const categorias = ['Fiel al juego', 'Realista', 'Minimalista', 'Caricatura', 'Medieval', 'Fantasía']
 
 export default function TexturasPage() {
+  const supabase = createClient()
   const [texturas, setTexturas] = useState<Textura[]>(texturasEjemplo)
   const [cargando, setCargando] = useState(true)
   

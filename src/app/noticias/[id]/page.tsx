@@ -35,7 +35,7 @@ function procesarContenido(contenido: string): string {
   
   return contenidoProcesado;
 }
-import { CalendarIcon, ArrowLeftIcon, MessageSquareIcon, ThumbsUpIcon, Pencil, Trash } from 'lucide-react'
+import { CalendarIcon, ArrowLeftIcon, MessageSquareIcon, ThumbsUpIcon, Pencil, Trash, Eye } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CommentSystem } from '@/components/comentarios/CommentSystem'
 import { Button } from '@/components/ui/button'
@@ -68,8 +68,10 @@ const scrollbarStyles = `
   }
 `;
 
+type LocalNoticia = Noticia & { vistas?: number }
+
 export default function NoticiaDetalle({ params }: { params: { id: string } }) {
-  const [noticia, setNoticia] = useState<Noticia | null>(null)
+  const [noticia, setNoticia] = useState<LocalNoticia | null>(null)
   const [cargando, setCargando] = useState(true)
   const [cargandoAuth, setCargandoAuth] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -212,6 +214,9 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
     
     cargarNoticia()
   }, [params.id])
+
+  // El contador de vistas se actualiza al cargar la página
+  // a través de la llamada a la API en el fetch inicial
   
   if (cargando) {
     return (
@@ -319,7 +324,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
               )}
             </div>
             
-            {/* Fecha y tiempo de lectura - en líneas separadas para móvil */}
+            {/* Fecha y vistas en vivo */}
             <div className="text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
               <div className="flex items-center">
                 {new Date(noticia.fecha_publicacion || Date.now()).toLocaleDateString('es-ES', {
@@ -327,6 +332,10 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
                   month: 'long',
                   day: 'numeric'
                 })}
+              </div>
+              <div className="flex items-center gap-1">
+                <Eye className="h-4 w-4" />
+                <span>{typeof noticia.vistas === 'number' ? noticia.vistas : 0} vistas</span>
               </div>
             </div>
           </div>

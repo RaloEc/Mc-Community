@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Editor } from "@tiptap/react";
 import "./toolbar-styles.css";
+import { ColorPopover, LinkPopover } from "./dialogs";
 import {
   Bold,
   Italic,
@@ -35,6 +36,7 @@ import {
   MessageSquare,
   MoreHorizontal,
   ChevronDown,
+  Eraser,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -58,6 +60,7 @@ interface ToolbarProps {
   onTableClick: () => void;
   currentFontFamily: string;
   setCurrentFontFamily: (font: string) => void;
+  onClearFormatting: () => void;
 }
 
 // Usar React.memo para evitar renderizaciones innecesarias
@@ -72,13 +75,48 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
     onTableClick,
     currentFontFamily,
     setCurrentFontFamily,
+    onClearFormatting,
   } = props;
+
+  // Estados para los menús desplegables
+  const [colorPopoverOpen, setColorPopoverOpen] = useState<boolean>(false);
+  const [highlightPopoverOpen, setHighlightPopoverOpen] = useState<boolean>(false);
+  const [linkPopoverOpen, setLinkPopoverOpen] = useState<boolean>(false);
+  const [currentColor, setCurrentColor] = useState<string>("#000000");
+  const [currentHighlightColor, setCurrentHighlightColor] = useState<string>("#ffcc00");
+  const [linkUrl, setLinkUrl] = useState<string>("");
+  const [linkText, setLinkText] = useState<string>("");
+  const [linkTarget, setLinkTarget] = useState<string>("_blank");
+  
+  // Estado para el menú desplegable de fuentes
+  const [fontMenuOpen, setFontMenuOpen] = useState(false);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
+  
+  // Referencias
+  const toolbarScrollRef = useRef<HTMLDivElement>(null);
+  
+  // Manejador de scroll optimizado
+  const handleWheel = React.useCallback((e: React.WheelEvent<HTMLDivElement>) => {
+    // Verificar si algún menú está abierto
+    const isAnyMenuOpen = moreMenuOpen || fontMenuOpen;
+    
+    // Solo actuar si se está desplazando verticalmente y ningún menú está abierto
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !isAnyMenuOpen) {
+      e.preventDefault();
+      
+      if (toolbarScrollRef.current) {
+        // Aplicar desplazamiento suave
+        toolbarScrollRef.current.scrollTo({
+          left: toolbarScrollRef.current.scrollLeft + e.deltaY,
+          behavior: 'smooth'
+        });
+      }
+    }
+  }, [moreMenuOpen, fontMenuOpen]);
+
   if (!editor) {
     return null;
   }
-
-  // Estado para el menú desplegable de fuentes
-  const [fontMenuOpen, setFontMenuOpen] = useState(false);
 
   // Función para aplicar el estilo
   const applyStyle = (styleFunction: () => void, e: React.MouseEvent) => {
@@ -100,28 +138,6 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
     { name: "Minecraft", value: "Minecraft, sans-serif" },
   ];
 
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
-  const toolbarScrollRef = useRef<HTMLDivElement>(null);
-
-  // Manejador de scroll optimizado
-  const handleWheel = React.useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    // Verificar si algún menú está abierto
-    const isAnyMenuOpen = moreMenuOpen || fontMenuOpen;
-    
-    // Solo actuar si se está desplazando verticalmente y ningún menú está abierto
-    if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !isAnyMenuOpen) {
-      e.preventDefault();
-      
-      if (toolbarScrollRef.current) {
-        // Aplicar desplazamiento suave
-        toolbarScrollRef.current.scrollTo({
-          left: toolbarScrollRef.current.scrollLeft + e.deltaY,
-          behavior: 'smooth'
-        });
-      }
-    }
-  }, [moreMenuOpen, fontMenuOpen]);
-
   // Definir interfaces para las herramientas
   interface ToolItem {
     icon: React.ElementType;
@@ -130,6 +146,7 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
     title: string;
     disabled?: boolean;
     shortcut?: string;
+    renderCustomButton?: (props: ToolItem) => React.ReactNode;
   }
 
   // Definir herramientas esenciales (siempre visibles)
@@ -166,16 +183,118 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
       },
       title: "Insertar imagen",
     },
+    // El botón de enlace ahora es un componente especial con popover integrado
     {
       icon: LinkIcon,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        onLinkClick();
+        
+        // Obtener el texto seleccionado
+        const { from, to } = editor.state.selection;
+        const selectedText = editor.state.doc.textBetween(from, to, ' ');
+        
+        // Configurar el estado inicial del popover
+        setLinkText(selectedText);
+        setLinkUrl("");
+        setLinkTarget("_blank");
+        
+        // Si ya hay un enlace activo, obtener sus propiedades
+        if (editor.isActive('link')) {
+          const attrs = editor.getAttributes('link');
+          if (attrs.href) setLinkUrl(attrs.href);
+          if (attrs.target) setLinkTarget(attrs.target);
+        }
+        
+        // Abrir el popover
+        setLinkPopoverOpen(true);
       },
       isActive: editor.isActive("link"),
       title: "Insertar enlace",
       shortcut: "Ctrl+K",
+      renderCustomButton: (props) => {
+        // Botón personalizado que sirve como disparador del popover
+        const linkButton = (
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            title={props.title}
+            className={cn(
+              "toolbar-button focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1",
+              props.isActive && "is-active"
+            )}
+            onClick={props.onClick}
+          >
+            <props.icon className="h-4 w-4" />
+          </Button>
+        );
+        
+        return (
+          <LinkPopover
+            open={linkPopoverOpen}
+            url={linkUrl}
+            text={linkText}
+            target={linkTarget}
+            onOpenChange={setLinkPopoverOpen}
+            onUrlChange={setLinkUrl}
+            onTextChange={setLinkText}
+            onTargetChange={setLinkTarget}
+            onSave={() => {
+              if (linkUrl) {
+                // Si hay texto seleccionado, validar que no contenga espacios
+                const hasSelection = editor.state.selection.content().size > 0;
+                
+                if (hasSelection && linkText) {
+                  // Si hay texto seleccionado y se proporcionó un texto, reemplazar la selección
+                  editor
+                    .chain()
+                    .focus()
+                    .extendMarkRange('link')
+                    .setLink({ href: linkUrl, target: linkTarget })
+                    .run();
+                } else if (hasSelection) {
+                  // Si hay texto seleccionado pero no se proporcionó un texto, usar la selección
+                  editor
+                    .chain()
+                    .focus()
+                    .extendMarkRange('link')
+                    .setLink({ href: linkUrl, target: linkTarget })
+                    .run();
+                } else if (linkText) {
+                  // Si no hay texto seleccionado pero se proporcionó un texto, insertar nuevo enlace
+                  editor
+                    .chain()
+                    .focus()
+                    .insertContent({
+                      type: 'text',
+                      text: linkText,
+                      marks: [
+                        {
+                          type: 'link',
+                          attrs: { href: linkUrl, target: linkTarget }
+                        }
+                      ]
+                    })
+                    .run();
+                }
+              }
+              
+              // Cerrar el popover y limpiar el estado
+              setLinkPopoverOpen(false);
+              setLinkUrl('');
+              setLinkText('');
+              setLinkTarget('_blank');
+              
+              // Devolver el foco al editor
+              setTimeout(() => {
+                editor.commands.focus();
+              }, 100);
+            }}
+            triggerButton={linkButton}
+          />
+        );
+      },
     },
     {
       icon: List,
@@ -250,31 +369,30 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
     }
   ];
 
-  // Herramientas de color (fuera del menú desplegable)
-  const colorTools: ToolItem[] = [
-    {
-      icon: Palette,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onColorClick();
-      },
-      isActive: false, // No hay estado activo para el botón de color
-      title: "Color de texto",
-      disabled: false
-    },
-    {
-      icon: Highlighter,
-      onClick: (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        onHighlightColorClick();
-      },
-      isActive: false, // No hay estado activo para el botón de resaltado
-      title: "Color de resaltado",
-      disabled: false
-    }
-  ];
+  // Botones para los menús desplegables de color
+  const colorButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      type="button"
+      title="Color de texto"
+      className="focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1"
+    >
+      <Palette className="h-4 w-4" />
+    </Button>
+  );
+
+  const highlightButton = (
+    <Button
+      variant="ghost"
+      size="icon"
+      type="button"
+      title="Color de resaltado"
+      className="focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-1"
+    >
+      <Highlighter className="h-4 w-4" />
+    </Button>
+  );
 
   // Definir herramientas de alineación
   const alignmentTools: ToolItem[] = [
@@ -343,30 +461,74 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
         {/* Herramientas esenciales */}
         <div className="toolbar-group">
           {essentialTools.map((tool, index) => (
-            <ToolbarButton
-              key={`essential-${index}`}
-              icon={tool.icon}
-              onClick={tool.onClick}
-              isActive={tool.isActive}
-              title={tool.title}
-              shortcut={tool.shortcut}
-              disabled={tool.disabled}
-            />
+            tool.renderCustomButton ? (
+              <React.Fragment key={`essential-custom-${index}`}>
+                {tool.renderCustomButton(tool)}
+              </React.Fragment>
+            ) : (
+              <ToolbarButton
+                key={`essential-${index}`}
+                icon={tool.icon}
+                onClick={tool.onClick}
+                isActive={tool.isActive}
+                title={tool.title}
+                shortcut={tool.shortcut}
+                disabled={tool.disabled}
+              />
+            )
           ))}
         </div>
 
         {/* Herramientas de color */}
         <div className="toolbar-group">
-          {colorTools.map((tool, index) => (
-            <ToolbarButton
-              key={`color-${index}`}
-              icon={tool.icon}
-              onClick={tool.onClick}
-              isActive={tool.isActive}
-              title={tool.title}
-              disabled={tool.disabled}
-            />
-          ))}
+          {/* Menú desplegable para color de texto */}
+          <ColorPopover
+            open={colorPopoverOpen}
+            title="Color de texto"
+            color={currentColor}
+            onOpenChange={setColorPopoverOpen}
+            onChange={(val) => setCurrentColor(val)}
+            onSave={() => {
+              editor.chain().focus().setColor(currentColor).run();
+              setColorPopoverOpen(false);
+            }}
+            onClear={() => {
+              editor.chain().focus().unsetColor().run();
+              setColorPopoverOpen(false);
+            }}
+            triggerButton={colorButton}
+          />
+
+          {/* Menú desplegable para color de resaltado */}
+          <ColorPopover
+            open={highlightPopoverOpen}
+            title="Color de resaltado"
+            color={currentHighlightColor}
+            onOpenChange={setHighlightPopoverOpen}
+            onChange={(val) => setCurrentHighlightColor(val)}
+            onSave={() => {
+              editor.chain().focus().toggleHighlight({ color: currentHighlightColor }).run();
+              setHighlightPopoverOpen(false);
+            }}
+            onClear={() => {
+              editor.chain().focus().unsetHighlight().run();
+              setHighlightPopoverOpen(false);
+            }}
+            triggerButton={highlightButton}
+          />
+
+          {/* Quitar todos los formatos */}
+          <ToolbarButton
+            icon={Eraser}
+            onClick={(e: React.MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              props.onClearFormatting();
+            }}
+            title="Quitar todos los formatos"
+          />
+          
+          {/* El menú desplegable para enlaces ahora se maneja directamente en el botón de enlace */}
         </div>
 
         {/* Selector de fuente */}

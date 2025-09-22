@@ -8,8 +8,6 @@ const nextConfig = {
     // Mejorar la estabilidad del servidor de desarrollo
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
     // La opción serverActions ya está disponible por defecto en Next.js 14+
-    // Deshabilitar Edge Runtime para componentes que usan módulos de Node.js
-    runtime: 'nodejs',
   },
   // Configuración para mejorar la estabilidad
   onDemandEntries: {

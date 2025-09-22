@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,6 +94,7 @@ const formSchema = z.object({
 })
 
 export default function CrearServidor() {
+  const supabase = createClient()
   const [enviando, setEnviando] = useState(false)
   const [imagenPreview, setImagenPreview] = useState<string | null>(null)
   const router = useRouter()

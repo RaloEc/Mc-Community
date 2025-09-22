@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Servidor, SolicitudServidor } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -94,6 +94,7 @@ const formSchema = z.object({
 })
 
 export default function EditarServidor({ params }: { params: { id: string } }) {
+  const supabase = createClient()
   const [isSolicitudReview, setIsSolicitudReview] = useState(false);
   const [solicitudOriginal, setSolicitudOriginal] = useState<SolicitudServidor | null>(null);
   const [enviando, setEnviando] = useState(false)

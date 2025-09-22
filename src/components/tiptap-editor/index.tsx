@@ -17,7 +17,7 @@ import {
 import dynamic from "next/dynamic";
 import { getDefaultExtensions } from "./extensions";
 import { Toolbar, BubbleToolbar, FloatingToolbar } from "./toolbar";
-import { LinkDialog, YoutubeDialog, TableDialog } from "./dialogs";
+import { LinkDialog, LinkPopover, YoutubeDialog, TableDialog, ColorDialog, ColorPopover } from "./dialogs";
 
 import {
   findAllImages,
@@ -34,6 +34,7 @@ import { Button } from "@/components/ui/button";
 // Importar estilos
 import EditorStyles from "./styles";
 import "./youtube-styles.css";
+import "./editor-styles.css"; // Estilos específicos para encabezados
 
 interface TiptapEditorProps {
   value: string;
@@ -61,8 +62,6 @@ const TiptapEditorBase = ({
 }: TiptapEditorProps) => {
   // Referencias
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const colorPickerRef = useRef<HTMLInputElement>(null);
-  const highlightColorPickerRef = useRef<HTMLInputElement>(null);
 
   // Estados
   const [selectedImagePos, setSelectedImagePos] = useState<number | null>(null);
@@ -70,10 +69,8 @@ const TiptapEditorBase = ({
   const [currentColor, setCurrentColor] = useState<string>("#000000");
   const [currentHighlightColor, setCurrentHighlightColor] =
     useState<string>("#ffcc00");
-  const [linkDialogOpen, setLinkDialogOpen] = useState<boolean>(false);
-  const [linkUrl, setLinkUrl] = useState<string>("");
-  const [linkText, setLinkText] = useState<string>("");
-  const [linkTarget, setLinkTarget] = useState<string>("_blank");
+  // Estados para los diálogos
+  // Los estados para el popover de enlaces ahora se manejan en la barra de herramientas
   const [youtubeDialogOpen, setYoutubeDialogOpen] = useState<boolean>(false);
   const [youtubeUrl, setYoutubeUrl] = useState<string>("");
   const [selectedYoutubePos, setSelectedYoutubePos] = useState<number | null>(
@@ -250,12 +247,9 @@ const TiptapEditorBase = ({
             const toolkit = document.querySelector(
               ".image-toolkit"
             ) as HTMLElement;
-            const img = target as HTMLElement;
-            if (toolkit && img) {
-              const imgRect = img.getBoundingClientRect();
-              toolkit.style.top = `${imgRect.top + window.scrollY - 40}px`;
-              toolkit.style.left = `${imgRect.left + window.scrollY}px`;
-            }
+            const imgRect = target.getBoundingClientRect();
+            toolkit.style.top = `${imgRect.top + window.scrollY - 40}px`;
+            toolkit.style.left = `${imgRect.left + window.scrollY}px`;
           }, 10);
         }
       } else if (!target.closest(".image-toolkit")) {
@@ -306,81 +300,9 @@ const TiptapEditorBase = ({
   }, [handleImageClick, handleYoutubeClick]);
 
   // Manejadores para los diálogos
-  const handleOpenLinkDialog = useCallback(() => {
-    if (!editor) return;
+  // El manejador de enlaces ahora se maneja directamente en la barra de herramientas
 
-    const { from, to } = editor.state.selection;
-    const text = editor.state.doc.textBetween(from, to, " ");
-
-    setLinkText(text);
-    setLinkUrl("");
-    setLinkTarget("_blank");
-    setLinkDialogOpen(true);
-  }, [editor]);
-
-  const handleSaveLink = useCallback(() => {
-    if (!editor) return;
-
-    if (linkUrl) {
-      const { from, to } = editor.state.selection;
-      const selectedText = editor.state.doc.textBetween(from, to, ' ');
-      
-      // Si hay texto seleccionado, validar que no contenga espacios
-      if (from !== to) {
-        if (selectedText.includes(' ')) {
-          alert('El texto seleccionado no puede contener espacios para convertirlo en enlace');
-          return;
-        }
-        
-        // Si hay texto seleccionado, convertirlo en enlace
-        editor
-          .chain()
-          .focus()
-          .extendMarkRange("link")
-          .setLink({ href: linkUrl, target: linkTarget })
-          .run();
-      } else {
-        // Si no hay texto seleccionado, insertar nuevo contenido con el texto del campo
-        const textoParaEnlace = linkText.trim() !== '' ? linkText : linkUrl;
-        
-        editor
-          .chain()
-          .focus()
-          .insertContent({
-            type: 'text',
-            text: textoParaEnlace,
-            marks: [
-              {
-                type: 'link',
-                attrs: {
-                  href: linkUrl,
-                  target: linkTarget
-                }
-              }
-            ]
-          })
-          .run();
-      }
-      
-      // Limpiar el estado del diálogo
-      setLinkUrl('');
-      setLinkText('');
-      setLinkTarget('_blank');
-      
-      // Cerrar el diálogo después de un pequeño retraso
-      setTimeout(() => {
-        setLinkDialogOpen(false);
-        
-        // Usar requestAnimationFrame para asegurar que el DOM esté listo
-        requestAnimationFrame(() => {
-          if (editor) {
-            // Enfocar el editor y mover el cursor al final
-            editor.chain().focus('end').run();
-          }
-        });
-      }, 50);
-    }
-  }, [editor, linkUrl, linkTarget, linkText]);
+  // El manejador de guardar enlaces ahora se maneja directamente en la barra de herramientas
 
   const handleOpenYoutubeDialog = useCallback(() => {
     setYoutubeUrl("");
@@ -514,13 +436,16 @@ const TiptapEditorBase = ({
         <Toolbar
           editor={editor}
           onImageClick={() => fileInputRef.current?.click()}
-          onColorClick={() => colorPickerRef.current?.click()}
-          onHighlightColorClick={() => highlightColorPickerRef.current?.click()}
-          onLinkClick={handleOpenLinkDialog}
+          onColorClick={() => {}}
+          onHighlightColorClick={() => {}}
+          onLinkClick={() => {}}
           onYoutubeClick={handleOpenYoutubeDialog}
           onTableClick={handleOpenTableDialog}
           currentFontFamily={currentFontFamily}
           setCurrentFontFamily={setCurrentFontFamily}
+          onClearFormatting={() => {
+            editor?.chain().focus().unsetAllMarks().clearNodes().run();
+          }}
         />
 
         {/* Contenido del editor */}
@@ -589,46 +514,12 @@ const TiptapEditorBase = ({
         accept="image/*"
         style={{ display: "none" }}
         onChange={handleImageUpload}
+        multiple
       />
 
-      {/* Input oculto para seleccionar color de texto */}
-      <input
-        ref={colorPickerRef}
-        type="color"
-        value={currentColor}
-        style={{ display: "none" }}
-        onChange={(e) => {
-          const color = e.target.value;
-          setCurrentColor(color);
-          editor?.chain().focus().setColor(color).run();
-        }}
-      />
+      {/* Los menús desplegables de color se implementan directamente en la barra de herramientas */}
 
-      {/* Input oculto para seleccionar color de resaltado */}
-      <input
-        ref={highlightColorPickerRef}
-        type="color"
-        value={currentHighlightColor}
-        style={{ display: "none" }}
-        onChange={(e) => {
-          const color = e.target.value;
-          setCurrentHighlightColor(color);
-          editor?.chain().focus().toggleHighlight({ color }).run();
-        }}
-      />
-
-      {/* Diálogo para insertar enlaces */}
-      <LinkDialog
-        open={linkDialogOpen}
-        url={linkUrl}
-        text={linkText}
-        target={linkTarget}
-        onClose={() => setLinkDialogOpen(false)}
-        onUrlChange={setLinkUrl}
-        onTextChange={setLinkText}
-        onTargetChange={setLinkTarget}
-        onSave={handleSaveLink}
-      />
+      {/* El menú desplegable para insertar enlaces ahora se maneja en la barra de herramientas */}
 
       {/* Diálogo para insertar videos de YouTube */}
       <YoutubeDialog

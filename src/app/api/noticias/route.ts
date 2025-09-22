@@ -43,6 +43,9 @@ export async function GET(request: Request) {
     // Obtener parámetros de la URL
     const { searchParams } = new URL(request.url);
     const isAdmin = searchParams.get('admin') === 'true';
+    const tipo = (searchParams.get('tipo') || '').toLowerCase();
+    const limitParam = parseInt(searchParams.get('limit') || '', 10);
+    const limitFromQuery = Number.isFinite(limitParam) ? Math.max(1, limitParam) : undefined;
     
     // Parámetros de búsqueda y filtrado
     const busqueda = searchParams.get('busqueda') || '';
@@ -68,11 +71,27 @@ export async function GET(request: Request) {
       query = query.ilike('autor', `%${autor}%`);
     }
     
-    // Aplicar orden por fecha
-    query = query.order('fecha_publicacion', { ascending: ordenFecha === 'asc' });
+    // Aplicar ordenamiento según 'tipo'
+    // - mas-vistas | populares: ordenar por vistas DESC
+    // - ultimas | recientes: ordenar por fecha_publicacion DESC
+    // - destacadas: primero destacada DESC, luego fecha_publicacion DESC
+    // - por defecto: usar ordenFecha si viene, sino fecha desc
+    if (tipo === 'mas-vistas' || tipo === 'populares') {
+      query = query.order('vistas', { ascending: false });
+    } else if (tipo === 'ultimas' || tipo === 'recientes') {
+      query = query.order('fecha_publicacion', { ascending: false });
+    } else if (tipo === 'destacadas') {
+      // Si la columna 'destacada' no existe en algunos entornos, el orden será ignorado por PostgREST
+      query = query.order('destacada', { ascending: false }).order('fecha_publicacion', { ascending: false });
+    } else {
+      // Orden por fecha configurable
+      query = query.order('fecha_publicacion', { ascending: ordenFecha === 'asc' });
+    }
       
-    // Si no es admin, limitar a 9 noticias
-    if (!isAdmin) {
+    // Aplicar límite (respetando tope para no-admin)
+    if (limitFromQuery) {
+      query = query.limit(isAdmin ? limitFromQuery : Math.min(limitFromQuery, 9));
+    } else if (!isAdmin) {
       query = query.limit(9);
     }
     

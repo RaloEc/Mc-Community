@@ -63,6 +63,18 @@ export async function GET(
       );
     }
     
+    // Incrementar contador de vistas (no bloqueante)
+    try {
+      const { data: nuevasVistas, error: errorVistas } = await serviceClient.rpc('incrementar_vista_noticia', { noticia_id: id });
+      if (errorVistas) {
+        console.warn('No se pudo incrementar vistas de la noticia:', errorVistas.message);
+      } else {
+        console.log('Vistas de noticia incrementadas. Total:', nuevasVistas);
+      }
+    } catch (e: any) {
+      console.warn('Fallo al llamar RPC incrementar_vista_noticia:', e?.message || e);
+    }
+
     console.log('Noticia encontrada:', {
       id: noticia.id,
       titulo: noticia.titulo,

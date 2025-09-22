@@ -554,11 +554,14 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                           </div>
                         </div>
                       )}
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-white/90 text-gray-900 hover:bg-white text-xs font-medium">
-                          Destacada
-                        </Badge>
-                      </div>
+                      {typeof noticiaPrincipal.vistas === 'number' && (
+                        <div className="absolute top-4 right-4">
+                          <Badge variant="secondary" className="bg-black/60 backdrop-blur-sm text-white text-xs">
+                            <Eye className="h-3 w-3 mr-1" />
+                            {noticiaPrincipal.vistas}
+                          </Badge>
+                        </div>
+                      )}
                     </div>
                     <div className="px-4 py-3">
                       <h3 

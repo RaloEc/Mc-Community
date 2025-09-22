@@ -17,6 +17,7 @@ interface AuthState {
   user: User | null
   session: Session | null
   loading: boolean
+  profileLoading: boolean
   profile: Profile | null
   signOut: () => Promise<void>
   refreshAuth: () => Promise<void>
@@ -27,6 +28,7 @@ const defaultAuthState: AuthState = {
   user: null,
   session: null,
   loading: true,
+  profileLoading: false,
   profile: null,
   signOut: async () => {},
   refreshAuth: async () => {},
@@ -47,32 +49,53 @@ export function AuthProvider({
   const [user, setUser] = React.useState<User | null>(null)
   const [profile, setProfile] = React.useState<Profile | null>(null)
   const [loading, setLoading] = React.useState<boolean>(true)
+  const [profileLoading, setProfileLoading] = React.useState<boolean>(false)
   const profileCacheRef = React.useRef<Map<string, Profile>>(new Map())
 
-  const fetchProfile = React.useCallback(async (userId: string) => {
+  const fetchProfile = React.useCallback(async (userId: string, retryCount = 0) => {
     // Cache simple en memoria para evitar refetch innecesario mientras viva la app
     if (profileCacheRef.current.has(userId)) {
       setProfile(profileCacheRef.current.get(userId) ?? null)
       return
     }
-    const { data, error } = await supabase
-      .from('perfiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (!error && data) {
-      const p: Profile = {
-        id: data.id,
-        username: data.username ?? null,
-        role: data.role ?? 'user',
-        created_at: data.created_at ?? null,
-        avatar_url: data.avatar_url ?? null,
-        color: data.color ?? null,
+
+    setProfileLoading(true)
+    
+    try {
+      const { data, error } = await supabase
+        .from('perfiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (!error && data) {
+        const p: Profile = {
+          id: data.id,
+          username: data.username ?? null,
+          role: data.role ?? 'user',
+          created_at: data.created_at ?? null,
+          avatar_url: data.avatar_url ?? null,
+          color: data.color ?? null,
+        }
+        profileCacheRef.current.set(userId, p)
+        setProfile(p)
+        console.log('AuthContext: Perfil cargado exitosamente:', { username: p.username, role: p.role })
+      } else if (error && retryCount < 2) {
+        // Retry para casos donde el perfil aún no existe tras OAuth (trigger delay)
+        console.log(`AuthContext: Error cargando perfil (intento ${retryCount + 1}/3), reintentando en 300ms:`, error)
+        setTimeout(() => {
+          fetchProfile(userId, retryCount + 1)
+        }, 300 * (retryCount + 1)) // Backoff incremental
+        return // No cambiar profileLoading aquí, se cambiará en el retry
+      } else {
+        console.error('AuthContext: Error definitivo cargando perfil:', error)
+        setProfile(null)
       }
-      profileCacheRef.current.set(userId, p)
-      setProfile(p)
-    } else {
+    } catch (err) {
+      console.error('AuthContext: Error inesperado en fetchProfile:', err)
       setProfile(null)
+    } finally {
+      setProfileLoading(false)
     }
   }, [supabase])
 
@@ -132,6 +155,7 @@ export function AuthProvider({
         await fetchProfile(u.id)
       } else {
         setProfile(null)
+        setProfileLoading(false)
       }
     })
 
@@ -155,6 +179,7 @@ export function AuthProvider({
       await fetchProfile(u.id)
     } else {
       setProfile(null)
+      setProfileLoading(false)
     }
   }, [supabase, fetchProfile])
   
@@ -173,11 +198,12 @@ export function AuthProvider({
     user,
     session,
     loading,
+    profileLoading,
     profile,
     signOut,
     refreshAuth,
     refreshProfile,
-  }), [user, session, loading, profile, signOut, refreshAuth, refreshProfile])
+  }), [user, session, loading, profileLoading, profile, signOut, refreshAuth, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

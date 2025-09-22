@@ -5,6 +5,7 @@ import { getUserInitials } from '@/lib/utils/avatar-utils'
 import { MessageSquare, Eye } from 'lucide-react'
 import { Votacion } from '@/components/ui/Votacion'
 import { useState, useEffect } from 'react'
+import HiloCard from '@/components/foro/HiloCard'
 
 export type HiloDTO = {
   id: string
@@ -40,89 +41,19 @@ function getExcerpt(contenido?: string | null, maxLength: number = 100) {
 
 export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
   const href = hilo.slug ? `/foro/hilos/${hilo.slug}` : `/foro/hilos/${hilo.id}`
-  
-  // Determinar el color de la categoría o usar un color por defecto
-  const categoriaColor = hilo.subcategoria?.color || '#4f46e5'
-  
-  // Estado local de votos (total)
-  const [totalVotos, setTotalVotos] = useState<number>(hilo.votos ?? 0)
-  
-  // Sincronizar con el contador inicial
-  useEffect(() => {
-    setTotalVotos(hilo.votos ?? 0);
-  }, [hilo.votos]);
-  
+
   return (
-    <article className="flex gap-3 p-0 rounded-lg border border-border/50 bg-card dark:bg-black/90 overflow-hidden">
-      {/* Componente de votación */}
-      <div className="flex flex-col items-center justify-center py-2 px-3 bg-accent/30 dark:bg-black min-w-[42px]">
-        <Votacion 
-          id={hilo.id}
-          tipo="hilo"
-          votosIniciales={hilo.votos ?? 0}
-          size="md"
-        />
-      </div>
-      
-      {/* Contenido principal */}
-      <div className="flex-1 min-w-0 py-3 pr-3">
-        {/* Categoría */}
-        <div className="flex items-center gap-2 text-xs mb-1">
-          {hilo.subcategoria?.nombre && (
-            <span 
-              className="inline-flex items-center px-3 py-1 rounded-full text-white text-xs font-medium"
-              style={{ backgroundColor: categoriaColor }}
-            >
-              {hilo.subcategoria.nombre}
-            </span>
-          )}
-          {hilo.destacado && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-yellow-500 text-yellow-600 dark:text-yellow-500 ml-2">
-              Destacado
-            </span>
-          )}
-        </div>
-        
-        {/* Título */}
-        <h3 className="font-bold text-base leading-tight mb-2 break-words">
-          <Link href={href} className="hover:underline text-foreground dark:text-white">
-            {hilo.titulo}
-          </Link>
-        </h3>
-        
-        {/* Extracto del contenido */}
-        {hilo.contenido && (
-          <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
-            {getExcerpt(hilo.contenido)}
-          </p>
-        )}
-        
-        {/* Metadatos */}
-        <div className="text-xs text-muted-foreground flex items-center gap-2 flex-wrap">
-          {hilo.autor?.username && (
-            <span className="flex items-center gap-1">
-              por <span className="font-medium text-primary">{hilo.autor.username}</span>
-            </span>
-          )}
-          <span>•</span>
-          <time>{formatDate(hilo.created_at)}</time>
-        </div>
-      </div>
-      
-      {/* Estadísticas */}
-      <div className="flex flex-col items-end justify-between text-xs min-w-[80px] py-3 pr-3">
-        {/* Comentarios */}
-        <div className="flex items-center gap-1 text-muted-foreground">
-          <MessageSquare className="h-4 w-4" />
-          <strong>{hilo.respuestas_count ?? 0}</strong>
-        </div>
-        
-        {/* Vistas */}
-        <div className="flex items-center gap-1 text-muted-foreground mt-2">
-          <Eye className="h-4 w-4" />
-          <strong>{hilo.vistas ?? 0}</strong>
-        </div>
-      </div>
-    </article>
+    <HiloCard
+      id={hilo.id}
+      href={href}
+      titulo={hilo.titulo}
+      contenido={hilo.contenido}
+      categoriaNombre={hilo.subcategoria?.nombre || undefined}
+      categoriaColor={hilo.subcategoria?.color || undefined}
+      createdAt={hilo.created_at}
+      vistas={hilo.vistas ?? 0}
+      respuestas={hilo.respuestas_count ?? 0}
+      votosIniciales={hilo.votos ?? 0}
+    />
   )
 }

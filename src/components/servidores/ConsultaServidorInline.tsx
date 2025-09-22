@@ -9,7 +9,7 @@ import { Loader2, ServerIcon, UsersIcon, AlertCircle, CheckCircle, ArrowRightIco
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { motion } from 'framer-motion'
 import { useAuth } from '@/context/AuthContext'
 
@@ -39,6 +39,7 @@ interface ServerResponse {
 export default function ConsultaServidorInline({ onServerAdded }: { onServerAdded: () => void }) {
   // Obtener el contexto de autenticación
   const { user, session } = useAuth()
+  const supabase = createClient()
   
   const [serverIp, setServerIp] = useState('')
   const [loading, setLoading] = useState(false)

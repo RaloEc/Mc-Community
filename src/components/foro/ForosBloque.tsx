@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import './ForosBloque.css';
 import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -349,7 +350,11 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
         </Link>
       </div>
 
-      <Tabs defaultValue="destacados" onValueChange={(value) => setActiveTab(value as TabKey)}>
+      <Tabs 
+        value={activeTab} 
+        onValueChange={(value) => setActiveTab(value as TabKey)}
+        className="w-full no-swipe"
+      >
         <TabsList className="mb-4">
           <TabsTrigger value="destacados">Destacados</TabsTrigger>
           <TabsTrigger value="recientes">Recientes</TabsTrigger>

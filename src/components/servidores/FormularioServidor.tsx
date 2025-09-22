@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { AlertCircle, Loader2 } from 'lucide-react'
 
@@ -32,6 +32,7 @@ export default function FormularioServidor({
   onServerSaved,
   className
 }: FormularioServidorProps) {
+  const supabase = createClient()
   const [serverName, setServerName] = useState(initialName)
   const [serverDescription, setServerDescription] = useState(initialDescription)
   const [serverType, setServerType] = useState(initialType)

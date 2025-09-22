@@ -50,11 +50,26 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
 
   // Función para alternar la expansión de una categoría
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Obtener la posición actual del scroll
+    const container = e.currentTarget.closest('.categorias-container');
+    const scrollPosition = container?.scrollTop || 0;
+    
+    // Actualizar el estado de expansión
     setExpandedCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
+    
+    // Restaurar la posición del scroll después de la actualización
+    if (container) {
+      setTimeout(() => {
+        container.scrollTop = scrollPosition;
+      }, 0);
+    }
   };
 
   useEffect(() => {
@@ -163,26 +178,24 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
         <label htmlFor="categoria" className="block text-sm font-medium text-foreground mb-2">
           Categoría
         </label>
-        <div className="bg-white border border-gray-200 dark:border-border rounded-md p-4 max-h-[300px] overflow-y-auto">
+        <div className="bg-card dark:bg-black/80 border border-border rounded-md p-4 max-h-[300px] overflow-y-auto shadow-sm categorias-container">
           {categoriaId && (
-            <div className="mb-4 pb-2 border-b border-border">
-              <p className="text-sm text-gray-600 dark:text-muted-foreground">Categoría seleccionada:</p>
-              <div className="flex items-center mt-1">
-                <div 
-                  className="w-3 h-3 rounded-full mr-2" 
-                  style={{ backgroundColor: categorias.find(c => c.id === categoriaId)?.color || 
-                                   categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.color || 
-                                   '#7c3aed' }}
-                />
-                <span className="font-medium text-gray-900 dark:text-foreground">
+            <div className="mb-4 pb-3 border-b border-border/50">
+              <p className="text-sm text-muted-foreground mb-1">Categoría seleccionada:</p>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0 bg-transparent" />
+                <span className="font-medium text-foreground truncate">
                   {categorias.find(c => c.id === categoriaId)?.nombre || 
                    categorias.find(c => c.hijos?.some(sc => sc.id === categoriaId))?.hijos?.find(sc => sc.id === categoriaId)?.nombre}
                 </span>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="ml-auto text-gray-500 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground"
-                  onClick={() => setCategoriaId('')}
+                  className="ml-auto text-muted-foreground hover:text-foreground hover:bg-transparent"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCategoriaId('');
+                  }}
                 >
                   Cambiar
                 </Button>
@@ -192,54 +205,48 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
           
           {!categoriaId && (
             <div>
-              <p className="text-sm text-gray-600 dark:text-muted-foreground mb-2">Selecciona una categoría:</p>
-              <div className="space-y-2">
+              <p className="text-sm text-muted-foreground mb-2">Selecciona una categoría:</p>
+              <div className="space-y-1">
                 {categorias.map((categoria) => (
                   <div key={categoria.id} className="space-y-1">
-                    <div className="flex items-center">
+                    <div className="flex items-center group">
                       {categoria.hijos && categoria.hijos.length > 0 && (
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="p-0 h-6 w-6 mr-1"
-                          onClick={() => toggleCategory(categoria.id)}
+                          className="p-0 h-6 w-6 mr-1 hover:bg-transparent flex-shrink-0"
+                          onClick={(e) => toggleCategory(categoria.id, e)}
                         >
-                          <span className="text-gray-500 dark:text-muted-foreground">
+                          <span className="text-muted-foreground group-hover:text-foreground transition-colors">
                             {expandedCategories[categoria.id] ? '▼' : '►'}
                           </span>
                         </Button>
                       )}
                       <Button 
                         variant="ghost" 
-                        className="justify-start p-2 h-auto w-full text-left"
+                        className="justify-start p-2 h-auto w-full text-left hover:bg-accent/50 rounded-md transition-colors"
                         onClick={() => setCategoriaId(categoria.id)}
                       >
                         <div className="flex items-center">
-                          <div 
-                            className="w-3 h-3 rounded-full mr-2" 
-                            style={{ backgroundColor: categoria.color || '#7c3aed' }}
-                          />
-                          <span>{categoria.nombre}</span>
+                          <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0 bg-transparent" />
+                          <span className="text-foreground">{categoria.nombre}</span>
                         </div>
                       </Button>
                     </div>
                     
                     {/* Subcategorías */}
                     {categoria.hijos && categoria.hijos.length > 0 && expandedCategories[categoria.id] && (
-                      <div className="ml-6 pl-2 border-l border-gray-700 space-y-1">
+                      <div className="ml-6 pl-2 border-l-2 border-border/30 dark:border-border/50 space-y-1">
                         {categoria.hijos.map((subcat) => (
                           <Button 
                             key={subcat.id}
                             variant="ghost" 
-                            className="justify-start p-2 h-auto w-full text-left"
+                            className="justify-start p-2 h-auto w-full text-left hover:bg-accent/30 rounded-md transition-colors"
                             onClick={() => setCategoriaId(subcat.id)}
                           >
                             <div className="flex items-center">
-                              <div 
-                                className="w-3 h-3 rounded-full mr-2" 
-                                style={{ backgroundColor: subcat.color || '#7c3aed' }}
-                              />
-                              <span>{subcat.nombre}</span>
+                              <div className="w-2 h-2 rounded-full mr-2 flex-shrink-0 bg-transparent" />
+                              <span className="text-foreground">{subcat.nombre}</span>
                             </div>
                           </Button>
                         ))}

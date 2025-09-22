@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase, getServiceClient } from '@/lib/supabase'
+import { getServiceClient } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/client'
 import type { Noticia } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -75,6 +76,7 @@ const formSchema = z.object({
 })
 
 function EditarNoticiaContent({ params }: { params: { id: string } }) {
+  const supabase = createClient()
   const [noticia, setNoticia] = useState<Noticia | null>(null)
   const [cargando, setCargando] = useState(true)
   const [enviando, setEnviando] = useState(false)

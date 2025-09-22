@@ -1,0 +1,123 @@
+/* Estilos para encabezados en el editor TipTap */
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5rem 0 1rem;
+  color: var(--foreground);
+  padding: 0.25rem 0;
+  border-bottom: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.75rem;
+  color: var(--foreground);
+  padding: 0.2rem 0;
+}
+
+.tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0 0.5rem;
+  color: var(--foreground);
+  padding: 0.15rem 0;
+}
+
+/* Asegurar que los encabezados sean visibles */
+.tiptap h1, .tiptap h2, .tiptap h3 {
+  display: block;
+  width: 100%;
+  min-height: 1.5em;
+}
+
+/* Estilos para modo oscuro */
+.dark .tiptap h1,
+.dark .tiptap h2,
+.dark .tiptap h3 {
+  color: #ffffff;
+}
+
+.dark .tiptap h1 {
+  border-bottom: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.3);
+}
+
+.dark .tiptap h1:before,
+.dark .tiptap h2:before,
+.dark .tiptap h3:before {
+  background-color: var(--user-color, rgb(96, 165, 250));
+  opacity: 0.8;
+}
+
+.dark .tiptap h1.node-selectedCell,
+.dark .tiptap h2.node-selectedCell,
+.dark .tiptap h3.node-selectedCell,
+.dark .tiptap h1.ProseMirror-selectednode,
+.dark .tiptap h2.ProseMirror-selectednode,
+.dark .tiptap h3.ProseMirror-selectednode {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.15);
+  box-shadow: 0 0 0 1px rgba(var(--user-color-rgb, 96, 165, 250), 0.25);
+}
+
+.dark .tiptap h1:hover:not(.ProseMirror-selectednode):not(.node-selectedCell),
+.dark .tiptap h2:hover:not(.ProseMirror-selectednode):not(.node-selectedCell),
+.dark .tiptap h3:hover:not(.ProseMirror-selectednode):not(.node-selectedCell) {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.08);
+}
+
+/* Estilos para encabezados cuando están activos */
+.tiptap h1.node-selectedCell,
+.tiptap h2.node-selectedCell,
+.tiptap h3.node-selectedCell,
+.tiptap h1.ProseMirror-selectednode,
+.tiptap h2.ProseMirror-selectednode,
+.tiptap h3.ProseMirror-selectednode {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.1);
+  border-radius: 4px;
+  box-shadow: 0 0 0 1px rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+}
+
+/* Estilos para encabezados cuando están seleccionados */
+.tiptap h1::selection,
+.tiptap h2::selection,
+.tiptap h3::selection {
+  background-color: var(--user-color, rgba(59, 130, 246, 0.2));
+  color: inherit;
+}
+
+/* Estilos para encabezados cuando se están editando */
+.tiptap h1:focus,
+.tiptap h2:focus,
+.tiptap h3:focus {
+  outline: none;
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.05);
+  border-radius: 4px;
+}
+
+/* Efecto hover sutil */
+.tiptap h1:hover:not(.ProseMirror-selectednode):not(.node-selectedCell),
+.tiptap h2:hover:not(.ProseMirror-selectednode):not(.node-selectedCell),
+.tiptap h3:hover:not(.ProseMirror-selectednode):not(.node-selectedCell) {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.03);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+/* Agregar un indicador visual para los encabezados */
+.tiptap h1:before,
+.tiptap h2:before,
+.tiptap h3:before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 1em;
+  background-color: var(--user-color, rgb(59, 130, 246));
+  opacity: 0.7;
+  margin-right: 10px;
+  border-radius: 2px;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+}

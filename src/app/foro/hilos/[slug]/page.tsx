@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 import { notFound } from 'next/navigation';
 import ForoSidebar from '@/components/foro/ForoSidebar';
 import Link from 'next/link';
@@ -13,7 +13,7 @@ import ComentariosNuevo from '../../../../components/ComentariosNuevo';
 import { MessageSquare, Share2, Star, Lock, CheckCircle2, Plus, Calendar, Clock, Eye, MessageCircle } from 'lucide-react';
 
 async function getHiloPorSlugOId(slugOrId: string) {
-  const supabase = createClientComponentClient();
+  const supabase = createClient();
   // Primero por slug
   let { data: hilo, error } = await supabase
     .from('foro_hilos')
@@ -70,9 +70,18 @@ export default function HiloPage() {
         // Obtener el hilo
         const hiloData = await getHiloPorSlugOId(slug);
         setHilo(hiloData);
+        // Incrementar vistas del hilo de forma no bloqueante usando nuestra API por ID
+        try {
+          if (hiloData?.id) {
+            // No necesitamos la respuesta; solo disparar el conteo
+            fetch(`/api/foro/hilo/${hiloData.id}`, { cache: 'no-store' }).catch(() => {});
+          }
+        } catch (_) {
+          // Silenciar cualquier error de red para no afectar la UI
+        }
         
-        // Crear cliente de Supabase
-        const supabase = createClientComponentClient();
+        // Crear cliente de Supabase (unificado)
+        const supabase = createClient();
         
         // Obtener categorías para el sidebar
         const { data: categoriasData } = await supabase
@@ -129,6 +138,9 @@ export default function HiloPage() {
     
     fetchData();
   }, [slug]);
+
+  // El contador de vistas se actualiza al cargar la página
+  // a través de la llamada a la API en el fetch inicial
 
   // Manejar estados de carga y error
   if (loading) {
