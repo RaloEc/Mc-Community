@@ -75,6 +75,76 @@ export async function GET(
   }
 }
 
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const supabase = getServiceClient()
+    const userId = params.id
+    const updates = await request.json()
+    
+    console.log(`[API] Actualizando usuario ${userId} con datos:`, updates)
+
+    // Actualizar datos de autenticación si se proporcionó email
+    if (updates.email) {
+      const { error: authError } = await supabase.auth.admin.updateUserById(userId, {
+        email: updates.email,
+        ...(updates.password && { password: updates.password })
+      })
+
+      if (authError) {
+        console.error('Error al actualizar autenticación:', authError)
+        return NextResponse.json({ 
+          error: 'Error al actualizar los datos de autenticación',
+          details: authError.message 
+        }, { status: 500 })
+      }
+    }
+
+    // Preparar los datos para actualizar en la tabla perfiles
+    const perfilUpdates: any = {
+      username: updates.username,
+      role: updates.role,
+      activo: updates.activo,
+      bio: updates.bio || null,
+      ubicacion: updates.ubicacion || null,
+      sitio_web: updates.sitio_web || null,
+      avatar_url: updates.avatar_url || null,
+      updated_at: new Date().toISOString()
+    }
+
+    // Actualizar perfil
+    const { data: updatedPerfil, error: perfilError } = await supabase
+      .from('perfiles')
+      .update(perfilUpdates)
+      .eq('id', userId)
+      .select()
+      .single()
+
+    if (perfilError) {
+      console.error('Error al actualizar perfil:', perfilError)
+      return NextResponse.json({ 
+        error: 'Error al actualizar el perfil del usuario',
+        details: perfilError.message 
+      }, { status: 500 })
+    }
+
+    console.log(`[API] Usuario ${userId} actualizado exitosamente`)
+    return NextResponse.json({ 
+      message: 'Usuario actualizado correctamente',
+      usuario: updatedPerfil 
+    })
+
+  } catch (error) {
+    console.error('Error al actualizar usuario:', error)
+    return NextResponse.json({ 
+      error: 'Error interno del servidor',
+      details: error instanceof Error ? error.message : String(error)
+    }, { status: 500 })
+  }
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

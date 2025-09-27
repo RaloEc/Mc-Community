@@ -4,16 +4,10 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-// Obtener todos los mensajes del ticker
+// Obtener todos los mensajes del ticker (público)
 const GET = async () => {
   try {
     const supabase = createRouteHandlerClient({ cookies });
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      return new NextResponse('No autorizado', { status: 401 });
-    }
 
     // Primero obtenemos los mensajes del ticker
     const { data: tickerData, error: tickerError } = await supabase

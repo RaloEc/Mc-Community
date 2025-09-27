@@ -195,7 +195,7 @@ function EditarUsuarioContent() {
         <div className="flex items-center space-x-4">
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/usuarios/${userId}`)}
+            onClick={() => router.push('/admin/usuarios')}
             className="border-gray-600 text-gray-300 hover:bg-gray-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

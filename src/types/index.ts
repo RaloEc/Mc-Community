@@ -108,6 +108,7 @@ export type Noticia = {
   autor_nombre?: string;
   autor_color?: string;
   autor_avatar?: string | null;
+  autor_rol?: 'admin' | 'moderator' | 'user';
   resumen?: string;
 };
 

@@ -7,6 +7,7 @@ import { useAuthModal } from '@/hooks/useAuthModal';
 import BannerPublicitario from '@/components/home/BannerPublicitario';
 import NoticiasDestacadas from '@/components/home/NoticiasDestacadas';
 import SeccionForo from '@/components/home/SeccionForo';
+import ForoCategoriasWidget from '@/components/home/ForoCategoriasWidget';
 
 export default function Home() {
   const { user } = useAuth();
@@ -30,7 +31,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-0 py-0">
         <motion.div
           className="space-y-12"
           initial="initial"
@@ -90,6 +91,11 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+              </motion.div>
+              
+              {/* Widget de categorías del foro */}
+              <motion.div variants={fadeInUp} className="mt-6">
+                <ForoCategoriasWidget />
               </motion.div>
 
               {/* Banner publicitario cuadrado */}

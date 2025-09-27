@@ -1,18 +1,35 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { format } from 'date-fns';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { format } from "date-fns";
 import { es } from 'date-fns/locale';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Eye, Bell, Mail, Clock, Flame, Star } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { NoticiaMetaInfo } from '../noticias/NoticiaMetaInfo';
-import { getExcerpt } from '@/lib/utils';
-import { useAuth } from '@/context/AuthContext';
-import { Input } from '@/components/ui/input';
-import { useUserTheme } from '@/hooks/useUserTheme';
-import EventosWidget from './EventosWidget';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Eye, Bell, Mail, Clock, Flame, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { NoticiaMetaInfo } from "../noticias/NoticiaMetaInfo";
+import { useRouter } from 'next/navigation';
+import { useAuth } from "@/context/AuthContext";
+import { getExcerpt } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { useUserTheme } from "@/hooks/useUserTheme";
+import EventosWidget from "./EventosWidget";
+import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Tiempo de cache en milisegundos (5 minutos)
+const CACHE_TIME = 5 * 60 * 1000;
+
+// Crear un cliente de React Query
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: CACHE_TIME,
+      gcTime: CACHE_TIME,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 interface Noticia {
   id: string;
@@ -63,62 +80,62 @@ function NewsTicker() {
   useEffect(() => {
     const fetchTickerMessages = async () => {
       try {
-        const response = await fetch('/api/admin/news-ticker');
+        const response = await fetch("/api/admin/news-ticker");
         if (response.ok) {
           const data = await response.json();
           // Filtrar solo mensajes activos y con contenido
           const activeMessages = data
             .filter((msg: any) => msg.activo && msg.mensaje?.trim())
             .sort((a: any, b: any) => a.orden - b.orden);
-          
+
           if (activeMessages.length > 0) {
             setMessages(activeMessages);
           } else {
             // Mensajes predeterminados en caso de que no haya ninguno configurado
             setMessages([
               {
-                id: 'default-1',
-                mensaje: 'Bienvenido a la comunidad de Minecraft',
+                id: "default-1",
+                mensaje: "Bienvenido a la comunidad de Minecraft",
                 activo: true,
-                orden: 1
+                orden: 1,
               },
               {
-                id: 'default-2',
-                mensaje: '¡Únete a nuestros eventos semanales!',
+                id: "default-2",
+                mensaje: "¡Únete a nuestros eventos semanales!",
                 activo: true,
-                orden: 2
+                orden: 2,
               },
               {
-                id: 'default-3',
-                mensaje: 'Explora los últimos mods y texturas',
+                id: "default-3",
+                mensaje: "Explora los últimos mods y texturas",
                 activo: true,
-                orden: 3
-              }
+                orden: 3,
+              },
             ]);
           }
         }
       } catch (error) {
-        console.error('Error al cargar el ticker de noticias:', error);
+        console.error("Error al cargar el ticker de noticias:", error);
         // Mensajes de respaldo en caso de error
         setMessages([
           {
-            id: 'error-1',
-            mensaje: 'Bienvenido a la comunidad de Minecraft',
+            id: "error-1",
+            mensaje: "Bienvenido a la comunidad de Minecraft",
             activo: true,
-            orden: 1
+            orden: 1,
           },
           {
-            id: 'error-2',
-            mensaje: '¡Únete a nuestros eventos semanales!',
+            id: "error-2",
+            mensaje: "¡Únete a nuestros eventos semanales!",
             activo: true,
-            orden: 2
+            orden: 2,
           },
           {
-            id: 'error-3',
-            mensaje: 'Explora los últimos mods y texturas',
+            id: "error-3",
+            mensaje: "Explora los últimos mods y texturas",
             activo: true,
-            orden: 3
-          }
+            orden: 3,
+          },
         ]);
       } finally {
         setIsLoading(false);
@@ -126,30 +143,38 @@ function NewsTicker() {
     };
 
     fetchTickerMessages();
-    
+
     // Actualizar el ticker cada 5 minutos
     const interval = setInterval(fetchTickerMessages, 5 * 60 * 1000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   const handleMessageClick = (message: TickerMessage) => {
     if (message.noticia) {
       // Abrir la noticia en una nueva pestaña
-      window.open(`/noticias/${message.noticia.slug || message.noticia.id}`, '_blank');
+      window.open(
+        `/noticias/${message.noticia.slug || message.noticia.id}`,
+        "_blank"
+      );
     }
   };
 
   if (isLoading) {
     return (
-      <div className="hidden md:flex items-center text-white text-sm py-2 px-4 rounded-t-lg" style={{ background: `linear-gradient(to right, ${userColor}80, ${userColor}cc)` }}>
-        <div className="flex items-center font-medium mr-4">
-          <Bell className="h-4 w-4 mr-2" />
-          <span>ÚLTIMAS NOTICIAS</span>
+      <div
+        className="flex items-center text-white text-xs sm:text-sm py-1 sm:py-2 px-2 sm:px-4 rounded-t-lg w-full"
+        style={{
+          background: `linear-gradient(to right, ${userColor}80, ${userColor}cc)`,
+        }}
+      >
+        <div className="flex items-center font-medium mr-2 sm:mr-4">
+          <Bell className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <span className="text-xs sm:text-sm">NOTICIAS</span>
         </div>
         <div className="flex-1 overflow-hidden">
           <div className="whitespace-nowrap">
-            <span className="inline-block mr-8">Cargando noticias...</span>
+            <span className="inline-block mr-4 sm:mr-8 text-ellipsis overflow-hidden max-w-[80vw] sm:max-w-none">Cargando noticias...</span>
           </div>
         </div>
       </div>
@@ -161,19 +186,26 @@ function NewsTicker() {
   }
 
   return (
-    <div className="hidden md:flex items-center text-white text-sm py-2 px-4 rounded-t-lg" style={{ background: `linear-gradient(to right, ${userColor}80, ${userColor}cc)` }}>
-      <div className="flex items-center font-medium mr-4 whitespace-nowrap">
-        <Bell className="h-4 w-4 mr-2" />
-        <span>ÚLTIMAS NOTICIAS</span>
+    <div
+      className="flex items-center text-white text-xs sm:text-sm py-1 sm:py-2 px-2 sm:px-4 rounded-t-lg w-full overflow-hidden"
+      style={{
+        background: `linear-gradient(to right, ${userColor}80, ${userColor}cc)`,
+      }}
+    >
+      <div className="flex items-center font-medium mr-2 sm:mr-4 whitespace-nowrap">
+        <Bell className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <span className="text-xs sm:text-sm">NOTICIAS</span>
       </div>
       <div className="flex-1 overflow-hidden">
-        <div className="whitespace-nowrap animate-marquee">
+        <div className="whitespace-nowrap animate-marquee text-ellipsis">
           {messages.map((message) => (
-            <span 
-              key={message.id} 
-              className={`inline-block mr-8 ${message.noticia ? 'cursor-pointer hover:underline' : ''}`}
+            <span
+              key={message.id}
+              className={`inline-block mr-4 sm:mr-8 ${
+                message.noticia ? "cursor-pointer hover:underline" : ""
+              } text-ellipsis overflow-hidden max-w-[80vw] sm:max-w-none`}
               onClick={() => message.noticia && handleMessageClick(message)}
-              style={message.noticia ? { color: 'white' } : {}}
+              style={message.noticia ? { color: "white" } : {}}
             >
               {message.mensaje}
             </span>
@@ -186,14 +218,14 @@ function NewsTicker() {
 
 // Componente de suscripción
 function SubscriptionSection() {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 
   const handleSubscribe = (e: React.FormEvent) => {
     e.preventDefault();
     // Aquí iría la lógica para suscribirse
     setSubscribed(true);
-    setEmail('');
+    setEmail("");
     setTimeout(() => setSubscribed(false), 3000);
   };
 
@@ -203,15 +235,23 @@ function SubscriptionSection() {
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-300 mb-4">
           <Mail className="h-6 w-6" />
         </div>
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Mantente actualizado</h3>
-        <p className="text-gray-600 dark:text-gray-300 mb-4">Recibe las últimas noticias y actualizaciones directamente en tu bandeja de entrada</p>
-        
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          Mantente actualizado
+        </h3>
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          Recibe las últimas noticias y actualizaciones directamente en tu
+          bandeja de entrada
+        </p>
+
         {subscribed ? (
           <div className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-4 py-3 rounded-md">
             ¡Gracias por suscribirte! Pronto recibirás nuestras noticias.
           </div>
         ) : (
-          <form onSubmit={handleSubscribe} className="flex max-w-md mx-auto gap-2">
+          <form
+            onSubmit={handleSubscribe}
+            className="flex max-w-md mx-auto gap-2"
+          >
             <Input
               type="email"
               placeholder="Tu correo electrónico"
@@ -230,23 +270,39 @@ function SubscriptionSection() {
   );
 }
 
-export default function NoticiasDestacadas({ className = '' }: NoticiasDestacadasProps) {
+export default function NoticiasDestacadas({
+  className = "",
+}: NoticiasDestacadasProps) {
+  const router = useRouter();
   const { profile } = useAuth();
   const { userColor, getTextColor, getHoverTextColor } = useUserTheme();
-  
+
+  // Manejador para el clic en el perfil del autor
+  const handleProfileClick = useCallback((e: React.MouseEvent, username: string) => {
+    e.stopPropagation();
+    e.preventDefault();
+    router.push(`/perfil/${encodeURIComponent(username)}`);
+  }, [router]);
+
   // Estilos dinámicos basados en el color del usuario
-  const primaryColor = userColor || '#3b82f6'; // Azul por defecto
-  
+  const primaryColor = userColor || "#3b82f6"; // Azul por defecto
+
   // Función para ajustar el brillo del color según el modo
   const getAdjustedColor = (color: string, isDark: boolean) => {
     // Si es modo oscuro, aclaramos el color, si es modo claro, lo oscurecemos ligeramente
-    return isDark 
+    return isDark
       ? color.replace(/#(..)(..)(..)/, (_, r, g, b) => {
           // Aclarar el color para modo oscuro
           const factor = 1.4;
-          const r2 = Math.min(255, Math.round(parseInt(r, 16) * factor)).toString(16).padStart(2, '0');
-          const g2 = Math.min(255, Math.round(parseInt(g, 16) * factor)).toString(16).padStart(2, '0');
-          const b2 = Math.min(255, Math.round(parseInt(b, 16) * factor)).toString(16).padStart(2, '0');
+          const r2 = Math.min(255, Math.round(parseInt(r, 16) * factor))
+            .toString(16)
+            .padStart(2, "0");
+          const g2 = Math.min(255, Math.round(parseInt(g, 16) * factor))
+            .toString(16)
+            .padStart(2, "0");
+          const b2 = Math.min(255, Math.round(parseInt(b, 16) * factor))
+            .toString(16)
+            .padStart(2, "0");
           return `#${r2}${g2}${b2}`;
         })
       : color;
@@ -254,76 +310,78 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
 
   // Usamos useState para manejar el modo oscuro
   const [isDarkMode, setIsDarkMode] = useState(false);
-  
+
   // Detectar el modo oscuro solo en el cliente
   useEffect(() => {
-    setIsDarkMode(document.documentElement.classList.contains('dark'));
-    
+    setIsDarkMode(document.documentElement.classList.contains("dark"));
+
     // Observar cambios en el tema
     const observer = new MutationObserver(() => {
-      setIsDarkMode(document.documentElement.classList.contains('dark'));
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
     });
-    
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+
     return () => observer.disconnect();
   }, []);
-  
+
   const adjustedPrimaryColor = getAdjustedColor(primaryColor, isDarkMode);
-  
+
   const hoverStyles = {
-    '--tw-ring-color': adjustedPrimaryColor,
-    '--tw-ring-opacity': isDarkMode ? '0.2' : '0.1',
-    '--tw-ring-offset-color': adjustedPrimaryColor,
-    '--tw-ring-offset-shadow': 'var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)',
-    '--tw-ring-shadow': 'var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)',
-    '--tw-ring': 'var(--tw-ring-offset-shadow), var(--tw-ring-shadow), 0 0 #0000',
-    '--tw-ring-inset': 'inset',
+    "--tw-ring-color": adjustedPrimaryColor,
+    "--tw-ring-opacity": isDarkMode ? "0.2" : "0.1",
+    "--tw-ring-offset-color": adjustedPrimaryColor,
+    "--tw-ring-offset-shadow":
+      "var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color)",
+    "--tw-ring-shadow":
+      "var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color)",
+    "--tw-ring":
+      "var(--tw-ring-offset-shadow), var(--tw-ring-shadow), 0 0 #0000",
+    "--tw-ring-inset": "inset",
   } as React.CSSProperties;
-  const [noticias, setNoticias] = useState<Noticia[]>([]);
-  const [ultimasNoticias, setUltimasNoticias] = useState<Noticia[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'destacadas' | 'recientes' | 'populares'>('destacadas');
+  const [activeTab, setActiveTab] = useState<"destacadas" | "recientes" | "populares">("destacadas");
 
-  useEffect(() => {
-    const fetchNoticias = async () => {
-      try {
-        setLoading(true);
-        // Obtener noticias destacadas
-        const destacadasRes = await fetch('/api/noticias?limit=5&tipo=destacadas');
-        const destacadasData = await destacadasRes.json();
-        
-        // Obtener últimas noticias para la barra lateral
-        const ultimasRes = await fetch('/api/noticias?limit=4&tipo=recientes');
-        const ultimasData = await ultimasRes.json();
-        
-        setNoticias(destacadasData.data || []);
-        setUltimasNoticias(ultimasData.data || []);
-      } catch (error) {
-        console.error('Error fetching noticias:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNoticias();
-  }, []);
-
-  const handleTabChange = async (tab: 'destacadas' | 'recientes' | 'populares') => {
-    setActiveTab(tab);
-    try {
-      setLoading(true);
-      const res = await fetch(`/api/noticias?limit=5&tipo=${tab}`);
-      const data = await res.json();
-      setNoticias(data.data || []);
-    } catch (error) {
-      console.error('Error al cambiar de pestaña:', error);
-    } finally {
-      setLoading(false);
+  // Función para obtener noticias
+  const fetchNoticias = async (tipo: string) => {
+    const res = await fetch(`/api/noticias?limit=${tipo === 'recientes' ? '4' : '5'}&tipo=${tipo}`);
+    if (!res.ok) {
+      throw new Error('Error al cargar las noticias');
     }
+    const data = await res.json();
+    return data.data || [];
   };
 
-  if (loading && noticias.length === 0) {
+  // Usar React Query para manejar el caché de noticias
+  const {
+    data: noticias = [],
+    isLoading: isLoadingNoticias,
+    isError: isErrorNoticias,
+  } = useQuery({
+    queryKey: ['noticias', activeTab],
+    queryFn: () => fetchNoticias(activeTab),
+    staleTime: CACHE_TIME,
+  });
+
+  // Cargar noticias recientes en paralelo
+  const {
+    data: ultimasNoticias = [],
+    isLoading: isLoadingUltimas,
+  } = useQuery({
+    queryKey: ['noticias', 'recientes'],
+    queryFn: () => fetchNoticias('recientes'),
+    staleTime: CACHE_TIME,
+  });
+
+  const loading = isLoadingNoticias || isLoadingUltimas;
+
+  const handleTabChange = (tab: "destacadas" | "recientes" | "populares") => {
+    setActiveTab(tab);
+  };
+
+  if (loading && noticias?.length === 0) {
     return (
       <div className={className}>
         {/* Ticker de noticias skeleton */}
@@ -348,7 +406,7 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between">
                 <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded my-4 animate-pulse"></div>
-                
+
                 {/* Pestañas de navegación skeleton */}
                 <div className="hidden md:flex -mb-px space-x-8">
                   {[1, 2, 3].map((i) => (
@@ -428,7 +486,7 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                     ))}
                   </div>
                 </div>
-                
+
                 <div className="rounded-xl p-4 border border-gray-200 dark:border-gray-800">
                   <div className="h-6 w-40 bg-gray-200 dark:bg-gray-700 rounded mb-4 animate-pulse"></div>
                   <div className="h-8 w-full bg-gray-200 dark:bg-gray-700 rounded mb-3 animate-pulse"></div>
@@ -445,15 +503,19 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
   if (noticias.length === 0) {
     return (
       <div className="py-12 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">No hay noticias disponibles</h2>
-        <p className="text-gray-600 dark:text-gray-300">Pronto tendremos nuevas noticias para ti</p>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          No hay noticias disponibles
+        </h2>
+        <p className="text-gray-600 dark:text-gray-300">
+          Pronto tendremos nuevas noticias para ti
+        </p>
       </div>
     );
   }
 
   // Extraer la noticia principal (primera del array)
   const noticiaPrincipal = noticias[0];
-  const noticiasSecundarias = noticias.slice(1, 5);
+  const noticiasSecundarias = noticias?.slice(1, 5) || [];
 
   return (
     <div className={className}>
@@ -469,17 +531,21 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white py-4">
                 Noticias
               </h2>
-              
+
               {/* Pestañas de navegación (solo escritorio) */}
               <div className="hidden md:flex -mb-px space-x-8">
                 <button
-                  onClick={() => handleTabChange('destacadas')}
+                  onClick={() => handleTabChange("destacadas")}
                   className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'destacadas'
-                      ? 'border-current text-current'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                    activeTab === "destacadas"
+                      ? "border-current text-current"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-                  style={activeTab === 'destacadas' ? { color: userColor, borderColor: userColor } : {}}
+                  style={
+                    activeTab === "destacadas"
+                      ? { color: userColor, borderColor: userColor }
+                      : {}
+                  }
                 >
                   <div className="flex items-center">
                     <Star className="h-4 w-4 mr-2" />
@@ -487,13 +553,17 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                   </div>
                 </button>
                 <button
-                  onClick={() => handleTabChange('recientes')}
+                  onClick={() => handleTabChange("recientes")}
                   className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'recientes'
-                      ? 'border-current text-current'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                    activeTab === "recientes"
+                      ? "border-current text-current"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-                  style={activeTab === 'recientes' ? { color: userColor, borderColor: userColor } : {}}
+                  style={
+                    activeTab === "recientes"
+                      ? { color: userColor, borderColor: userColor }
+                      : {}
+                  }
                 >
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 mr-2" />
@@ -501,13 +571,17 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                   </div>
                 </button>
                 <button
-                  onClick={() => handleTabChange('populares')}
+                  onClick={() => handleTabChange("populares")}
                   className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === 'populares'
-                      ? 'border-current text-current'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200'
+                    activeTab === "populares"
+                      ? "border-current text-current"
+                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
-                  style={activeTab === 'populares' ? { color: userColor, borderColor: userColor } : {}}
+                  style={
+                    activeTab === "populares"
+                      ? { color: userColor, borderColor: userColor }
+                      : {}
+                  }
                 >
                   <div className="flex items-center">
                     <Flame className="h-4 w-4 mr-2" />
@@ -519,7 +593,8 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
               <div className="hidden md:block">
                 <Link href="/noticias">
                   <Button variant="outline" size="sm" className="group">
-                    Ver todas <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    Ver todas{" "}
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
               </div>
@@ -533,13 +608,22 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
             <div className="lg:w-2/3">
               {/* Noticia destacada */}
               {noticiaPrincipal && (
-                <div className="mb-10 rounded-xl overflow-hidden" 
+                <div
+                  className="mb-10 rounded-xl overflow-hidden"
                   style={{
-                    backgroundColor: isDarkMode 
-                      ? `color-mix(in srgb, ${userColor || '#3b82f6'} 3%, #0a0a0a)` 
-                      : `color-mix(in srgb, ${userColor || '#3b82f6'} 6%, white)`
-                  }}>
-                  <Link href={`/noticias/${noticiaPrincipal.id}`} className="block group">
+                    backgroundColor: isDarkMode
+                      ? `color-mix(in srgb, ${
+                          userColor || "#3b82f6"
+                        } 3%, #0a0a0a)`
+                      : `color-mix(in srgb, ${
+                          userColor || "#3b82f6"
+                        } 6%, white)`,
+                  }}
+                >
+                  <Link
+                    href={`/noticias/${noticiaPrincipal.id}`}
+                    className="block group"
+                  >
                     <div className="relative aspect-video rounded-xl overflow-hidden mb-4">
                       {noticiaPrincipal.imagen_url ? (
                         <img
@@ -548,25 +632,26 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(to bottom right, ${userColor}10, ${userColor}20)` }}>
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{
+                            background: `linear-gradient(to bottom right, ${userColor}10, ${userColor}20)`,
+                          }}
+                        >
                           <div className="text-center text-gray-400 dark:text-gray-600">
                             <div className="text-6xl mb-2">📰</div>
                           </div>
                         </div>
                       )}
-                      {typeof noticiaPrincipal.vistas === 'number' && (
-                        <div className="absolute top-4 right-4">
-                          <Badge variant="secondary" className="bg-black/60 backdrop-blur-sm text-white text-xs">
-                            <Eye className="h-3 w-3 mr-1" />
-                            {noticiaPrincipal.vistas}
-                          </Badge>
-                        </div>
-                      )}
                     </div>
                     <div className="px-4 py-3">
-                      <h3 
+                      <h3
                         className="text-xl font-bold text-gray-900 dark:text-white mb-2 transition-colors"
-                        style={{ '--user-color': userColor || '#3b82f6' } as React.CSSProperties}
+                        style={
+                          {
+                            "--user-color": userColor || "#3b82f6",
+                          } as React.CSSProperties
+                        }
                       >
                         <span className="group-hover:text-[color:var(--user-color)]">
                           {noticiaPrincipal.titulo}
@@ -580,9 +665,11 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                           autor_nombre={noticiaPrincipal.autor_nombre}
                           autor_avatar={noticiaPrincipal.autor_avatar}
                           created_at={noticiaPrincipal.created_at}
+                          vistas={noticiaPrincipal.vistas}
                           comentarios_count={noticiaPrincipal.comentarios_count}
                           className="text-sm"
                           userColor={profile?.color || null}
+                          onProfileClick={handleProfileClick}
                         />
                       </div>
                     </div>
@@ -593,13 +680,23 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
               {/* Grid de noticias secundarias */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {noticiasSecundarias.map((noticia) => (
-                  <div key={noticia.id} className="group flex flex-col h-full rounded-lg overflow-hidden" 
+                  <div
+                    key={noticia.id}
+                    className="group flex flex-col h-full rounded-lg overflow-hidden"
                     style={{
-                      backgroundColor: isDarkMode 
-                        ? `color-mix(in srgb, ${userColor || '#3b82f6'} 3%, #0a0a0a)` 
-                        : `color-mix(in srgb, ${userColor || '#3b82f6'} 5%, white)`
-                    }}>
-                    <Link href={`/noticias/${noticia.id}`} className="flex flex-col h-full">
+                      backgroundColor: isDarkMode
+                        ? `color-mix(in srgb, ${
+                            userColor || "#3b82f6"
+                          } 3%, #0a0a0a)`
+                        : `color-mix(in srgb, ${
+                            userColor || "#3b82f6"
+                          } 5%, white)`,
+                    }}
+                  >
+                    <Link
+                      href={`/noticias/${noticia.id}`}
+                      className="flex flex-col h-full"
+                    >
                       <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
                         {noticia.imagen_url ? (
                           <img
@@ -614,24 +711,22 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                             </div>
                           </div>
                         )}
-                        <div 
+                        <div
                           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                           style={{
                             backgroundColor: `hsl(var(--primary) / 0.1)`,
                           }}
                         ></div>
-                        <div className="absolute top-2 right-2">
-                          <Badge variant="secondary" className="bg-black/60 backdrop-blur-sm text-white text-xs">
-                            <Eye className="h-3 w-3 mr-1" />
-                            {noticia.vistas}
-                          </Badge>
-                        </div>
                       </div>
                       <div className="px-3 py-3 flex flex-col flex-grow">
                         <div className="mb-2">
-                          <h4 
+                          <h4
                             className="text-lg font-semibold text-gray-900 dark:text-white mb-1 transition-colors"
-                            style={{ '--user-color': userColor || '#3b82f6' } as React.CSSProperties}
+                            style={
+                              {
+                                "--user-color": userColor || "#3b82f6",
+                              } as React.CSSProperties
+                            }
                           >
                             <span className="group-hover:text-[color:var(--user-color)]">
                               {noticia.titulo}
@@ -646,9 +741,11 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                             autor_nombre={noticia.autor_nombre}
                             autor_avatar={noticia.autor_avatar}
                             created_at={noticia.created_at}
+                            vistas={noticia.vistas}
                             comentarios_count={noticia.comentarios_count}
                             className="text-xs"
                             userColor={profile?.color || null}
+                            onProfileClick={handleProfileClick}
                           />
                         </div>
                       </div>
@@ -659,43 +756,49 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
             </div>
 
             {/* Barra lateral */}
-            <div 
-    className="lg:w-1/3 space-y-6"
-    style={{
-      '--primary': adjustedPrimaryColor,
-      '--primary-foreground': isDarkMode ? 'hsl(210 20% 98%)' : 'hsl(210 40% 98%)',
-      '--primary-hover': isDarkMode 
-        ? `color-mix(in srgb, ${adjustedPrimaryColor} 10%, transparent)`
-        : `color-mix(in srgb, ${adjustedPrimaryColor} 5%, transparent)`,
-    } as React.CSSProperties}
-  >
-              <div 
+            <div
+              className="lg:w-1/3 space-y-6"
+              style={
+                {
+                  "--primary": adjustedPrimaryColor,
+                  "--primary-foreground": isDarkMode
+                    ? "hsl(210 20% 98%)"
+                    : "hsl(210 40% 98%)",
+                  "--primary-hover": isDarkMode
+                    ? `color-mix(in srgb, ${adjustedPrimaryColor} 10%, transparent)`
+                    : `color-mix(in srgb, ${adjustedPrimaryColor} 5%, transparent)`,
+                } as React.CSSProperties
+              }
+            >
+              <div
                 className="rounded-xl p-4 transition-colors duration-300"
                 style={{
                   backgroundColor: `hsl(var(--primary) / 0.03)`,
                   border: `1px solid hsl(var(--primary) / 0.1)`,
                 }}
               >
-                <h3 
-    className="font-bold text-foreground mb-4 flex items-center"
-    style={{
-      '--primary': userColor || 'hsl(221.2 83.2% 53.3%)',
-    } as React.CSSProperties}
-  >
+                <h3
+                  className="font-bold text-foreground mb-4 flex items-center"
+                  style={
+                    {
+                      "--primary": userColor || "hsl(221.2 83.2% 53.3%)",
+                    } as React.CSSProperties
+                  }
+                >
                   <Clock className="h-4 w-4 mr-2 text-primary" />
                   Últimas noticias
                 </h3>
                 <div className="space-y-4">
                   {ultimasNoticias.slice(0, 4).map((noticia) => (
-                    <Link 
-    key={noticia.id} 
-    href={`/noticias/${noticia.id}`} 
-    className={`block group rounded-lg p-1 -mx-1 transition-all duration-200 
+                    <Link
+                      key={noticia.id}
+                      href={`/noticias/${noticia.id}`}
+                      className={`block group rounded-lg p-1 -mx-1 transition-all duration-200 
       hover:bg-[--primary-hover] dark:hover:bg-[--primary-hover]`}
-    style={hoverStyles}
-  >
+                      style={hoverStyles}
+                    >
                       <div className="flex gap-3">
-                        <div 
+                        <div
                           className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden"
                           style={{
                             backgroundColor: `hsl(var(--primary) / 0.1)`,
@@ -713,24 +816,28 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                             </div>
                           )}
                         </div>
-                        <div 
-    className="flex-1 min-w-0 transition-all duration-200 group-hover:translate-x-1"
-    style={{
-      color: 'inherit',
-      '--tw-text-opacity': '1',
-    } as React.CSSProperties}
-  >
-                          <h4 
-    className={`text-sm font-medium text-foreground 
+                        <div
+                          className="flex-1 min-w-0 transition-all duration-200 group-hover:translate-x-1"
+                          style={
+                            {
+                              color: "inherit",
+                              "--tw-text-opacity": "1",
+                            } as React.CSSProperties
+                          }
+                        >
+                          <h4
+                            className={`text-sm font-medium text-foreground 
       group-hover:text-[--primary] dark:group-hover:text-[--primary]
       transition-colors duration-200 line-clamp-2`}
-  >
+                          >
                             {noticia.titulo}
                           </h4>
                           <div className="flex items-center text-xs text-muted-foreground mt-1">
-                            <span>{format(new Date(noticia.created_at), 'dd MMM', { locale: es })}</span>
-                            <span className="mx-1">•</span>
-                            <span>{noticia.vistas} vistas</span>
+                            <span>
+                              {format(new Date(noticia.created_at), "dd MMM", {
+                                locale: es,
+                              })}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -738,14 +845,17 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                   ))}
                 </div>
                 <div className="mt-4 text-center">
-                  <Link 
-                    href="/noticias" 
+                  <Link
+                    href="/noticias"
                     className="text-sm font-medium text-primary hover:text-primary/80 transition-colors inline-flex items-center"
-                    style={{
-                      '--primary': userColor || 'hsl(221.2 83.2% 53.3%)',
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        "--primary": userColor || "hsl(221.2 83.2% 53.3%)",
+                      } as React.CSSProperties
+                    }
                   >
-                    Ver todas las noticias <ArrowRight className="ml-1 h-3 w-3" />
+                    Ver todas las noticias{" "}
+                    <ArrowRight className="ml-1 h-3 w-3" />
                   </Link>
                 </div>
               </div>
@@ -754,7 +864,7 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
               <EventosWidget className="mb-6" />
 
               {/* Widget de categorías */}
-              <div 
+              <div
                 className="rounded-xl p-4 transition-colors duration-300"
                 style={{
                   backgroundColor: `hsl(var(--primary) / 0.03)`,
@@ -764,23 +874,25 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
                 <h3 className="font-bold text-foreground mb-4">Categorías</h3>
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { nombre: 'Actualizaciones', color: '#3b82f6' },
-                    { nombre: 'Eventos', color: '#10b981' },
-                    { nombre: 'Guias', color: '#f59e0b' },
-                    { nombre: 'Comunidad', color: '#8b5cf6' },
-                    { nombre: 'Trucos', color: '#ec4899' },
-                    { nombre: 'Mods', color: '#f43f5e' },
+                    { nombre: "Actualizaciones", color: "#3b82f6" },
+                    { nombre: "Eventos", color: "#10b981" },
+                    { nombre: "Guias", color: "#f59e0b" },
+                    { nombre: "Comunidad", color: "#8b5cf6" },
+                    { nombre: "Trucos", color: "#ec4899" },
+                    { nombre: "Mods", color: "#f43f5e" },
                   ].map((categoria, index) => (
                     <Link
                       key={index}
                       href={`/noticias?categoria=${categoria.nombre.toLowerCase()}`}
                       className="text-xs font-medium px-3 py-1.5 rounded-full transition-all duration-200 hover:scale-105 hover:shadow-sm"
-                      style={{
-                        backgroundColor: `${categoria.color}15`,
-                        color: categoria.color,
-                        '--tw-ring-color': categoria.color,
-                        '--tw-ring-opacity': '0.2',
-                      } as React.CSSProperties}
+                      style={
+                        {
+                          backgroundColor: `${categoria.color}15`,
+                          color: categoria.color,
+                          "--tw-ring-color": categoria.color,
+                          "--tw-ring-opacity": "0.2",
+                        } as React.CSSProperties
+                      }
                     >
                       {categoria.nombre}
                     </Link>
@@ -798,8 +910,12 @@ export default function NoticiasDestacadas({ className = '' }: NoticiasDestacada
       {/* Estilos para el efecto de marquesina */}
       <style jsx global>{`
         @keyframes marquee {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
         }
         .animate-marquee {
           display: inline-block;

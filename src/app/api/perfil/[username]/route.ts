@@ -12,7 +12,7 @@ export async function GET(
     // 1. Obtener el perfil del usuario
     const { data: perfil, error: perfilError } = await supabase
       .from('perfiles')
-      .select('id, username, created_at, avatar_url, bio, role')
+      .select('id, username, created_at, avatar_url, banner_url, bio, role')
       .eq('username', username)
       .single()
 

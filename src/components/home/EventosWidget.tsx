@@ -43,59 +43,7 @@ interface EventosWidgetProps {
   className?: string;
 }
 
-// Datos de prueba fallback (en caso de error al cargar)
-const eventosDemo: Evento[] = [
-  {
-    id: '1',
-    titulo: 'Actualización DeltaForce 2.5',
-    descripcion: 'Nueva actualización con mapas y armas',
-    fecha: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-    tipo: 'actualizacion',
-    juego_nombre: 'DeltaForce',
-    imagen_url: 'https://via.placeholder.com/50',
-    estado: 'publicado'
-  },
-  {
-    id: '2',
-    titulo: 'Parche de seguridad Minecraft',
-    descripcion: 'Corrección de vulnerabilidades críticas',
-    fecha: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).toISOString(),
-    tipo: 'parche',
-    juego_nombre: 'Minecraft',
-    imagen_url: 'https://via.placeholder.com/50',
-    estado: 'publicado'
-  },
-  {
-    id: '3',
-    titulo: 'Torneo semanal de PvP',
-    descripcion: 'Competencia con premios para los ganadores',
-    fecha: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-    tipo: 'torneo',
-    juego_nombre: 'Minecraft',
-    imagen_url: 'https://via.placeholder.com/50',
-    estado: 'publicado'
-  },
-  {
-    id: '4',
-    titulo: 'Evento especial de Halloween',
-    descripcion: 'Misiones y recompensas temáticas',
-    fecha: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    tipo: 'evento',
-    juego_nombre: 'Varios juegos',
-    imagen_url: 'https://via.placeholder.com/50',
-    estado: 'publicado'
-  },
-  {
-    id: '5',
-    titulo: 'Actualización de contenido',
-    descripcion: 'Nuevos items y misiones',
-    fecha: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    tipo: 'actualizacion',
-    juego_nombre: 'Skyblock',
-    imagen_url: 'https://via.placeholder.com/50',
-    estado: 'publicado'
-  }
-];
+// No usamos datos de prueba hardcodeados
 
 // Iconos para los tipos de eventos
 const tipoEventoIcon: Record<string, JSX.Element> = {
@@ -132,17 +80,12 @@ export default function EventosWidget({ className = '' }: EventosWidgetProps) {
           throw error;
         }
         
-        if (data && data.length > 0) {
-          setEventos(data);
-        } else {
-          // Si no hay eventos en Supabase, usar datos de prueba
-          console.log('No se encontraron eventos en la base de datos, usando datos de prueba');
-          setEventos(eventosDemo);
-        }
+        // Solo establecer los eventos si hay datos
+        setEventos(data || []);
       } catch (error) {
         console.error('Error al cargar eventos:', error);
-        // En caso de error, usar datos de prueba
-        setEventos(eventosDemo);
+        // En caso de error, establecer un array vacío
+        setEventos([]);
       } finally {
         setLoading(false);
       }

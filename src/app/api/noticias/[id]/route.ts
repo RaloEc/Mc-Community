@@ -157,6 +157,7 @@ export async function GET(
     let autorNombre = 'Desconocido';
     let autorColor = '#3b82f6'; // Color azul por defecto
     let autorAvatar = null; // URL de la imagen de perfil del autor
+    let autorRol = 'user'; // Rol por defecto
     
     // Determinar el ID del autor (puede estar en autor_id o en autor si es UUID)
     let autorId = null;
@@ -224,6 +225,13 @@ export async function GET(
         console.log(`Tipo de username: ${typeof perfil.username}`);
         console.log(`Avatar URL del perfil: ${perfil.avatar_url}`);
         console.log(`Tipo de avatar_url: ${typeof perfil.avatar_url}`);
+        console.log(`Rol del perfil: ${perfil.role}`);
+        
+        // Guardar el rol del autor
+        if (perfil.role) {
+          autorRol = perfil.role;
+          console.log(`Rol del autor establecido a: ${autorRol}`);
+        }
         
         // Usar el username del perfil, no el campo 'autor' de la noticia
         if (perfil.username && typeof perfil.username === 'string' && perfil.username.trim().length > 0) {
@@ -314,7 +322,8 @@ export async function GET(
       categorias: categorias || [],
       autor_nombre: autorNombre || noticia.autor || 'Desconocido',
       autor_color: autorColor || '#6b7280', // Gris por defecto
-      autor_avatar: autorAvatar || null
+      autor_avatar: autorAvatar || null,
+      autor_rol: autorRol
     };
     
     // Logs adicionales para depuración
@@ -322,6 +331,7 @@ export async function GET(
     console.log('autor_nombre final:', responseData.autor_nombre);
     console.log('autor_color final:', responseData.autor_color);
     console.log('autor_avatar final:', responseData.autor_avatar);
+    console.log('autor_rol final:', responseData.autor_rol);
     
     console.log('autor_avatar en la respuesta:', responseData.autor_avatar);
     

@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 export async function POST(request: Request) {
   try {
     // Obtener los datos del cuerpo de la solicitud
-    const { userId, username, color, avatar_url, bio, ubicacion, sitio_web } = await request.json();
+    const { userId, username, color, avatar_url, bio, ubicacion, sitio_web, banner_url } = await request.json();
     
     // Obtener el ID de usuario de la sesión si no se proporciona
     let userIdToUse = userId;
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     }
     
     console.log(`[API] Actualizando perfil para usuario: ${userIdToUse}`);
-    console.log(`[API] Nuevos valores - Username: ${username}, Color: ${color}, Avatar URL: ${avatar_url || 'No cambiada'}`);
+    console.log(`[API] Nuevos valores - Username: ${username}, Color: ${color}, Avatar URL: ${avatar_url || 'No cambiada'}, Banner URL: ${banner_url || 'No cambiada'}`);
     console.log(`[API] Campos adicionales - Bio: ${bio ? 'Presente' : 'No cambiada'}, Ubicación: ${ubicacion || 'No cambiada'}, Sitio web: ${sitio_web || 'No cambiado'}`);
     
     // Obtener el cliente de servicio para saltarse las restricciones RLS
@@ -52,6 +52,10 @@ export async function POST(request: Request) {
     // Agregar avatar_url si está presente
     if (avatar_url) {
       updateData.avatar_url = avatar_url;
+    }
+    // Agregar banner_url si está presente (permitir null para eliminar)
+    if (banner_url !== undefined) {
+      updateData.banner_url = banner_url;
     }
     
     // Agregar bio si está presente

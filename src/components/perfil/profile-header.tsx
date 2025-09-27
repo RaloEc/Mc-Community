@@ -3,6 +3,7 @@
 import { Button, Chip } from '@nextui-org/react'
 import { Edit, Shield, User } from 'lucide-react'
 import UserAvatar from '@/components/UserAvatar'
+import Image from 'next/image'
 
 interface ProfileHeaderProps {
   perfil: {
@@ -10,6 +11,7 @@ interface ProfileHeaderProps {
     role: 'user' | 'admin' | 'moderator'
     avatar_url: string
     color: string
+    banner_url?: string
   }
   onEditClick: () => void
 }
@@ -42,12 +44,31 @@ export default function ProfileHeader({ perfil, onEditClick }: ProfileHeaderProp
   return (
     <div className="relative overflow-hidden bg-white dark:bg-black amoled:bg-black rounded-xl shadow-lg">
       {/* Banner personalizado */}
-      <div 
-        className="w-full h-28 bg-gradient-to-r from-blue-500 to-purple-500 rounded-t-xl overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${perfil.color}dd, ${perfil.color}88, ${perfil.color}dd)`
-        }}
-      >
+      <div className="w-full h-28 rounded-t-xl overflow-hidden relative">
+        {perfil.banner_url ? (
+          <Image
+            key={perfil.banner_url} // Forzar recarga cuando cambie la URL
+            src={`${perfil.banner_url}${perfil.banner_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`}
+            alt={`Banner de ${perfil.username}`}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority
+            unoptimized={perfil.banner_url?.includes('supabase')} // Desactivar optimización para imágenes de Supabase
+            onError={(e) => {
+              // Si falla la carga, intentar forzar recarga
+              const target = e.target as HTMLImageElement;
+              target.src = `${perfil.banner_url}${perfil.banner_url?.includes('?') ? '&' : '?'}t=${new Date().getTime()}`;
+            }}
+          />
+        ) : (
+          <div 
+            className="w-full h-full"
+            style={{
+              backgroundColor: `${perfil.color}33` // Color pastel con 20% de opacidad
+            }}
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
       </div>
       

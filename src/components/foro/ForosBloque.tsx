@@ -361,15 +361,15 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
           <TabsTrigger value="sin_respuestas">Sin Respuestas</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="destacados" className="mt-0">
+        <TabsContent value="destacados" className="mt-0" forceMount>
           {renderTabContent('destacados')}
         </TabsContent>
         
-        <TabsContent value="recientes" className="mt-0">
+        <TabsContent value="recientes" className="mt-0" forceMount>
           {renderTabContent('recientes')}
         </TabsContent>
         
-        <TabsContent value="sin_respuestas" className="mt-0">
+        <TabsContent value="sin_respuestas" className="mt-0" forceMount>
           {renderTabContent('sin_respuestas')}
         </TabsContent>
       </Tabs>

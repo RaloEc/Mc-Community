@@ -276,6 +276,8 @@ export default function ForosDestacadosSection({
                 contenido={hilo.contenido}
                 categoriaNombre={hilo.categoria?.nombre}
                 categoriaColor={hilo.categoria?.color}
+                autorUsername={hilo.autor?.username || 'Anónimo'}
+                autorAvatarUrl={hilo.autor?.avatar_url || null}
                 createdAt={hilo.fecha_creacion}
                 vistas={hilo.vistas || 0}
                 respuestas={hilo.respuestas_conteo || 0}

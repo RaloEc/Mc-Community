@@ -3,11 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ExternalLink, MessageSquare, Newspaper } from 'lucide-react'
+ 
 
 // Tipos para los datos del perfil
 interface ProfileData {
@@ -15,6 +17,7 @@ interface ProfileData {
   username: string
   created_at: string
   avatar_url: string
+  banner_url: string | null
   bio: string
   role: string
   stats: {
@@ -40,6 +43,7 @@ interface ProfileData {
 const ProfileSkeleton = () => (
   <div className="space-y-6">
     <Card>
+      <Skeleton className="h-48 w-full" />
       <CardHeader className="flex flex-row items-center space-x-4">
         <Skeleton className="h-24 w-24 rounded-full" />
         <div className="space-y-2">
@@ -131,7 +135,20 @@ export default function UserProfilePage() {
     <div className="container mx-auto py-8 px-4 space-y-8">
       {/* Cabecera del Perfil */}
       <Card className="overflow-hidden">
-        <div className="bg-card-foreground/5 h-20" />
+        <div className="relative h-48 w-full">
+          {profile.banner_url ? (
+            <Image
+              src={profile.banner_url}
+              alt={`Banner de ${profile.username}`}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-primary/10 to-secondary/10" />
+          )}
+        </div>
         <CardContent className="p-6">
           <div className="flex items-start -mt-16">
             <Avatar className="w-24 h-24 border-4 border-background">

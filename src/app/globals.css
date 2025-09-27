@@ -275,6 +275,104 @@ html, body {
 
   
 
+/* Estilos para blockquotes */
+.prose blockquote,
+.hilo-content blockquote,
+.hilo-preview blockquote,
+.foro-card blockquote {
+  background: none !important;
+  border-left: none !important;
+  padding-left: 1.5em !important;
+  margin: 0.75em 0 !important;
+  color: inherit !important;
+  font-style: normal !important;
+  position: relative;
+  padding: 0.25em 0 0.25em 1.5em;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.prose blockquote::before,
+.hilo-content blockquote::before,
+.hilo-preview blockquote::before,
+.foro-card blockquote::before {
+  content: '>' !important;
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  font-weight: bold;
+  color: var(--foreground);
+  opacity: 0.6;
+}
+
+.prose blockquote p,
+.hilo-content blockquote p,
+.hilo-preview blockquote p,
+.foro-card blockquote p {
+  margin: 0 !important;
+  display: inline;
+  color: inherit;
+}
+
+/* Asegurar que los blockquotes se vean bien en modo oscuro */
+.dark .prose blockquote,
+.dark .hilo-content blockquote,
+.dark .hilo-preview blockquote,
+.dark .foro-card blockquote {
+  color: #e5e7eb !important;
+}
+
+.dark .prose blockquote::before,
+.dark .hilo-content blockquote::before,
+.dark .hilo-preview blockquote::before,
+.dark .foro-card blockquote::before {
+  color: #e5e7eb;
+  opacity: 0.8;
+}
+
+/* Estilo para citas dentro de blockquotes */
+.prose blockquote blockquote,
+.hilo-content blockquote blockquote,
+.hilo-preview blockquote blockquote,
+.foro-card blockquote blockquote {
+  margin-left: 1em !important;
+  padding-left: 1em !important;
+  border-left: 2px solid var(--border) !important;
+}
+
+.dark .prose blockquote blockquote,
+.dark .hilo-content blockquote blockquote,
+.dark .hilo-preview blockquote blockquote,
+.dark .foro-card blockquote blockquote {
+  border-left-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Estilos específicos para presupuestos en tarjetas de foro */
+.foro-card .hilo-content,
+.foro-card .hilo-preview {
+  position: relative;
+}
+
+.foro-card blockquote {
+  margin: 0.5em 0 !important;
+  padding: 0.25em 0 0.25em 1.5em !important;
+  font-size: 0.85em !important;
+  line-height: 1.4 !important;
+  color: var(--muted-foreground) !important;
+}
+
+.dark .foro-card blockquote {
+  color: var(--muted-foreground) !important;
+}
+
+.foro-card blockquote::before {
+  content: '>' !important;
+  position: absolute;
+  left: 0.5em;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
 /* Estilos para tarjetas con hover */
 .card-hover-effect {
   transition: all 0.1s ease;
@@ -858,6 +956,64 @@ iframe.editor-youtube {
   outline: none;
   border-color: var(--user-color, #3b82f6);
   box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+}
+
+/* Efecto cuando el menú móvil está abierto */
+body.menu-open {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Asegurar que el header esté por encima del menú */
+header {
+  /* No establecer position aquí para no sobrescribir clases Tailwind (e.g., fixed) */
+  z-index: 60;
+}
+
+/* Fondo con desenfoque sutil para el menú móvil */
+body.menu-open::after {
+  content: '';
+  position: fixed;
+  top: 64px; /* Altura del header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 40; /* Menor que el header pero mayor que el contenido */
+  pointer-events: auto;
+}
+
+/* Asegurar que el header no se vea afectado por el overlay */
+body.menu-open header {
+  background-color: var(--background);
+  /* No forzar position aquí para respetar la posición fija del header */
+  z-index: 60;
+}
+
+/* Estilos para el menú desplegable en modo oscuro */
+.dark .fixed.inset-0.bg-black\/40.z-\[998\] {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] {
+  background-color: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Asegurar que los elementos del menú tengan buen contraste en modo oscuro */
+.dark .fixed.top-16.right-4.z-\[999\] .text-gray-700 {
+  color: #e5e7eb;
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] .hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .dialog-actions {

@@ -50,6 +50,8 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
       contenido={hilo.contenido}
       categoriaNombre={hilo.subcategoria?.nombre || undefined}
       categoriaColor={hilo.subcategoria?.color || undefined}
+      autorUsername={hilo.autor?.username || 'Anónimo'}
+      autorAvatarUrl={hilo.autor?.avatar_url || null}
       createdAt={hilo.created_at}
       vistas={hilo.vistas ?? 0}
       respuestas={hilo.respuestas_count ?? 0}

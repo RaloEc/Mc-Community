@@ -10,6 +10,7 @@ interface Profile {
   role: 'user' | 'admin' | string
   created_at?: string | null
   avatar_url?: string | null
+  banner_url?: string | null
   color?: string | null
 }
 
@@ -75,6 +76,7 @@ export function AuthProvider({
           role: data.role ?? 'user',
           created_at: data.created_at ?? null,
           avatar_url: data.avatar_url ?? null,
+          banner_url: (data as any).banner_url ?? null,
           color: data.color ?? null,
         }
         profileCacheRef.current.set(userId, p)

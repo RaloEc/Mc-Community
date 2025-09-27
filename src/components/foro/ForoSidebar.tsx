@@ -217,17 +217,33 @@ interface ForoSidebarProps {
   categorias: Categoria[];
 }
 
-export default function ForoSidebar({ categorias }: ForoSidebarProps) {
+export default function ForoSidebar({ categorias = [] }: ForoSidebarProps) {
   const [query, setQuery] = useState('')
+  
+  // Log para depuración
+  React.useEffect(() => {
+    console.log('Categorías recibidas en ForoSidebar:', categorias);
+    if (categorias.length === 0) {
+      console.warn('No se recibieron categorías en el componente ForoSidebar');
+    }
+  }, [categorias]);
 
   const nestedCategorias = useMemo(() => {
-    const parents = categorias.filter((c) => c.categoria_padre_id === null)
+    if (!categorias || categorias.length === 0) {
+      console.warn('No hay categorías para procesar en nestedCategorias');
+      return [];
+    }
+    
+    const parents = categorias.filter((c) => !c.categoria_padre_id)
+    console.log('Categorías padre encontradas:', parents);
+    
     const childrenByParent = new Map<string, Categoria[]>()
     for (const child of categorias) {
-      if (child.categoria_padre_id) {
-        const list = childrenByParent.get(child.categoria_padre_id) || []
-        list.push(child as Categoria)
-        childrenByParent.set(child.categoria_padre_id, list)
+      const parentId = child.categoria_padre_id || child.parent_id;
+      if (parentId) {
+        const list = childrenByParent.get(parentId) || []
+        list.push(child)
+        childrenByParent.set(parentId, list)
       }
     }
 
@@ -267,7 +283,7 @@ export default function ForoSidebar({ categorias }: ForoSidebarProps) {
   }), [])
 
   return (
-    <aside className="sticky top-[var(--header-height)] h-[calc(100vh-var(--header-height))] hidden lg:flex lg:flex-col w-64 flex-shrink-0 bg-white dark:bg-black">
+    <aside className="sticky top-[var(--header-height)] h-[calc(100vh-var(--header-height))] hidden lg:flex lg:flex-col w-56 flex-shrink-0 bg-white dark:bg-black">
       <div className="pt-4 px-4">
         <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-2">Categorías</h2>
       </div>

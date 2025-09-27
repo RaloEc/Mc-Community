@@ -7,8 +7,14 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const Dialog = ({ open, onOpenChange, ...props }: DialogPrimitive.DialogProps) => {
-  // No manejamos el scroll aquí, lo dejamos para el overlay
-  return <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />;
+  // Dejamos que Radix maneje el estado de apertura/cierre
+  return (
+    <DialogPrimitive.Root 
+      open={open} 
+      onOpenChange={onOpenChange} 
+      {...props} 
+    />
+  );
 };
 
 const DialogTrigger = DialogPrimitive.Trigger;
@@ -45,12 +51,23 @@ const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { forceMount?: boolean }
 >(({ className, children, ...props }, ref) => {
-  // Usar un efecto para manejar el scroll cuando el modal está abierto
+  // Efecto para manejar el scroll del body cuando el diálogo está abierto
   React.useEffect(() => {
     if (props['data-state'] === 'open') {
-      document.body.style.overflow = 'hidden';
+      // Guardar la posición actual del scroll
+      const scrollY = window.scrollY;
+      // Bloquear el scroll del body
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = '100%';
+      
       return () => {
-        document.body.style.overflow = '';
+        // Restaurar el scroll al cerrar el diálogo
+        const scrollY = document.body.style.top;
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.width = '';
+        window.scrollTo(0, parseInt(scrollY || '0') * -1);
       };
     }
   }, [props['data-state']]);
@@ -77,6 +94,22 @@ const DialogContent = React.forwardRef<
           maxWidth: '100%',
           // Asegurar márgenes consistentes
           margin: '0 auto'
+        }}
+        // Prevenir el cierre automático al hacer clic en el contenido
+        onPointerDownOutside={(e) => {
+          // Solo permitir el cierre si el clic fue en el overlay, no en el contenido
+          const isOverlay = (e.target as HTMLElement).closest('[role="dialog"]') === null;
+          if (!isOverlay) {
+            e.preventDefault();
+          }
+        }}
+        // Prevenir el cierre al presionar Escape
+        onEscapeKeyDown={(e) => {
+          // Permitir cerrar con Escape solo si no estamos en un formulario
+          const target = e.target as HTMLElement;
+          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+            e.preventDefault();
+          }
         }}
         {...props}
       >

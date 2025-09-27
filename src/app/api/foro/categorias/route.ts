@@ -37,21 +37,33 @@ export async function GET() {
     const categoriasConEstadisticas = await Promise.all(
       categorias.map(async (categoria) => {
         // Contar hilos en esta categoría
-        const { count: hilosCount, error: hilosError } = await supabase
+        const { count: hilosCount } = await supabase
           .from('foro_hilos')
           .select('*', { count: 'exact', head: true })
           .eq('categoria_id', categoria.id);
         
-        // Contar todos los posts en hilos de esta categoría
-        const { data: posts, error: postsError } = await supabase
-          .from('foro_posts')
+        // Obtener los IDs de los hilos de esta categoría para contar mensajes
+        const { data: hilos, error: hilosError } = await supabase
+          .from('foro_hilos')
           .select('id')
-          .eq('hilo_id', supabase.from('foro_hilos').select('id').eq('categoria_id', categoria.id));
+          .eq('categoria_id', categoria.id);
         
-        const mensajesCount = posts?.length || 0;
+        let mensajesCount = 0;
+        
+        // Si hay hilos, contar los mensajes
+        if (hilos && hilos.length > 0) {
+          const hiloIds = hilos.map(h => h.id);
+          const { count, error: postsError } = await supabase
+            .from('foro_posts')
+            .select('*', { count: 'exact', head: true })
+            .in('hilo_id', hiloIds);
+          
+          mensajesCount = count || 0;
+        }
         
         return {
           ...categoria,
+          categoria_padre_id: categoria.parent_id, // Asegurar compatibilidad
           hilos: hilosCount || 0,
           mensajes: mensajesCount
         };

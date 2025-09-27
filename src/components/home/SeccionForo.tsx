@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { TrendingUp, Eye, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SwipeableTabs } from '@/components/ui/swipeable-tabs';
 import { useResponsive } from '@/hooks/useResponsive';
 import HiloItem, { HiloDTO } from '@/components/foro/HiloItem';
 
@@ -132,56 +131,6 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
     );
   }
 
-  const tabsData = [
-    {
-      id: 'mas-votados',
-      label: 'Más Votados',
-      icon: <TrendingUp className="h-4 w-4" />,
-      content: (
-        <div className="space-y-4">
-          {hilos.masVotados.map((hilo) => (
-            <HiloItem key={hilo.id} hilo={convertirAHiloDTO(hilo)} />
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 'mas-vistos',
-      label: 'Más Vistos',
-      icon: <Eye className="h-4 w-4" />,
-      content: (
-        <div className="space-y-4">
-          {hilos.masVistos.map((hilo) => (
-            <HiloItem key={hilo.id} hilo={convertirAHiloDTO(hilo)} />
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 'sin-respuestas',
-      label: 'Sin Respuesta',
-      icon: <AlertCircle className="h-4 w-4" />,
-      content: (
-        <div className="space-y-4">
-          {hilos.sinRespuestas.map((hilo) => (
-            <HiloItem key={hilo.id} hilo={convertirAHiloDTO(hilo)} />
-          ))}
-        </div>
-      )
-    },
-    {
-      id: 'recientes',
-      label: 'Recientes',
-      icon: <Clock className="h-4 w-4" />,
-      content: (
-        <div className="space-y-4">
-          {hilos.recientes.map((hilo) => (
-            <HiloItem key={hilo.id} hilo={convertirAHiloDTO(hilo)} />
-          ))}
-        </div>
-      )
-    }
-  ];
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -196,10 +145,7 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
         </Link>
       </div>
 
-      {isMobile ? (
-        <SwipeableTabs tabs={tabsData} defaultTab="mas-votados" />
-      ) : (
-        <div className="space-y-12">
+      <div className="space-y-12">
           {/* Sección Más Votados */}
           <div>
             <div className="flex items-center gap-2 mb-6">
@@ -251,8 +197,7 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
               ))}
             </div>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

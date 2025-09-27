@@ -33,6 +33,19 @@ const darkenColor = (color: string, percent: number) => {
   ).toString(16).slice(1);
 };
 
+// Función para convertir un color hexadecimal a RGBA con opacidad
+export const hexToRgba = (hex: string, opacity: number): string => {
+  // Eliminar el # si está presente
+  const hexValue = hex.replace('#', '');
+  
+  // Convertir a valores RGB
+  const r = parseInt(hexValue.substring(0, 2), 16);
+  const g = parseInt(hexValue.substring(2, 4), 16);
+  const b = parseInt(hexValue.substring(4, 6), 16);
+  
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
 export function useUserTheme() {
   const { profile } = useAuth();
   const { theme } = useTheme();
@@ -48,6 +61,18 @@ export function useUserTheme() {
   const adjustedColor = isDarkMode 
     ? darkenColor(userColor, 10) // Un poco más oscuro en modo oscuro
     : lightenColor(userColor, 10); // Un poco más claro en modo claro
+    
+  // Obtener color con opacidad
+  const getColorWithOpacity = (opacity: number): string => {
+    return hexToRgba(userColor, opacity);
+  };
+  
+  // Obtener color de fondo atenuado según el tema
+  const getFadedBackground = (): string => {
+    return isDarkMode 
+      ? hexToRgba(darkenColor(userColor, 30), 0.2) // Más oscuro y más transparente en modo oscuro
+      : hexToRgba(lightenColor(userColor, 40), 0.15); // Más claro y menos transparente en modo claro
+  };
   
   // Genera clases de Tailwind con el color personalizado
   const getTextColor = () => ({
@@ -88,12 +113,11 @@ export function useUserTheme() {
   };
 
   // Función para obtener el color de fondo con opacidad ajustada según el tema
-  const getThemeAdjustedBgColor = (opacity = 0.1) => {
-    return {
-      backgroundColor: `${adjustedColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
-    };
-  };
+  const getThemeAdjustedBgColor = (opacity = 0.1) => ({
+    backgroundColor: `${adjustedColor}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,
+  });
 
+  // Retornar solo las funciones y valores necesarios
   return {
     userColor,
     adjustedColor,
@@ -104,20 +128,8 @@ export function useUserTheme() {
     getRingColor,
     getThemeAdjustedBorderColor,
     getThemeAdjustedBgColor,
-    // Clases de utilidad comunes
-    textColor: `text-[${userColor}]`,
-    hoverTextColor: `hover:text-[${userColor}]`,
-    borderColor: `border-[${userColor}]`,
-    hoverBorderColor: `hover:border-[${userColor}]`,
-    bgColor: `bg-[${userColor}]`,
-    hoverBgColor: `hover:bg-[${userColor}]`,
-    // Clases para modo oscuro
-    darkTextColor: `dark:text-[${adjustedColor}]`,
-    darkHoverTextColor: `dark:hover:text-[${adjustedColor}]`,
-    darkBorderColor: `dark:border-[${adjustedColor}]`,
-    darkHoverBorderColor: `dark:hover:border-[${adjustedColor}]`,
-    // Clases con ajuste de tema
-    themeAdjustedBorderColor: `border-[${adjustedColor}]`,
-    themeAdjustedHoverBorderColor: `hover:border-[${adjustedColor}]`,
-  };
+    // Nuevas funciones añadidas
+    getFadedBackground,
+    getColorWithOpacity,
+  } as const;
 }
