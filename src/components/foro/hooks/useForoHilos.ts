@@ -95,6 +95,57 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
 
+  // Función para obtener contadores de respuestas en una sola consulta
+  const getResponseCountsForHilos = async (hiloIds: string[]): Promise<Record<string, number>> => {
+    if (hiloIds.length === 0) return {};
+    
+    // Inicializar el mapa de contadores con 0 para todos los hilos
+    const countsMap: Record<string, number> = {};
+    hiloIds.forEach(id => {
+      countsMap[id] = 0;
+    });
+    
+    try {
+      // Consultar todos los posts para los hilos especificados
+      const { data, error } = await supabase
+        .from("foro_posts")
+        .select("hilo_id")
+        .in("hilo_id", hiloIds);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Contar manualmente las respuestas para cada hilo
+      if (data) {
+        data.forEach((post: any) => {
+          const hiloId = post.hilo_id;
+          countsMap[hiloId] = (countsMap[hiloId] || 0) + 1;
+        });
+      }
+      
+      return countsMap;
+    } catch (error) {
+      console.error("Error al obtener contadores de respuestas:", error);
+      
+      // Plan B: hacer consultas individuales si la consulta principal falla
+      for (const hiloId of hiloIds) {
+        try {
+          const { count } = await supabase
+            .from("foro_posts")
+            .select("*", { count: "exact", head: true })
+            .eq("hilo_id", hiloId);
+          
+          countsMap[hiloId] = count || 0;
+        } catch (err) {
+          console.error(`Error al obtener conteo para hilo ${hiloId}:`, err);
+          // El contador ya está inicializado en 0, no es necesario hacer nada más
+        }
+      }
+      return countsMap;
+    }
+  };
+
   // Consulta principal de hilos
   const {
     data,
@@ -139,18 +190,16 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           respuestas_conteo: 0
         }));
         
-        // Cargar conteos de respuestas por separado
+        // Cargar conteos de respuestas en una sola consulta
         if (items.length > 0) {
-          for (const hilo of items) {
-            const { count, error: countErr } = await supabase
-              .from("foro_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("hilo_id", hilo.id);
-              
-            if (!countErr && count !== null) {
-              hilo.respuestas_conteo = count;
-            }
-          }
+          const hiloIds = items.map(hilo => hilo.id);
+          const respuestasCountMap = await getResponseCountsForHilos(hiloIds);
+          
+          // Asignar contadores a cada hilo
+          items = items.map(hilo => ({
+            ...hilo,
+            respuestas_conteo: respuestasCountMap[hilo.id] || 0
+          }));
         }
       } 
       else if (activeTab === "populares") {
@@ -170,18 +219,16 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           respuestas_conteo: 0
         }));
         
-        // Cargar conteos de respuestas por separado
+        // Cargar conteos de respuestas en una sola consulta
         if (items.length > 0) {
-          for (const hilo of items) {
-            const { count, error: countErr } = await supabase
-              .from("foro_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("hilo_id", hilo.id);
-              
-            if (!countErr && count !== null) {
-              hilo.respuestas_conteo = count;
-            }
-          }
+          const hiloIds = items.map(hilo => hilo.id);
+          const respuestasCountMap = await getResponseCountsForHilos(hiloIds);
+          
+          // Asignar contadores a cada hilo
+          items = items.map(hilo => ({
+            ...hilo,
+            respuestas_conteo: respuestasCountMap[hilo.id] || 0
+          }));
         }
         
         // Ordenar por "popularidad" local
@@ -212,18 +259,16 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           respuestas_conteo: 0
         }));
         
-        // Cargar conteos de respuestas por separado para filtrar
+        // Cargar conteos de respuestas en una sola consulta
         if (items.length > 0) {
-          for (const hilo of items) {
-            const { count, error: countErr } = await supabase
-              .from("foro_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("hilo_id", hilo.id);
-              
-            if (!countErr && count !== null) {
-              hilo.respuestas_conteo = count;
-            }
-          }
+          const hiloIds = items.map(hilo => hilo.id);
+          const respuestasCountMap = await getResponseCountsForHilos(hiloIds);
+          
+          // Asignar contadores a cada hilo
+          items = items.map(hilo => ({
+            ...hilo,
+            respuestas_conteo: respuestasCountMap[hilo.id] || 0
+          }));
         }
         
         // Filtrar solo los hilos sin respuestas
@@ -262,18 +307,16 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           respuestas_conteo: 0
         }));
         
-        // Cargar conteos de respuestas por separado
+        // Cargar conteos de respuestas en una sola consulta
         if (items.length > 0) {
-          for (const hilo of items) {
-            const { count, error: countErr } = await supabase
-              .from("foro_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("hilo_id", hilo.id);
-              
-            if (!countErr && count !== null) {
-              hilo.respuestas_conteo = count;
-            }
-          }
+          const hiloIds = items.map(hilo => hilo.id);
+          const respuestasCountMap = await getResponseCountsForHilos(hiloIds);
+          
+          // Asignar contadores a cada hilo
+          items = items.map(hilo => ({
+            ...hilo,
+            respuestas_conteo: respuestasCountMap[hilo.id] || 0
+          }));
         }
       } 
       else if (activeTab === "mios") {
@@ -296,18 +339,16 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           respuestas_conteo: 0
         }));
         
-        // Cargar conteos de respuestas por separado
+        // Cargar conteos de respuestas en una sola consulta
         if (items.length > 0) {
-          for (const hilo of items) {
-            const { count, error: countErr } = await supabase
-              .from("foro_posts")
-              .select("*", { count: "exact", head: true })
-              .eq("hilo_id", hilo.id);
-              
-            if (!countErr && count !== null) {
-              hilo.respuestas_conteo = count;
-            }
-          }
+          const hiloIds = items.map(hilo => hilo.id);
+          const respuestasCountMap = await getResponseCountsForHilos(hiloIds);
+          
+          // Asignar contadores a cada hilo
+          items = items.map(hilo => ({
+            ...hilo,
+            respuestas_conteo: respuestasCountMap[hilo.id] || 0
+          }));
         }
       }
 

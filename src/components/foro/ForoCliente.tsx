@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
@@ -50,8 +50,12 @@ const InvitacionRegistro = () => (
   </motion.div>
 );
 
+// Componente Row eliminado temporalmente
+
 export default function ForoCliente() {
   const { user, profile, loading: userLoading } = useAuth();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   // Usar nuestro hook personalizado para gestionar los hilos
   const {
@@ -70,6 +74,13 @@ export default function ForoCliente() {
     hasNextPage,
     isFetchingNextPage,
   } = useForoHilos();
+  
+  // Observar cambios en el tamaño del contenedor
+  useEffect(() => {
+    if (containerRef.current) {
+      setContainerWidth(containerRef.current.offsetWidth);
+    }
+  }, [containerRef]);
 
   // Estado para los filtros
   const [filters, setFilters] = useState<ForoFiltersState>({
@@ -264,23 +275,21 @@ export default function ForoCliente() {
                     Inicia sesión para ver tus hilos.
                   </div>
                 )}
-                <div
-                  className="space-y-6"
+                <div className="w-full space-y-6" ref={containerRef}
                   onScroll={(e: React.UIEvent<HTMLDivElement>) => {
                     const target = e.target as HTMLDivElement;
                     const { scrollTop, scrollHeight, clientHeight } = target;
                     if (scrollTop + clientHeight >= scrollHeight - 100) {
                       loadMoreHilos();
                     }
-                  }}
-                >
+                  }}>
                   {hilos.map((hilo, index) => (
                     <motion.div
                       key={`${hilo.id}-${index}`}
                       initial={index < 10 ? false : { opacity: 0, y: 4 }}
                       animate={index < 10 ? undefined : { opacity: 1, y: 0 }}
                       transition={{ duration: 0.18, ease: "easeOut" }}
-                      className="w-full"
+                      className="w-full px-2 py-1"
                     >
                       <HiloCard
                         id={hilo.id}

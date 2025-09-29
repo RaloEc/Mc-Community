@@ -174,9 +174,9 @@ export async function GET(request: Request) {
         // Obtener todos los IDs de noticias como UUIDs
         const noticiaIds = noticias.map(n => n.id);
         
-        // Consultar comentarios para estas noticias usando la función RPC específica para UUIDs
+        // Consultar comentarios para estas noticias usando la nueva función RPC optimizada
         const { data: comentarios, error: errorComentarios } = await serviceClient
-          .rpc('contar_comentarios_por_noticia_uuid', {
+          .rpc('contar_comentarios_por_noticia', {
             noticia_ids: noticiaIds
           });
         

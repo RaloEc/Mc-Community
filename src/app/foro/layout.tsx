@@ -1,3 +1,5 @@
+import Script from 'next/script';
+
 export const revalidate = 0;
 
 function getBaseUrl() {
@@ -27,6 +29,23 @@ export default async function ForoLayout({
 }) {
   return (
     <div className="bg-white dark:bg-black amoled:bg-black min-h-screen">
+      {/* Script para deshabilitar Google Cast */}
+      <Script id="disable-google-cast" strategy="beforeInteractive">
+        {`
+          // Deshabilitar la API de Google Cast
+          window.chrome = window.chrome || {};
+          window.chrome.cast = window.chrome.cast || {};
+          window.chrome.cast.isAvailable = false;
+
+          // Evitar que se cargue el script de Google Cast
+          Object.defineProperty(window, '__onGCastApiAvailable', {
+            value: function() { return false; },
+            writable: false,
+            configurable: false
+          });
+        `}
+      </Script>
+      
       <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-2 lg:py-8">
         {children}
       </div>

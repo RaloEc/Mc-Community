@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import NoticiasLista from '@/components/NoticiasLista'
 import FiltrosBtnFlotante from '@/components/FiltrosBtnFlotante';
 import FiltrosModal from '@/components/FiltrosModal';
 import FiltrosDesktop from '@/components/FiltrosDesktop';
-import NoticiasDestacadas from '@/components/noticias/NoticiasDestacadas';
-import SeccionCategoria from '@/components/noticias/SeccionCategoria';
-import NoticiasGrid from '@/components/noticias/NoticiasGrid';
-import { useQuery } from '@tanstack/react-query';
+import NoticiasDestacadas from '@/components/NoticiasDestacadas';
+import SeccionCategoria from '@/components/SeccionCategoria';
+import { CategoriaNoticia } from '@/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -29,8 +29,17 @@ export default function Noticias() {
   const [categorias, setCategorias] = useState<{id: string, nombre: string}[]>([]);
   const [filtrosActivosArray, setFiltrosActivosArray] = useState<{tipo: string, valor: string, etiqueta: string}[]>([]);
   
+  // Función para adaptar categorías del tipo CategoriaNoticia[] a {id: string, nombre: string}[]
+  const adaptarCategorias = (cats: CategoriaNoticia[]): {id: string, nombre: string}[] => {
+    return cats.map(cat => ({
+      id: String(cat.id), // Convertir id a string explícitamente
+      nombre: cat.nombre
+    }));
+  };
+  
   // Estado para controlar la vista
   const [mostrarListaCompleta, setMostrarListaCompleta] = useState(false);
+  const [categoriasDestacadas, setCategoriasDestacadas] = useState<{id: number, nombre: string}[]>([]);
   
   // Referencia para evitar bucles infinitos
   const categoriaProcesada = useRef(false);
@@ -40,35 +49,7 @@ export default function Noticias() {
   const [autorTemp, setAutorTemp] = useState('');
   const [categoriaTemp, setCategoriaTemp] = useState('');
   const [ordenFechaTemp, setOrdenFechaTemp] = useState<'asc' | 'desc'>('desc');
-
-  // Consulta para obtener las categorías destacadas
-  const { data: categoriasDestacadas = [] } = useQuery({
-    queryKey: ['noticias', 'categoriasDestacadas'],
-    queryFn: async () => {
-      try {
-        // Usar URL absoluta para evitar problemas con Next.js
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-        const response = await fetch(`${baseUrl}/api/categorias`);
-        
-        if (!response.ok) {
-          throw new Error(`Error al obtener categorías: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-          // Tomar las primeras 3 categorías como destacadas
-          return data.data.slice(0, 3);
-        }
-        return [];
-      } catch (err) {
-        console.error('Error al cargar categorías destacadas:', err);
-        return [];
-      }
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutos
-  });
-
+  
   // Efecto para leer los parámetros de la URL y aplicar los filtros al cargar la página
   useEffect(() => {
     const urlBusqueda = searchParams.get('busqueda');
@@ -160,6 +141,32 @@ export default function Noticias() {
     }
   }, [busqueda, autor, categoria, ordenFecha]);
   
+  // Efecto para cargar las categorías destacadas
+  useEffect(() => {
+    const cargarCategoriasDestacadas = async () => {
+      try {
+        // Usar URL absoluta para evitar problemas con Next.js
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/categorias`);
+        
+        if (!response.ok) {
+          throw new Error(`Error al obtener categorías: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+          // Tomar las primeras 3 categorías como destacadas
+          setCategoriasDestacadas(data.data.slice(0, 3));
+        }
+      } catch (err) {
+        console.error('Error al cargar categorías destacadas:', err);
+      }
+    };
+    
+    cargarCategoriasDestacadas();
+  }, []);
+  
   // Función para eliminar un filtro específico
   const eliminarFiltro = (tipo: string) => {
     if (tipo === 'busqueda') setBusqueda('');
@@ -211,23 +218,25 @@ export default function Noticias() {
         
         <div className="w-full max-w-[1600px] mx-auto">
           {mostrarListaCompleta ? (
-            // Mostrar la lista completa con filtros aplicados usando el nuevo componente NoticiasGrid
-            <NoticiasGrid 
-              initialFiltros={{
-                busqueda,
-                autor,
-                categoria,
-                ordenFecha
+            // Mostrar la lista completa con filtros aplicados
+            <NoticiasLista 
+              limit={16} 
+              columnas={3} 
+              mostrarResumen={true} 
+              mostrarFiltros={false}
+              busqueda={busqueda}
+              autor={autor}
+              categoria={categoria}
+              ordenFecha={ordenFecha}
+              onFiltrosActivosChange={(cantidad) => {
+                setFiltrosActivos(cantidad);
               }}
-              columnas={3}
-              mostrarResumen={true}
-              limit={16}
               onCategoriasLoaded={(cats) => {
-                // Convertir CategoriaNoticia[] a {id: string, nombre: string}[]
-                setCategorias(cats.map(cat => ({
-                  id: String(cat.id),
-                  nombre: cat.nombre
-                })));
+                // Usar la función adaptadora para convertir CategoriaNoticia[] a {id: string, nombre: string}[]
+                setCategorias(adaptarCategorias(cats));
+              }}
+              onFiltrosActivosArrayChange={(filtros) => {
+                setFiltrosActivosArray(filtros);
               }}
             />
           ) : (

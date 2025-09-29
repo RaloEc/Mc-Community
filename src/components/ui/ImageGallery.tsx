@@ -28,7 +28,7 @@ export function ImageGallery({ images, className = "" }: ImageGalleryProps) {
           <img 
             src={images[0]} 
             alt="Imagen" 
-            className="max-h-40 w-auto h-auto object-contain mx-auto"
+            className="w-full max-h-80 h-auto object-contain mx-auto"
           />
         </div>
         
@@ -87,7 +87,7 @@ export function ImageGallery({ images, className = "" }: ImageGalleryProps) {
             <img 
               src={image} 
               alt={`Imagen ${index + 1}`}
-              className="max-h-40 w-auto h-auto object-contain mx-auto rounded-md transition-transform hover:scale-105"
+              className="w-full max-h-80 h-auto object-contain mx-auto rounded-lg"
               style={{ aspectRatio: 'auto' }}
             />
           </div>
