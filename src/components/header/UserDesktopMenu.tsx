@@ -1,0 +1,160 @@
+import React from "react";
+import Link from "next/link";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserInitials } from "@/lib/utils/avatar-utils";
+import { User, LogOut } from "lucide-react";
+
+interface UserDesktopMenuProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  onLogout: () => void;
+  currentTheme: string;
+  authUser: any;
+  profile?: {
+    username?: string;
+    avatar_url?: string;
+    role?: string;
+  } | null;
+  userButtonRef: React.RefObject<HTMLButtonElement>;
+  userMenuRef: React.RefObject<HTMLDivElement>;
+}
+
+export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
+  isOpen,
+  onToggle,
+  onClose,
+  onLogout,
+  currentTheme,
+  authUser,
+  profile,
+  userButtonRef,
+  userMenuRef,
+}) => {
+  return (
+    <div className="relative">
+      <button
+        ref={userButtonRef}
+        type="button"
+        className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        onClick={onToggle}
+      >
+        <Avatar className="w-8 h-8">
+          <AvatarImage
+            src={
+              profile?.avatar_url ||
+              authUser?.user_metadata?.avatar_url ||
+              authUser?.user_metadata?.picture ||
+              undefined
+            }
+            alt={
+              profile?.username ||
+              authUser?.user_metadata?.full_name ||
+              authUser?.user_metadata?.name ||
+              "Usuario"
+            }
+            className="object-cover"
+          />
+          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+            {getUserInitials(
+              profile?.username ||
+                authUser?.user_metadata?.full_name ||
+                "",
+              1,
+              "U"
+            )}
+          </AvatarFallback>
+        </Avatar>
+      </button>
+      {isOpen && (
+        <div
+          ref={userMenuRef}
+          className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg border z-50 ${
+            currentTheme === "light"
+              ? "bg-white border-gray-200"
+              : "bg-black border-gray-800"
+          }`}
+        >
+          <div className="p-3">
+            <div className="flex items-center px-3 py-3 border-b border-gray-200/50 dark:border-gray-800/50 mb-2">
+              <Avatar className="w-10 h-10 mr-3">
+                <AvatarImage
+                  src={
+                    profile?.avatar_url ||
+                    authUser?.user_metadata?.avatar_url ||
+                    authUser?.user_metadata?.picture ||
+                    undefined
+                  }
+                  alt={
+                    profile?.username ||
+                    authUser?.user_metadata?.full_name ||
+                    authUser?.user_metadata?.name ||
+                    "Usuario"
+                  }
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
+                  {getUserInitials(
+                    profile?.username ||
+                      authUser?.user_metadata?.full_name ||
+                      "",
+                    1,
+                    "U"
+                  )}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm truncate">
+                    {profile?.username ||
+                      authUser?.user_metadata?.full_name ||
+                      authUser?.user_metadata?.name ||
+                      authUser?.email?.split("@")[0] ||
+                      "Usuario"}
+                  </span>
+                  <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${
+                    currentTheme === "light"
+                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                      : "bg-blue-950/40 text-blue-300 border-blue-900/60"
+                  }`}>
+                    {profile?.role || "user"}
+                  </span>
+                </div>
+                {authUser.email && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {authUser.email}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Link
+                href="/perfil"
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
+                  currentTheme === "light"
+                    ? "text-gray-700 hover:bg-gray-100"
+                    : "text-gray-200 hover:bg-gray-800"
+                }`}
+                onClick={onClose}
+              >
+                <User className="h-4 w-4" />
+                Mi Perfil
+              </Link>
+              <button
+                onClick={onLogout}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors w-full text-left ${
+                  currentTheme === "light"
+                    ? "text-red-600 hover:bg-red-50"
+                    : "text-red-400 hover:bg-red-950/20"
+                }`}
+              >
+                <LogOut className="h-4 w-4" />
+                Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

@@ -6,7 +6,7 @@ import { Sun, Moon, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function ThemeSwitcher() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, isChanging } = useTheme()
   const [isAnimating, setIsAnimating] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -21,7 +21,7 @@ export function ThemeSwitcher() {
 
   const toggleTheme = () => {
     // Evitar múltiples clics durante la animación
-    if (isAnimating) return
+    if (isAnimating || isChanging) return
     
     setIsAnimating(true)
     
@@ -33,11 +33,20 @@ export function ThemeSwitcher() {
       newTheme = 'light';
     }
     
-    // Pequeño retraso para que la animación se vea antes de cambiar el tema
+    // Crear efecto de barrido para la transición
+    const sweepElement = document.createElement('div');
+    sweepElement.className = 'theme-sweep';
+    sweepElement.style.background = newTheme === 'dark' ? 'black' : 'white';
+    document.body.appendChild(sweepElement);
+    
+    // Aplicar el cambio de tema inmediatamente
+    setTheme(newTheme)
+    
+    // Eliminar el elemento de barrido después de la animación
     setTimeout(() => {
-      setTheme(newTheme)
-      setTimeout(() => setIsAnimating(false), 300)
-    }, 150)
+      document.body.removeChild(sweepElement);
+      setIsAnimating(false);
+    }, 500);
   }
 
   return (
