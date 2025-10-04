@@ -57,6 +57,20 @@ html, body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Animación de resaltado para posts reportados */
+@keyframes highlight {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+}
+
+.animate-highlight {
+  animation: highlight 1s ease-in-out 3;
+}
+
 /* Animación de barrido para cambio de tema */
 @keyframes theme-sweep {
   0% {

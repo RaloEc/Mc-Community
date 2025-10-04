@@ -18,25 +18,59 @@ export default function AdminProtection({
   fallbackUrl = '/login'
 }: AdminProtectionProps) {
   const router = useRouter()
-  const { isLoading, isAdmin, user } = useAdminAuth()
+  
+  console.log('[AdminProtection] Componente montándose...')
+  
+  const { isLoading, isAdmin, user, profile } = useAdminAuth()
   const [showError, setShowError] = useState(false)
+  const [hasRedirected, setHasRedirected] = useState(false)
+  
+  console.log('[AdminProtection] Hook useAdminAuth ejecutado:', {
+    isLoading,
+    isAdmin,
+    hasUser: !!user,
+    hasProfile: !!profile
+  })
 
   useEffect(() => {
-    // Si no está cargando y no hay usuario, redirigir al login
-    if (!isLoading && !user) {
+    // Solo actuar cuando ya no esté cargando
+    if (isLoading) {
+      console.log('[AdminProtection] Aún cargando, esperando...', { 
+        hasUser: !!user, 
+        hasProfile: !!profile,
+        profileRole: profile?.role 
+      })
+      return
+    }
+
+    console.log('[AdminProtection] Verificación completa:', {
+      isLoading,
+      isAdmin,
+      hasUser: !!user,
+      hasProfile: !!profile,
+      profileRole: profile?.role,
+      userId: user?.id
+    })
+
+    // Si no hay usuario, redirigir al login (solo una vez)
+    if (!user && !hasRedirected) {
       const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
       const redirectUrl = `${fallbackUrl}?redirect=${encodeURIComponent(currentPath)}`
       console.log('[AdminProtection] No hay sesión, redirigiendo a:', redirectUrl)
+      setHasRedirected(true)
       router.push(redirectUrl)
       return
     }
 
-    // Si no está cargando, hay usuario pero no es admin, mostrar error
-    if (!isLoading && user && !isAdmin) {
-      console.log('[AdminProtection] Usuario no es admin:', user.id)
+    // Si hay usuario pero no es admin, mostrar error
+    if (user && !isAdmin) {
+      console.log('[AdminProtection] Usuario no es admin:', user.id, 'Profile role:', profile?.role)
       setShowError(true)
+    } else if (user && isAdmin) {
+      console.log('[AdminProtection] ✅ Usuario es admin, acceso permitido')
+      setShowError(false)
     }
-  }, [isLoading, isAdmin, user, router, fallbackUrl])
+  }, [isLoading, isAdmin, user, profile, router, fallbackUrl, hasRedirected])
 
   // Mientras está cargando, mostrar spinner
   if (isLoading) {
@@ -74,6 +108,16 @@ export default function AdminProtection({
         </div>
       </div>
     )
+  }
+
+  // Si no hay usuario después de cargar, no mostrar nada (ya se redirigió)
+  if (!user) {
+    return null
+  }
+
+  // Si no es admin después de cargar, no mostrar nada (ya se mostró el error)
+  if (!isAdmin) {
+    return null
   }
 
   // Si todo está bien, mostrar el contenido

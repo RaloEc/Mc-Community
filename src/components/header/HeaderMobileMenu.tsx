@@ -37,7 +37,7 @@ interface HeaderMobileMenuProps {
   setForoMobileOpen: (value: boolean) => void;
   foroCategorias: ForoCategoria[];
   expandedCategories: Record<string, boolean>;
-  setExpandedCategories: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  setExpandedCategories: (value: React.SetStateAction<Record<string, boolean>>) => void;
   isAdmin: boolean;
 }
 
@@ -61,6 +61,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   setExpandedCategories,
   isAdmin,
 }) => {
+  const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
   if (!isOpen) return null;
 
   return (
@@ -68,7 +69,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
       {/* Menú desplegable */}
       <div
         key="mobile-menu"
-        className={`fixed top-16 right-0 w-72 max-w-[calc(100%-1rem)] rounded-bl-lg border border-gray-200 dark:border-gray-800 shadow-lg z-50 overflow-hidden ${
+        className={`fixed top-16 right-0 w-72 max-w-[calc(100%-1rem)] rounded-bl-lg border border-gray-200 dark:border-gray-800 shadow-lg z-[60] overflow-hidden ${
           currentTheme === "light"
             ? "bg-white text-gray-900"
             : "bg-black text-white"
@@ -244,7 +245,102 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                   : "#4b5563 #1f2937",
             }}
           >
-            {/* Aplicar clase menu-item a cada elemento de la lista */}
+            {/* Sección de Perfil */}
+            {authUser && (
+              <li className="menu-item">
+                <Link
+                  href="/perfil"
+                  className={`flex items-center gap-2 p-2 rounded-md ${
+                    currentTheme === "light"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-200 hover:bg-gray-800"
+                  }`}
+                  onClick={closeAllMenus}
+                >
+                  <User size={18} /> Mi Perfil
+                </Link>
+              </li>
+            )}
+
+            {/* Sección de Administración */}
+            {isAdmin && (
+              <li className="menu-item">
+                <div className="flex items-center justify-between w-full">
+                  <Link
+                    href="/admin/dashboard"
+                    className={`flex-grow flex items-center gap-2 p-2 rounded-md ${
+                      currentTheme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-200 hover:bg-gray-800"
+                    }`}
+                    onClick={closeAllMenus}
+                  >
+                    <span className="font-medium">Administración</span>
+                  </Link>
+                  <button
+                    type="button"
+                    className="p-2 rounded-full hover:bg-opacity-20 hover:bg-gray-500"
+                    aria-expanded={adminMenuOpen}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setAdminMenuOpen(!adminMenuOpen);
+                    }}
+                  >
+                    <ChevronDown
+                      size={18}
+                      className={`transition-transform ${
+                        adminMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                </div>
+                <div
+                  className={`ml-4 overflow-hidden transition-all duration-200 ease-out ${
+                    adminMenuOpen
+                      ? "max-h-40 opacity-100"
+                      : "max-h-0 opacity-0 pointer-events-none"
+                  }`}
+                  aria-hidden={!adminMenuOpen}
+                >
+                  <Link
+                    href="/admin/noticias"
+                    className={`block p-2 rounded-md text-sm ${
+                      currentTheme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    onClick={closeAllMenus}
+                  >
+                    Noticias
+                  </Link>
+                  <Link
+                    href="/admin/usuarios"
+                    className={`block p-2 rounded-md text-sm ${
+                      currentTheme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    onClick={closeAllMenus}
+                  >
+                    Usuarios
+                  </Link>
+                  <Link
+                    href="/admin/foro"
+                    className={`block p-2 rounded-md text-sm ${
+                      currentTheme === "light"
+                        ? "text-gray-700 hover:bg-gray-100"
+                        : "text-gray-300 hover:bg-gray-800"
+                    }`}
+                    onClick={closeAllMenus}
+                  >
+                    Foro
+                  </Link>
+                </div>
+              </li>
+            )}
+
+            {/* Sección de Noticias */}
             <li className="menu-item">
               <div className="flex items-center justify-between w-full">
                 <Link
@@ -319,6 +415,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               </div>
             </li>
 
+            {/* Sección de Foro */}
             <li className="menu-item">
               <div className="flex items-center justify-between w-full">
                 <Link
@@ -419,28 +516,24 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                 })}
               </div>
             </li>
+          </ul>
 
+          {/* Sección inferior con tema y cerrar sesión */}
+          <div className="mt-auto">
+            {/* Botón de cambio de tema */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Tema</span>
+                <ModeToggle variant="ghost" size="sm" className="h-9 w-9" />
+              </div>
+            </div>
+            
+            {/* Botón de cerrar sesión al final */}
             {authUser && (
-              <li className="menu-item">
-                <Link
-                  href="/perfil"
-                  className={`flex items-center gap-2 p-2 rounded-md ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-200 hover:bg-gray-800"
-                  }`}
-                  onClick={closeAllMenus}
-                >
-                  <User size={18} /> Mi Perfil
-                </Link>
-              </li>
-            )}
-
-            {authUser && (
-              <li className="menu-item">
+              <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <button
                   onClick={handleLogout}
-                  className={`flex items-center gap-2 p-2 rounded-md w-full text-left ${
+                  className={`flex items-center justify-center gap-2 p-2 rounded-md w-full text-center ${
                     currentTheme === "light"
                       ? "text-red-600 hover:bg-red-50"
                       : "text-red-400 hover:bg-red-950/20"
@@ -448,77 +541,8 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                 >
                   <LogOut size={18} /> Cerrar Sesión
                 </button>
-              </li>
-            )}
-
-            {/* Sección de Admin para móvil */}
-            {isAdmin && (
-              <div
-                className={`p-4 border-t ${
-                  currentTheme === "light"
-                    ? "border-gray-200"
-                    : "border-gray-800"
-                }`}
-              >
-                <h3 className="text-sm font-medium mb-3 text-gray-500 dark:text-gray-400">
-                  Administración
-                </h3>
-                <div className="space-y-2">
-                  <Link
-                    href="/admin/dashboard"
-                    className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-200 hover:bg-gray-800"
-                    }`}
-                    onClick={closeAllMenus}
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/admin/noticias"
-                    className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-200 hover:bg-gray-800"
-                    }`}
-                    onClick={closeAllMenus}
-                  >
-                    Admin Noticias
-                  </Link>
-                  <Link
-                    href="/admin/usuarios"
-                    className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-200 hover:bg-gray-800"
-                    }`}
-                    onClick={closeAllMenus}
-                  >
-                    Admin Usuarios
-                  </Link>
-                  <Link
-                    href="/admin/foro"
-                    className={`flex items-center gap-2 p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-200 hover:bg-gray-800"
-                    }`}
-                    onClick={closeAllMenus}
-                  >
-                    Admin Foro
-                  </Link>
-                </div>
               </div>
             )}
-          </ul>
-
-          {/* Botón de cambio de tema - Siempre visible */}
-          <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Tema</span>
-              <ModeToggle variant="ghost" size="sm" className="h-9 w-9" />
-            </div>
           </div>
         </div>
       </div>

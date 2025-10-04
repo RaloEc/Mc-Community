@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
@@ -15,6 +16,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import ForoBtnFlotante from "./ForoBtnFlotante";
 import ForoFiltrosModal, { ForoFiltersState } from "./ForoFiltrosModal";
+import BtnFlotanteUnificado from "@/components/BtnFlotanteUnificado";
 import HiloCard from "./HiloCard";
 import { useForoHilos } from "./hooks/useForoHilos";
 
@@ -53,6 +55,7 @@ const InvitacionRegistro = () => (
 // Componente Row eliminado temporalmente
 
 export default function ForoCliente() {
+  const router = useRouter();
   const { user, profile, loading: userLoading } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -332,13 +335,32 @@ export default function ForoCliente() {
         </div>
       </div>
 
-      {/* Botón flotante para móvil */}
-      <ForoBtnFlotante
-        hayFiltrosActivos={activeTab !== "recientes" || timeRange !== "24h"}
-        onAbrirFiltros={() => {}}
+      {/* Botón flotante unificado para móvil */}
+      <BtnFlotanteUnificado
+        tipo="foro"
         usuarioAutenticado={!!user}
-        onCambiarFiltro={setActiveTab as any}
         filtroActivo={activeTab}
+        onCambiarFiltro={(filtro) => {
+          setActiveTab(filtro as any);
+        }}
+        onCambiarCategoria={(categoriaId) => {
+          // Navegar a la categoría usando el router de Next.js
+          if (categoriaId) {
+            router.push(`/foro/categoria/${categoriaId}`);
+          }
+        }}
+        categorias={categorias.map(cat => ({
+          id: cat.slug || cat.id.toString(),
+          nombre: cat.nombre,
+          color: cat.color || undefined,
+          parent_id: cat.parent_id,
+          subcategorias: cat.subcategorias?.map(sub => ({
+            id: sub.slug || sub.id.toString(),
+            nombre: sub.nombre,
+            color: sub.color || undefined,
+            parent_id: sub.parent_id
+          }))
+        }))}
       />
     </div>
   );

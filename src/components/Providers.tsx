@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import { ThemeProvider } from '@/components/theme-provider'
-import { Toaster } from '@/components/ui/sonner'
-import { AuthProvider } from '@/context/AuthContext'
-import FABMobile from '@/components/ui/FABMobile'
-import { ReactQueryProvider } from '@/lib/react-query/provider'
+import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/context/AuthContext";
+import FABMobile from "@/components/ui/FABMobile";
+import { ReactQueryProvider } from "@/lib/react-query/provider";
 
 export default function Providers({
   children,
   session,
 }: {
-  children: React.ReactNode
-  session?: any
+  children: React.ReactNode;
+  session?: any;
 }) {
   return (
     <ReactQueryProvider>
@@ -20,9 +20,9 @@ export default function Providers({
           {children}
           <Toaster />
           {/* Botón flotante global solo móvil */}
-          <FABMobile />
+          {/* <FABMobile /> */}
         </AuthProvider>
       </ThemeProvider>
     </ReactQueryProvider>
-  )
+  );
 }

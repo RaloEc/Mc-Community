@@ -3,17 +3,27 @@
 import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarIcon, ArrowRightIcon } from 'lucide-react';
+import { CalendarIcon, ArrowRightIcon, Eye, MessageSquare } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Noticia } from '@/types';
+import { motion } from 'framer-motion';
 
 interface NoticiaCardProps {
   noticia: Noticia;
   mostrarResumen?: boolean;
+  prioridad?: boolean;
+  index?: number;
 }
 
 // Componente de tarjeta de noticia optimizado con React.memo
-const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = true }) => {
+const NoticiaCard = React.forwardRef<HTMLDivElement, NoticiaCardProps>(({ 
+  noticia, 
+  mostrarResumen = true, 
+  prioridad = false,
+  index = 0 
+}, ref) => {
   // Función para renderizar la categoría principal
   const renderCategoria = () => {
     if (noticia.categorias && noticia.categorias.length > 0) {
@@ -26,7 +36,7 @@ const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = tru
         return (
           <Badge 
             key={cat.id} 
-            className={`text-xs ${cat.color ? `border-${cat.color}-500 ` : ''}`}
+            className="text-xs font-medium bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
             variant="outline"
           >
             {cat.icono && <span className="mr-1">{cat.icono}</span>}
@@ -44,7 +54,7 @@ const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = tru
           return (
             <Badge 
               key={categoriaPadre.id} 
-              className={`text-xs ${categoriaPadre.color ? `border-${categoriaPadre.color}-500 ` : ''}`}
+              className="text-xs font-medium bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
               variant="outline"
             >
               {categoriaPadre.icono && <span className="mr-1">{categoriaPadre.icono}</span>}
@@ -55,7 +65,7 @@ const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = tru
           return (
             <Badge 
               key={primerSubcategoria.id} 
-              className={`text-xs ${primerSubcategoria.color ? `border-${primerSubcategoria.color}-500 ` : ''}`}
+              className="text-xs font-medium bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
               variant="outline"
             >
               {primerSubcategoria.icono && <span className="mr-1">{primerSubcategoria.icono}</span>}
@@ -67,7 +77,7 @@ const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = tru
     } else if (noticia.categoria) {
       return (
         <Badge 
-          className={`text-xs ${noticia.categoria.color ? `border-${noticia.categoria.color}-500 ` : ''}`}
+          className="text-xs font-medium bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors"
           variant="outline"
         >
           {noticia.categoria.icono && <span className="mr-1">{noticia.categoria.icono}</span>}
@@ -78,80 +88,139 @@ const NoticiaCard: React.FC<NoticiaCardProps> = ({ noticia, mostrarResumen = tru
     return null;
   };
 
+  // Formatear fecha
+  const formatearFecha = (fecha: string) => {
+    const date = new Date(fecha);
+    const ahora = new Date();
+    const diffMs = ahora.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHoras = Math.floor(diffMs / 3600000);
+    const diffDias = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) {
+      return `Hace ${diffMins} min${diffMins !== 1 ? 's' : ''}`;
+    } else if (diffHoras < 24) {
+      return `Hace ${diffHoras} hora${diffHoras !== 1 ? 's' : ''}`;
+    } else if (diffDias < 7) {
+      return `Hace ${diffDias} día${diffDias !== 1 ? 's' : ''}`;
+    } else {
+      return date.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      });
+    }
+  };
+
   return (
-    <div className="bg-card rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 border border-border/50 relative dark:data-[theme=amoled]:bg-black">
-      <div className="relative h-48 overflow-hidden">
-        {/* Categorías en la esquina superior izquierda */}
-        <div className="flex flex-wrap gap-1 mb-2">
-          {renderCategoria()}
-        </div>
-        
-        {(noticia.imagen_url || noticia.imagen_portada) ? (
-          <Image 
-            src={noticia.imagen_url || noticia.imagen_portada || '/placeholder.jpg'} 
-            alt={noticia.titulo} 
-            fill
-            loading="lazy"
-            className="object-cover"
-            onError={(e) => {
-              console.error('Error al cargar imagen de noticia en lista');
-              // Ocultar la imagen y mostrar el fallback
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-primary/40');
-              const fallback = document.createElement('span');
-              fallback.className = 'text-primary-foreground text-lg font-medium absolute inset-0 flex items-center justify-center';
-              fallback.textContent = 'MC Community';
-              e.currentTarget.parentElement?.appendChild(fallback);
-            }}
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-            <span className="text-primary-foreground text-lg font-medium">MC Community</span>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.3) }}
+      layout
+    >
+      <Card className="group overflow-hidden border border-border/50 hover:border-border transition-all duration-300 hover:shadow-lg bg-card dark:bg-card h-full flex flex-col">
+        <Link href={`/noticias/${noticia.id}`} className="flex flex-1 flex-col">
+          {/* Imagen de portada */}
+          <div className="relative w-full aspect-video overflow-hidden bg-muted">
+            {(noticia.imagen_url || noticia.imagen_portada) ? (
+              <Image 
+                src={noticia.imagen_url || noticia.imagen_portada || '/placeholder.jpg'} 
+                alt={noticia.titulo} 
+                fill
+                priority={prioridad}
+                loading={prioridad ? undefined : 'lazy'}
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const parent = e.currentTarget.parentElement;
+                  if (parent) {
+                    parent.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-primary/40');
+                    const fallback = document.createElement('div');
+                    fallback.className = 'absolute inset-0 flex items-center justify-center text-primary-foreground text-lg font-medium';
+                    fallback.textContent = 'MC Community';
+                    parent.appendChild(fallback);
+                  }
+                }}
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                <span className="text-primary-foreground text-lg font-medium">MC Community</span>
+              </div>
+            )}
+            
+            {/* Badge de categoría sobre la imagen */}
+            <div className="absolute top-3 left-3 z-10">
+              {renderCategoria()}
+            </div>
           </div>
-        )}
-      </div>
-      <div className="p-4 pb-8">
-        <div className="flex items-center mb-2 text-xs text-muted-foreground">
-          <CalendarIcon className="h-3 w-3 mr-1" />
-          <span>{new Date(noticia.fecha_publicacion || '').toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric'
-          })}</span>
-        </div>
-        <h3 className="text-lg font-semibold mb-2 line-clamp-2">
-          <Link href={`/noticias/${noticia.id}`} className="hover:text-primary transition-colors">
-            {noticia.titulo}
-          </Link>
-        </h3>
-        {mostrarResumen && noticia.contenido && (
-          <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
-            {noticia.resumen || noticia.contenido.replace(/<[^>]*>/g, '').substring(0, 120) + '...'}
-          </p>
-        )}
-        <div className="flex justify-end">
-          <Link href={`/noticias/${noticia.id}`} className="text-primary hover:text-primary/80 font-medium inline-flex items-center">
-              <ArrowRightIcon className="h-5 w-5" />
-          </Link>
-        </div>
-      </div>
-      {/* Autor posicionado en el borde inferior de toda la tarjeta */}
-      {(noticia.autor_nombre || noticia.autor?.username) && (
-        <span 
-          className="absolute bottom-2 left-4 text-xs text-muted-foreground"
-        >
-          <Link 
-            href={`/perfil/${noticia.autor?.username || noticia.autor_nombre}`} 
-            className="text-sm hover:underline" 
-            style={{ color: noticia.autor?.color || noticia.autor_color || 'inherit' }}
-          >
-            {noticia.autor?.username || noticia.autor_nombre}
-          </Link>
-        </span>
-      )}
-    </div>
+
+          {/* Contenido de la tarjeta */}
+          <CardContent className="p-4 flex-1 flex flex-col">
+            {/* Título */}
+            <h3 className="text-lg font-semibold mb-2 line-clamp-2 group-hover:text-primary transition-colors">
+              {noticia.titulo}
+            </h3>
+
+            {/* Resumen */}
+            {mostrarResumen && (
+              <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1">
+                {noticia.resumen || (noticia.contenido ? noticia.contenido.replace(/<[^>]*>/g, '').substring(0, 150) + '...' : '')}
+              </p>
+            )}
+
+            {/* Footer con información del autor y estadísticas */}
+            <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/50">
+              {/* Autor */}
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                {noticia.autor?.avatar_url && (
+                  <Avatar className="h-6 w-6 flex-shrink-0">
+                    <AvatarImage 
+                      src={noticia.autor.avatar_url} 
+                      alt={noticia.autor.username || noticia.autor_nombre || 'Autor'} 
+                    />
+                    <AvatarFallback className="text-xs">
+                      {(noticia.autor.username || noticia.autor_nombre || 'A')[0].toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span 
+                    className="text-xs font-medium truncate hover:underline"
+                    style={{ color: noticia.autor?.color || noticia.autor_color || 'inherit' }}
+                  >
+                    {noticia.autor?.username || noticia.autor_nombre || 'Anónimo'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {formatearFecha(noticia.fecha_publicacion || noticia.created_at)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Estadísticas */}
+              <div className="flex items-center gap-3 text-xs text-muted-foreground flex-shrink-0">
+                {noticia.vistas !== undefined && (
+                  <div className="flex items-center gap-1" title="Vistas">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span>{noticia.vistas}</span>
+                  </div>
+                )}
+                {noticia.comentarios_count !== undefined && (
+                  <div className="flex items-center gap-1" title="Comentarios">
+                    <MessageSquare className="h-3.5 w-3.5" />
+                    <span>{noticia.comentarios_count}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Link>
+      </Card>
+    </motion.div>
   );
-};
+});
 
 // Función de comparación personalizada para React.memo
 const areEqual = (prevProps: NoticiaCardProps, nextProps: NoticiaCardProps) => {
@@ -159,14 +228,20 @@ const areEqual = (prevProps: NoticiaCardProps, nextProps: NoticiaCardProps) => {
   return (
     prevProps.noticia.id === nextProps.noticia.id &&
     prevProps.noticia.titulo === nextProps.noticia.titulo &&
-    prevProps.noticia.contenido === nextProps.noticia.contenido &&
+    prevProps.noticia.resumen === nextProps.noticia.resumen &&
     prevProps.noticia.imagen_url === nextProps.noticia.imagen_url &&
     prevProps.noticia.imagen_portada === nextProps.noticia.imagen_portada &&
     prevProps.noticia.fecha_publicacion === nextProps.noticia.fecha_publicacion &&
+    prevProps.noticia.vistas === nextProps.noticia.vistas &&
+    prevProps.noticia.comentarios_count === nextProps.noticia.comentarios_count &&
     prevProps.mostrarResumen === nextProps.mostrarResumen &&
+    prevProps.prioridad === nextProps.prioridad &&
     JSON.stringify(prevProps.noticia.categorias) === JSON.stringify(nextProps.noticia.categorias)
   );
 };
+
+// Configurar displayName para mejor depuración
+NoticiaCard.displayName = 'NoticiaCard';
 
 // Exportar el componente memoizado
 export default React.memo(NoticiaCard, areEqual);

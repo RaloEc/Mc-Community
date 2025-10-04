@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import BtnCrearFlotante from '@/components/BtnCrearFlotante';
 import { useAuth } from '@/context/AuthContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuthModal } from '@/hooks/useAuthModal';
@@ -111,20 +112,22 @@ export default function Home() {
       </main>
 
       {/* Banner publicitario inferior */}
-      <div className="container mx-auto px-4 pb-8">
-        <div className="flex justify-center">
-          <BannerPublicitario 
-            variant="horizontal" 
-            className="w-full max-w-4xl" 
-          />
-        </div>
+      <div className="flex justify-center py-6">
+        <BannerPublicitario 
+          variant="horizontal" 
+          className="w-full max-w-4xl" 
+        />
       </div>
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={authModal.isOpen}
+      
+      {/* Botón flotante para crear contenido (solo móvil/tablet) */}
+      <div className="lg:hidden">
+        <BtnCrearFlotante tipo="ambos" />
+      </div>
+      
+      {/* Modal de autenticación */}
+      <AuthModal 
+        isOpen={authModal.isOpen} 
         onClose={authModal.close}
-        defaultMode={authModal.mode}
         redirectTo={authModal.redirectTo}
       />
     </div>

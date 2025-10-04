@@ -44,7 +44,7 @@ async function esAdmin(supabase: any, request?: NextRequest) {
   }
 }
 
-// GET - Obtener estadísticas de noticias
+// GET - Obtener estadísticas de noticias (optimizado con función RPC)
 export async function GET(request: NextRequest) {
   console.log('GET - Recibida solicitud para obtener estadísticas')
   
@@ -53,6 +53,18 @@ export async function GET(request: NextRequest) {
   console.log('Usando cliente de servicio para operación administrativa')
 
   try {
+    // Intentar usar la función RPC optimizada primero
+    const { data: estadisticasRPC, error: errorRPC } = await supabase
+      .rpc('obtener_estadisticas_admin_noticias')
+    
+    if (!errorRPC && estadisticasRPC) {
+      console.log('✅ Estadísticas obtenidas mediante función RPC optimizada')
+      return NextResponse.json(estadisticasRPC)
+    }
+    
+    console.log('⚠️ Función RPC no disponible, usando consultas individuales:', errorRPC)
+    
+    // Fallback: Consultas individuales (código anterior)
     // Total de noticias
     const { count: total_noticias, error: errorNoticias } = await supabase
       .from('noticias')

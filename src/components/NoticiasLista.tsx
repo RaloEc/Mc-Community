@@ -48,8 +48,8 @@ interface NoticiasListaProps {
   mostrarFiltros?: boolean;
   filtrosAbiertos?: boolean;
   onToggleFiltros?: (estado: boolean) => void;
-  onFiltrosActivosChange?: (cantidad: number) => void;
   onCategoriasLoaded?: (categorias: Categoria[]) => void;
+  onFiltrosActivosChange?: (cantidad: number) => void;
   onFiltrosActivosArrayChange?: (filtros: FiltroActivo[]) => void;
 }
 
@@ -65,8 +65,8 @@ export default function NoticiasLista({
   mostrarFiltros = false,
   filtrosAbiertos = false,
   onToggleFiltros = () => {},
-  onFiltrosActivosChange,
   onCategoriasLoaded,
+  onFiltrosActivosChange,
   onFiltrosActivosArrayChange
 }: NoticiasListaProps) {
   // Estados principales
@@ -93,9 +93,6 @@ export default function NoticiasLista({
     categoria,
     ordenFecha
   });
-  
-  // Estado para los filtros activos (mostrados en la UI)
-  const [filtrosActivos, setFiltrosActivos] = useState<FiltroActivo[]>([]);
   
   // Estado para la visibilidad de filtros en móvil
   const [filtrosVisibles, setFiltrosVisibles] = useState(
@@ -124,72 +121,8 @@ export default function NoticiasLista({
   
   // Inicializamos los filtros activos en la primera renderización
   useEffect(() => {
-    // Actualizamos los filtros según las props iniciales
-    if (busqueda || autor || categoria || ordenFecha !== 'desc') {
-      actualizarFiltrosActivos(busqueda, autor, categoria, ordenFecha);
-    }
+    // Inicializamos los filtros según las props
   }, []);
-  
-  // Efecto para notificar al componente padre sobre cambios en filtros activos
-  useEffect(() => {
-    // Solo notificamos cuando no es la primera carga
-    if (!initialMount.current) {
-      if (onFiltrosActivosChange) {
-        onFiltrosActivosChange(filtrosActivos.length);
-      }
-      if (onFiltrosActivosArrayChange) {
-        onFiltrosActivosArrayChange(filtrosActivos);
-      }
-    }
-  }, [filtrosActivos, onFiltrosActivosChange, onFiltrosActivosArrayChange]);
-  
-  // Función para actualizar filtros activos (los que se muestran en la UI)
-  const actualizarFiltrosActivos = useCallback((busqueda: string, autor: string, categoria: string, ordenFecha: 'asc' | 'desc') => {
-    const nuevosFiltros: FiltroActivo[] = [];
-    
-    if (busqueda) {
-      nuevosFiltros.push({
-        tipo: 'busqueda',
-        valor: busqueda,
-        etiqueta: `Título: ${busqueda}`
-      });
-    }
-    
-    if (autor) {
-      nuevosFiltros.push({
-        tipo: 'autor',
-        valor: autor,
-        etiqueta: `Autor: ${autor}`
-      });
-    }
-    
-    if (categoria && categorias.length > 0) {
-      // Intentamos encontrar la categoría por ID
-      const categoriaSeleccionada = categorias.find(c => c.id === categoria);
-      nuevosFiltros.push({
-        tipo: 'categoria',
-        valor: categoria,
-        etiqueta: `Categoría: ${categoriaSeleccionada ? categoriaSeleccionada.nombre : categoria}`
-      });
-    } else if (categoria) {
-      // Si hay categoría pero aún no se han cargado las categorías
-      nuevosFiltros.push({
-        tipo: 'categoria',
-        valor: categoria,
-        etiqueta: `Categoría: ${categoria}`
-      });
-    }
-    
-    if (ordenFecha !== 'desc') {
-      nuevosFiltros.push({
-        tipo: 'ordenFecha',
-        valor: ordenFecha,
-        etiqueta: `Orden: Más antiguas primero`
-      });
-    }
-    
-    setFiltrosActivos(nuevosFiltros);
-  }, [categorias, categoria]);
   
   // Usamos un callback para la función de carga de noticias
   const fetchNoticias = useCallback(async () => {
@@ -250,33 +183,47 @@ export default function NoticiasLista({
       filtersChanged.current = false;
       fetchNoticias();
     }
-  }, [fetchNoticias]);
+  }, [filtrosAplicados, fetchNoticias]);
+
+  // Notificar cantidad y listado de filtros activos
+  useEffect(() => {
+    const activos: FiltroActivo[] = [];
+    if (filtrosAplicados.busqueda) {
+      activos.push({ tipo: 'busqueda', valor: filtrosAplicados.busqueda, etiqueta: 'Búsqueda' });
+    }
+    if (filtrosAplicados.autor) {
+      activos.push({ tipo: 'autor', valor: filtrosAplicados.autor, etiqueta: 'Autor' });
+    }
+    if (filtrosAplicados.categoria) {
+      activos.push({ tipo: 'categoria', valor: filtrosAplicados.categoria, etiqueta: 'Categoría' });
+    }
+    if (filtrosAplicados.ordenFecha && filtrosAplicados.ordenFecha !== 'desc') {
+      activos.push({ tipo: 'ordenFecha', valor: filtrosAplicados.ordenFecha, etiqueta: 'Orden' });
+    }
+
+    if (onFiltrosActivosChange) onFiltrosActivosChange(activos.length);
+    if (onFiltrosActivosArrayChange) onFiltrosActivosArrayChange(activos);
+  }, [filtrosAplicados, onFiltrosActivosChange, onFiltrosActivosArrayChange]);
   
   // Efecto para detectar cambios en las props de filtros
   useEffect(() => {
     // No ejecutamos esto en la primera carga
     if (initialMount.current) return;
     
-    // Si cambian las props, actualizamos los filtros locales
+    // Solo actualizamos si los props han cambiado
     if (busqueda !== busquedaLocal) setBusquedaLocal(busqueda);
     if (autor !== autorLocal) setAutorLocal(autor);
     if (categoria !== categoriaLocal) setCategoriaLocal(categoria);
     if (ordenFecha !== ordenFechaLocal) setOrdenFechaLocal(ordenFecha);
     
-    // Y también actualizamos los filtros aplicados
+    // Actualizamos los filtros aplicados
     setFiltrosAplicados({
       busqueda,
       autor,
       categoria,
       ordenFecha
     });
-    
-    // Actualizamos los filtros activos
-    actualizarFiltrosActivos(busqueda, autor, categoria, ordenFecha);
-    
-    // Marcamos que cambiaron los filtros para saber que debemos recargar las noticias
-    filtersChanged.current = true;
-  }, [busqueda, autor, categoria, ordenFecha, actualizarFiltrosActivos]);
+  }, [busqueda, autor, categoria, ordenFecha, busquedaLocal, autorLocal, categoriaLocal, ordenFechaLocal]);
   
   // Efecto para cargar las categorías al montar el componente
   useEffect(() => {
@@ -348,10 +295,6 @@ export default function NoticiasLista({
         [tipo]: valor
       }));
 
-      // Actualizar filtros activos
-      const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
-      setFiltrosActivos(nuevosFiltros);
-
       // Si hay un timeout pendiente, lo limpiamos
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -368,22 +311,11 @@ export default function NoticiasLista({
           [tipo]: valor
         }));
 
-        // Actualizar filtros activos
-        const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
-        if (valor) {
-          nuevosFiltros.push({
-            tipo,
-            valor,
-            etiqueta: `${tipo === 'busqueda' ? 'Búsqueda' : 'Autor'}: ${valor}`
-          });
-        }
-        setFiltrosActivos(nuevosFiltros);
-
         // Marcar que los filtros han cambiado
         filtersChanged.current = true;
       }, 500);
     }
-  }, [filtrosActivos]);
+  }, []);
 
   // Renderizar el selector de orden
   const renderOrdenSelector = () => (
@@ -396,18 +328,7 @@ export default function NoticiasLista({
           ...prev,
           ordenFecha: valor
         }));
-
-        // Actualizar filtros activos
-        const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== 'ordenFecha');
-        if (valor !== 'desc') {
-          nuevosFiltros.push({
-            tipo: 'ordenFecha',
-            valor,
-            etiqueta: `Orden: ${valor === 'asc' ? 'Más antiguas primero' : 'Más recientes primero'}`
-          });
-        }
-        setFiltrosActivos(nuevosFiltros);
-
+        
         // Marcar que los filtros han cambiado
         filtersChanged.current = true;
       }}
@@ -430,32 +351,9 @@ export default function NoticiasLista({
       categoria: '',
       ordenFecha: 'desc'
     });
-    setFiltrosActivos([]);
     filtersChanged.current = true;
   };
 
-  // Función para eliminar un filtro específico
-  const eliminarFiltro = (tipo: string) => {
-    const nuevosFiltros = filtrosActivos.filter(f => f.tipo !== tipo);
-    setFiltrosActivos(nuevosFiltros);
-    
-    // Actualizar los estados según el tipo de filtro eliminado
-    if (tipo === 'busqueda') {
-      setBusquedaLocal('');
-      setFiltrosAplicados(prev => ({ ...prev, busqueda: '' }));
-    } else if (tipo === 'autor') {
-      setAutorLocal('');
-      setFiltrosAplicados(prev => ({ ...prev, autor: '' }));
-    } else if (tipo === 'categoria') {
-      setCategoriaLocal('');
-      setFiltrosAplicados(prev => ({ ...prev, categoria: '' }));
-    } else if (tipo === 'ordenFecha') {
-      setOrdenFechaLocal('desc');
-      setFiltrosAplicados(prev => ({ ...prev, ordenFecha: 'desc' }));
-    }
-    
-    filtersChanged.current = true;
-  };
 
   // Función para renderizar el contenido de las noticias
   const renderContenidoNoticias = () => {
@@ -732,39 +630,16 @@ export default function NoticiasLista({
                 Aplicar
               </button>
             </div>
-          
-            {filtrosActivos.length > 0 && (
-              <div className="w-full bg-[#1a1a1a] p-2 rounded-md border border-[#333333]">
-                <div className="text-xs text-gray-400 mb-1.5">Filtros activos:</div>
-                <div className="flex flex-wrap gap-2">
-                  {filtrosActivos.map((filtro, index) => (
-                    <div 
-                      key={index} 
-                      className="inline-flex items-center bg-[#0066cc] text-white text-xs py-1 px-2 rounded-[15px] shadow-sm"
-                    >
-                      {filtro.etiqueta}
-                      <button 
-                        onClick={() => eliminarFiltro(filtro.tipo)}
-                        className="ml-2 hover:text-opacity-80"
-                        aria-label="Eliminar filtro"
-                      >
-                        <XIcon size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
       
       {/* Contenido principal */}
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center mt-4">
         <div className="w-full">
           {renderContenidoNoticias()}
-        </div>
       </div>
+    </div>
     </div>
   );
 }

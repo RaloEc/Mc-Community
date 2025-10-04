@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { AnimatePresence, motion } from 'framer-motion';
 import NoticiaCard from './NoticiaCard';
 import { useNoticias, FiltroNoticias } from './hooks/useNoticias';
 import AdBanner from '@/components/ads/AdBanner';
 import AdRectangle from '@/components/ads/AdRectangle';
 
-interface NoticiasGridProps {
+export interface NoticiasGridProps {
   initialFiltros?: FiltroNoticias;
   columnas?: 1 | 2 | 3;
   mostrarResumen?: boolean;
@@ -22,8 +23,11 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
   mostrarResumen = true,
   limit = 16,
   className = '',
-  onCategoriasLoaded
+  onCategoriasLoaded = () => {}
 }) => {
+  // Estado para controlar si es la primera carga
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
   // Referencia para detección de scroll para carga infinita
   const { ref, inView } = useInView({
     threshold: 0.1,
@@ -35,6 +39,7 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
     noticias,
     categorias,
     isLoading,
+    isRefetching,
     isError,
     loadMoreNoticias,
     hasNextPage,
@@ -54,6 +59,13 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
       onCategoriasLoaded(categorias);
     }
   }, [categorias, onCategoriasLoaded]);
+
+  // Marcar que ya no es la primera carga cuando tengamos datos
+  useEffect(() => {
+    if (noticias.length > 0 && isFirstLoad) {
+      setIsFirstLoad(false);
+    }
+  }, [noticias, isFirstLoad]);
 
   // Definir el número de columnas según el prop
   const gridCols: Record<number, string> = {
@@ -83,7 +95,8 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
   // Noticias con anuncios insertados
   const noticiasConAnuncios = insertarAnuncios(noticias);
 
-  if (isLoading) {
+  // Mostrar spinner de carga solo cuando es la primera carga
+  if (isLoading && isFirstLoad) {
     return (
       <div className="flex justify-center items-center py-12">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -91,6 +104,7 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
     );
   }
 
+  // Mostrar mensaje de error si hay un error
   if (isError) {
     return (
       <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
@@ -100,7 +114,8 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
     );
   }
 
-  if (noticias.length === 0) {
+  // Mostrar mensaje de "sin resultados" solo si no hay noticias y no está cargando
+  if (noticias.length === 0 && !isLoading && !isRefetching) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">No se encontraron noticias con los filtros seleccionados.</p>
@@ -108,26 +123,57 @@ const NoticiasGrid: React.FC<NoticiasGridProps> = ({
     );
   }
 
+
   return (
     <div className={`w-full ${className}`}>
-      <div className={`grid ${gridCols[columnas]} gap-6 w-full`}>
-        {noticiasConAnuncios.map((item) => (
-          item.esAnuncio ? (
-            <div key={item.id} className="col-span-full flex justify-center my-4">
-              {item.id === 'ad-1' ? (
-                <AdBanner className="w-full max-w-4xl" />
-              ) : (
-                <AdRectangle className="" />
-              )}
-            </div>
-          ) : (
-            <NoticiaCard 
-              key={item.id} 
-              noticia={item} 
-              mostrarResumen={mostrarResumen}
-            />
-          )
-        ))}
+      {/* Indicador de carga sutil */}
+      {(isLoading || isRefetching) && (
+        <div className="mb-4 text-center">
+          <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-blue-500"></div>
+            <span>Buscando noticias...</span>
+          </div>
+        </div>
+      )}
+
+      <div className={`grid ${gridCols[columnas]} gap-6 w-full transition-opacity duration-200 ${isRefetching && !isFirstLoad ? 'opacity-70' : 'opacity-100'}`}>
+        <AnimatePresence mode="popLayout">
+          {noticiasConAnuncios.map((item, index) => (
+            item.esAnuncio ? (
+              <motion.div 
+                key={item.id}
+                className="col-span-full flex justify-center my-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 * Math.min(index, 6) }}
+              >
+                {item.id === 'ad-1' ? (
+                  <AdBanner className="w-full max-w-4xl" />
+                ) : (
+                  <AdRectangle className="" />
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: 0.1 * Math.min(index, 6),
+                  ease: 'easeOut' 
+                }}
+                layout
+              >
+                <NoticiaCard 
+                  noticia={item} 
+                  mostrarResumen={mostrarResumen}
+                />
+              </motion.div>
+            )
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Elemento para detectar cuando el usuario llega al final y cargar más noticias */}

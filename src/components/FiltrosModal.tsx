@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { XIcon, FilterIcon, ChevronUpIcon, ChevronDownIcon } from 'lucide-react';
 import { Noticia } from '@/types';
 
@@ -22,7 +22,7 @@ interface FiltrosModalProps {
   onEliminarFiltro: (tipo: string) => void;
 }
 
-export default function FiltrosModal({
+const FiltrosModal = React.memo(function FiltrosModal({
   isOpen,
   onClose,
   busqueda,
@@ -136,37 +136,12 @@ export default function FiltrosModal({
                   onChange={(e) => onOrdenFechaChange(e.target.value as 'asc' | 'desc')}
                 >
                   <option value="desc">Más recientes primero</option>
-                  <option value="asc">Más antiguas primero</option>
+                  <option value="asc">Más antiguas Primero</option>
                 </select>
               </div>
             </div>
-            
-            {filtrosActivos.length > 0 && (
-              <div className="w-full bg-muted p-2 rounded-md border border-border transition-all duration-300 mt-2">
-                <div className="text-xs text-gray-400 mb-1.5">Filtros activos:</div>
-                <div className="flex flex-wrap gap-2 transition-all duration-300">
-                  {filtrosActivos.map((filtro, index) => (
-                    <div 
-                      key={index} 
-                      className="inline-flex items-center bg-primary text-primary-foreground text-xs py-1 px-2 rounded-[15px] transition-all duration-300 animate-fadeIn shadow-sm"
-                    >
-                      {filtro.etiqueta}
-                      <button 
-                        onClick={() => onEliminarFiltro(filtro.tipo)}
-                        className="ml-2 hover:text-opacity-80 transition-all duration-300"
-                        aria-label="Eliminar filtro"
-                      >
-                        <XIcon size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
-        
-        {/* Pie del modal con botones */}
         <div className="p-4 border-t border-border flex gap-2 justify-end">
           <button 
             className="p-[0.6rem] px-4 h-[38px] bg-muted text-muted-foreground rounded-[5px] whitespace-nowrap hover:opacity-90 transition-all duration-300"
@@ -187,4 +162,6 @@ export default function FiltrosModal({
       </div>
     </div>
   );
-}
+});
+
+export default FiltrosModal;

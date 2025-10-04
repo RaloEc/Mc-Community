@@ -1,6 +1,8 @@
 'use client';
 
-import { FilterIcon, XIcon } from 'lucide-react';
+import React from 'react';
+import { FilterIcon, XIcon, Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface FiltrosDesktopProps {
   busqueda: string;
@@ -18,7 +20,7 @@ interface FiltrosDesktopProps {
   onEliminarFiltro: (tipo: string) => void;
 }
 
-export default function FiltrosDesktop({
+const FiltrosDesktop = React.memo(function FiltrosDesktop({
   busqueda,
   autor,
   categoria,
@@ -34,92 +36,96 @@ export default function FiltrosDesktop({
   onEliminarFiltro
 }: FiltrosDesktopProps) {
   return (
-    <div className="hidden md:block bg-card rounded-lg border border-border mb-6 p-3">
-      <div className="flex flex-wrap items-center gap-2">
+    <div className="hidden md:block bg-card rounded-lg border border-border mb-6 p-4 shadow-sm">
+      <div className="space-y-3">
         {/* Título con icono */}
-        <div className="flex items-center mr-2">
-          <FilterIcon size={16} className="mr-1" />
-          <span className="text-sm font-medium">Filtros:</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <FilterIcon size={18} className="text-primary" />
+            <span className="text-sm font-semibold text-foreground">Filtros de búsqueda</span>
+          </div>
+          {filtrosActivos.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {filtrosActivos.length} activo{filtrosActivos.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
         
-        {/* Inputs y selects en línea */}
-        <div className="flex flex-1 flex-wrap gap-2 items-center">
-          <input 
-            type="text" 
-            placeholder="Título..." 
-            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
-            value={busqueda}
-            onChange={(e) => onBusquedaChange(e.target.value)}
-          />
+        {/* Inputs y selects */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-3">
+          {/* Búsqueda */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <input 
+              type="text" 
+              placeholder="Buscar noticias..." 
+              className="w-full pl-9 pr-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+              value={busqueda}
+              onChange={(e) => onBusquedaChange(e.target.value)}
+              aria-label="Buscar noticias"
+            />
+          </div>
           
-          {/* Campo de autor oculto pero manteniendo la funcionalidad */}
-          <input 
-            type="text" 
-            placeholder="Autor..." 
-            className="hidden p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
-            value={autor}
-            onChange={(e) => onAutorChange(e.target.value)}
-          />
-          
+          {/* Categoría */}
           <select 
-            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[200px]"
+            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors cursor-pointer"
             value={categoria}
             onChange={(e) => onCategoriaChange(e.target.value)}
+            aria-label="Filtrar por categoría"
           >
-            <option value="">Categoría</option>
+            <option value="">Todas las categorías</option>
             {categorias.map(cat => (
               <option key={cat.id} value={cat.id}>{cat.nombre}</option>
             ))}
           </select>
           
+          {/* Orden */}
           <select 
-            className="p-1 px-2 border border-input rounded-[5px] bg-background text-foreground h-[32px] text-sm flex-1 min-w-[120px] max-w-[180px]"
+            className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors cursor-pointer"
             value={ordenFecha}
             onChange={(e) => onOrdenFechaChange(e.target.value as 'asc' | 'desc')}
+            aria-label="Ordenar por fecha"
           >
-            <option value="desc">Más recientes</option>
-            <option value="asc">Más antiguas</option>
+            <option value="desc">Más recientes primero</option>
+            <option value="asc">Más antiguas primero</option>
           </select>
-        </div>
-        
-        {/* Botones */}
-        <div className="flex gap-2 ml-auto">
+          
+          {/* Botón limpiar */}
           <button 
-            className="p-1 px-3 h-[32px] bg-muted text-muted-foreground text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
+            className="px-4 py-2 bg-muted text-muted-foreground text-sm rounded-md hover:bg-muted/80 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onLimpiarFiltros}
+            disabled={filtrosActivos.length === 0}
+            aria-label="Limpiar todos los filtros"
           >
-            Limpiar
-          </button>
-          <button 
-            className="p-1 px-3 h-[32px] bg-primary text-primary-foreground text-sm rounded-[5px] whitespace-nowrap hover:opacity-90"
-            onClick={onAplicarFiltros}
-          >
-            Aplicar
+            Limpiar filtros
           </button>
         </div>
-      </div>
-      
-      {/* Filtros activos */}
-      {filtrosActivos.length > 0 && (
-        <div className="flex flex-wrap gap-2 mt-2 items-center">
-          <span className="text-xs text-gray-400">Activos:</span>
-          {filtrosActivos.map((filtro, index) => (
-            <div 
-              key={index} 
-              className="inline-flex items-center bg-primary text-primary-foreground text-xs py-1 px-2 rounded-[15px] animate-fadeIn shadow-sm"
-            >
-              {filtro.etiqueta}
-              <button 
-                onClick={() => onEliminarFiltro(filtro.tipo)}
-                className="ml-1 hover:text-opacity-80"
-                aria-label="Eliminar filtro"
+
+        {/* Filtros activos */}
+        {filtrosActivos.length > 0 && (
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+            <span className="text-xs text-muted-foreground self-center">Activos:</span>
+            {filtrosActivos.map((filtro) => (
+              <Badge 
+                key={`${filtro.tipo}-${filtro.valor}`}
+                variant="secondary"
+                className="flex items-center gap-1.5 pl-2.5 pr-1.5 py-1"
               >
-                <XIcon size={12} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
+                <span className="text-xs">{filtro.etiqueta}</span>
+                <button
+                  onClick={() => onEliminarFiltro(filtro.tipo)}
+                  className="hover:bg-background/50 rounded-sm p-0.5 transition-colors"
+                  aria-label={`Eliminar filtro ${filtro.etiqueta}`}
+                >
+                  <XIcon size={12} />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
-}
+});
+
+export default FiltrosDesktop;

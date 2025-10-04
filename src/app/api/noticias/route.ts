@@ -44,6 +44,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const isAdmin = searchParams.get('admin') === 'true';
     const tipo = (searchParams.get('tipo') || '').toLowerCase();
+    
+    // Parámetros de paginación
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const pageSize = parseInt(searchParams.get('pageSize') || '12', 10);
+    const offset = (page - 1) * pageSize;
+    
+    // Mantener compatibilidad con el límite antiguo
     const limitParam = parseInt(searchParams.get('limit') || '', 10);
     const limitFromQuery = Number.isFinite(limitParam) ? Math.max(1, limitParam) : undefined;
     
@@ -88,15 +95,17 @@ export async function GET(request: Request) {
       query = query.order('fecha_publicacion', { ascending: ordenFecha === 'asc' });
     }
       
-    // Aplicar límite (respetando tope para no-admin)
+    // Aplicar paginación
     if (limitFromQuery) {
-      query = query.limit(isAdmin ? limitFromQuery : Math.min(limitFromQuery, 9));
-    } else if (!isAdmin) {
-      query = query.limit(9);
+      // Mantener compatibilidad con el límite antiguo
+      query = query.range(0, limitFromQuery - 1);
+    } else {
+      // Usar paginación basada en página y tamaño de página
+      query = query.range(offset, offset + pageSize - 1);
     }
     
-    // Ejecutar la consulta inicial para obtener noticias
-    let { data: noticias, error } = await query;
+    // Ejecutar la consulta para obtener noticias con conteo total
+    let { data: noticias, error, count } = await query;
     
     // Si tenemos un filtro de categoría, necesitamos filtrarlo después de obtener las relaciones
     const filtrarPorCategoria = categoria ? true : false;
@@ -395,10 +404,14 @@ export async function GET(request: Request) {
     }
 
     // Asegurar que la respuesta use el formato esperado por los componentes
-    // que esperan un objeto con propiedades 'success' y 'data'
+    // que esperan un objeto con propiedades 'success', 'data', 'total', 'page', 'pageSize' y 'hasMore'
     const respuestaExitosa = NextResponse.json({ 
       success: true, 
-      data: noticiasData 
+      data: noticiasData,
+      total: count || noticiasData.length,
+      page,
+      pageSize,
+      hasMore: noticiasData.length >= pageSize
     });
     return configurarCORS(respuestaExitosa);
   } catch (error) {

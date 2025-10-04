@@ -50,18 +50,28 @@ const Header: React.FC = () => {
   } = useHeaderLogic();
 
   return (
-    <div
-      role="banner"
-      className={`fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full transition-all duration-200 ${
-        currentTheme === 'light'
-          ? 'bg-white'
-          : 'bg-black'
-      }`}
-      style={{
-        backgroundColor: currentTheme === 'light' ? 'white' : 'black',
-        opacity: 1
-      }}
-    >
+    <>
+      {/* Backdrop blur overlay */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-all duration-300 animate-in fade-in"
+          onClick={closeAllMenus}
+          style={{ top: '64px' }} // Empieza después del header (h-16 = 64px)
+        />
+      )}
+
+      <div
+        role="banner"
+        className={`fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full transition-all duration-200 ${
+          currentTheme === 'light'
+            ? 'bg-white'
+            : 'bg-black'
+        }`}
+        style={{
+          backgroundColor: currentTheme === 'light' ? 'white' : 'black',
+          opacity: 1
+        }}
+      >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-2 md:gap-4">
           {/* Logo */}
@@ -144,6 +154,7 @@ const Header: React.FC = () => {
         redirectTo={authRedirectTo}
       />
     </div>
+    </>
   );
 };
 

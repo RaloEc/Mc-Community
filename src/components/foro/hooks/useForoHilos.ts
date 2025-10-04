@@ -87,10 +87,41 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
       const { data, error } = await supabase
         .from("foro_categorias")
         .select("*")
+        .order("orden", { ascending: true })
         .order("nombre", { ascending: true });
       
       if (error) throw new Error("Error al cargar categorías");
-      return data || [];
+      
+      // Organizar categorías de forma jerárquica
+      const categoriasPlanas = data || [];
+      const categoriasPrincipales: Categoria[] = [];
+      const categoriasMap = new Map<string, Categoria>();
+      
+      // Crear un mapa de todas las categorías
+      categoriasPlanas.forEach(cat => {
+        categoriasMap.set(cat.id, { ...cat, subcategorias: [] });
+      });
+      
+      // Organizar la jerarquía
+      categoriasPlanas.forEach(cat => {
+        const categoria = categoriasMap.get(cat.id)!;
+        
+        if (!cat.parent_id) {
+          // Es una categoría principal
+          categoriasPrincipales.push(categoria);
+        } else {
+          // Es una subcategoría, agregarla a su padre
+          const padre = categoriasMap.get(cat.parent_id);
+          if (padre) {
+            if (!padre.subcategorias) {
+              padre.subcategorias = [];
+            }
+            padre.subcategorias.push(categoria);
+          }
+        }
+      });
+      
+      return categoriasPrincipales;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });

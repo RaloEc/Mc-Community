@@ -94,11 +94,14 @@ export type Noticia = {
   titulo: string;
   contenido: string;
   fecha_publicacion: string;
+  created_at?: string;
   autor_id: string;
   categoria_id: number;
   slug: string;
   imagen_url: string | null;
   imagen_portada?: string | null; // Campo alternativo para la imagen
+  vistas?: number;
+  comentarios_count?: number;
   // Relaciones
   autor: Perfil | null;
   categoria: CategoriaNoticia | null;
