@@ -41,7 +41,8 @@ a::-moz-selection {
   color: var(--selection-text, #ffffff) !important;
 }
 
-html, body {
+html,
+body {
   overflow-x: hidden;
   width: 100%;
   position: relative;
@@ -53,13 +54,20 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Animación de resaltado para posts reportados */
 @keyframes highlight {
-  0%, 100% {
+  0%,
+  100% {
     background-color: transparent;
   }
   50% {
@@ -71,141 +79,104 @@ html, body {
   animation: highlight 1s ease-in-out 3;
 }
 
-/* Animación de barrido para cambio de tema */
-@keyframes theme-sweep {
-  0% {
-    clip-path: polygon(0 0, 100% 0, 100% 0, 0 0);
-    opacity: 0.95;
-  }
-  5% {
-    opacity: 1;
-  }
-  70% {
-    clip-path: polygon(0 0, 100% 0, 100% 70%, 0 70%);
-    opacity: 0.8;
-  }
-  100% {
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-    opacity: 0;
-  }
-}
+/* ============================================
+   TRANSICIONES DE TEMA
+   ============================================ */
 
-/* Transición suave entre temas - optimizada para rendimiento */
-.theme-transition {
-  transition-property: background-color, border-color, box-shadow;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Excepciones para elementos que no deberían tener transición */
-.theme-transition .no-transition,
-.theme-transition .no-transition *,
-.theme-transition .no-transition *::before,
-.theme-transition .no-transition *::after {
-  transition: none !important;
-}
-
-/* Efecto de barrido para cambio de tema */
-.theme-sweep {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 9999;
-  animation: theme-sweep 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
+/* 
+ * Cambio de tema instantáneo sin animaciones
+ * next-themes maneja el cambio automáticamente
+ */
 
 .dropdown-animation {
   animation: fadeIn 0.2s ease-out;
   transform-origin: top center;
 }
 
+
 /* Estilos de Swapy eliminados */
 
 /* Definición de variables y estilos base */
 :root {
-    /* Colores base */
-    --blue: 217 91% 60%;     /* Azul principal */
-    --green: 120 60% 50%;    /* Verde hierba */
-    --orange: 25 95% 53%;    /* Naranja lava */
-    --stone: 25 5% 45%;      /* Gris piedra */
-    
-    /* Tema Claro */
-    --background: 0 0% 100%;
-    --foreground: 25 5% 25%;  /* Texto principal - Gris piedra oscuro */
+  /* Colores base */
+  --blue: 217 91% 60%; /* Azul principal */
+  --green: 120 60% 50%; /* Verde hierba */
+  --orange: 25 95% 53%; /* Naranja lava */
+  --stone: 25 5% 45%; /* Gris piedra */
 
-    --card: 0 0% 100%;
-    --card-foreground: 25 5% 25%;
+  /* Tema Claro */
+  --background: 0 0% 100%;
+  --foreground: 25 5% 25%; /* Texto principal - Gris piedra oscuro */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 25 5% 25%;
+  --card: 0 0% 100%;
+  --card-foreground: 25 5% 25%;
 
-    --primary: 217 91% 60%;   /* Azul principal */
-    --primary-foreground: 0 0% 100%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 25 5% 25%;
 
-    --secondary: 120 60% 50%; /* Verde hierba */
-    --secondary-foreground: 0 0% 100%;
+  --primary: 217 91% 60%; /* Azul principal */
+  --primary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 98%;
-    --muted-foreground: 25 5% 45%; /* Gris piedra */
+  --secondary: 120 60% 50%; /* Verde hierba */
+  --secondary-foreground: 0 0% 100%;
 
-    --accent: 217 91% 60%;    /* Azul principal */
-    --accent-foreground: 0 0% 100%;
+  --muted: 210 20% 98%;
+  --muted-foreground: 25 5% 45%; /* Gris piedra */
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
+  --accent: 217 91% 60%; /* Azul principal */
+  --accent-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;     /* Azul principal */
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
-  }
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%; /* Azul principal */
 
-    .dark {
-    /* Tema AMOLED - Negro puro con acentos vibrantes */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 95%;
-    --menu-bg-color: #000000;
+  --radius: 0.5rem;
+}
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 95%;
+.dark {
+  /* Tema AMOLED - Negro puro con acentos vibrantes */
+  --background: 0 0% 0%;
+  --foreground: 0 0% 95%;
+  --menu-bg-color: #000000;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 95%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 95%;
 
-    --primary: 217 91% 65%;   /* Azul brillante */
-    --primary-foreground: 0 0% 100%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 0 0% 95%;
 
-    --secondary: 120 70% 40%; /* Verde hierba más saturado */
-    --secondary-foreground: 0 0% 100%;
+  --primary: 217 91% 65%; /* Azul brillante */
+  --primary-foreground: 0 0% 100%;
 
-    --muted: 0 0% 8%;
-    --muted-foreground: 25 5% 60%; /* Gris piedra más claro */
+  --secondary: 120 70% 40%; /* Verde hierba más saturado */
+  --secondary-foreground: 0 0% 100%;
 
-    --accent: 217 91% 60%;    /* Azul principal */
-    --accent-foreground: 0 0% 100%;
+  --muted: 0 0% 8%;
+  --muted-foreground: 25 5% 60%; /* Gris piedra más claro */
 
-    --destructive: 0 84% 63%;
-    --destructive-foreground: 0 0% 100%;
+  --accent: 217 91% 60%; /* Azul principal */
+  --accent-foreground: 0 0% 100%;
 
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 217 91% 65%;     /* Igual que primary */
-  }
+  --destructive: 0 84% 63%;
+  --destructive-foreground: 0 0% 100%;
 
+  --border: 0 0% 12%;
+  --input: 0 0% 12%;
+  --ring: 217 91% 65%; /* Igual que primary */
+}
 
-  /* La clase .amoled ha sido eliminada y sus estilos se han movido a .dark */
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    padding-top: 64px; /* Compensar el header fijo */
-  }
+/* La clase .amoled ha sido eliminada y sus estilos se han movido a .dark */
+* {
+  @apply border-border;
+}
+body {
+  @apply bg-background text-foreground;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  padding-top: 64px; /* Compensar el header fijo */
+}
 
 /* Animaciones y efectos */
 
@@ -215,12 +186,12 @@ html, body {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
   }
-  
+
   70% {
     transform: scale(1);
     box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
   }
-  
+
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
@@ -236,6 +207,7 @@ html, body {
   position: relative;
   transition: all 0.1s ease;
 }
+
 
 /* Estado del servidor (online/offline) con borde superior */
 .servidor-card.online .border-t-status {
@@ -299,8 +271,6 @@ html, body {
   border-color: #1e1e1e;
 }
 
-  
-
 /* Estilos para blockquotes */
 .prose blockquote,
 .hilo-content blockquote,
@@ -322,7 +292,7 @@ html, body {
 .hilo-content blockquote::before,
 .hilo-preview blockquote::before,
 .foro-card blockquote::before {
-  content: '>' !important;
+  content: ">" !important;
   position: absolute;
   left: 0;
   top: 0.25em;
@@ -392,7 +362,7 @@ html, body {
 }
 
 .foro-card blockquote::before {
-  content: '>' !important;
+  content: ">" !important;
   position: absolute;
   left: 0.5em;
   color: var(--muted-foreground);
@@ -404,9 +374,11 @@ html, body {
   transition: all 0.1s ease;
 }
 
+
 .card-hover-effect:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 /* Estilos para tema AMOLED */
@@ -424,7 +396,7 @@ html, body {
 
 /* Estilos para efectos de gradiente */
 .minecraft-gradient {
-  background: linear-gradient(to right, #2196F3, #4AEDD9);
+  background: linear-gradient(to right, #2196f3, #4aedd9);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -437,6 +409,7 @@ html, body {
 .button-hover-effect {
   transition: all 0.2s ease;
 }
+
 
 .button-hover-effect:hover {
   transform: translateY(-2px);
@@ -458,6 +431,7 @@ html, body {
   transition: all 0.1s ease;
 }
 
+
 .icon-container:hover {
   transform: scale(1.1);
   background-color: rgba(33, 150, 243, 0.1);
@@ -468,9 +442,14 @@ a {
   text-decoration: none;
 }
 
-/* Transiciones suaves para cambio de tema - optimizadas para rendimiento */
-* {
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+/* Transiciones solo para interacciones, NO para cambio de tema */
+button,
+a,
+input,
+textarea,
+select {
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
 /* Animación de ping lento para el botón de cambio de tema */
@@ -479,7 +458,8 @@ a {
     transform: scale(0.8);
     opacity: 0.8;
   }
-  75%, 100% {
+  75%,
+  100% {
     transform: scale(2.5);
     opacity: 0;
   }
@@ -499,6 +479,7 @@ a {
   overflow: hidden;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
+
 
 /* Estilos específicos para el modo oscuro */
 .dark .tiptap-container {
@@ -555,7 +536,7 @@ a {
 /* Efecto de resaltado para el botón activo */
 .tiptap-toolbar button.is-active::after,
 .tiptap-toolbar button[aria-pressed="true"]::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 20%;
@@ -631,8 +612,10 @@ a {
   font-size: 1.05rem;
   line-height: 1.6;
   outline: none;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
 }
+
 
 /* Estilos para encabezados en el editor */
 .tiptap h1 {
@@ -669,7 +652,7 @@ a {
 
 /* Subrayado sutil para enlaces */
 .tiptap a::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 0;
   bottom: 0;
@@ -773,7 +756,12 @@ a {
 }
 
 .tiptap::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(59, 130, 246, 0.5); /* Color más intenso al pasar el mouse */
+  background-color: rgba(
+    59,
+    130,
+    246,
+    0.5
+  ); /* Color más intenso al pasar el mouse */
 }
 
 /* Placeholder */
@@ -876,7 +864,7 @@ iframe.editor-youtube {
   height: auto !important;
   aspect-ratio: 16/9 !important;
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Contenedor responsivo para videos */
@@ -998,7 +986,7 @@ header {
 
 /* Fondo con desenfoque sutil para el menú móvil */
 body.menu-open::after {
-  content: '';
+  content: "";
   position: fixed;
   top: 64px; /* Altura del header */
   left: 0;
@@ -1026,7 +1014,8 @@ body.menu-open header {
 .dark .fixed.top-16.right-4.z-\[999\] {
   background-color: rgba(15, 23, 42, 0.98);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1);
 }
 
 /* Asegurar que los elementos del menú tengan buen contraste en modo oscuro */
@@ -1149,7 +1138,7 @@ body.menu-open header {
     bottom: 0.4rem;
     font-size: 0.84rem;
   }
-  
+
   .dialog-content {
     padding: 1rem;
     width: 95%;

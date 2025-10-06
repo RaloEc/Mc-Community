@@ -5,7 +5,6 @@ interface AdminDesktopMenuProps {
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
-  currentTheme: string;
   profile?: {
     color?: string;
   } | null;
@@ -16,7 +15,6 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
   isOpen,
   onToggle,
   onClose,
-  currentTheme,
   profile,
   menuRef,
 }) => {
@@ -46,11 +44,7 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
         </span>
       </button>
       <div
-        className={`absolute top-full left-0 mt-1 w-56 rounded-md border shadow-lg ${
-          currentTheme === "light"
-            ? "bg-white border-gray-200"
-            : "bg-black border-gray-800"
-        } transition-all duration-200 ease-in-out transform origin-top-left ${
+        className={`absolute top-full left-0 mt-1 w-56 rounded-md border shadow-lg bg-white dark:bg-black border-gray-200 dark:border-gray-800 transition-all duration-200 ease-in-out transform origin-top-left ${
           isOpen
             ? "scale-100 opacity-100"
             : "scale-95 opacity-0 pointer-events-none"
@@ -72,11 +66,7 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
                   "--dark-hover-text": profile?.color || "#60a5fa",
                 } as React.CSSProperties
               }
-              className={`block px-4 py-2 transition-colors ${
-                currentTheme === "light"
-                  ? "text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
-                  : "text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]"
-              }`}
+              className="block px-4 py-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)]"
               onClick={onClose}
             >
               Dashboard
@@ -97,11 +87,7 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
                   "--dark-hover-text": profile?.color || "#60a5fa",
                 } as React.CSSProperties
               }
-              className={`block px-4 py-2 transition-colors ${
-                currentTheme === "light"
-                  ? "text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
-                  : "text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]"
-              }`}
+              className="block px-4 py-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)]"
               onClick={onClose}
             >
               Admin Noticias
@@ -122,11 +108,7 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
                   "--dark-hover-text": profile?.color || "#60a5fa",
                 } as React.CSSProperties
               }
-              className={`block px-4 py-2 transition-colors ${
-                currentTheme === "light"
-                  ? "text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
-                  : "text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]"
-              }`}
+              className="block px-4 py-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)]"
               onClick={onClose}
             >
               Admin Usuarios
@@ -147,11 +129,7 @@ export const AdminDesktopMenu: React.FC<AdminDesktopMenuProps> = ({
                   "--dark-hover-text": profile?.color || "#60a5fa",
                 } as React.CSSProperties
               }
-              className={`block px-4 py-2 transition-colors ${
-                currentTheme === "light"
-                  ? "text-gray-700 hover:bg-[var(--hover-bg)] hover:text-[var(--hover-text)]"
-                  : "text-gray-200 hover:bg-[var(--dark-hover-bg)] hover:text-[var(--dark-hover-text)]"
-              }`}
+              className="block px-4 py-2 transition-colors text-gray-700 dark:text-gray-200 hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)]"
               onClick={onClose}
             >
               Admin Foro

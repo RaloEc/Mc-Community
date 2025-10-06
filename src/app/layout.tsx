@@ -20,23 +20,36 @@ export const metadata: Metadata = {
 // Script para prevenir FOUC (Flash of Unstyled Content)
 const ThemeScript = () => {
   // Script que se ejecuta antes de la hidratación para evitar parpadeo
-  // Solo soporta modo claro y AMOLED puro (#000000)
+  // Soporta: light, dark, y system (prefers-color-scheme)
   const themeScript = `
     (function() {
       try {
-        const savedTheme = localStorage.getItem('theme');
-        // Solo permitir 'light' o 'dark' (AMOLED)
-        if (savedTheme === 'light') {
-          document.documentElement.classList.remove('dark');
+        const storageKey = 'mc-community-theme';
+        const savedTheme = localStorage.getItem(storageKey);
+        
+        // Función para aplicar el tema
+        function applyTheme(theme) {
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        }
+        
+        // Determinar el tema a aplicar
+        if (savedTheme === 'light' || savedTheme === 'dark') {
+          applyTheme(savedTheme);
         } else {
-          // Por defecto AMOLED (dark con #000000 puro)
-          document.documentElement.classList.add('dark');
-          document.documentElement.style.setProperty('--amoled-black', '#000000');
+          // Si no hay tema guardado o es 'system', usar preferencia del sistema
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          applyTheme(prefersDark ? 'dark' : 'light');
         }
       } catch (e) {
-        // Fallback a AMOLED
-        document.documentElement.classList.add('dark');
-        document.documentElement.style.setProperty('--amoled-black', '#000000');
+        // Fallback: usar preferencia del sistema o dark por defecto
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.classList.toggle('dark', prefersDark);
       }
     })();
   `;
@@ -84,13 +97,11 @@ export default async function RootLayout({
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
       </head>
       <body className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}>
-        <Providers session={session}>
-          <ThemeProvider userColor={userColor}>
-            <Header />
-            <main className="container mx-auto px-4">
-              {children}
-            </main>
-          </ThemeProvider>
+        <Providers session={session} userColor={userColor}>
+          <Header />
+          <main className="container mx-auto px-4">
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

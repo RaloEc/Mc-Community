@@ -1,6 +1,6 @@
 "use client";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/lib/theme";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import FABMobile from "@/components/ui/FABMobile";
@@ -9,13 +9,15 @@ import { ReactQueryProvider } from "@/lib/react-query/provider";
 export default function Providers({
   children,
   session,
+  userColor,
 }: {
   children: React.ReactNode;
   session?: any;
+  userColor?: string;
 }) {
   return (
     <ReactQueryProvider>
-      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <ThemeProvider userColor={userColor}>
         <AuthProvider session={session}>
           {children}
           <Toaster />

@@ -24,7 +24,6 @@ interface HeaderMobileMenuProps {
     avatar_url?: string;
     role?: string;
   } | null;
-  currentTheme: string;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
   handleSearch: (e: React.FormEvent) => void;
@@ -45,7 +44,6 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   isOpen,
   authUser,
   profile,
-  currentTheme,
   searchQuery,
   setSearchQuery,
   handleSearch,
@@ -69,11 +67,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
       {/* Menú desplegable */}
       <div
         key="mobile-menu"
-        className={`fixed top-16 right-0 w-72 max-w-[calc(100%-1rem)] rounded-bl-lg border border-gray-200 dark:border-gray-800 shadow-lg z-[60] overflow-hidden ${
-          currentTheme === "light"
-            ? "bg-white text-gray-900"
-            : "bg-black text-white"
-        }`}
+        className="fixed top-16 right-0 w-72 max-w-[calc(100%-1rem)] rounded-bl-lg border border-gray-200 dark:border-gray-800 shadow-lg z-[60] overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white"
       >
         <style jsx global>{`
           @keyframes scaleIn {
@@ -122,11 +116,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
           }
         `}</style>
         <div
-          className={`w-full rounded-lg shadow-2xl flex flex-col overflow-hidden ${
-            currentTheme === "light"
-              ? "bg-white text-gray-900"
-              : "bg-black text-white"
-          }`}
+          className="w-full rounded-lg shadow-2xl flex flex-col overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white"
           style={{
             maxHeight: "calc(100vh - 6rem)",
             boxShadow:
@@ -172,11 +162,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                         "Usuario"}
                     </span>
                     <span
-                      className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        currentTheme === "light"
-                          ? "bg-blue-50 text-blue-700 border border-blue-200"
-                          : "bg-blue-950/40 text-blue-300 border border-blue-900/60"
-                      }`}
+                      className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60"
                     >
                       {profile?.role || "user"}
                     </span>
@@ -239,10 +225,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
             className="flex-grow p-4 space-y-3 overflow-y-auto"
             style={{
               scrollbarWidth: "thin",
-              scrollbarColor:
-                currentTheme === "light"
-                  ? "#9ca3af #e5e7eb"
-                  : "#4b5563 #1f2937",
+              scrollbarColor: "#9ca3af #e5e7eb",
             }}
           >
             {/* Sección de Perfil */}
@@ -250,11 +233,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               <li className="menu-item">
                 <Link
                   href="/perfil"
-                  className={`flex items-center gap-2 p-2 rounded-md ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-200 hover:bg-gray-800"
-                  }`}
+                  className="flex items-center gap-2 p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   <User size={18} /> Mi Perfil
@@ -268,11 +247,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                 <div className="flex items-center justify-between w-full">
                   <Link
                     href="/admin/dashboard"
-                    className={`flex-grow flex items-center gap-2 p-2 rounded-md ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-200 hover:bg-gray-800"
-                    }`}
+                    className="flex-grow flex items-center gap-2 p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={closeAllMenus}
                   >
                     <span className="font-medium">Administración</span>
@@ -305,33 +280,21 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                 >
                   <Link
                     href="/admin/noticias"
-                    className={`block p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-300 hover:bg-gray-800"
-                    }`}
+                    className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={closeAllMenus}
                   >
                     Noticias
                   </Link>
                   <Link
                     href="/admin/usuarios"
-                    className={`block p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-300 hover:bg-gray-800"
-                    }`}
+                    className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={closeAllMenus}
                   >
                     Usuarios
                   </Link>
                   <Link
                     href="/admin/foro"
-                    className={`block p-2 rounded-md text-sm ${
-                      currentTheme === "light"
-                        ? "text-gray-700 hover:bg-gray-100"
-                        : "text-gray-300 hover:bg-gray-800"
-                    }`}
+                    className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                     onClick={closeAllMenus}
                   >
                     Foro
@@ -345,11 +308,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               <div className="flex items-center justify-between w-full">
                 <Link
                   href="/noticias"
-                  className={`flex-grow flex items-center gap-2 p-2 rounded-md ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-200 hover:bg-gray-800"
-                  }`}
+                  className="flex-grow flex items-center gap-2 p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   <Newspaper size={18} /> Noticias
@@ -381,33 +340,21 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               >
                 <Link
                   href="/noticias"
-                  className={`block p-2 rounded-md text-sm ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
+                  className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   Ver noticias
                 </Link>
                 <Link
                   href="/noticias?tipo=recientes"
-                  className={`block p-2 rounded-md text-sm ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
+                  className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   Recientes
                 </Link>
                 <Link
                   href="/noticias?tipo=destacadas"
-                  className={`block p-2 rounded-md text-sm ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-300 hover:bg-gray-800"
-                  }`}
+                  className="block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   Destacadas
@@ -420,11 +367,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               <div className="flex items-center justify-between w-full">
                 <Link
                   href="/foro"
-                  className={`flex-grow flex items-center gap-2 p-2 rounded-md ${
-                    currentTheme === "light"
-                      ? "text-gray-700 hover:bg-gray-100"
-                      : "text-gray-200 hover:bg-gray-800"
-                  }`}
+                  className="flex-grow flex items-center gap-2 p-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                   onClick={closeAllMenus}
                 >
                   <MessageSquare size={18} /> Foro
@@ -464,11 +407,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                       <div className="flex items-center justify-between">
                         <Link
                           href={`/foro/categoria/${cat.slug}`}
-                          className={`flex-grow block p-2 rounded-md text-sm ${
-                            currentTheme === "light"
-                              ? "text-gray-700 hover:bg-gray-100"
-                              : "text-gray-300 hover:bg-gray-800"
-                          }`}
+                          className="flex-grow block p-2 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                           onClick={closeAllMenus}
                         >
                           {cat.nombre}
@@ -499,11 +438,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                             <Link
                               key={subcat.id}
                               href={`/foro/categoria/${subcat.slug}`}
-                              className={`block p-1 rounded text-xs ${
-                                currentTheme === "light"
-                                  ? "text-gray-600 hover:bg-gray-100"
-                                  : "text-gray-400 hover:bg-gray-800"
-                              }`}
+                              className="block p-1 rounded text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                               onClick={closeAllMenus}
                             >
                               {subcat.nombre}
@@ -524,7 +459,11 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Tema</span>
-                <ModeToggle variant="ghost" size="sm" className="h-9 w-9" />
+                <ModeToggle 
+                  variant="ghost" 
+                  size="default"
+                  modes={["light", "dark"]}
+                />
               </div>
             </div>
             
@@ -533,11 +472,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <button
                   onClick={handleLogout}
-                  className={`flex items-center justify-center gap-2 p-2 rounded-md w-full text-center ${
-                    currentTheme === "light"
-                      ? "text-red-600 hover:bg-red-50"
-                      : "text-red-400 hover:bg-red-950/20"
-                  }`}
+                  className="flex items-center justify-center gap-2 p-2 rounded-md w-full text-center text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <LogOut size={18} /> Cerrar Sesión
                 </button>

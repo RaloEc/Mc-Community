@@ -1,6 +1,9 @@
 "use client"
 
-// Este componente ha sido actualizado para usar el nuevo ThemeTogglerButton
-// Se mantiene para compatibilidad con el código existente
-export { ThemeTogglerButton as ModeToggle } from './ui/theme-toggler-button'
-
+/**
+ * ModeToggle - Componente de compatibilidad
+ * 
+ * Este componente se mantiene para compatibilidad con código existente.
+ * Usa el nuevo sistema de tema con animación wipe vertical.
+ */
+export { ThemeToggleButton as ModeToggle } from '@/lib/theme'

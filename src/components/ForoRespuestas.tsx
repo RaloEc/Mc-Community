@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAuth } from '@/context/AuthContext'
-import { useTheme } from '@/components/theme-provider'
+import { useTheme } from 'next-themes'
 import Link from 'next/link'
 import { formatDistanceToNow, format, differenceInHours } from 'date-fns'
 import { es } from 'date-fns/locale'

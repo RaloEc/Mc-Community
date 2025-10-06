@@ -9,7 +9,6 @@ interface UserDesktopMenuProps {
   onToggle: () => void;
   onClose: () => void;
   onLogout: () => void;
-  currentTheme: string;
   authUser: any;
   profile?: {
     username?: string;
@@ -25,7 +24,6 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
   onToggle,
   onClose,
   onLogout,
-  currentTheme,
   authUser,
   profile,
   userButtonRef,
@@ -69,11 +67,7 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
       {isOpen && (
         <div
           ref={userMenuRef}
-          className={`absolute right-0 mt-2 w-64 rounded-lg shadow-lg border z-50 ${
-            currentTheme === "light"
-              ? "bg-white border-gray-200"
-              : "bg-black border-gray-800"
-          }`}
+          className="absolute right-0 mt-2 w-64 rounded-lg shadow-lg border z-50 bg-white dark:bg-black border-gray-200 dark:border-gray-800"
         >
           <div className="p-3">
             <div className="flex items-center px-3 py-3 border-b border-gray-200/50 dark:border-gray-800/50 mb-2">
@@ -112,11 +106,7 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
                       authUser?.email?.split("@")[0] ||
                       "Usuario"}
                   </span>
-                  <span className={`shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border ${
-                    currentTheme === "light"
-                      ? "bg-blue-50 text-blue-700 border-blue-200"
-                      : "bg-blue-950/40 text-blue-300 border-blue-900/60"
-                  }`}>
+                  <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium border bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/60">
                     {profile?.role || "user"}
                   </span>
                 </div>
@@ -130,11 +120,7 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
             <div className="space-y-1">
               <Link
                 href="/perfil"
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors ${
-                  currentTheme === "light"
-                    ? "text-gray-700 hover:bg-gray-100"
-                    : "text-gray-200 hover:bg-gray-800"
-                }`}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 onClick={onClose}
               >
                 <User className="h-4 w-4" />
@@ -142,11 +128,7 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
               </Link>
               <button
                 onClick={onLogout}
-                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors w-full text-left ${
-                  currentTheme === "light"
-                    ? "text-red-600 hover:bg-red-50"
-                    : "text-red-400 hover:bg-red-950/20"
-                }`}
+                className="flex items-center gap-2 px-3 py-2 text-sm rounded-md transition-colors w-full text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
               >
                 <LogOut className="h-4 w-4" />
                 Cerrar Sesión

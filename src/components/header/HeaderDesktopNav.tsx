@@ -9,7 +9,6 @@ interface HeaderDesktopNavProps {
   isAdminMenuOpen: boolean;
   setIsAdminMenuOpen: (value: boolean) => void;
   closeAllMenus: () => void;
-  currentTheme: string;
   profile?: {
     color?: string;
   } | null;
@@ -24,7 +23,6 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
   isAdminMenuOpen,
   setIsAdminMenuOpen,
   closeAllMenus,
-  currentTheme,
   profile,
   adminMenuRef,
   searchQuery,
@@ -95,7 +93,6 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
               isOpen={isAdminMenuOpen}
               onToggle={() => setIsAdminMenuOpen(!isAdminMenuOpen)}
               onClose={() => setIsAdminMenuOpen(false)}
-              currentTheme={currentTheme}
               profile={profile}
               menuRef={adminMenuRef}
             />

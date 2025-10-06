@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { saveCurrentUrlForRedirect } from "@/lib/utils/auth-utils";
+import { useTheme } from "next-themes";
 
 export type ForoCategoria = {
   id: string;
@@ -26,12 +27,12 @@ type ApiForoCategoria = {
 export const useHeaderLogic = () => {
   const router = useRouter();
   const { session, user: authUser, profile, signOut } = useAuth();
+  const { resolvedTheme } = useTheme();
   
   // Estados principales
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState("light");
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const [isForoMenuOpen, setIsForoMenuOpen] = useState(false);
   const [isNoticiasMenuOpen, setIsNoticiasMenuOpen] = useState(false);
@@ -50,27 +51,6 @@ export const useHeaderLogic = () => {
   const userButtonRef = useRef<HTMLButtonElement | null>(null);
   const foroMenuRef = useRef<HTMLLIElement | null>(null);
   const noticiasMenuRef = useRef<HTMLLIElement | null>(null);
-
-  // Detectar tema
-  useEffect(() => {
-    const detectTheme = () => {
-      const htmlElement = document.documentElement;
-      if (htmlElement.classList.contains("dark")) {
-        setCurrentTheme("dark");
-      } else {
-        setCurrentTheme("light");
-      }
-    };
-
-    detectTheme();
-    const observer = new MutationObserver(detectTheme);
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => observer.disconnect();
-  }, []);
 
   // Manejar clics fuera de los menús
   useEffect(() => {
@@ -223,7 +203,6 @@ export const useHeaderLogic = () => {
     isUserMenuOpen,
     setIsUserMenuOpen,
     isAdmin,
-    currentTheme,
     isAdminMenuOpen,
     setIsAdminMenuOpen,
     isForoMenuOpen,

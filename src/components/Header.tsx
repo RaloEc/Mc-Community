@@ -16,7 +16,6 @@ const Header: React.FC = () => {
     isUserMenuOpen,
     setIsUserMenuOpen,
     isAdmin,
-    currentTheme,
     isAdminMenuOpen,
     setIsAdminMenuOpen,
     isAuthModalOpen,
@@ -62,15 +61,7 @@ const Header: React.FC = () => {
 
       <div
         role="banner"
-        className={`fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 text-gray-900 dark:text-white shadow-sm w-full transition-all duration-200 ${
-          currentTheme === 'light'
-            ? 'bg-white'
-            : 'bg-black'
-        }`}
-        style={{
-          backgroundColor: currentTheme === 'light' ? 'white' : 'black',
-          opacity: 1
-        }}
+        className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/50 dark:border-gray-800/50 bg-white dark:bg-black text-gray-900 dark:text-white shadow-sm w-full"
       >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-2 md:gap-4">
@@ -98,7 +89,6 @@ const Header: React.FC = () => {
             isAdminMenuOpen={isAdminMenuOpen}
             setIsAdminMenuOpen={setIsAdminMenuOpen}
             closeAllMenus={closeAllMenus}
-            currentTheme={currentTheme}
             profile={profile}
             adminMenuRef={adminMenuRef}
             searchQuery={searchQuery}
@@ -115,7 +105,6 @@ const Header: React.FC = () => {
             setIsUserMenuOpen={setIsUserMenuOpen}
             isMenuOpen={isMenuOpen}
             setIsMenuOpen={setIsMenuOpen}
-            currentTheme={currentTheme}
             userButtonRef={userButtonRef}
             userMenuRef={userMenuRef}
             handleLogout={handleLogout}
@@ -129,7 +118,6 @@ const Header: React.FC = () => {
         isOpen={isMenuOpen}
         authUser={authUser}
         profile={profile}
-        currentTheme={currentTheme}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         handleSearch={handleSearch}

@@ -18,7 +18,6 @@ interface HeaderRightControlsProps {
   setIsUserMenuOpen: (value: boolean) => void;
   isMenuOpen: boolean;
   setIsMenuOpen: (value: boolean) => void;
-  currentTheme: string;
   userButtonRef: React.RefObject<HTMLButtonElement>;
   userMenuRef: React.RefObject<HTMLDivElement>;
   handleLogout: () => void;
@@ -33,7 +32,6 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
   setIsUserMenuOpen,
   isMenuOpen,
   setIsMenuOpen,
-  currentTheme,
   userButtonRef,
   userMenuRef,
   handleLogout,
@@ -43,7 +41,11 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
     <div className="flex items-center gap-1 md:gap-3">
       {/* Botones de creación - Ocultar en pantallas menores a 1024px */}
       <div className="hidden lg:flex items-center gap-2">
-        <ModeToggle />
+        <ModeToggle 
+          variant="ghost" 
+          size="default"
+          modes={["light", "dark"]}
+        />
         {isAdmin && (
           <Button
             variant="ghost"
@@ -104,7 +106,6 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
             onToggle={() => setIsUserMenuOpen(!isUserMenuOpen)}
             onClose={() => setIsUserMenuOpen(false)}
             onLogout={handleLogout}
-            currentTheme={currentTheme}
             authUser={authUser}
             profile={profile}
             userButtonRef={userButtonRef}
