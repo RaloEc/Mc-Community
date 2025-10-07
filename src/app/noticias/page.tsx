@@ -64,10 +64,16 @@ export default function Noticias() {
 
   // Formatear categorías para los selectores
   const categorias = useMemo(() => {
-    return categoriasData.map((cat) => ({
+    console.log('[Noticias Page] categoriasData recibidas:', categoriasData);
+    console.log('[Noticias Page] Cantidad de categorías:', categoriasData.length);
+    
+    const formateadas = categoriasData.map((cat) => ({
       id: String(cat.id),
       nombre: cat.nombre
     }));
+    
+    console.log('[Noticias Page] Categorías formateadas:', formateadas);
+    return formateadas;
   }, [categoriasData]);
 
   // Calcular filtros activos

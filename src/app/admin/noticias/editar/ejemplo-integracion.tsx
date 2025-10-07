@@ -37,7 +37,7 @@ export function EditorCategoria({
         }
         
         const data = await response.json()
-        setCategorias(data)
+        setCategorias(data.success ? data.data : [])
       } catch (err: any) {
         console.error('Error al cargar categorías:', err)
         setError(err.message || 'Error al cargar las categorías')

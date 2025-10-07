@@ -51,11 +51,23 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
   const { data: categorias = [] } = useQuery({
     queryKey: ['noticias', 'categorias'],
     queryFn: async () => {
+      console.log('[useNoticias] Iniciando carga de categorías...');
       const response = await fetch('/api/noticias/categorias');
-      if (!response.ok) throw new Error('Error al cargar categorías');
+      console.log('[useNoticias] Response status:', response.status);
+      
+      if (!response.ok) {
+        console.error('[useNoticias] Error en response:', response.status, response.statusText);
+        throw new Error('Error al cargar categorías');
+      }
+      
       const data = await response.json();
+      console.log('[useNoticias] Datos recibidos:', data);
+      console.log('[useNoticias] data.success:', data.success);
+      console.log('[useNoticias] Array.isArray(data.data):', Array.isArray(data.data));
+      console.log('[useNoticias] data.data:', data.data);
       
       if (!(data.success && Array.isArray(data.data))) {
+        console.warn('[useNoticias] Formato de datos inválido, retornando array vacío');
         return [] as Categoria[];
       }
 
@@ -121,10 +133,16 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
 
       ordenar(raices);
 
+      console.log('[useNoticias] Categorías procesadas (raíces):', raices);
+      console.log('[useNoticias] Total de categorías raíz:', raices.length);
+      
       return raices as unknown as Categoria[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutos
   });
+  
+  console.log('[useNoticias] Categorías en estado:', categorias);
+  console.log('[useNoticias] Total categorías:', categorias.length);
 
   // Memoizar la query key para evitar re-renders innecesarios
   const queryKey = useMemo(() => ['noticias', 'lista', filtros], [

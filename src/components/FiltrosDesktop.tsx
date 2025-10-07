@@ -35,6 +35,10 @@ const FiltrosDesktop = React.memo(function FiltrosDesktop({
   onLimpiarFiltros,
   onEliminarFiltro
 }: FiltrosDesktopProps) {
+  console.log('[FiltrosDesktop] Categorías recibidas:', categorias);
+  console.log('[FiltrosDesktop] Total categorías:', categorias.length);
+  console.log('[FiltrosDesktop] Categoría seleccionada:', categoria);
+  
   return (
     <div className="hidden md:block bg-card rounded-lg border border-border mb-6 p-4 shadow-sm">
       <div className="space-y-3">
