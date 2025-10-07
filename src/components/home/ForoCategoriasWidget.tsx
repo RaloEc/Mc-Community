@@ -45,6 +45,12 @@ export default function ForoCategoriasWidget() {
     const fetchCategorias = async () => {
       try {
         const supabase = createClient();
+        const supabaseUrlSafe = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/^(https?:\/\/)/, '')
+        console.info('[ForoCategoriasWidget] Iniciando carga de categorías', {
+          supabaseUrl: supabaseUrlSafe,
+          hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          ts: new Date().toISOString()
+        })
         
         // Primero obtenemos todas las categorías activas
         const { data: todasCategorias, error } = await supabase
@@ -64,7 +70,15 @@ export default function ForoCategoriasWidget() {
           .eq('es_activa', true)  // Solo categorías activas
           .order('orden', { ascending: true });
           
-        if (error) throw error;
+        if (error) {
+          console.error('[ForoCategoriasWidget] Error al cargar foro_categorias:', {
+            message: (error as any)?.message,
+            code: (error as any)?.code,
+            details: (error as any)?.details,
+            hint: (error as any)?.hint
+          })
+          throw error;
+        }
         
         // Función recursiva para construir el árbol de categorías
         const construirArbol = (parentId: string | null = null): Categoria[] => {
@@ -79,6 +93,10 @@ export default function ForoCategoriasWidget() {
         
         // Obtenemos solo las categorías principales (primer nivel)
         const categoriasPrincipales = construirArbol(null).slice(0, 6); // Limitamos a 6 categorías principales
+        console.info('[ForoCategoriasWidget] Categorías principales construidas:', {
+          count: categoriasPrincipales.length,
+          sample: categoriasPrincipales.slice(0, Math.min(3, categoriasPrincipales.length)).map(c => ({ id: c.id, nombre: c.nombre }))
+        })
         
         if (error) {
           console.error('Error al cargar categorías:', error);
@@ -110,7 +128,7 @@ export default function ForoCategoriasWidget() {
                 .eq('categoria_id', id);
               
               if (error) {
-                console.error(`Error al contar hilos para categoría ${id}:`, error);
+                console.error(`[ForoCategoriasWidget] Error al contar hilos para categoría ${id}:`, error);
                 return { categoria_id: id, count: 0 };
               }
               
@@ -131,12 +149,16 @@ export default function ForoCategoriasWidget() {
           };
           
           const categoriasConConteos = actualizarConteos(categoriasPrincipales);
+          console.info('[ForoCategoriasWidget] Árbol final con conteos:', {
+            roots: categoriasConConteos.length,
+            sample: categoriasConConteos.slice(0, Math.min(3, categoriasConConteos.length)).map(c => ({ id: c.id, nombre: c.nombre, subCount: c.subcategorias?.length || 0 }))
+          })
           setCategorias(categoriasConConteos);
         } else {
           setCategorias([]);
         }
       } catch (error) {
-        console.error('Error al cargar categorías:', error);
+        console.error('[ForoCategoriasWidget] Error general al cargar categorías:', error);
       } finally {
         setLoading(false);
       }

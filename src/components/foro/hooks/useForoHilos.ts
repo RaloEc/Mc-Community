@@ -84,16 +84,44 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
   const { data: categorias = [] } = useQuery({
     queryKey: ['foro', 'categorias'],
     queryFn: async () => {
+      try {
+        // Información básica del entorno (sin exponer secretos)
+        const supabaseUrlSafe = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/^(https?:\/\/)/, '')
+        console.info('[useForoHilos] Iniciando carga de categorías', {
+          supabaseUrl: supabaseUrlSafe,
+          hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+          ts: new Date().toISOString()
+        })
+
+        // Probar una consulta mínima para validar conectividad (opcional)
+        // Nota: mantenemos la consulta principal, esta preconsulta no es necesaria
+      } catch (e) {
+        console.warn('[useForoHilos] Aviso antes de query foro_categorias:', e)
+      }
+
       const { data, error } = await supabase
         .from("foro_categorias")
         .select("*")
         .order("orden", { ascending: true })
         .order("nombre", { ascending: true });
       
-      if (error) throw new Error("Error al cargar categorías");
+      if (error) {
+        // Log detallado para depurar en producción
+        console.error('[useForoHilos] Error al cargar foro_categorias:', {
+          message: (error as any)?.message,
+          code: (error as any)?.code,
+          details: (error as any)?.details,
+          hint: (error as any)?.hint
+        });
+        throw new Error("Error al cargar categorías");
+      }
       
       // Organizar categorías de forma jerárquica
       const categoriasPlanas = data || [];
+      console.info('[useForoHilos] Categorías planas recibidas:', {
+        count: categoriasPlanas.length,
+        sample: categoriasPlanas.slice(0, Math.min(3, categoriasPlanas.length))
+      })
       const categoriasPrincipales: Categoria[] = [];
       const categoriasMap = new Map<string, Categoria>();
       
@@ -121,6 +149,15 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
         }
       });
       
+      console.info('[useForoHilos] Árbol de categorías construido:', {
+        roots: categoriasPrincipales.length,
+        rootsSample: categoriasPrincipales.slice(0, Math.min(3, categoriasPrincipales.length)).map(c => ({
+          id: c.id,
+          nombre: c.nombre,
+          subCount: c.subcategorias?.length || 0
+        }))
+      })
+
       return categoriasPrincipales;
     },
     staleTime: 5 * 60 * 1000, // 5 minutos

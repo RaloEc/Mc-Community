@@ -12,13 +12,5 @@
   status = 200
   force = true
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
+# Nota: No se definen redirecciones catch-all ni para /api/*, el plugin de Next.js
+# maneja el enrutado, SSR y funciones automáticamente en Netlify.
