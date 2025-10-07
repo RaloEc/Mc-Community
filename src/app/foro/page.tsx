@@ -1,29 +1,75 @@
 import ForoCliente from "@/components/foro/ForoCliente";
 import ForoSidebar from "@/components/foro/ForoSidebar";
+import { createClient } from "@/lib/supabase/server";
 
 async function getCategorias() {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  const url = `${baseUrl}/api/foro/categorias`;
   try {
-    console.log("[ForoPage] Solicitando categorías desde:", url);
-    const res = await fetch(url, { next: { revalidate: 0 } });
-    let json: any = null;
-    try {
-      json = await res.json();
-    } catch (e) {
-      console.error("[ForoPage] Error parseando JSON de categorías:", e);
+    console.log("[ForoPage] Cargando categorías directamente desde Supabase (server)");
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from("foro_categorias")
+      .select("*")
+      .eq("es_activa", true)
+      .order("orden", { ascending: true })
+      .order("nombre", { ascending: true });
+    
+    if (error) {
+      console.error("[ForoPage] Error al cargar foro_categorias:", {
+        message: error.message,
+        code: (error as any)?.code,
+        details: (error as any)?.details,
+        hint: (error as any)?.hint
+      });
       return [];
     }
-    const items = json?.data || [];
-    console.log("[ForoPage] Categorías recibidas (conteo):", Array.isArray(items) ? items.length : 0);
-    if (!Array.isArray(items) || items.length === 0) {
-      console.warn("[ForoPage] Respuesta de categorías vacía o inválida:", json);
-    } else {
-      console.log("[ForoPage] Ejemplo de categorías:", items.slice(0, Math.min(3, items.length)));
-    }
-    return items;
+    
+    const categoriasPlanas = data || [];
+    console.log("[ForoPage] Categorías planas recibidas:", {
+      count: categoriasPlanas.length,
+      sample: categoriasPlanas.slice(0, Math.min(3, categoriasPlanas.length))
+    });
+    
+    // Organizar en estructura jerárquica
+    const categoriasPrincipales: any[] = [];
+    const categoriasMap = new Map<string, any>();
+    
+    // Crear un mapa de todas las categorías
+    categoriasPlanas.forEach(cat => {
+      categoriasMap.set(cat.id, { ...cat, subcategorias: [] });
+    });
+    
+    // Organizar la jerarquía
+    categoriasPlanas.forEach(cat => {
+      const categoria = categoriasMap.get(cat.id)!;
+      
+      if (!cat.parent_id) {
+        // Es una categoría principal
+        categoriasPrincipales.push(categoria);
+      } else {
+        // Es una subcategoría, agregarla a su padre
+        const padre = categoriasMap.get(cat.parent_id);
+        if (padre) {
+          if (!padre.subcategorias) {
+            padre.subcategorias = [];
+          }
+          padre.subcategorias.push(categoria);
+        }
+      }
+    });
+    
+    console.log("[ForoPage] Árbol de categorías construido:", {
+      roots: categoriasPrincipales.length,
+      rootsSample: categoriasPrincipales.slice(0, Math.min(3, categoriasPrincipales.length)).map(c => ({
+        id: c.id,
+        nombre: c.nombre,
+        subCount: c.subcategorias?.length || 0
+      }))
+    });
+    
+    return categoriasPrincipales;
   } catch (err) {
-    console.error("[ForoPage] Error al solicitar categorías:", err);
+    console.error("[ForoPage] Error general al cargar categorías:", err);
     return [];
   }
 }
