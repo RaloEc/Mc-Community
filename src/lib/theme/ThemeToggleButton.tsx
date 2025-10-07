@@ -22,7 +22,7 @@ export interface ThemeTogglerButtonProps {
 }
 
 /**
- * ThemeTogglerButton - Botón para cambiar entre temas
+ * ThemeTogglerButton - Botón para cambiar entre temasd
  *
  * Basado en el diseño de animate-ui
  * Solo soporta light y dark por defecto (sin system)
