@@ -234,23 +234,47 @@ export default function ForoSidebar({ categorias = [] }: ForoSidebarProps) {
       return [];
     }
     
-    const parents = categorias.filter((c) => !c.categoria_padre_id)
-    console.log('Categorías padre encontradas:', parents);
+    console.log('[ForoSidebar] Categorías recibidas (raw):', categorias);
+    console.log('[ForoSidebar] Primera categoría estructura:', categorias[0]);
     
-    const childrenByParent = new Map<string, Categoria[]>()
-    for (const child of categorias) {
-      const parentId = child.categoria_padre_id || child.parent_id;
-      if (parentId) {
-        const list = childrenByParent.get(parentId) || []
-        list.push(child)
-        childrenByParent.set(parentId, list)
+    // Si las categorías ya vienen con subcategorias (árbol construido), usarlas directamente
+    const yaEsArbol = categorias.some(c => c.subcategorias !== undefined);
+    console.log('[ForoSidebar] ¿Ya es árbol?:', yaEsArbol);
+    
+    let tree: Categoria[];
+    
+    if (yaEsArbol) {
+      // Ya viene organizado jerárquicamente desde el servidor
+      tree = categorias;
+      console.log('[ForoSidebar] Usando árbol existente, raíces:', tree.length);
+    } else {
+      // Necesita reorganización (categorías planas)
+      const parents = categorias.filter((c) => !c.categoria_padre_id && !c.parent_id)
+      console.log('[ForoSidebar] Categorías padre encontradas:', parents.length);
+      
+      const childrenByParent = new Map<string, Categoria[]>()
+      for (const child of categorias) {
+        const parentId = child.categoria_padre_id || child.parent_id;
+        if (parentId) {
+          const list = childrenByParent.get(parentId) || []
+          list.push(child)
+          childrenByParent.set(parentId, list)
+        }
       }
-    }
 
-    const tree = parents.map((parent) => ({
-      ...parent,
-      subcategorias: childrenByParent.get(parent.id) || [],
-    }))
+      tree = parents.map((parent) => ({
+        ...parent,
+        subcategorias: childrenByParent.get(parent.id) || [],
+      }))
+    }
+    
+    // Log de subcategorías
+    tree.forEach(cat => {
+      if (cat.subcategorias && cat.subcategorias.length > 0) {
+        console.log(`[ForoSidebar] Categoría "${cat.nombre}" tiene ${cat.subcategorias.length} subcategorías:`, 
+          cat.subcategorias.map(s => s.nombre));
+      }
+    });
 
     if (!query.trim()) return tree
     const q = query.toLowerCase()
