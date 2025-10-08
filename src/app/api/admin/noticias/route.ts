@@ -63,6 +63,13 @@ export async function GET(request: NextRequest) {
     const busqueda = searchParams.get('busqueda')
     const categoria = searchParams.get('categoria')
     const ordenar = searchParams.get('ordenar') || 'fecha_desc'
+    const autor = searchParams.get('autor')
+    const fechaDesde = searchParams.get('fecha_desde')
+    const fechaHasta = searchParams.get('fecha_hasta')
+    const vistasMin = searchParams.get('vistas_min')
+    const vistasMax = searchParams.get('vistas_max')
+    const esActiva = searchParams.get('es_activa')
+    const destacada = searchParams.get('destacada')
     
     // Si se solicita una noticia específica por ID
     if (id) {
@@ -106,6 +113,34 @@ export async function GET(request: NextRequest) {
     
     if (categoria) {
       query = query.eq('noticias_categorias.categoria_id', categoria)
+    }
+    
+    if (autor) {
+      query = query.eq('autor_id', autor)
+    }
+    
+    if (fechaDesde) {
+      query = query.gte('fecha_publicacion', fechaDesde)
+    }
+    
+    if (fechaHasta) {
+      query = query.lte('fecha_publicacion', fechaHasta)
+    }
+    
+    if (vistasMin) {
+      query = query.gte('vistas', parseInt(vistasMin))
+    }
+    
+    if (vistasMax) {
+      query = query.lte('vistas', parseInt(vistasMax))
+    }
+    
+    if (esActiva !== null) {
+      query = query.eq('es_activa', esActiva === 'true')
+    }
+    
+    if (destacada !== null) {
+      query = query.eq('destacada', destacada === 'true')
     }
     
     // Aplicar ordenamiento

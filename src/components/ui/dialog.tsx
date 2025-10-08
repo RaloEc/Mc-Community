@@ -49,28 +49,19 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { forceMount?: boolean }
->(({ className, children, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { forceMount?: boolean; open?: boolean }
+>(({ className, children, open, ...props }, ref) => {
   // Efecto para manejar el scroll del body cuando el diálogo está abierto
   React.useEffect(() => {
-    if (props['data-state'] === 'open') {
-      // Guardar la posición actual del scroll
-      const scrollY = window.scrollY;
-      // Bloquear el scroll del body
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      
-      return () => {
-        // Restaurar el scroll al cerrar el diálogo
-        const scrollY = document.body.style.top;
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        window.scrollTo(0, parseInt(scrollY || '0') * -1);
-      };
+    if (open) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+      document.body.style.overflow = "hidden"
+      document.body.style.paddingRight = `${scrollbarWidth}px` 
+    } else {
+      document.body.style.overflow = ""
+      document.body.style.paddingRight = ""
     }
-  }, [props['data-state']]);
+  }, [open])
 
   return (
     <DialogPortal>

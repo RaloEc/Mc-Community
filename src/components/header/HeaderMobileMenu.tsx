@@ -60,6 +60,21 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   isAdmin,
 }) => {
   const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
+  
+  // Bloquear scroll del body cuando el menú esté abierto
+  React.useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    // Cleanup: restaurar el scroll cuando el componente se desmonte
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+  
   if (!isOpen) return null;
 
   return (

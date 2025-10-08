@@ -181,10 +181,33 @@ export async function GET(request: NextRequest) {
       console.error('Error al obtener noticias pendientes:', errorPendientes)
     }
 
+    // Noticias destacadas
+    const { count: noticias_destacadas, error: errorDestacadas } = await supabase
+      .from('noticias')
+      .select('*', { count: 'exact', head: true })
+      .eq('destacada', true)
+    
+    if (errorDestacadas) {
+      console.error('Error al obtener noticias destacadas:', errorDestacadas)
+    }
+
+    // Noticias inactivas
+    const { count: noticias_inactivas, error: errorInactivas } = await supabase
+      .from('noticias')
+      .select('*', { count: 'exact', head: true })
+      .eq('es_activa', false)
+    
+    if (errorInactivas) {
+      console.error('Error al obtener noticias inactivas:', errorInactivas)
+    }
+
     // Construir respuesta
     const estadisticas = {
       total_noticias: total_noticias || 0,
       total_vistas,
+      promedio_vistas: total_noticias ? Math.round(total_vistas / total_noticias) : 0,
+      noticias_destacadas: noticias_destacadas || 0,
+      noticias_inactivas: noticias_inactivas || 0,
       total_categorias: categorias_count,
       total_autores,
       noticias_recientes: noticias_recientes || 0,

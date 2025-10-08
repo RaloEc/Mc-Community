@@ -121,7 +121,7 @@ export default function Home() {
       
       {/* Botón flotante para crear contenido (solo móvil/tablet) */}
       <div className="lg:hidden">
-        <BtnCrearFlotante tipo="ambos" />
+        <BtnCrearFlotante tipo="foro" />
       </div>
       
       {/* Modal de autenticación */}

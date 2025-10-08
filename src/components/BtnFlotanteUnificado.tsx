@@ -136,10 +136,25 @@ export default function BtnFlotanteUnificado({
   };
 
   return (
-    <div className="md:hidden fixed bottom-6 right-6 z-50">
-      {/* Menú principal */}
+    <>
+      {/* Backdrop blur overlay */}
       <AnimatePresence>
         {menuAbierto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+            onClick={() => setMenuAbierto(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      <div className="md:hidden fixed bottom-6 right-6 z-50">
+        {/* Menú principal */}
+        <AnimatePresence>
+          {menuAbierto && (
           <motion.div
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -377,9 +392,9 @@ export default function BtnFlotanteUnificado({
       {/* Botón principal */}
       <button
         onClick={toggleMenu}
-        className="flex items-center justify-center w-14 h-14 rounded-full shadow-xl transition-all duration-300 bg-primary hover:bg-primary/90 dark:bg-black dark:hover:bg-black/80 hover:scale-110 active:scale-95 border-2"
+        className="flex items-center justify-center w-14 h-14 rounded-full shadow-xl transition-all duration-300 bg-white dark:bg-black hover:bg-gray-50 dark:hover:bg-black/80 hover:scale-110 active:scale-95 border-2"
         style={{
-          borderColor: 'var(--color-personalizado)',
+          borderColor: colorPersonalizado,
           '--color-personalizado': colorPersonalizado,
           '--color-personalizado-hover': `${colorPersonalizado}1a`
         } as React.CSSProperties}
@@ -392,18 +407,17 @@ export default function BtnFlotanteUnificado({
           {menuAbierto ? (
             <X 
               size={24} 
-              className="text-primary-foreground dark:text-[var(--color-personalizado)]" 
-              style={{ color: 'var(--color-personalizado)' }}
+              style={{ color: colorPersonalizado }}
             />
           ) : (
             <PlusIcon 
               size={24} 
-              className="text-primary-foreground dark:text-[var(--color-personalizado)]"
-              style={{ color: 'var(--color-personalizado)' }}
+              style={{ color: colorPersonalizado }}
             />
           )}
         </motion.div>
       </button>
-    </div>
+      </div>
+    </>
   );
 }
