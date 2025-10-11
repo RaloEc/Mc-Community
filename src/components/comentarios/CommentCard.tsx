@@ -243,17 +243,6 @@ export const CommentCard: React.FC<CommentCardProps> = ({
             />
           </Avatar>
         </div>
-
-        {/* Sistema de votación */}
-        <div className="flex-shrink-0">
-          <Votacion
-            id={comment.id}
-            tipo="comentario"
-            votosIniciales={comment.votos_totales || 0}
-            vertical={true}
-            size="sm"
-          />
-        </div>
         
         {/* Contenido del comentario */}
         <div className="flex-1 min-w-0">
@@ -373,18 +362,32 @@ export const CommentCard: React.FC<CommentCardProps> = ({
           
           {/* Botones de acción */}
           <div className="flex items-center justify-between mt-1 px-2">
-            {/* Botón responder a la izquierda */}
-            <button
-              onClick={() => user ? setIsReplying(!isReplying) : null}
-              disabled={!user}
-              className={`text-sm font-medium transition-opacity ${!user ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
-              style={{ 
-                color: user ? userColor : '#9CA3AF'
-              }}
-              title={!user ? 'Inicia sesión para responder' : (isReplying ? 'Cancelar' : 'Responder')}
-            >
-              {isReplying ? 'Cancelar' : 'Responder'}
-            </button>
+            {/* Botón responder y votación a la izquierda */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => user ? setIsReplying(!isReplying) : null}
+                disabled={!user}
+                className={`text-sm font-medium transition-opacity ${!user ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+                style={{ 
+                  color: user ? userColor : '#9CA3AF'
+                }}
+                title={!user ? 'Inicia sesión para responder' : (isReplying ? 'Cancelar' : 'Responder')}
+              >
+                {isReplying ? 'Cancelar' : 'Responder'}
+              </button>
+              
+              {/* Divisor */}
+              <div className="h-5 w-px bg-gray-300 dark:bg-gray-600" />
+              
+              {/* Sistema de votación */}
+              <Votacion
+                id={comment.id}
+                tipo="comentario"
+                votosIniciales={comment.votos_totales || 0}
+                vertical={false}
+                size="sm"
+              />
+            </div>
             
             {/* Botones editar y eliminar a la derecha */}
             <div className="flex items-center gap-1">

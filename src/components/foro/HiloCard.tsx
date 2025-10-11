@@ -446,6 +446,7 @@ function HiloCard(props: HiloCardProps) {
                       id={id}
                       tipo="hilo"
                       votosIniciales={votosIniciales}
+                      vertical={false}
                       size="sm"
                       className="h-6"
                     />

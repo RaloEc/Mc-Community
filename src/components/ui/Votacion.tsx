@@ -19,7 +19,7 @@ export function Votacion({
   id, 
   tipo, 
   votosIniciales = 0, 
-  vertical = true,
+  vertical = false,
   size = 'md',
   className = ''
 }: VotacionProps) {
@@ -115,11 +115,6 @@ export function Votacion({
     }
   };
 
-  const Container = vertical ? 'div' : 'span';
-  const containerClasses = vertical 
-    ? 'flex flex-col items-center justify-between h-full py-2' 
-    : 'inline-flex items-center gap-1';
-
   const textClasses = {
     sm: 'text-sm',
     md: 'text-base',
@@ -127,8 +122,8 @@ export function Votacion({
   }[size];
 
   return (
-    <div className={`flex items-center bg-gray-100 dark:bg-gray-800 rounded-full p-0.5 ${className}`}>
-      {/* Botón de voto negativo */}
+    <div className={`flex ${vertical ? 'flex-col' : 'flex-row items-center'} bg-gray-100 dark:bg-gray-800 ${vertical ? 'rounded-lg' : 'rounded-full'} p-0.5 ${className}`}>
+      {/* Botón de voto negativo (abajo en vertical, izquierda en horizontal) */}
       <button
         onClick={(e) => manejarVoto(e, -1)}
         disabled={isLoading}
@@ -144,7 +139,7 @@ export function Votacion({
       
       {/* Contador de votos */}
       <div 
-        className={`px-1 font-bold text-sm min-w-[24px] text-center ${
+        className={`${vertical ? 'py-0.5' : 'px-1'} font-bold text-sm min-w-[24px] text-center ${
           miVoto !== null ? 'text-current' : 'text-gray-500 dark:text-gray-400'
         }`}
         style={miVoto !== null ? { color: userColor } : undefined}
@@ -154,7 +149,7 @@ export function Votacion({
         {votos}
       </div>
       
-      {/* Botón de voto positivo */}
+      {/* Botón de voto positivo (arriba en vertical, derecha en horizontal) */}
       <button
         onClick={(e) => manejarVoto(e, 1)}
         disabled={isLoading}
