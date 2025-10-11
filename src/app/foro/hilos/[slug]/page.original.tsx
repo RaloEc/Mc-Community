@@ -25,7 +25,7 @@ import {
   getEtiquetasHilo,
   getCategoriaParent,
   getHilosRelacionados,
-  getCategoriasForo,
+  getCategoriasJerarquicas,
   incrementarVistasHilo,
 } from "@/lib/foro/server-actions";
 import type { ForoHiloCompleto } from "@/types/foro";
@@ -75,7 +75,7 @@ export default async function HiloPage({ params }: PageProps) {
   const [etiquetas, categorias, hilosRelacionados, categoriaParent] =
     await Promise.all([
       getEtiquetasHilo(hilo.id),
-      getCategoriasForo(),
+      getCategoriasJerarquicas(),
       getHilosRelacionados(hilo.categoria_id, hilo.id),
       hilo.categoria?.parent_id
         ? getCategoriaParent(hilo.categoria.parent_id)
@@ -85,7 +85,7 @@ export default async function HiloPage({ params }: PageProps) {
   return (
     <div className="container mx-auto py-6 px-0 lg:px-0">
       <div className="flex flex-col lg:flex-row gap-8">
-        <ForoSidebar categorias={categorias as any} />
+        <ForoSidebar categorias={categorias} />
 
         <main className="w-full lg:flex-1 min-w-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

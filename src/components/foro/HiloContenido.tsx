@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
 
 // Cargar dinámicamente el componente YoutubePlayer para evitar problemas de hidratación
 const YoutubePlayer = dynamic<{
@@ -50,6 +51,9 @@ export default function HiloContenido({
   className = "",
 }: HiloContenidoProps) {
   const [isClient, setIsClient] = useState(false);
+
+  // Activar sincronización en tiempo real de votos de hilos
+  useRealtimeVotosHilos();
 
   useEffect(() => {
     setIsClient(true);

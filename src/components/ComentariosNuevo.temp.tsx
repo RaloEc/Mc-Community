@@ -124,8 +124,8 @@ export default function ComentariosNuevo({ contentType, contentId }: Comentarios
   }
 
   // Agregar respuesta
-  const handleAddReply = async (parentId: string, text: string) => {
-    if (!user) return
+  const handleAddReply = async (parentId: string, text: string): Promise<boolean> => {
+    if (!user) return false
     
     try {
       setReplyLoading(true)
@@ -148,9 +148,11 @@ export default function ComentariosNuevo({ contentType, contentId }: Comentarios
       
       const newReply = await response.json()
       setComments(prevComments => addReplyToComment(prevComments, parentId, newReply))
+      return true
     } catch (err) {
       console.error('Error enviando respuesta:', err)
       setError('Error al enviar la respuesta')
+      return false
     } finally {
       setReplyLoading(false)
     }

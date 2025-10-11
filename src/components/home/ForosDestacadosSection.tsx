@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { Votacion } from '@/components/ui/Votacion';
 import HiloCard from '@/components/foro/HiloCard';
+import { useRealtimeVotosHilos } from '@/hooks/useRealtimeVotosHilos';
 
 interface HiloForo {
   id: string;
@@ -63,6 +64,9 @@ export default function ForosDestacadosSection({
   const [categorias, setCategorias] = useState<CategoriaForo[]>([]);
   const [loading, setLoading] = useState(true);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('');
+
+  // Activar sincronización en tiempo real de votos de hilos
+  useRealtimeVotosHilos();
 
   useEffect(() => {
     const loadContent = async () => {

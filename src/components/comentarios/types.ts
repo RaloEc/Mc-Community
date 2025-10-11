@@ -35,4 +35,9 @@ export interface Comment {
     isEdited?: boolean;
     isDeleted?: boolean;
   };
+  // Funcionalidad específica del foro
+  isSolution?: boolean; // Indica si este comentario está marcado como solución
+  parentCommentId?: string; // ID del comentario padre (si es una respuesta anidada marcada como solución)
+  // Sistema de votos
+  votos_totales?: number; // Total de votos del comentario
 }

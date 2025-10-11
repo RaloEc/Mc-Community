@@ -1,18 +1,30 @@
+'use client';
+
 import React, { useState } from 'react';
-import type { Comment } from './types';
-import { Avatar } from './ui/Avatar';
-import { Button } from './ui/Button';
+import { Avatar } from '@/components/ui/avatar';
 import { CommentForm } from './CommentForm';
 import { useAuth } from '@/context/AuthContext';
+import type { Comment } from './types';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Votacion } from '@/components/ui/Votacion';
 
 interface CommentCardProps {
   comment: Comment;
-  onReply: (commentId: string, text: string, repliedTo?: { id: string; author: string; text: string; color?: string }) => void;
+  onReply: (commentId: string, text: string, repliedTo?: { id: string; author: string; text: string; color?: string }) => Promise<boolean> | boolean | void;
   onQuotedReplyClick: (commentId: string) => void;
   onEdit?: (commentId: string, newText: string) => void;
   onDelete?: (commentId: string) => void;
   isAuthor?: boolean;
   currentUser?: any;
+  // Props específicas del foro
+  canMarkSolution?: boolean;
+  onMarkSolution?: (commentId: string) => void;
 }
 
 const ChevronDownIcon: React.FC<{className?: string}> = ({ className }) => (
@@ -37,6 +49,23 @@ const DeleteIcon: React.FC<{className?: string}> = ({ className }) => (
   </svg>
 );
 
+// Icono de check (solución)
+const CheckCircleIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </svg>
+);
+
+// Icono de X (quitar solución)
+const XCircleIcon: React.FC<{className?: string}> = ({ className }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="10"/>
+    <path d="m15 9-6 6"/>
+    <path d="m9 9 6 6"/>
+  </svg>
+);
+
 export const CommentCard: React.FC<CommentCardProps> = ({ 
   comment, 
   onReply, 
@@ -44,23 +73,61 @@ export const CommentCard: React.FC<CommentCardProps> = ({
   onEdit, 
   onDelete, 
   isAuthor: propIsAuthor, 
-  currentUser 
+  currentUser,
+  canMarkSolution = false,
+  onMarkSolution
 }) => {
-  const { user: authUser } = useAuth();
+  const { user: authUser, profile: authProfile } = useAuth();
   const [isReplying, setIsReplying] = useState(false);
   const [isQuoteExpanded, setIsQuoteExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReplies, setShowReplies] = useState(false); // Por defecto ocultas
+  const [visibleRepliesCount, setVisibleRepliesCount] = useState(10);
   
-  // Usar el usuario proporcionado por props o el del contexto de autenticación
+  // Función para contar todas las respuestas recursivamente
+  const countAllReplies = (replies: Comment[]): number => {
+    if (!replies || replies.length === 0) return 0;
+    
+    let count = replies.length;
+    replies.forEach(reply => {
+      if (reply.replies && reply.replies.length > 0) {
+        count += countAllReplies(reply.replies);
+      }
+    });
+    return count;
+  };
+  
+  const totalRepliesCount = comment.replies ? countAllReplies(comment.replies) : 0;
+  // Usar el usuario proporcionado por props o del contexto de autenticación
   const user = currentUser || authUser;
+  
+  // Obtener el color del perfil del usuario desde AuthContext
+  const userColor = authProfile?.color || comment.authorColor || '#6B7280';
+  
+  // Debug: ver estructura del usuario (solo una vez)
+  React.useEffect(() => {
+    if (user && !comment.repliedTo) {
+      console.log('[CommentCard] Usuario y Perfil:', { 
+        userId: user.id,
+        profileId: authProfile?.id,
+        profileColor: authProfile?.color,
+        authorColor: comment.authorColor,
+        finalColor: userColor
+      });
+    }
+  }, []);
   
   // Verificar si el usuario actual es el autor del comentario
   // Usar la prop isAuthor si se proporciona, de lo contrario calcularla
   const isAuthor = propIsAuthor !== undefined ? propIsAuthor : (user && user.id === comment.authorId);
-
-  const handleReplySubmit = (text: string) => {
+  
+  // Log para debugging de autoría (solo en desarrollo y solo una vez por comentario)
+  // Removido para evitar problemas de renderizado
+  
+  // Manejar el envío de una respuesta
+  const handleReplySubmit = async (text: string) => {
     const repliedTo = {
       id: comment.id,
       author: comment.author,
@@ -72,8 +139,20 @@ export const CommentCard: React.FC<CommentCardProps> = ({
       text: text.substring(0, 20) + '...',
       repliedTo
     });
-    onReply(comment.id, text, repliedTo);
-    setIsReplying(false);
+    
+    // Esperar a que se complete la respuesta
+    const result = onReply(comment.id, text, repliedTo);
+    
+    // Si devuelve una promesa, esperarla
+    if (result instanceof Promise) {
+      const success = await result;
+      if (success) {
+        setIsReplying(false);
+      }
+    } else {
+      // Si no devuelve promesa, cerrar inmediatamente
+      setIsReplying(false);
+    }
   };
   
   // Manejar la edición de un comentario
@@ -107,196 +186,424 @@ export const CommentCard: React.FC<CommentCardProps> = ({
     minute: '2-digit'
   });
 
+  // Detectar si es un comentario temporal (recién creado)
+  const isOptimistic = comment.id.startsWith('temp-');
+
   return (
-    <div className="mb-6">
-      <div 
-        id={`comment-${comment.id}`} 
-        className="bg-white dark:bg-black border border-blue-200 dark:border-gray-800 rounded-lg shadow-sm overflow-hidden"
-        aria-labelledby={`comment-author-${comment.id}`}
-      >  
-        {/* Cabecera del comentario con autor y fecha */}
-        <div className="bg-gray-200 dark:bg-gray-900 px-4 py-2 border-b border-blue-200 dark:border-gray-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Avatar src={comment.avatarUrl} alt={comment.author} />
-            <div>
-              <p 
-                id={`comment-author-${comment.id}`}
-                className="font-semibold text-sm" 
-                style={{ color: comment.authorColor || 'inherit' }}
-              >
-                {comment.author}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{formattedDate}</p>
-            </div>
+    <div 
+      className={`${
+        comment.repliedTo 
+          ? `mb-2 ${
+              comment.isSolution 
+                ? 'border-l-2 border-emerald-600 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20 pl-3 rounded-lg py-2' 
+                : ''
+            }`
+          : `mb-8 py-4 rounded-lg ${
+              comment.isSolution 
+                ? 'bg-emerald-50/50 dark:bg-emerald-950/20 border-l-4 border-emerald-600 dark:border-emerald-500 pl-4' 
+                : ''
+            }`
+      } transition-all duration-300 ease-in-out ${isOptimistic ? 'animate-fadeIn' : ''}`} 
+      id={`comment-${comment.id}`}
+    >
+      {/* Banner para soluciones anidadas - enlace al comentario padre */}
+      {comment.isSolution && comment.parentCommentId && (
+        <button
+          onClick={() => {
+            const parentElement = document.getElementById(`comment-${comment.parentCommentId}`);
+            if (parentElement) {
+              parentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              parentElement.classList.add('highlight');
+              setTimeout(() => {
+                parentElement.classList.remove('highlight');
+              }, 1500);
+            }
+          }}
+          className="mb-3 w-full px-3 py-2 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg text-left hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors group"
+        >
+          <div className="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-300">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            <span className="font-medium group-hover:underline">
+              Ver conversación completa
+            </span>
           </div>
+        </button>
+      )}
+      
+      <div className="flex gap-3">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          <Avatar className="h-10 w-10">
+            <img 
+              src={comment.avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author}`} 
+              alt={comment.author}
+              className="h-full w-full object-cover"
+            />
+          </Avatar>
+        </div>
+
+        {/* Sistema de votación */}
+        <div className="flex-shrink-0">
+          <Votacion
+            id={comment.id}
+            tipo="comentario"
+            votosIniciales={comment.votos_totales || 0}
+            vertical={true}
+            size="sm"
+          />
         </div>
         
-        {/* Contenido principal */}
-        <div className="p-4">
-          {/* Bloque de cita si es una respuesta */}
-          {comment.repliedTo && (
-            <div className="mb-4 rounded-md bg-gray-100 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 overflow-hidden">
-              <button
-                onClick={() => setIsQuoteExpanded(!isQuoteExpanded)}
-                className="w-full flex justify-between items-center p-2 text-left hover:bg-gray-200 dark:hover:bg-gray-900 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400"
-                aria-expanded={isQuoteExpanded}
-              >
-                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                  Respondiendo a <span 
-                    className="font-semibold" 
-                    style={{ color: comment.repliedTo.color || '#14b8a6' }}
+        {/* Contenido del comentario */}
+        <div className="flex-1 min-w-0">
+          {/* Contenido del comentario */}
+          <div className="w-full">
+            {/* Nombre, fecha, badge de solución y botón marcar solución */}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="flex items-center gap-2">
+                <p 
+                  id={`comment-author-${comment.id}`}
+                  className="font-semibold text-sm text-gray-700 dark:text-gray-300"
+                >
+                  {comment.author}
+                </p>
+                {comment.isSolution && (
+                  <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-emerald-600 dark:bg-emerald-500 text-white">
+                    <CheckCircleIcon className="w-3 h-3" />
+                    Solución
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2 ml-auto">
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {formattedDate}
+                </span>
+                {/* Botón marcar/desmarcar como solución */}
+                {canMarkSolution && onMarkSolution && (
+                  <button
+                    onClick={() => onMarkSolution(comment.id)}
+                    className={`p-1.5 rounded-lg transition-colors focus:outline-none ${
+                      comment.isSolution
+                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                        : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    }`}
+                    title={comment.isSolution ? 'Quitar como solución' : 'Marcar como solución'}
+                    aria-label={comment.isSolution ? 'Quitar como solución' : 'Marcar como solución'}
                   >
+                    {comment.isSolution ? (
+                      <XCircleIcon className="w-4 h-4" />
+                    ) : (
+                      <CheckCircleIcon className="w-4 h-4" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* Bloque de cita si es una respuesta - DESACTIVADO TEMPORALMENTE */}
+            {/* {comment.repliedTo && (
+              <div className="mb-2 pl-3 border-l-2 border-gray-300 dark:border-gray-600">
+                <button
+                  onClick={() => onQuotedReplyClick(comment.repliedTo!.id)}
+                  className="text-xs text-gray-600 dark:text-gray-400 focus:outline-none"
+                >
+                  <span className="font-medium" style={{ color: comment.repliedTo.color }}>
                     {comment.repliedTo.author}
                   </span>
-                  {comment.repliedTo.isEdited && (
-                    <span className="ml-1 text-xs text-gray-500 dark:text-gray-400 italic">
-                      (editado)
+                  {!comment.repliedTo.isDeleted && (
+                    <span className="ml-1">
+                      {comment.repliedTo.text.length > 50 
+                        ? comment.repliedTo.text.substring(0, 50) + '...' 
+                        : comment.repliedTo.text}
                     </span>
                   )}
-                </span>
-                <ChevronDownIcon className={`transform transition-transform duration-200 ${isQuoteExpanded ? 'rotate-180' : ''}`} />
-              </button>
-              <div 
-                className={`overflow-hidden transition-all duration-300 ease-in-out ${isQuoteExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-              >
-                <div className="p-3 border-t border-gray-200 dark:border-gray-800">
-                  {comment.repliedTo.isDeleted ? (
-                    <p className="text-sm italic text-gray-500 dark:text-gray-400 mb-2">
-                      Este comentario ha sido eliminado.
-                    </p>
-                  ) : (
-                    <>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                        {comment.repliedTo.text}
-                      </p>
-                      <button 
-                        onClick={() => onQuotedReplyClick(comment.repliedTo!.id)}
-                        className="text-xs font-semibold text-teal-600 dark:text-teal-500 hover:underline"
-                      >
-                        Ver original
-                      </button>
-                    </>
+                  {comment.repliedTo.isDeleted && (
+                    <span className="ml-1 italic">Comentario eliminado</span>
                   )}
-                </div>
+                </button>
               </div>
-            </div>
-          )}
-          
-          {/* Formulario de edición */}
-          {isEditing ? (
-            <div className="mt-4">
-              <textarea
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 dark:focus:ring-teal-400 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-100"
-                rows={4}
-              />
-              <div className="mt-2 flex gap-2">
-                <Button
-                  onClick={handleEditSubmit}
-                  className="h-auto px-3 py-1 text-xs bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 transition-colors"
-                >
-                  Guardar
-                </Button>
-                <Button
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditText(comment.text);
-                  }}
-                  className="h-auto px-3 py-1 text-xs bg-gray-500 text-white hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 transition-colors"
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Texto del comentario */}
-              {comment.deleted ? (
-                <p className="text-gray-500 dark:text-gray-400 italic">
-                  [Comentario eliminado]
-                </p>
-              ) : (
-                <p className="text-gray-700 dark:text-gray-100">
-                  {comment.text}
-                  {comment.isEdited && (
-                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 italic">
-                      (editado)
-                    </span>
-                  )}
-                </p>
-              )}
-              
-              {/* Confirmación de eliminación */}
-              {showDeleteConfirm && (
-                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
-                  <p className="text-sm text-red-700 dark:text-red-300 mb-2">
-                    ¿Estás seguro de que quieres eliminar este comentario?
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={handleDelete}
-                      className="h-auto px-3 py-1 text-xs bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 transition-colors"
-                    >
-                      Eliminar
-                    </Button>
-                    <Button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="h-auto px-3 py-1 text-xs bg-gray-500 text-white hover:bg-gray-600 dark:bg-gray-600 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:focus:ring-gray-400 transition-colors"
-                    >
-                      Cancelar
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-              {/* Botones de acción */}
-              <div className="mt-4 flex items-center gap-2">
-                <Button
-                  onClick={() => setIsReplying(!isReplying)}
-                  className="h-auto px-3 py-1 text-xs bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors"
-                >
-                  {isReplying ? 'Cancelar' : 'Responder'}
-                </Button>
-                
-                {isAuthor && onEdit && (
-                  <Button
+            )} */}
+            
+            {/* Texto del comentario */}
+            {isEditing ? (
+              <div className="mt-2">
+                <textarea
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  className="w-full p-2 rounded-lg focus:outline-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                  rows={3}
+                />
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={handleEditSubmit}
+                    className="px-3 py-1 text-xs rounded-full bg-gray-600 dark:bg-gray-500 text-white hover:bg-gray-700 dark:hover:bg-gray-600"
+                  >
+                    Guardar
+                  </button>
+                  <button
                     onClick={() => {
-                      setIsEditing(true);
+                      setIsEditing(false);
                       setEditText(comment.text);
                     }}
-                    className="h-auto px-3 py-1 text-xs bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 dark:focus:ring-amber-400 transition-colors flex items-center gap-1"
+                    className="px-3 py-1 text-xs rounded-full bg-gray-500 text-white"
                   >
-                    <EditIcon className="w-3 h-3" /> Editar
-                  </Button>
-                )}
-                
-                {isAuthor && onDelete && (
-                  <Button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="h-auto px-3 py-1 text-xs bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400 transition-colors flex items-center gap-1"
-                  >
-                    <DeleteIcon className="w-3 h-3" /> Eliminar
-                  </Button>
-                )}
+                    Cancelar
+                  </button>
+                </div>
               </div>
-            </>
-          )}
+            ) : (
+              <>
+                {comment.deleted ? (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                    [Comentario eliminado]
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed break-words">
+                    {comment.text}
+                    {comment.isEdited && (
+                      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400 italic">
+                        (editado)
+                      </span>
+                    )}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
           
-          {/* Formulario de respuesta */}
-          <div 
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${isReplying ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
-          >
-            <div className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-4">
-              <CommentForm
-                onSubmit={handleReplySubmit}
-                placeholder={`Respondiendo a ${comment.author}...`}
-                ctaText="Publicar"
-              />
+          {/* Botones de acción */}
+          <div className="flex items-center justify-between mt-1 px-2">
+            {/* Botón responder a la izquierda */}
+            <button
+              onClick={() => user ? setIsReplying(!isReplying) : null}
+              disabled={!user}
+              className={`text-sm font-medium transition-opacity ${!user ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
+              style={{ 
+                color: user ? userColor : '#9CA3AF'
+              }}
+              title={!user ? 'Inicia sesión para responder' : (isReplying ? 'Cancelar' : 'Responder')}
+            >
+              {isReplying ? 'Cancelar' : 'Responder'}
+            </button>
+            
+            {/* Botones editar y eliminar a la derecha */}
+            <div className="flex items-center gap-1">
+              {isAuthor && onEdit && (
+                <button
+                  onClick={() => {
+                    setIsEditing(true);
+                    setEditText(comment.text);
+                  }}
+                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  title="Editar"
+                  aria-label="Editar comentario"
+                >
+                  <EditIcon className="w-4 h-4" />
+                </button>
+              )}
+              
+              {isAuthor && onDelete && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  title="Eliminar"
+                  aria-label="Eliminar comentario"
+                >
+                  <DeleteIcon className="w-4 h-4" />
+                </button>
+              )}
             </div>
           </div>
+          
+          {/* Confirmación de eliminación */}
+          {showDeleteConfirm && (
+            <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              <p className="text-sm text-red-700 dark:text-red-300 mb-2">
+                ¿Eliminar este comentario?
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDelete}
+                  className="px-3 py-1 text-xs rounded-full bg-red-500 text-white"
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-3 py-1 text-xs rounded-full bg-gray-500 text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Formulario de respuesta con animación */}
+          <AnimatePresence>
+            {isReplying && (
+              <motion.div 
+                className="mt-3"
+                initial={{ opacity: 0, height: 0, y: -10 }}
+                animate={{ 
+                  opacity: 1, 
+                  height: "auto", 
+                  y: 0,
+                  transition: {
+                    height: { duration: 0.3, ease: "easeOut" },
+                    opacity: { duration: 0.25, delay: 0.05 },
+                    y: { duration: 0.25, ease: "easeOut" }
+                  }
+                }}
+                exit={{ 
+                  opacity: 0, 
+                  height: 0, 
+                  y: -10,
+                  transition: {
+                    height: { duration: 0.25, ease: "easeIn" },
+                    opacity: { duration: 0.2 },
+                    y: { duration: 0.2, ease: "easeIn" }
+                  }
+                }}
+              >
+                <CommentForm
+                  onSubmit={handleReplySubmit}
+                  placeholder={`Respondiendo a ${comment.author}...`}
+                  ctaText="Publicar"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
+      
+      {/* Botón para ver respuestas con flecha de respuesta */}
+      {totalRepliesCount > 0 && (
+        <motion.div 
+          className="mt-3 ml-12"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: "easeOut" }}
+        >
+          <button
+            onClick={() => setShowReplies(!showReplies)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          >
+            <span className="flex items-center gap-1.5">
+              <motion.svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="16" 
+                height="16" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round"
+                animate={{ 
+                  rotate: showReplies ? 90 : 0,
+                  scale: showReplies ? 1.1 : 1
+                }}
+                transition={{ 
+                  duration: 0.3, 
+                  ease: "easeInOut" 
+                }}
+              >
+                <polyline points="9 18 15 12 9 6"/>
+              </motion.svg>
+              {showReplies ? (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Ocultar {totalRepliesCount} {totalRepliesCount === 1 ? 'respuesta' : 'respuestas'}
+                </motion.span>
+              ) : (
+                <motion.span
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  Ver {totalRepliesCount} {totalRepliesCount === 1 ? 'respuesta' : 'respuestas'}
+                </motion.span>
+              )}
+            </span>
+          </button>
+        </motion.div>
+      )}
+      
+      {/* Renderizar respuestas anidadas cuando estén expandidas */}
+      <AnimatePresence>
+        {showReplies && comment.replies && comment.replies.length > 0 && (
+          <motion.div 
+            className="ml-12 mt-2"
+            initial={{ opacity: 0, height: 0, y: -20 }}
+            animate={{ 
+              opacity: 1, 
+              height: "auto", 
+              y: 0,
+              transition: {
+                height: { duration: 0.4, ease: "easeOut" },
+                opacity: { duration: 0.3, delay: 0.1 },
+                y: { duration: 0.3, ease: "easeOut" }
+              }
+            }}
+            exit={{ 
+              opacity: 0, 
+              height: 0, 
+              y: -20,
+              transition: {
+                height: { duration: 0.3, ease: "easeIn" },
+                opacity: { duration: 0.2 },
+                y: { duration: 0.2, ease: "easeIn" }
+              }
+            }}
+          >
+          {comment.replies.slice(0, visibleRepliesCount).map(reply => {
+            const flatReply = { ...reply, replies: [] };
+            
+            return (
+              <React.Fragment key={reply.id}>
+                <CommentCard
+                  comment={flatReply}
+                  onReply={onReply}
+                  onQuotedReplyClick={onQuotedReplyClick}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  currentUser={currentUser}
+                  canMarkSolution={canMarkSolution}
+                  onMarkSolution={onMarkSolution}
+                />
+                {/* Renderizar sub-respuestas al mismo nivel */}
+                {reply.replies && reply.replies.length > 0 && reply.replies.map(subReply => (
+                  <CommentCard
+                    key={subReply.id}
+                    comment={{ ...subReply, replies: [] }}
+                    onReply={onReply}
+                    onQuotedReplyClick={onQuotedReplyClick}
+                    onEdit={onEdit}
+                    onDelete={onDelete}
+                    currentUser={currentUser}
+                    canMarkSolution={canMarkSolution}
+                    onMarkSolution={onMarkSolution}
+                  />
+                ))}
+              </React.Fragment>
+            );
+          })}
+          
+          {/* Botón "Ver más" si hay más de 10 respuestas */}
+          {comment.replies.length > visibleRepliesCount && (
+            <button
+              onClick={() => setVisibleRepliesCount(prev => prev + 10)}
+              className="text-sm font-medium mt-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+            >
+              Ver más respuestas ({comment.replies.length - visibleRepliesCount} restantes)
+            </button>
+          )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -110,10 +110,10 @@ export async function POST(request: Request) {
     let isParentDeleted = false;
     
     if (isForoPost) {
-      // Buscar en foro_posts
+      // Buscar en foro_posts (no tiene columna deleted)
       const { data: parentForoPostData, error: parentForoError } = await serviceSupabase
         .from('foro_posts')
-        .select('id, contenido, autor_id, created_at, editado, deleted')
+        .select('id, contenido, autor_id, created_at, editado')
         .eq('id', parent_id)
         .single();
         
@@ -127,7 +127,13 @@ export async function POST(request: Request) {
       
       parentCommentData = parentForoPostData;
       isParentEdited = parentForoPostData.editado || false;
-      isParentDeleted = parentForoPostData.deleted || false;
+      // foro_posts no tiene soft delete, verificar en foro_posts_eliminados
+      const { data: deletedPost } = await serviceSupabase
+        .from('foro_posts_eliminados')
+        .select('id')
+        .eq('id', parent_id)
+        .single();
+      isParentDeleted = !!deletedPost;
     } else {
       // Buscar en comentarios (sin asumir que existe la columna 'deleted')
       const { data: parentComentarioData, error: parentComentarioError } = await serviceSupabase

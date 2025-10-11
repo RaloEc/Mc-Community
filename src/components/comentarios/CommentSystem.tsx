@@ -215,10 +215,10 @@ export const CommentSystem: React.FC<CommentSystemProps> = ({
   };
 
   // Manejar la adición de una respuesta a un comentario
-  const handleAddReply = async (parentId: string, text: string, repliedTo?: { id: string; author: string; text: string; color?: string }) => {
+  const handleAddReply = async (parentId: string, text: string, repliedTo?: { id: string; author: string; text: string; color?: string }): Promise<boolean> => {
     if (!user) {
       setError('Debes iniciar sesión para responder');
-      return;
+      return false;
     }
 
     try {
@@ -249,9 +249,11 @@ export const CommentSystem: React.FC<CommentSystemProps> = ({
       
       setComments(prevComments => addReplyToComment(prevComments, parentId, newReply));
       setTotal(prev => prev + 1);
+      return true;
     } catch (err) {
       console.error('Error al crear respuesta:', err);
       setError(err instanceof Error ? err.message : 'Error al crear respuesta');
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -414,7 +416,7 @@ export const CommentSystem: React.FC<CommentSystemProps> = ({
         comment={comment}
         onReply={handleAddReply}
         onQuotedReplyClick={handleQuotedReplyClick}
-        onEdit={handleEditComment}
+        // onEdit deshabilitado - no se permite editar comentarios
         onDelete={handleDeleteComment}
         isAuthor={isAuthor}
         currentUser={user}

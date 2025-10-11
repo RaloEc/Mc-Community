@@ -78,34 +78,56 @@ export async function DELETE(request: Request) {
     // Antes de eliminar, verificar si hay citas a este comentario
     // Si hay citas, necesitamos actualizar la tabla de referencias para marcar el comentario como eliminado
     
-    // Eliminar físicamente el comentario en lugar de usar borrado suave
-    console.log('[API Comentarios Delete] Eliminando comentario físicamente');
+    // SIEMPRE hacer soft delete para mantener registro
+    console.log('[API Comentarios Delete] Haciendo soft delete del comentario');
     
     if (isForoPost) {
-      // Eliminar de foro_posts
-      const { data: deletedPost, error: deleteError } = await serviceSupabase
+      // Marcar como eliminado en foro_posts (sin modificar el contenido)
+      console.log('[API Comentarios Delete] Actualizando foro_posts con ID:', comment_id);
+      console.log('[API Comentarios Delete] Usuario que elimina:', user.id);
+      
+      const { data: updateData, error: updateError } = await serviceSupabase
         .from('foro_posts')
-        .delete()
-        .eq('id', comment_id);
+        .update({ 
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id
+        })
+        .eq('id', comment_id)
+        .select();
         
-      if (deleteError) {
-        console.error('[API Comentarios Delete] Error al eliminar físicamente:', deleteError);
+      console.log('[API Comentarios Delete] Resultado de actualización:', { updateData, updateError });
+        
+      if (updateError) {
+        console.error('[API Comentarios Delete] Error al hacer soft delete:', updateError);
         return NextResponse.json(
-          { success: false, error: `Error al eliminar el comentario: ${deleteError.message}` },
+          { success: false, error: `Error al eliminar el comentario: ${updateError.message}`, details: updateError },
           { status: 500 }
         );
       }
+      
+      if (!updateData || updateData.length === 0) {
+        console.error('[API Comentarios Delete] No se actualizó ningún registro');
+        return NextResponse.json(
+          { success: false, error: 'No se pudo actualizar el comentario. Puede que ya esté eliminado o no exista.' },
+          { status: 404 }
+        );
+      }
     } else {
-      // Eliminar de comentarios
-      const { data: deletedComment, error: deleteError } = await serviceSupabase
+      // Para comentarios de noticias, usar soft delete (sin modificar el contenido)
+      const { error: updateError } = await serviceSupabase
         .from('comentarios')
-        .delete()
+        .update({ 
+          deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id
+        })
         .eq('id', comment_id);
         
-      if (deleteError) {
-        console.error('[API Comentarios Delete] Error al eliminar físicamente:', deleteError);
+      if (updateError) {
+        console.error('[API Comentarios Delete] Error al hacer soft delete:', updateError);
         return NextResponse.json(
-          { success: false, error: `Error al eliminar el comentario: ${deleteError.message}` },
+          { success: false, error: `Error al eliminar el comentario: ${updateError.message}` },
           { status: 500 }
         );
       }
@@ -114,8 +136,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json({
       success: true,
       message: 'Comentario eliminado correctamente',
-      softDelete: false
+      softDelete: true
     });
+    
   } catch (error) {
     console.error('[API Comentarios Delete] Error:', error);
     return NextResponse.json(

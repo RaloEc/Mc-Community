@@ -2,31 +2,55 @@
 (function() {
   function clearBrowserCache() {
     try {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = 'Limpiando caché...';
+      statusEl.className = '';
+      
       // Limpiar localStorage
-      localStorage.clear();
-      console.log('✅ localStorage limpiado correctamente');
-      
-      // Limpiar sessionStorage
-      sessionStorage.clear();
-      console.log('✅ sessionStorage limpiado correctamente');
-      
-      // Intentar limpiar caché de aplicación
-      if (window.caches) {
-        caches.keys().then(function(names) {
-          for (let name of names) {
-            caches.delete(name);
-          }
-          console.log('✅ Cache API limpiada correctamente');
-        });
+      console.log('Limpiando localStorage...');
+      try {
+        localStorage.clear();
+        console.log('✅ localStorage limpiado');
+      } catch (e) {
+        console.error('Error limpiando localStorage:', e);
       }
       
-      // Mostrar mensaje de éxito
-      document.getElementById('status').textContent = 'Caché limpiada correctamente. Redirigiendo...';
-      document.getElementById('status').className = 'success';
+      // Limpiar sessionStorage
+      console.log('Limpiando sessionStorage...');
+      try {
+        sessionStorage.clear();
+        console.log('✅ sessionStorage limpiado');
+      } catch (e) {
+        console.error('Error limpiando sessionStorage:', e);
+      }
+      
+      // Limpiar cookies (especialmente las de Supabase)
+      console.log('Limpiando cookies...');
+      try {
+        const cookies = document.cookie.split(";");
+        
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i];
+          const eqPos = cookie.indexOf("=");
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          
+          // Limpiar la cookie en diferentes paths y dominios
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+          document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+          
+          console.log('Limpiando cookie:', name);
+        }
+        console.log('✅ Cookies limpiadas');
+      } catch (e) {
+        console.error('Error limpiando cookies:', e);
+      }
+      
+      statusEl.textContent = '✅ Caché limpiada exitosamente. Redirigiendo...';
+      statusEl.className = 'success';
       
       // Redirigir después de 2 segundos
       setTimeout(function() {
-        window.location.href = '/login';
+        window.location.href = '/?cache_cleared=true';
       }, 2000);
       
     } catch (error) {

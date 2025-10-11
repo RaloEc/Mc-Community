@@ -19,6 +19,7 @@ import ForoFiltrosModal, { ForoFiltersState } from "./ForoFiltrosModal";
 import BtnFlotanteUnificado from "@/components/BtnFlotanteUnificado";
 import HiloCard from "./HiloCard";
 import { useForoHilos } from "./hooks/useForoHilos";
+import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
 
 const InvitacionRegistro = () => (
   <motion.div
@@ -77,6 +78,9 @@ export default function ForoCliente() {
     hasNextPage,
     isFetchingNextPage,
   } = useForoHilos();
+  
+  // Activar sincronización en tiempo real de votos de hilos
+  useRealtimeVotosHilos();
   
   // Observar cambios en el tamaño del contenedor
   useEffect(() => {

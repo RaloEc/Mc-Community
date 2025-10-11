@@ -6,6 +6,7 @@ import { TrendingUp, Eye, Clock, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useResponsive } from '@/hooks/useResponsive';
 import HiloItem, { HiloDTO } from '@/components/foro/HiloItem';
+import { useRealtimeVotosHilos } from '@/hooks/useRealtimeVotosHilos';
 
 interface HiloForo {
   id: string;
@@ -46,6 +47,9 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
   });
   const [loading, setLoading] = useState(true);
   const { isMobile, isLoaded } = useResponsive();
+
+  // Activar sincronización en tiempo real de votos de hilos
+  useRealtimeVotosHilos();
 
   useEffect(() => {
     const fetchHilos = async () => {

@@ -37,6 +37,8 @@ export interface ForoHilo {
   autor_id: string;
   categoria_id: string;
   vistas: number;
+  votos?: number;
+  respuestas?: number;
   es_fijado: boolean;
   es_cerrado: boolean;
   created_at: string;

@@ -3,6 +3,7 @@ import ForoSidebar from '@/components/foro/ForoSidebar'
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
+import { getCategoriasJerarquicas } from '@/lib/foro/server-actions'
 
 async function getCategoriaBySlugOrId(slugOrId: string) {
   const supabase = createServerComponentClient({ cookies })
@@ -28,23 +29,11 @@ async function getCategoriaBySlugOrId(slugOrId: string) {
   return categoria
 }
 
-async function getCategorias() {
-  try {
-    const supabase = createServerComponentClient({ cookies })
-    const { data } = await supabase
-      .from('foro_categorias')
-      .select('*')
-    return data || []
-  } catch {
-    return []
-  }
-}
-
 export default async function CategoriaPage({ params, searchParams }: { params: { slug: string }, searchParams: Record<string, string | string[]> }) {
   const categoria = await getCategoriaBySlugOrId(params.slug)
   if (!categoria) notFound()
   
-  const categorias = await getCategorias()
+  const categorias = await getCategoriasJerarquicas()
 
   return (
     <div className="flex flex-col lg:flex-row gap-8">

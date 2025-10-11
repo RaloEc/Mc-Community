@@ -8,17 +8,20 @@ interface VoteBody {
   value: -1 | 0 | 1; // -1: downvote, 0: quitar voto, 1: upvote
 }
 
-// Helper para obtener el total de votos del hilo
-async function getVotesTotalFor(supabase: SupabaseClient<Database>, hiloId: string): Promise<{ total: number; userVote: -1 | 0 | 1 }> {
+// Helper para obtener el total de votos del post/comentario
+async function getVotesTotalFor(
+  supabase: SupabaseClient<Database>, 
+  postId: string
+): Promise<{ total: number; userVote: -1 | 0 | 1 }> {
   // Obtener el voto del usuario actual si está autenticado
   const { data: { session } } = await supabase.auth.getSession();
   const userId = session?.user?.id;
 
-  // Calcular el total de votos sumando todos los votos de la tabla foro_votos_hilos
+  // Calcular el total de votos sumando todos los votos de la tabla foro_votos_posts
   const { data: votos, error: votosError } = await supabase
-    .from('foro_votos_hilos')
+    .from('foro_votos_posts')
     .select('valor_voto')
-    .eq('hilo_id', hiloId);
+    .eq('post_id', postId);
   
   if (votosError) {
     console.error('Error al obtener votos:', votosError);
@@ -38,9 +41,9 @@ async function getVotesTotalFor(supabase: SupabaseClient<Database>, hiloId: stri
 
   // Obtenemos el voto del usuario actual
   const { data: userVote } = await supabase
-    .from('foro_votos_hilos')
+    .from('foro_votos_posts')
     .select('valor_voto')
-    .eq('hilo_id', hiloId)
+    .eq('post_id', postId)
     .eq('usuario_id', userId)
     .single();
 
@@ -51,73 +54,81 @@ async function getVotesTotalFor(supabase: SupabaseClient<Database>, hiloId: stri
 }
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  console.log('Iniciando POST /api/foro/hilo/[id]/votar');
+  console.log('[VOTOS POST] Iniciando POST /api/foro/comentario/[id]/votar');
   try {
     const supabase = createClient();
 
     // Validar sesión
     const { data: { session } } = await supabase.auth.getSession();
+    console.log('[VOTOS POST] Usuario autenticado:', session?.user?.id);
     if (!session?.user?.id) {
+      console.log('[VOTOS POST] ERROR: Usuario no autenticado');
       return NextResponse.json({ ok: false, error: 'No autenticado' }, { status: 401 });
     }
 
-    const hiloId = params.id;
-    if (!hiloId) {
-      return NextResponse.json({ ok: false, error: 'ID de hilo inválido' }, { status: 400 });
+    const postId = params.id;
+    console.log('[VOTOS POST] Post ID:', postId);
+    if (!postId) {
+      return NextResponse.json({ ok: false, error: 'ID de post inválido' }, { status: 400 });
     }
 
     const body = (await req.json()) as VoteBody;
-    console.log('Cuerpo de la petición:', body);
+    console.log('[VOTOS POST] Cuerpo de la petición:', body);
     if (body.value !== -1 && body.value !== 0 && body.value !== 1) {
+      console.log('[VOTOS POST] ERROR: Valor de voto inválido:', body.value);
       return NextResponse.json({ ok: false, error: 'Valor de voto inválido' }, { status: 400 });
     }
 
     const userId = session.user.id;
 
-    console.log('ID de usuario:', userId);
-    console.log('ID de hilo:', hiloId);
-    console.log('Acción:', body.value === 0 ? 'Eliminar voto' : body.value === 1 ? 'Upvote' : 'Downvote');
+    console.log('[VOTOS POST] ID de usuario:', userId);
+    console.log('[VOTOS POST] ID de post:', postId);
+    console.log('[VOTOS POST] Acción:', body.value === 0 ? 'Eliminar voto' : body.value === 1 ? 'Upvote' : 'Downvote');
     
     if (body.value === 0) {
       // Eliminar el voto existente
-      console.log('Eliminando voto existente');
+      console.log('[VOTOS POST] Eliminando voto existente');
       const { data: deleteData, error: deleteError } = await supabase
-        .from('foro_votos_hilos')
+        .from('foro_votos_posts')
         .delete()
-        .eq('hilo_id', hiloId)
-        .eq('usuario_id', userId);
+        .eq('post_id', postId)
+        .eq('usuario_id', userId)
+        .select();
 
+      console.log('[VOTOS POST] Resultado DELETE:', { deleteData, deleteError });
       if (deleteError) {
-        console.error('Error al eliminar voto:', deleteError);
+        console.error('[VOTOS POST] ERROR al eliminar voto:', deleteError);
         return NextResponse.json({ ok: false, error: 'Error al eliminar el voto' }, { status: 500 });
       }
     } else {
       // Insertar o actualizar el voto
-      console.log('Insertando/actualizando voto con valor:', body.value);
+      console.log('[VOTOS POST] Insertando/actualizando voto con valor:', body.value);
       const { data: upsertData, error: upsertError } = await supabase
-        .from('foro_votos_hilos')
+        .from('foro_votos_posts')
         .upsert(
           { 
-            hilo_id: hiloId, 
+            post_id: postId, 
             usuario_id: userId, 
             valor_voto: body.value
           },
           { 
-            onConflict: 'hilo_id,usuario_id',
+            onConflict: 'post_id,usuario_id',
             ignoreDuplicates: false
           }
         )
         .select();
 
-      console.log('Resultado del UPSERT:', { upsertData, upsertError });
+      console.log('[VOTOS POST] Resultado UPSERT:', { upsertData, upsertError });
       if (upsertError) {
-        console.error('Error al actualizar voto:', upsertError);
+        console.error('[VOTOS POST] ERROR al actualizar voto:', upsertError);
         return NextResponse.json({ ok: false, error: 'Error al actualizar el voto' }, { status: 500 });
       }
     }
 
     // Obtener el nuevo estado de votos
-    const { total, userVote } = await getVotesTotalFor(supabase, hiloId);
+    console.log('[VOTOS POST] Obteniendo total de votos...');
+    const { total, userVote } = await getVotesTotalFor(supabase, postId);
+    console.log('[VOTOS POST] Total de votos:', total, 'Voto del usuario:', userVote);
 
     return NextResponse.json({ 
       ok: true, 
@@ -126,7 +137,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Error inesperado';
-    console.error('Error en el servidor:', err);
+    console.error('[VOTOS POST] ERROR en el servidor:', err);
     return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
@@ -134,14 +145,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const supabase = createClient();
-    const hiloId = params.id;
+    const postId = params.id;
     
-    if (!hiloId) {
-      return NextResponse.json({ ok: false, error: 'ID de hilo inválido' }, { status: 400 });
+    if (!postId) {
+      return NextResponse.json({ ok: false, error: 'ID de post inválido' }, { status: 400 });
     }
 
     // Obtener el total de votos y el voto del usuario actual
-    const { total, userVote } = await getVotesTotalFor(supabase, hiloId);
+    const { total, userVote } = await getVotesTotalFor(supabase, postId);
 
     return NextResponse.json({ 
       ok: true, 

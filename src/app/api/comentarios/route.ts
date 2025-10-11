@@ -13,8 +13,9 @@ export async function GET(request: Request) {
     const limite = parseInt(searchParams.get('limite') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
     const orden = searchParams.get('orden') || 'desc'; // 'desc' por defecto
+    const sortBy = searchParams.get('sortBy') || 'recent'; // 'recent' o 'replies'
 
-    console.log('[API Comentarios] Parámetros de búsqueda:', { contentType, contentId, limite, offset });
+    console.log('[API Comentarios] Parámetros de búsqueda:', { contentType, contentId, limite, offset, sortBy });
 
     // Validar parámetros requeridos
     if (!contentType || !contentId) {
@@ -102,12 +103,37 @@ export async function GET(request: Request) {
       console.log('[API Comentarios] Modo hilo: leyendo desde foro_posts');
       const ascending = orden === 'asc';
       
-      // 1) Obtener todos los posts del hilo
-      const { data: posts, error: postsError } = await supabase
-        .from('foro_posts')
-        .select('*')
-        .eq('hilo_id', contentId)
-        .order('created_at', { ascending: true });
+      // 1) Obtener todos los posts del hilo con votos
+      // Primero intentar con el campo 'deleted', si falla intentar sin filtro
+      let posts, postsError;
+      
+      try {
+        const result = await supabase
+          .from('foro_posts')
+          .select('*, votos_totales')
+          .eq('hilo_id', contentId)
+          .order('created_at', { ascending: true });
+        
+        posts = result.data;
+        postsError = result.error;
+        
+        // Si hay posts, filtrar manualmente los que tienen deleted = true
+        if (posts && !postsError) {
+          console.log(`[API Comentarios] Total posts antes de filtrar: ${posts.length}`);
+          
+          // Verificar si el campo 'deleted' existe
+          const hasDeletedField = posts.length > 0 && 'deleted' in posts[0];
+          console.log(`[API Comentarios] Campo 'deleted' existe: ${hasDeletedField}`);
+          
+          if (hasDeletedField) {
+            posts = posts.filter(p => p.deleted === false);
+            console.log(`[API Comentarios] Posts después de filtrar deleted=false: ${posts.length}`);
+          }
+        }
+      } catch (err) {
+        console.error('[API Comentarios] Error al obtener posts:', err);
+        postsError = err;
+      }
         
       if (postsError) {
         console.error('[API Comentarios] Error al obtener posts del foro:', postsError);
@@ -132,15 +158,9 @@ export async function GET(request: Request) {
         console.log(`[API Comentarios] Post eliminado con ID: ${id}`);
       });
 
-      // 2) Contar posts totales
-      const { count, error: countError } = await supabase
-        .from('foro_posts')
-        .select('*', { count: 'exact', head: true })
-        .eq('hilo_id', contentId);
-
-      if (countError) {
-        console.error('[API Comentarios] Error al contar foro_posts:', countError);
-      }
+      // 2) Contar posts totales (usar el conteo de posts filtrados)
+      const count = posts?.length || 0;
+      console.log(`[API Comentarios] Total de posts a mostrar: ${count}`);
 
       // 3) Obtener autores de los posts
       const autorIds = posts?.map(post => post.autor_id) || [];
@@ -209,12 +229,37 @@ export async function GET(request: Request) {
           autor: autorPerfil,
           replies: [],
           repliedTo: repliedTo,
-          isEdited: !!post.historial_ediciones
+          isEdited: !!post.historial_ediciones,
+          es_solucion: post.es_solucion || false, // Incluir campo de solución
+          votos_totales: post.votos_totales || 0 // Incluir votos totales
         };
       }) || [];
 
-      // 6) Aplicar paginación a los comentarios principales
-      const comentariosPrincipales = comentariosFormateados.filter(c => !c.parent_id);
+      // 6) Ordenar comentarios principales según sortBy
+      let comentariosPrincipales = comentariosFormateados.filter(c => !c.parent_id);
+      
+      if (sortBy === 'replies') {
+        // Contar respuestas para cada comentario
+        const contarRespuestas = (commentId: string): number => {
+          return comentariosFormateados.filter(c => c.parent_id === commentId).length;
+        };
+        
+        // Ordenar por cantidad de respuestas (descendente)
+        comentariosPrincipales = comentariosPrincipales.sort((a, b) => {
+          const countA = contarRespuestas(a.id);
+          const countB = contarRespuestas(b.id);
+          return countB - countA;
+        });
+      } else {
+        // Ordenar por fecha (más recientes primero)
+        comentariosPrincipales = comentariosPrincipales.sort((a, b) => {
+          const dateA = new Date(a.created_at).getTime();
+          const dateB = new Date(b.created_at).getTime();
+          return dateB - dateA; // Descendente
+        });
+      }
+      
+      // 7) Aplicar paginación después del ordenamiento
       const comentariosPaginados = comentariosPrincipales.slice(offset, offset + limite);
       
       // 7) Construir árbol de comentarios para los paginados
@@ -222,8 +267,10 @@ export async function GET(request: Request) {
         return comments
           .filter(comment => comment.parent_id === parentId)
           .map(comment => {
+            // Asegurar que author_id esté presente en todos los niveles
             return {
               ...comment,
+              author_id: comment.author_id, // Preservar explícitamente
               replies: buildForoCommentTree(comments, comment.id)
             };
           });

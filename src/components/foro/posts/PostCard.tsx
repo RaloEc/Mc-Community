@@ -94,7 +94,7 @@ function PostCard({
         nivel > 0 ? "ml-8 mt-4" : ""
       } border-l-2 ${
         post.es_solucion
-          ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20"
+          ? "border-gray-600 dark:border-gray-500 bg-gray-50/50 dark:bg-gray-900/20"
           : "border-gray-200 dark:border-gray-700"
       } pl-4 transition-all duration-300 ${
         debeResaltar ? "animate-highlight" : ""
@@ -116,7 +116,7 @@ function PostCard({
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-sm">
+              <p className="font-semibold text-sm text-gray-700 dark:text-gray-300">
                 {post.autor?.username ?? "Usuario desconocido"}
               </p>
               <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
@@ -143,7 +143,7 @@ function PostCard({
 
           <div className="flex items-center gap-2">
             {post.es_solucion && (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-600 dark:bg-gray-500 text-white">
                 <CheckCircle2 size={14} />
                 Solución
               </span>

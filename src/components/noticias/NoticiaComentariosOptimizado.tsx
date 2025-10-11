@@ -1,13 +1,15 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CommentForm } from '@/components/comentarios/CommentForm';
 import { CommentCard } from '@/components/comentarios/CommentCard';
+import { AuthModal } from '@/components/auth/AuthModal';
 import { useNoticiaComentarios } from './hooks/useNoticiaComentarios';
 import { useInView } from 'react-intersection-observer';
+import { useRealtimeComments } from '@/hooks/useRealtimeComments';
 
 interface NoticiaComentariosOptimizadoProps {
   noticiaId: string;
@@ -20,6 +22,9 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
   pageSize = 10,
   order = 'desc'
 }) => {
+  // Estado para el modal de autenticación
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  
   // Usar el hook personalizado para gestionar comentarios
   const {
     comentarios,
@@ -36,6 +41,9 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
     handleEditComment,
     handleDeleteComment
   } = useNoticiaComentarios(noticiaId, pageSize, order);
+
+  // Activar actualizaciones en tiempo real
+  useRealtimeComments('noticia', noticiaId);
 
   // Configurar el observador de intersección para carga infinita
   const { ref, inView } = useInView({
@@ -107,8 +115,11 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
                 <p className="text-gray-600 dark:text-gray-400 mb-3">
                   Debes iniciar sesión para comentar
                 </p>
-                <Button asChild variant="outline">
-                  <Link href="/login">Iniciar sesión</Link>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsAuthModalOpen(true)}
+                >
+                  Iniciar sesión
                 </Button>
               </div>
             )}
@@ -127,7 +138,7 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
                   comment={comment}
                   onReply={handleAddReply}
                   onQuotedReplyClick={handleQuotedReplyClick}
-                  onEdit={handleEditComment}
+                  // onEdit deshabilitado - no se permite editar comentarios
                   onDelete={handleDeleteComment}
                   isAuthor={user && user.id === comment.authorId}
                   currentUser={user}
@@ -152,6 +163,13 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
           </div>
         </CardContent>
       </Card>
+      
+      {/* Modal de autenticación */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        defaultMode="login"
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 import { SupabaseClient, createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 // Variables para almacenar instancias singleton
@@ -64,15 +64,28 @@ export function createClient(options?: { disablePersistence?: boolean }): Supaba
   }
   
   // Para cliente con persistencia normal
-  // En el servidor, crear una nueva instancia
+  // En el servidor, crear una instancia temporal sin persistencia
   if (isServer) {
-    return createClientComponentClient()
+    console.log('[client.ts] Advertencia: createClient() llamado en servidor, creando instancia temporal');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    
+    return createSupabaseClient(supabaseUrl, supabaseKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      }
+    })
   }
   
   // En el cliente, reutilizar la instancia si existe
   if (!global._persistentClientInstance) {
-    console.log('[client.ts] Creando nueva instancia de cliente persistente');
-    global._persistentClientInstance = createClientComponentClient()
+    console.log('[client.ts] Creando nueva instancia de cliente persistente con @supabase/ssr');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    
+    global._persistentClientInstance = createBrowserClient(supabaseUrl, supabaseKey)
   } else {
     console.log('[client.ts] Reutilizando instancia existente de cliente persistente');
   }

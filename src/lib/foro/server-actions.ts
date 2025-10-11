@@ -52,7 +52,25 @@ export async function getHiloPorSlugOId(
     notFound();
   }
 
-  return hilo as ForoHiloCompleto;
+  // Obtener el conteo de votos
+  const { data: votosData } = await supabase
+    .from("foro_votos")
+    .select("value")
+    .eq("hilo_id", hilo.id);
+
+  const votos = votosData?.reduce((sum, voto) => sum + voto.value, 0) || 0;
+
+  // Obtener el conteo de respuestas (posts que no son el hilo principal)
+  const { count: respuestas } = await supabase
+    .from("foro_posts")
+    .select("*", { count: "exact", head: true })
+    .eq("hilo_id", hilo.id);
+
+  return {
+    ...hilo,
+    votos,
+    respuestas: respuestas || 0,
+  } as ForoHiloCompleto;
 }
 
 /**
@@ -145,6 +163,66 @@ export async function getCategoriasForo(): Promise<ForoCategoria[]> {
   }
 
   return (data as ForoCategoria[]) || [];
+}
+
+/**
+ * Obtiene las categorías organizadas jerárquicamente para el sidebar
+ */
+export async function getCategoriasJerarquicas(): Promise<any[]> {
+  try {
+    console.log("[getCategoriasJerarquicas] Cargando categorías desde Supabase");
+    const supabase = createClient();
+    
+    const { data, error } = await supabase
+      .from("foro_categorias")
+      .select("*")
+      .eq("es_activa", true)
+      .order("orden", { ascending: true })
+      .order("nombre", { ascending: true });
+    
+    if (error) {
+      console.error("[getCategoriasJerarquicas] Error al cargar foro_categorias:", error);
+      return [];
+    }
+    
+    const categoriasPlanas = data || [];
+    console.log("[getCategoriasJerarquicas] Categorías planas recibidas:", categoriasPlanas.length);
+    
+    // Organizar en estructura jerárquica
+    const categoriasPrincipales: any[] = [];
+    const categoriasMap = new Map<string, any>();
+    
+    // Crear un mapa de todas las categorías
+    categoriasPlanas.forEach(cat => {
+      categoriasMap.set(cat.id, { ...cat, subcategorias: [] });
+    });
+    
+    // Organizar la jerarquía
+    categoriasPlanas.forEach(cat => {
+      const categoria = categoriasMap.get(cat.id)!;
+      
+      if (!cat.parent_id) {
+        // Es una categoría principal
+        categoriasPrincipales.push(categoria);
+      } else {
+        // Es una subcategoría, agregarla a su padre
+        const padre = categoriasMap.get(cat.parent_id);
+        if (padre) {
+          if (!padre.subcategorias) {
+            padre.subcategorias = [];
+          }
+          padre.subcategorias.push(categoria);
+        }
+      }
+    });
+    
+    console.log("[getCategoriasJerarquicas] Árbol de categorías construido:", categoriasPrincipales.length);
+    
+    return categoriasPrincipales;
+  } catch (err) {
+    console.error("[getCategoriasJerarquicas] Error general:", err);
+    return [];
+  }
 }
 
 /**

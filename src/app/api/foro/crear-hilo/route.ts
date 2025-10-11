@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
 // Función para generar un slug a partir de un título
@@ -22,7 +21,7 @@ function createSlug(title: string): string {
 export async function POST(request: Request) {
   const { titulo, contenido, categoria_id } = await request.json();
 
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {

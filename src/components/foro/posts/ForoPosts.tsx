@@ -6,8 +6,15 @@ import PostCard from "./PostCard";
 import PostForm from "./PostForm";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, Loader2 } from "lucide-react";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import type { ForoPostConAutor } from "@/types/foro";
-import { useForoPosts, useCreatePost, useUpdatePost, useDeletePost, useMarkSolution } from "../hooks/useForoPosts";
+import {
+  useForoPosts,
+  useCreatePost,
+  useUpdatePost,
+  useDeletePost,
+  useMarkSolution,
+} from "../hooks/useForoPosts";
 
 interface ForoPostsProps {
   hiloId: string;
@@ -22,7 +29,9 @@ export default function ForoPosts({
 }: ForoPostsProps) {
   const { user } = useAuth();
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [postRespondiendoId, setPostRespondiendoId] = useState<string | null>(null);
+  const [postRespondiendoId, setPostRespondiendoId] = useState<string | null>(
+    null
+  );
   const [postEditandoId, setPostEditandoId] = useState<string | null>(null);
 
   // Hooks de React Query
@@ -87,7 +96,7 @@ export default function ForoPosts({
     // Organizar jerarquía
     posts.forEach((post) => {
       const postConRespuestas = postsMap.get(post.id)!;
-      
+
       if (post.post_padre_id) {
         const padre = postsMap.get(post.post_padre_id);
         if (padre) {
@@ -189,8 +198,14 @@ export default function ForoPosts({
           ))}
         </div>
       ) : (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-900 amoled:bg-gray-950 rounded-lg">
-          <MessageSquare size={48} className="mx-auto mb-4 text-gray-400" />
+        <div className="text-center">
+          <div className="w-32 h-32 mx-auto mb-4">
+            <DotLottieReact
+              src="https://lottie.host/0947ffac-d843-43e4-9135-cf650aedbddb/qvVE4Zvsu6.lottie"
+              loop
+              autoplay
+            />
+          </div>
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             Aún no hay respuestas en este hilo
           </p>

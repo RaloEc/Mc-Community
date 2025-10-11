@@ -2,6 +2,57 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Animaciones personalizadas para comentarios */
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Animación de highlight para comentarios */
+@keyframes highlight {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.highlight {
+  animation: highlight 1.5s ease-in-out;
+}
+
+/* Animación de fade in para comentarios */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-5px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
 :root {
   /* Variables de color del tema por defecto */
   --user-color: #3b82f6; /* Color azul por defecto */

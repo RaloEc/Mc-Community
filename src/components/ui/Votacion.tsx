@@ -43,6 +43,11 @@ export function Votacion({
     lg: 'scale-125',
   } as const;
 
+  // Actualizar votos cuando cambien desde el padre (para sincronización en tiempo real)
+  useEffect(() => {
+    setVotos(votosIniciales);
+  }, [votosIniciales]);
+
   // Cargar el voto del usuario al montar el componente
   useEffect(() => {
     const cargarMiVoto = async () => {

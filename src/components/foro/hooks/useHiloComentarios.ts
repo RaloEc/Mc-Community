@@ -1,25 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { Comment } from '@/components/comentarios/types';
 
 // Función para mapear comentarios de la API al tipo UI
 const mapApiCommentToUI = (apiComment: any): Comment => {
+  const authorId = apiComment.author_id || apiComment.autor?.id || '';
+  
   return {
     id: apiComment.id,
     author: apiComment.autor?.username || 'Usuario',
-    authorId: apiComment.autor_id || apiComment.autor?.id || '',
+    authorId: authorId,
     avatarUrl: apiComment.autor?.avatar_url || '',
     timestamp: apiComment.created_at,
-    text: apiComment.texto || apiComment.text, // Usar texto o text dependiendo de cuál esté disponible
-    authorColor: apiComment.autor?.color || '#3b82f6', // Usar color del perfil
-    replies: apiComment.respuestas ? apiComment.respuestas.map(mapApiCommentToUI) : 
-             apiComment.replies ? apiComment.replies.map(mapApiCommentToUI) : [],
+    text: apiComment.text || apiComment.contenido || '',
+    authorColor: apiComment.autor?.color || '#3b82f6',
+    replies: apiComment.replies ? apiComment.replies.map(mapApiCommentToUI) : [],
     isEdited: apiComment.isEdited || apiComment.editado || false,
-    editedAt: apiComment.editado_en || null,
+    editedAt: apiComment.editedAt || apiComment.editado_en || null,
     deleted: apiComment.deleted || false,
+    isSolution: apiComment.es_solucion || false, // Mapear campo de solución del foro
+    votos_totales: apiComment.votos_totales || 0, // Mapear votos totales
     repliedTo: apiComment.repliedTo ? {
       id: apiComment.repliedTo.id,
       author: apiComment.repliedTo.author,
@@ -31,10 +34,11 @@ const mapApiCommentToUI = (apiComment: any): Comment => {
   };
 };
 
-export function useNoticiaComentarios(
-  contentId: string,
-  pageSize: number = 10,
-  order: 'asc' | 'desc' = 'desc'
+export function useHiloComentarios(
+  hiloId: string,
+  pageSize: number = 20,
+  order: 'asc' | 'desc' = 'asc',
+  sortBy: 'recent' | 'replies' = 'recent'
 ) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<any>(null);
@@ -69,11 +73,11 @@ export function useNoticiaComentarios(
     isFetchingNextPage,
     refetch
   } = useInfiniteQuery<ComentariosResponse>({
-    queryKey: ['comentarios', 'noticia', contentId],
+    queryKey: ['comentarios', 'hilo', hiloId, sortBy],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       try {
-        const url = `/api/comentarios?contentType=noticia&contentId=${encodeURIComponent(contentId)}&limite=${pageSize}&offset=${pageParam}&orden=${order}`;
+        const url = `/api/comentarios?contentType=hilo&contentId=${encodeURIComponent(hiloId)}&limite=${pageSize}&offset=${pageParam}&orden=${order}&sortBy=${sortBy}`;
         
         const response = await fetch(url);
         
@@ -93,7 +97,7 @@ export function useNoticiaComentarios(
           nextOffset: (pageParam as number) + pageSize
         };
       } catch (err) {
-        console.error('Error al cargar comentarios:', err);
+        console.error('Error al cargar comentarios del hilo:', err);
         throw err;
       }
     },
@@ -135,11 +139,10 @@ export function useNoticiaComentarios(
         credentials: 'same-origin',
         body: JSON.stringify({
           text,
-          content_type: 'noticia',
-          content_id: contentId,
+          content_type: 'hilo',
+          content_id: hiloId,
         }),
       });
-      
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `Error ${response.status}`);
@@ -147,8 +150,16 @@ export function useNoticiaComentarios(
       
       const newCommentData = await response.json();
       
-      // Invalidar la caché completamente y refetch inmediatamente
-      await queryClient.resetQueries({ queryKey: ['comentarios', 'noticia', contentId] });
+      // Solo invalidar sin forzar recarga completa
+      queryClient.invalidateQueries({ 
+        queryKey: ['comentarios', 'hilo', hiloId],
+        refetchType: 'none' // No refetch automático
+      });
+      
+      // Refetch en background
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['comentarios', 'hilo', hiloId] });
+      }, 100);
       
       return true;
     } catch (err) {
@@ -171,6 +182,56 @@ export function useNoticiaComentarios(
       setSubmitting(true);
       setError(null);
       
+      // Crear respuesta optimista
+      const optimisticReply: Comment = {
+        id: `temp-${Date.now()}`, // ID temporal
+        author: user.username || 'Usuario',
+        authorId: user.id,
+        avatarUrl: user.avatar_url || '',
+        timestamp: new Date().toISOString(),
+        text: text,
+        authorColor: user.color || '#3b82f6',
+        replies: [],
+        isEdited: false,
+        isSolution: false,
+        repliedTo: repliedTo
+      };
+
+      // Actualización optimista: añadir la respuesta inmediatamente a la UI
+      queryClient.setQueryData(['comentarios', 'hilo', hiloId], (old: any) => {
+        if (!old) return old;
+        
+        // Función para añadir la respuesta al comentario padre
+        const addReplyToComment = (comments: Comment[]): Comment[] => {
+          return comments.map(comment => {
+            if (comment.id === parentId) {
+              // Encontramos el comentario padre, añadimos la respuesta
+              return {
+                ...comment,
+                replies: [...(comment.replies || []), optimisticReply]
+              };
+            } else if (comment.replies && comment.replies.length > 0) {
+              // Buscar recursivamente en las respuestas
+              return {
+                ...comment,
+                replies: addReplyToComment(comment.replies)
+              };
+            }
+            return comment;
+          });
+        };
+
+        // Actualizar todas las páginas
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            comentarios: addReplyToComment(page.comentarios)
+          }))
+        };
+      });
+      
+      // Enviar al servidor
       const response = await fetch('/api/comentarios/reply', {
         method: 'POST',
         headers: {
@@ -185,11 +246,49 @@ export function useNoticiaComentarios(
       
       if (!response.ok) {
         const errorData = await response.json();
+        // Revertir la actualización optimista en caso de error
+        await queryClient.invalidateQueries({ 
+          queryKey: ['comentarios', 'hilo', hiloId]
+        });
         throw new Error(errorData.error || `Error ${response.status}`);
       }
       
-      // Invalidar la caché completamente y refetch inmediatamente
-      await queryClient.resetQueries({ queryKey: ['comentarios', 'noticia', contentId] });
+      const data = await response.json();
+      console.log('[useHiloComentarios] Respuesta creada exitosamente:', data);
+      
+      // Reemplazar la respuesta temporal con la real del servidor
+      queryClient.setQueryData(['comentarios', 'hilo', hiloId], (old: any) => {
+        if (!old) return old;
+        
+        const replaceOptimisticReply = (comments: Comment[]): Comment[] => {
+          return comments.map(comment => {
+            if (comment.id === parentId) {
+              return {
+                ...comment,
+                replies: comment.replies?.map(reply => 
+                  reply.id === optimisticReply.id 
+                    ? { ...reply, id: data.id } // Reemplazar con ID real
+                    : reply
+                ) || []
+              };
+            } else if (comment.replies && comment.replies.length > 0) {
+              return {
+                ...comment,
+                replies: replaceOptimisticReply(comment.replies)
+              };
+            }
+            return comment;
+          });
+        };
+
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            comentarios: replaceOptimisticReply(page.comentarios)
+          }))
+        };
+      });
       
       return true;
     } catch (err) {
@@ -235,8 +334,12 @@ export function useNoticiaComentarios(
         throw new Error(data.error || 'Error al editar comentario');
       }
       
-      // Invalidar la caché completamente y refetch inmediatamente
-      await queryClient.resetQueries({ queryKey: ['comentarios', 'noticia', contentId] });
+      console.log('[useHiloComentarios] Comentario editado exitosamente');
+      
+      // Resetear completamente la query para forzar recarga desde cero
+      await queryClient.resetQueries({ 
+        queryKey: ['comentarios', 'hilo', hiloId]
+      });
       
       return true;
     } catch (err) {
@@ -260,10 +363,10 @@ export function useNoticiaComentarios(
       setError(null);
       
       // Guardar el estado anterior para poder revertir si falla
-      const previousData = queryClient.getQueryData(['comentarios', 'noticia', contentId]);
+      const previousData = queryClient.getQueryData(['comentarios', 'hilo', hiloId]);
       
       // Actualización optimista: eliminar el comentario inmediatamente
-      queryClient.setQueryData(['comentarios', 'noticia', contentId], (old: any) => {
+      queryClient.setQueryData(['comentarios', 'hilo', hiloId], (old: any) => {
         if (!old) return old;
         
         // Función recursiva para eliminar el comentario
@@ -302,7 +405,7 @@ export function useNoticiaComentarios(
       if (!response.ok) {
         const errorData = await response.json();
         // Revertir la actualización optimista
-        queryClient.setQueryData(['comentarios', 'noticia', contentId], previousData);
+        queryClient.setQueryData(['comentarios', 'hilo', hiloId], previousData);
         throw new Error(errorData.error || `Error ${response.status}`);
       }
       
@@ -310,16 +413,16 @@ export function useNoticiaComentarios(
       
       if (!data.success) {
         // Revertir la actualización optimista
-        queryClient.setQueryData(['comentarios', 'noticia', contentId], previousData);
+        queryClient.setQueryData(['comentarios', 'hilo', hiloId], previousData);
         throw new Error(data.error || 'Error al eliminar comentario');
       }
       
-      console.log('[useNoticiaComentarios] Comentario eliminado exitosamente');
+      console.log('[useHiloComentarios] Comentario eliminado exitosamente');
       
       // Invalidar en background para sincronizar con el servidor
       setTimeout(() => {
         queryClient.invalidateQueries({ 
-          queryKey: ['comentarios', 'noticia', contentId],
+          queryKey: ['comentarios', 'hilo', hiloId],
           refetchType: 'none'
         });
       }, 500);
@@ -334,12 +437,84 @@ export function useNoticiaComentarios(
     }
   };
 
+  // Marcar/desmarcar comentario como solución (funcionalidad específica del foro)
+  const handleMarkSolution = async (commentId: string) => {
+    if (!user) {
+      setError('Debes iniciar sesión para marcar una solución');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      setError(null);
+      
+      const supabase = createClient();
+      
+      // Verificar si el comentario ya es solución
+      const { data: currentPost } = await supabase
+        .from('foro_posts')
+        .select('es_solucion')
+        .eq('id', commentId)
+        .single();
+      
+      const isSolution = currentPost?.es_solucion || false;
+      
+      if (isSolution) {
+        // Si ya es solución, desmarcarlo
+        const { error: updateError } = await supabase
+          .from('foro_posts')
+          .update({ es_solucion: false })
+          .eq('id', commentId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      } else {
+        // Si no es solución, primero desmarcar cualquier solución anterior
+        await supabase
+          .from('foro_posts')
+          .update({ es_solucion: false })
+          .eq('hilo_id', hiloId)
+          .eq('es_solucion', true);
+
+        // Marcar el nuevo post como solución
+        const { error: updateError } = await supabase
+          .from('foro_posts')
+          .update({ es_solucion: true })
+          .eq('id', commentId);
+
+        if (updateError) {
+          throw new Error(updateError.message);
+        }
+      }
+      
+      // Solo invalidar sin forzar recarga completa
+      queryClient.invalidateQueries({ 
+        queryKey: ['comentarios', 'hilo', hiloId],
+        refetchType: 'none'
+      });
+      
+      // Refetch en background
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['comentarios', 'hilo', hiloId] });
+      }, 100);
+      
+      return true;
+    } catch (err) {
+      console.error('Error al marcar/desmarcar solución:', err);
+      setError(err instanceof Error ? err.message : 'Error al marcar/desmarcar solución');
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Efecto para manejar la visibilidad de la página
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         // Refrescar datos solo si han pasado 5 minutos desde la última actualización
-        const lastUpdate = queryClient.getQueryState(['comentarios', 'noticia', contentId])?.dataUpdatedAt;
+        const lastUpdate = queryClient.getQueryState(['comentarios', 'hilo', hiloId])?.dataUpdatedAt;
         const now = Date.now();
         
         if (lastUpdate && (now - lastUpdate > 5 * 60 * 1000)) { // 5 minutos
@@ -352,7 +527,7 @@ export function useNoticiaComentarios(
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [contentId, queryClient, refetch]);
+  }, [hiloId, queryClient, refetch]);
 
   return {
     comentarios,
@@ -369,6 +544,7 @@ export function useNoticiaComentarios(
     handleAddComment,
     handleAddReply,
     handleEditComment,
-    handleDeleteComment
+    handleDeleteComment,
+    handleMarkSolution, // Funcionalidad específica del foro
   };
 }
