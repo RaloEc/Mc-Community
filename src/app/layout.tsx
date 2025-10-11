@@ -107,7 +107,7 @@ export default async function RootLayout({
       >
         <Providers session={session} userColor={userColor}>
           <Header />
-          <main className="container mx-auto px-2">{children}</main>
+          <main className="container mx-auto px-3">{children}</main>
         </Providers>
       </body>
     </html>
