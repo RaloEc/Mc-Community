@@ -269,12 +269,12 @@ export default function ForoCliente() {
             router.push(`/foro/categoria/${categoriaId}`);
           }
         }}
-        categorias={categorias.map(cat => ({
+        categorias={(categorias || []).map(cat => ({
           id: cat.slug || cat.id.toString(),
           nombre: cat.nombre,
           color: cat.color || undefined,
           parent_id: cat.parent_id,
-          subcategorias: cat.subcategorias?.map(sub => ({
+          subcategorias: (cat.subcategorias || []).map(sub => ({
             id: sub.slug || sub.id.toString(),
             nombre: sub.nombre,
             color: sub.color || undefined,

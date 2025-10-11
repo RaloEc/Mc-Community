@@ -279,12 +279,12 @@ export default function Noticias() {
           onCambiarCategoria={(categoriaId) => {
             setCategoria(categoriaId);
           }}
-          categorias={categoriasData.map(cat => ({
+          categorias={(categoriasData || []).map(cat => ({
             id: String(cat.id),
             nombre: cat.nombre,
             color: cat.color || undefined,
             parent_id: (cat as any).parent_id ?? undefined,
-            subcategorias: (cat as any).subcategorias?.map((sub: any) => ({
+            subcategorias: ((cat as any).subcategorias || []).map((sub: any) => ({
               id: String(sub.id),
               nombre: sub.nombre,
               color: sub.color || undefined,

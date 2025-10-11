@@ -65,7 +65,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
               } as React.CSSProperties
             }
           >
-            <Link href="/admin/noticias/nueva" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
+            <Link href="/admin/noticias/crear" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
               <Plus className="h-4 w-4 mr-1" />
               Noticia
             </Link>
@@ -90,7 +90,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
               } as React.CSSProperties
             }
           >
-            <Link href="/foro/nuevo-hilo" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
+            <Link href="/foro/crear-hilo" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
               <PenSquare className="h-4 w-4 mr-1" />
               Hilo
             </Link>
