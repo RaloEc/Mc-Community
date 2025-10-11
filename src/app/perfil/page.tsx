@@ -391,7 +391,6 @@ export default function PerfilPage() {
                 activo: perfil.activo,
                 role: perfil.role,
               }}
-              estadisticas={estadisticas}
             />
 
             {/* Botón de cerrar sesión */}

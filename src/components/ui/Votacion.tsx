@@ -81,6 +81,8 @@ export function Votacion({
       return;
     }
 
+    if (isLoading) return; // Prevenir múltiples clicks
+
     setIsLoading(true);
     const valorNuevo = miVoto === valor ? 0 : valor;
     
@@ -104,12 +106,19 @@ export function Votacion({
       const data = await res.json();
       setVotos(data.total);
       setMiVoto(data.userVote);
+      
+      // No forzar navegación ni revalidación - dejar que React Query maneje el estado
     } catch (error) {
       console.error('Error al votar:', error);
       // Revertir en caso de error
       setVotos(votos);
       setMiVoto(votoAnterior === 0 ? null : votoAnterior);
-      alert('No se pudo registrar tu voto. Inténtalo de nuevo.');
+      
+      // Mensaje de error más amigable
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      if (!errorMessage.includes('ChunkLoadError')) {
+        alert('No se pudo registrar tu voto. Inténtalo de nuevo.');
+      }
     } finally {
       setIsLoading(false);
     }

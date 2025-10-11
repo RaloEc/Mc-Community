@@ -63,6 +63,67 @@ const ThemeScript = () => {
   );
 };
 
+// Script para manejar errores de carga de chunks
+const ChunkErrorHandlerScript = () => {
+  const chunkErrorScript = `
+    (function() {
+      let isReloading = false;
+      let reloadAttempts = 0;
+      const MAX_RELOAD_ATTEMPTS = 3;
+      
+      function isChunkLoadError(error) {
+        if (!error) return false;
+        const errorString = error.toString();
+        const errorMessage = error.message || '';
+        const errorName = error.name || '';
+        return (
+          errorName === 'ChunkLoadError' ||
+          errorString.includes('Loading chunk') ||
+          errorString.includes('ChunkLoadError') ||
+          errorMessage.includes('Loading chunk') ||
+          errorMessage.includes('ChunkLoadError')
+        );
+      }
+      
+      function handleChunkLoadError(error) {
+        if (!isChunkLoadError(error) || isReloading) return;
+        if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
+          console.error('Máximo de intentos de recarga alcanzado');
+          return;
+        }
+        isReloading = true;
+        reloadAttempts++;
+        console.log('ChunkLoadError detectado. Recargando... (Intento ' + reloadAttempts + '/' + MAX_RELOAD_ATTEMPTS + ')');
+        setTimeout(function() {
+          window.location.reload();
+        }, 1000);
+      }
+      
+      window.addEventListener('error', function(event) {
+        handleChunkLoadError(event.error);
+      });
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        handleChunkLoadError(event.reason);
+      });
+      
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          reloadAttempts = 0;
+          isReloading = false;
+        }, 5000);
+      });
+    })();
+  `;
+
+  return (
+    <script
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: chunkErrorScript }}
+    />
+  );
+};
+
 export default async function RootLayout({
   children,
 }: {
@@ -100,6 +161,7 @@ export default async function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <ChunkErrorHandlerScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
       </head>
       <body

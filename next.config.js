@@ -48,7 +48,7 @@ const nextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
     if (!isServer) {
       // Configuración de fallbacks para compatibilidad
       config.resolve.fallback = {
@@ -61,17 +61,24 @@ const nextConfig = {
       config.watchOptions = {
         aggregateTimeout: 1000, // Aumentado para dar más tiempo
         poll: 2000, // Comprobar cambios cada 2 segundos
+        ignored: /node_modules/, // Ignorar node_modules para mejor rendimiento
       }
       
       // Configurar el timeout para la carga de chunks
-      config.output.chunkLoadTimeout = 60000; // 60 segundos
+      config.output.chunkLoadTimeout = 120000; // 120 segundos (aumentado)
       
-      // Optimizar la división de código - simplificada para evitar problemas
+      // En desarrollo, usar nombres de chunk más estables
+      if (dev) {
+        config.output.filename = 'static/chunks/[name].js';
+        config.output.chunkFilename = 'static/chunks/[name].js';
+      }
+      
+      // Optimizar la división de código
       config.optimization.splitChunks = {
         chunks: 'all',
-        maxInitialRequests: 25, // Aumentar el límite de solicitudes iniciales
-        minSize: 20000, // Tamaño mínimo para crear un chunk
-        maxSize: 200000, // Tamaño máximo para un chunk
+        maxInitialRequests: 25,
+        minSize: 20000,
+        maxSize: dev ? 500000 : 200000, // Chunks más grandes en desarrollo
         cacheGroups: {
           default: {
             minChunks: 2,
@@ -81,9 +88,19 @@ const nextConfig = {
           vendors: {
             test: /[\\/]node_modules[\\/]/,
             priority: -10,
+            reuseExistingChunk: true,
+          },
+          // Grupo especial para React Query y Supabase
+          reactQuery: {
+            test: /[\\/]node_modules[\\/](@tanstack|@supabase)[\\/]/,
+            priority: 10,
+            reuseExistingChunk: true,
           },
         },
       }
+      
+      // Mejorar el manejo de errores de carga de chunks
+      config.output.crossOriginLoading = 'anonymous';
     }
     return config
   },

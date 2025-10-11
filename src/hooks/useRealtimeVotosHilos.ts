@@ -57,21 +57,48 @@ export function useRealtimeVotosHilos() {
               return;
             }
             
-            // Invalidar queries con refetch en background (sin mostrar loading)
+            // Actualizar solo los datos en caché sin refetch
+            // Esto evita errores de ChunkLoadError en desarrollo
+            queryClient.setQueriesData(
+              { queryKey: ['foro', 'hilos'], exact: false },
+              (oldData: any) => {
+                if (!oldData) return oldData;
+                
+                // Si es paginación infinita
+                if (oldData.pages) {
+                  return {
+                    ...oldData,
+                    pages: oldData.pages.map((page: any) => ({
+                      ...page,
+                      hilos: page.hilos?.map((hilo: any) => 
+                        hilo.id === hiloId 
+                          ? { ...hilo, _needsRefresh: true }
+                          : hilo
+                      ) || page.hilos
+                    }))
+                  };
+                }
+                
+                // Si es array simple
+                if (Array.isArray(oldData)) {
+                  return oldData.map((hilo: any) => 
+                    hilo.id === hiloId 
+                      ? { ...hilo, _needsRefresh: true }
+                      : hilo
+                  );
+                }
+                
+                return oldData;
+              }
+            );
+            
+            // Invalidar sin refetch automático - el refetch ocurrirá naturalmente
+            // cuando el usuario interactúe con la página
             queryClient.invalidateQueries({ 
               queryKey: ['foro', 'hilos'],
               exact: false,
-              refetchType: 'none' // No refetch automático
+              refetchType: 'none'
             });
-            
-            // Refetch silencioso en background después de un pequeño delay
-            setTimeout(() => {
-              queryClient.refetchQueries({
-                queryKey: ['foro', 'hilos'],
-                exact: false,
-                type: 'active'
-              });
-            }, 50);
             
             console.log('[useRealtimeVotosHilos] Queries invalidadas para hilo:', hiloId);
           }

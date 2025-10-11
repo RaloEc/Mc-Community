@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import FABMobile from "@/components/ui/FABMobile";
 import { ReactQueryProvider } from "@/lib/react-query/provider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 export default function Providers({
   children,
@@ -16,15 +17,17 @@ export default function Providers({
   userColor?: string;
 }) {
   return (
-    <ReactQueryProvider>
-      <ThemeProvider userColor={userColor}>
-        <AuthProvider session={session}>
-          {children}
-          <Toaster />
-          {/* Botón flotante global solo móvil */}
-          {/* <FABMobile /> */}
-        </AuthProvider>
-      </ThemeProvider>
-    </ReactQueryProvider>
+    <ErrorBoundary>
+      <ReactQueryProvider>
+        <ThemeProvider userColor={userColor}>
+          <AuthProvider session={session}>
+            {children}
+            <Toaster />
+            {/* Botón flotante global solo móvil */}
+            {/* <FABMobile /> */}
+          </AuthProvider>
+        </ThemeProvider>
+      </ReactQueryProvider>
+    </ErrorBoundary>
   );
 }
