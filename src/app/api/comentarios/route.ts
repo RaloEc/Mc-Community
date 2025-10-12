@@ -50,23 +50,50 @@ export async function GET(request: Request) {
         );
       }
       
-      // Obtener el conteo total de comentarios
-      const { count, error: countError } = await supabase
+      // Obtener el conteo total de comentarios principales no eliminados
+      // Primero obtener los IDs de comentarios de esta noticia
+      const { data: noticiaComentariosIds } = await supabase
         .from('noticias_comentarios')
-        .select('*', { count: 'exact', head: true })
+        .select('comentario_id')
         .eq('noticia_id', contentId);
+      
+      const comentarioIds = noticiaComentariosIds?.map(nc => nc.comentario_id) || [];
+      
+      // Contar comentarios principales no eliminados
+      const { count, error: countError } = await supabase
+        .from('comentarios')
+        .select('id', { count: 'exact', head: true })
+        .in('id', comentarioIds)
+        .is('comentario_padre_id', null)
+        .or('deleted.is.null,deleted.eq.false');
       
       if (countError) {
         console.error('[API Comentarios] Error al contar comentarios:', countError);
       }
+      
+      const totalComentarios = count || 0;
       
       // Formatear la respuesta
       const comentariosFormateados = (comentarios || []).map(comentario => {
         console.log('[API Comentarios] Comentario a formatear:', {
           id: comentario.id,
           texto: comentario.texto,
-          contenido_tipo: typeof comentario.texto
+          contenido_tipo: typeof comentario.texto,
+          tiene_respuestas: !!comentario.respuestas,
+          num_respuestas: comentario.respuestas?.length || 0
         });
+        
+        // Log de respuestas para debugging
+        if (comentario.respuestas && comentario.respuestas.length > 0) {
+          comentario.respuestas.forEach((resp, idx) => {
+            console.log(`[API Comentarios] Respuesta ${idx + 1}:`, {
+              id: resp.id,
+              tiene_autor: !!resp.autor,
+              username: resp.autor?.username,
+              avatar_url: resp.autor?.avatar_url
+            });
+          });
+        }
         
         return {
           id: comentario.id,
@@ -84,18 +111,24 @@ export async function GET(request: Request) {
             is_own: comentario.es_propio
           },
           respuestas: comentario.respuestas ? comentario.respuestas.map(resp => ({
-            ...resp,
-            text: resp.texto // Asegurar que las respuestas también tengan el campo text
+            id: resp.id,
+            texto: resp.texto,
+            text: resp.texto, // Asegurar que las respuestas también tengan el campo text
+            created_at: resp.created_at,
+            autor_id: resp.autor_id,
+            autor: resp.autor, // Mantener el objeto autor completo que viene de la función RPC
+            editado: resp.editado,
+            isEdited: resp.editado || false
           })) : []
         };
       });
       
-      console.log(`[API Comentarios] Se encontraron ${comentariosFormateados.length} comentarios`);
+      console.log(`[API Comentarios] Se encontraron ${comentariosFormateados.length} comentarios de un total de ${totalComentarios}`);
       
       return NextResponse.json({
         success: true,
         comentarios: comentariosFormateados,
-        total: count || 0
+        total: totalComentarios
       });
     }
     // Caso especial: hilos del foro usan foro_posts como fuente de respuestas

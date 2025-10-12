@@ -39,8 +39,7 @@ export async function GET(
         updated_at,
         es_solucion,
         autor_id,
-        autor:perfiles (username, avatar_url, role),
-        foro_reacciones(count)
+        autor:perfiles (username, avatar_url, role)
       `)
       .eq('hilo_id', params.id)
       .order('created_at', { ascending })
@@ -48,15 +47,15 @@ export async function GET(
     
     if (error) {
       console.error('Error al obtener posts:', error);
-      return NextResponse.json({ error: 'Error al obtener posts' }, { status: 500 });
+      return NextResponse.json({ error: 'Error al obtener posts', details: error.message }, { status: 500 });
     }
     
     // Formatear datos para el frontend
-    const postsMapeados = posts.map((post: any) => ({
+    const postsMapeados = posts?.map((post: any) => ({
       id: post.id,
       contenido: post.contenido,
       created_at: post.created_at,
-      updated_at: post.created_at, // Si no hay campo updated_at, usar created_at
+      updated_at: post.updated_at || post.created_at,
       hilo_id: params.id,
       autor_id: post.autor_id,
       autor: post.autor ? {
@@ -68,9 +67,8 @@ export async function GET(
         avatar_url: null,
         role: 'user'
       },
-      es_solucion: post.es_solucion,
-      reacciones: post.foro_reacciones[0]?.count || 0
-    }));
+      es_solucion: post.es_solucion || false
+    })) || [];
     
     // Obtener el total de posts para este hilo
     const { count, error: countError } = await supabase

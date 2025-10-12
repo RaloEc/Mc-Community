@@ -40,13 +40,15 @@ export async function GET() {
         const { count: hilosCount } = await supabase
           .from('foro_hilos')
           .select('*', { count: 'exact', head: true })
-          .eq('categoria_id', categoria.id);
+          .eq('categoria_id', categoria.id)
+          .is('deleted_at', null);
         
         // Obtener los IDs de los hilos de esta categoría para contar mensajes
         const { data: hilos, error: hilosError } = await supabase
           .from('foro_hilos')
           .select('id')
-          .eq('categoria_id', categoria.id);
+          .eq('categoria_id', categoria.id)
+          .is('deleted_at', null);
         
         let mensajesCount = 0;
         

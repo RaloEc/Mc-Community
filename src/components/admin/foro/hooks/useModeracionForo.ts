@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { getServiceClient } from '@/utils/supabase-service';
+import { createClient } from '@/lib/supabase/client';
 import { toast } from 'sonner';
 
 // Tipos
@@ -45,7 +45,6 @@ export interface ComentarioModeracion {
   hilo_titulo: string;
   hilo_slug: string;
   parent_id: string | null;
-  votos_conteo: number;
   created_at: string;
   updated_at: string;
   editado: boolean;
@@ -82,8 +81,16 @@ export function useHilosModeracion(filtros: FiltrosHilos = {}) {
   return useInfiniteQuery({
     queryKey: MODERACION_FORO_KEYS.hilos(filtros),
     queryFn: async ({ pageParam = 0 }): Promise<HiloModeracion[]> => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const limite = 20;
+      
+      console.log('🔍 Llamando a get_hilos_recientes_moderacion con:', {
+        limite,
+        offset_val: pageParam,
+        filtro_categoria: filtros.categoria || null,
+        orden_campo: filtros.ordenCampo || 'created_at',
+        orden_direccion: filtros.ordenDireccion || 'DESC',
+      });
       
       const { data, error } = await supabase.rpc('get_hilos_recientes_moderacion', {
         limite,
@@ -94,9 +101,11 @@ export function useHilosModeracion(filtros: FiltrosHilos = {}) {
       });
       
       if (error) {
-        console.error('Error al obtener hilos para moderación:', error);
+        console.error('❌ Error al obtener hilos para moderación:', error);
         throw error;
       }
+      
+      console.log('✅ Hilos obtenidos:', data?.length || 0);
       
       return data as HiloModeracion[];
     },
@@ -116,8 +125,13 @@ export function useComentariosModeracion() {
   return useInfiniteQuery({
     queryKey: MODERACION_FORO_KEYS.comentarios(),
     queryFn: async ({ pageParam = 0 }): Promise<ComentarioModeracion[]> => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const limite = 50;
+      
+      console.log('🔍 Llamando a get_comentarios_recientes_moderacion con:', {
+        limite,
+        offset_val: pageParam,
+      });
       
       const { data, error } = await supabase.rpc('get_comentarios_recientes_moderacion', {
         limite,
@@ -125,9 +139,11 @@ export function useComentariosModeracion() {
       });
       
       if (error) {
-        console.error('Error al obtener comentarios para moderación:', error);
+        console.error('❌ Error al obtener comentarios para moderación:', error);
         throw error;
       }
+      
+      console.log('✅ Comentarios obtenidos:', data?.length || 0);
       
       return data as ComentarioModeracion[];
     },
@@ -151,7 +167,7 @@ export function useBuscarContenidoForo(termino: string, enabled: boolean = true)
         return [];
       }
       
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { data, error } = await supabase.rpc('buscar_contenido_foro', {
         termino_busqueda: termino,
         limite: 20,
@@ -177,21 +193,72 @@ export function useEliminarHilo() {
   
   return useMutation({
     mutationFn: async (hiloId: string) => {
-      const supabase = getServiceClient();
-      const { error } = await supabase
+      const supabase = createClient();
+      console.log('🗑️ Intentando eliminar hilo:', hiloId);
+      
+      const { data, error, count } = await supabase
         .from('foro_hilos')
         .update({ deleted_at: new Date().toISOString() })
-        .eq('id', hiloId);
+        .eq('id', hiloId)
+        .select();
       
-      if (error) throw error;
+      console.log('📊 Resultado de eliminación:', { data, error, count });
+      
+      if (error) {
+        console.error('❌ Error al eliminar:', error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.warn('⚠️ No se actualizó ningún registro. Posible problema de permisos RLS.');
+        throw new Error('No se pudo eliminar el hilo. Verifica los permisos.');
+      }
+      
+      console.log('✅ Hilo eliminado exitosamente:', data);
+      return hiloId;
+    },
+    onMutate: async (hiloId) => {
+      // Cancelar queries en curso
+      await queryClient.cancelQueries({ queryKey: MODERACION_FORO_KEYS.all });
+      
+      // Obtener datos actuales
+      const previousData = queryClient.getQueriesData({ queryKey: MODERACION_FORO_KEYS.all });
+      
+      // Actualizar optimistamente removiendo el hilo
+      queryClient.setQueriesData<any>({ queryKey: MODERACION_FORO_KEYS.all }, (old: any) => {
+        if (!old) return old;
+        if (Array.isArray(old)) {
+          return old.filter((hilo: any) => hilo.id !== hiloId);
+        }
+        if (old.pages) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => 
+              Array.isArray(page) ? page.filter((hilo: any) => hilo.id !== hiloId) : page
+            ),
+          };
+        }
+        return old;
+      });
+      
+      return { previousData };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: MODERACION_FORO_KEYS.all });
       toast.success('Hilo eliminado correctamente');
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
+      // Revertir cambios optimistas
+      if (context?.previousData) {
+        context.previousData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
       console.error('Error al eliminar hilo:', error);
       toast.error('Error al eliminar el hilo');
+    },
+    onSettled: () => {
+      // Refrescar datos después de la mutación
+      queryClient.invalidateQueries({ queryKey: MODERACION_FORO_KEYS.all });
     },
   });
 }
@@ -204,7 +271,7 @@ export function useEliminarComentario() {
   
   return useMutation({
     mutationFn: async (comentarioId: string) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_comentarios')
         .update({ deleted_at: new Date().toISOString() })
@@ -231,7 +298,7 @@ export function useToggleFijarHilo() {
   
   return useMutation({
     mutationFn: async ({ hiloId, esFijado }: { hiloId: string; esFijado: boolean }) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_hilos')
         .update({ es_fijado: esFijado })
@@ -258,7 +325,7 @@ export function useToggleCerrarHilo() {
   
   return useMutation({
     mutationFn: async ({ hiloId, esCerrado }: { hiloId: string; esCerrado: boolean }) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_hilos')
         .update({ es_cerrado: esCerrado })
@@ -285,7 +352,7 @@ export function useMoverHilo() {
   
   return useMutation({
     mutationFn: async ({ hiloId, categoriaId }: { hiloId: string; categoriaId: string }) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_hilos')
         .update({ categoria_id: categoriaId })
@@ -312,7 +379,7 @@ export function useEliminarHilosLote() {
   
   return useMutation({
     mutationFn: async (hiloIds: string[]) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_hilos')
         .update({ deleted_at: new Date().toISOString() })
@@ -340,7 +407,7 @@ export function useMoverHilosLote() {
   
   return useMutation({
     mutationFn: async ({ hiloIds, categoriaId }: { hiloIds: string[]; categoriaId: string }) => {
-      const supabase = getServiceClient();
+      const supabase = createClient();
       const { error } = await supabase
         .from('foro_hilos')
         .update({ categoria_id: categoriaId })

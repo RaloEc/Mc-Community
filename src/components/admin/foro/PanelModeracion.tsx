@@ -65,6 +65,7 @@ import {
   ExternalLink,
   CheckSquare,
   Square,
+  RefreshCw,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -73,7 +74,7 @@ import { useInView } from 'react-intersection-observer';
 
 export default function PanelModeracion() {
   const [tabActiva, setTabActiva] = useState<'hilos' | 'comentarios'>('hilos');
-  const [filtroCategoria, setFiltroCategoria] = useState<string>('');
+  const [filtroCategoria, setFiltroCategoria] = useState<string>('all');
   const [ordenCampo, setOrdenCampo] = useState<'created_at' | 'vistas' | 'votos_conteo'>('created_at');
   const [ordenDireccion, setOrdenDireccion] = useState<'ASC' | 'DESC'>('DESC');
   const [hilosSeleccionados, setHilosSeleccionados] = useState<Set<string>>(new Set());
@@ -88,8 +89,10 @@ export default function PanelModeracion() {
     fetchNextPage: fetchNextHilos,
     hasNextPage: hasNextHilos,
     isFetchingNextPage: isFetchingNextHilos,
+    isLoading: isLoadingHilos,
+    error: errorHilos,
   } = useHilosModeracion({
-    categoria: filtroCategoria || undefined,
+    categoria: filtroCategoria === 'all' ? undefined : filtroCategoria,
     ordenCampo,
     ordenDireccion,
   });
@@ -99,6 +102,8 @@ export default function PanelModeracion() {
     fetchNextPage: fetchNextComentarios,
     hasNextPage: hasNextComentarios,
     isFetchingNextPage: isFetchingNextComentarios,
+    isLoading: isLoadingComentarios,
+    error: errorComentarios,
   } = useComentariosModeracion();
 
   const eliminarHilo = useEliminarHilo();
@@ -232,7 +237,7 @@ export default function PanelModeracion() {
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todas las categorías</SelectItem>
+                  <SelectItem value="all">Todas las categorías</SelectItem>
                   {categorias?.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.nombre}
@@ -284,6 +289,23 @@ export default function PanelModeracion() {
 
             {/* Lista de hilos */}
             <div className="space-y-3">
+              {errorHilos && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                  <p className="font-semibold">Error al cargar hilos:</p>
+                  <p className="text-sm mt-1">{errorHilos.message}</p>
+                  <pre className="text-xs mt-2 overflow-auto">{JSON.stringify(errorHilos, null, 2)}</pre>
+                </div>
+              )}
+              {isLoadingHilos && hilos.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Cargando hilos...
+                </div>
+              )}
+              {!isLoadingHilos && !errorHilos && hilos.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay hilos para mostrar
+                </div>
+              )}
               {hilos.map((hilo) => (
                 <div
                   key={hilo.id}
@@ -417,6 +439,29 @@ export default function PanelModeracion() {
               {/* Trigger para infinite scroll */}
               <div ref={refHilos} className="h-4" />
 
+              {/* Botón manual para cargar más */}
+              {hasNextHilos && !isFetchingNextHilos && (
+                <div className="text-center py-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchNextHilos()}
+                    className="w-full"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Cargar más hilos
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Mostrando {hilos.length} hilos
+                  </p>
+                </div>
+              )}
+
+              {!hasNextHilos && hilos.length > 0 && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  ✅ Todos los hilos cargados ({hilos.length} total)
+                </div>
+              )}
+
               {isFetchingNextHilos && (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
@@ -436,6 +481,23 @@ export default function PanelModeracion() {
           {/* Tab de Comentarios */}
           <TabsContent value="comentarios" className="space-y-4">
             <div className="space-y-3">
+              {errorComentarios && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+                  <p className="font-semibold">Error al cargar comentarios:</p>
+                  <p className="text-sm mt-1">{errorComentarios.message}</p>
+                  <pre className="text-xs mt-2 overflow-auto">{JSON.stringify(errorComentarios, null, 2)}</pre>
+                </div>
+              )}
+              {isLoadingComentarios && comentarios.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  Cargando comentarios...
+                </div>
+              )}
+              {!isLoadingComentarios && !errorComentarios && comentarios.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay comentarios para mostrar
+                </div>
+              )}
               {comentarios.map((comentario) => (
                 <div
                   key={comentario.id}

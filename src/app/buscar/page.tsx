@@ -100,7 +100,7 @@ export default function BuscarPage() {
   };
 
   const ResultadoCard = ({ resultado }: { resultado: ResultadoBusqueda }) => (
-    <Link href={resultado.tipo === 'noticia' ? `/noticias/${resultado.id}` : `/foro/hilo/${resultado.id}`}>
+    <Link href={resultado.tipo === 'noticia' ? `/noticias/${resultado.id}` : `/foro/hilos/${resultado.id}`}>
       <article className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-[1.01] group">
         <div className="flex items-start gap-4">
           {/* Imagen o icono */}

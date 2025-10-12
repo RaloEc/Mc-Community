@@ -115,7 +115,7 @@ export default function ForosBloque({ limit = 5 }: ForosBloqueProps) {
         foro_categorias:categoria_id(nombre, color)
       `;
 
-      let query = supabase.from('foro_hilos').select(baseSelect);
+      let query = supabase.from('foro_hilos').select(baseSelect).is('deleted_at', null);
 
       // Configurar la consulta según la pestaña
       switch (tab) {

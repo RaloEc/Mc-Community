@@ -30,7 +30,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
-      <main className="container mx-auto px-2 py-0">
+      <main className="container mx-auto px-4 py-4">
         <motion.div
           className="space-y-12"
           initial="initial"

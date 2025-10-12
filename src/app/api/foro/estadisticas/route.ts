@@ -13,7 +13,7 @@ export async function GET() {
       postsResult,
       usuariosResult
     ] = await Promise.allSettled([
-      supabase.from('foro_hilos').select('id, vistas'),
+      supabase.from('foro_hilos').select('id, vistas').is('deleted_at', null),
       supabase.from('foro_posts').select('id'),
       supabase.from('perfiles')
         .select('id')
@@ -53,6 +53,7 @@ export async function GET() {
       supabase
         .from('foro_hilos')
         .select('id')
+        .is('deleted_at', null)
         .gt('created_at', fechaLimiteStr),
       supabase
         .from('foro_posts')
@@ -91,6 +92,7 @@ export async function GET() {
           perfiles:autor_id (nombre_usuario),
           foro_categorias:categoria_id (nombre)
         `)
+        .is('deleted_at', null)
         .order('vistas', { ascending: false })
         .limit(5)
       

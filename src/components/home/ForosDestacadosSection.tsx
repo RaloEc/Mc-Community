@@ -98,7 +98,8 @@ export default function ForosDestacadosSection({
               respuestas_conteo:foro_posts(count),
               autor:perfiles!autor_id(username, avatar_url),
               categoria:foro_categorias!categoria_id(nombre, color, slug)
-            `);
+            `)
+            .is('deleted_at', null);
 
           switch (tipo) {
             case 'mas-votados':
@@ -275,7 +276,7 @@ export default function ForosDestacadosSection({
             >
               <HiloCard
                 id={hilo.id}
-                href={`/foro/hilo/${hilo.id}`}
+                href={`/foro/hilos/${hilo.id}`}
                 titulo={hilo.titulo}
                 contenido={hilo.contenido}
                 categoriaNombre={hilo.categoria?.nombre}

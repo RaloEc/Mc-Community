@@ -2,7 +2,6 @@
 
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { Card, CardContent } from '@/components/ui/card';
 
 // Importar CommentSystem de forma dinámica para carga diferida
 const CommentSystem = dynamic(
@@ -10,14 +9,10 @@ const CommentSystem = dynamic(
   { 
     loading: () => (
       <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-              <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+          <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
+        </div>
       </div>
     ),
     ssr: false // Deshabilitar SSR para este componente
@@ -32,14 +27,10 @@ const NoticiaComentarios: React.FC<NoticiaComentariosProps> = ({ noticiaId }) =>
   return (
     <Suspense fallback={
       <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-              <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+          <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
+        </div>
       </div>
     }>
       <CommentSystem

@@ -125,7 +125,8 @@ export default function ForoCategoriasWidget() {
               const { count, error } = await supabase
                 .from('foro_hilos')
                 .select('*', { count: 'exact', head: true })
-                .eq('categoria_id', id);
+                .eq('categoria_id', id)
+                .is('deleted_at', null);
               
               if (error) {
                 console.error(`[ForoCategoriasWidget] Error al contar hilos para categoría ${id}:`, error);

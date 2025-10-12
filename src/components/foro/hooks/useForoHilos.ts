@@ -245,6 +245,7 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
         const query = supabase
           .from("foro_hilos")
           .select(baseSelect, { count: 'exact' })
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .range(from, to);
           
@@ -275,6 +276,7 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
         const { data, error: hErr } = await supabase
           .from("foro_hilos")
           .select(baseSelect)
+          .is('deleted_at', null)
           .gte("ultimo_post_at", fromIso)
           .order("updated_at", { ascending: false })
           .limit(50);
@@ -316,6 +318,7 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
         const { data, error: hErr } = await supabase
           .from("foro_hilos")
           .select(baseSelect)
+          .is('deleted_at', null)
           .order("created_at", { ascending: false })
           .limit(50);
         if (hErr) throw new Error("No se pudieron cargar los hilos.");
@@ -364,6 +367,7 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           .from("foro_hilos")
           .select(baseSelect)
           .in("id", ids)
+          .is('deleted_at', null)
           .order("updated_at", { ascending: false })
           .limit(50);
         if (hErr) throw new Error("No se pudieron cargar los hilos seguidos.");
@@ -396,6 +400,7 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
           .from("foro_hilos")
           .select(baseSelect)
           .eq("autor_id", user.id)
+          .is('deleted_at', null)
           .order("updated_at", { ascending: false })
           .limit(50);
         if (hErr) throw new Error("No se pudieron cargar tus hilos.");

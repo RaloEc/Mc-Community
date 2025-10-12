@@ -36,6 +36,7 @@ export async function GET(req: Request) {
       .from('foro_hilos')
       .select('id, slug, titulo, ultimo_post_at, created_at, categoria_id')
       .in('categoria_id', categoriaIds)
+      .is('deleted_at', null)
       .order('ultimo_post_at', { ascending: false })
       .limit(maxPool)
 

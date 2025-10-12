@@ -58,6 +58,7 @@ export default function NotificacionesRealTime() {
             avatar_url
           )
         `)
+        .is('deleted_at', null)
         .gte('created_at', hace5Min)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -79,6 +80,7 @@ export default function NotificacionesRealTime() {
             slug
           )
         `)
+        .is('deleted_at', null)
         .gte('created_at', hace5Min)
         .order('created_at', { ascending: false })
         .limit(10);
@@ -143,7 +145,7 @@ export default function NotificacionesRealTime() {
     } finally {
       setActualizando(false);
     }
-  }, [ultimaActualizacion]);
+  }, []);
 
   // Polling cada 30 segundos
   useEffect(() => {

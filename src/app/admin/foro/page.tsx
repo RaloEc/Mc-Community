@@ -30,11 +30,6 @@ const GestorCategorias = lazy(() => import('@/components/admin/foro/GestorCatego
 const BusquedaAvanzada = lazy(() => import('@/components/admin/foro/BusquedaAvanzada'));
 const NotificacionesRealTime = lazy(() => import('@/components/admin/foro/NotificacionesRealTime'));
 
-// Nuevos componentes de moderación
-const TablaReportes = lazy(() => import('@/components/admin/foro/moderacion/TablaReportes'));
-const GestionUsuarios = lazy(() => import('@/components/admin/foro/moderacion/GestionUsuarios'));
-const EstadisticasModeracion = lazy(() => import('@/components/admin/foro/moderacion/EstadisticasModeracion'));
-
 // Componente de carga
 function ComponenteSkeleton() {
   return (
@@ -113,27 +108,12 @@ function DashboardContent() {
         {/* Tab: Moderación */}
         <TabsContent value="moderacion" className="space-y-6">
           <Suspense fallback={<ComponenteSkeleton />}>
-            <EstadisticasModeracion />
+            <BusquedaAvanzada />
           </Suspense>
-
-          <Tabs defaultValue="reportes" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="reportes">Reportes</TabsTrigger>
-              <TabsTrigger value="usuarios">Gestión de Usuarios</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="reportes">
-              <Suspense fallback={<ComponenteSkeleton />}>
-                <TablaReportes />
-              </Suspense>
-            </TabsContent>
-
-            <TabsContent value="usuarios">
-              <Suspense fallback={<ComponenteSkeleton />}>
-                <GestionUsuarios />
-              </Suspense>
-            </TabsContent>
-          </Tabs>
+          
+          <Suspense fallback={<ComponenteSkeleton />}>
+            <PanelModeracion />
+          </Suspense>
         </TabsContent>
 
         {/* Tab: Categorías */}

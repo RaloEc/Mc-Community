@@ -147,8 +147,11 @@ export function useNoticiaComentarios(
       
       const newCommentData = await response.json();
       
-      // Invalidar la caché completamente y refetch inmediatamente
-      await queryClient.resetQueries({ queryKey: ['comentarios', 'noticia', contentId] });
+      // Invalidar la caché para refetch en background (sin recargar el componente)
+      queryClient.invalidateQueries({ 
+        queryKey: ['comentarios', 'noticia', contentId],
+        refetchType: 'active'
+      });
       
       return true;
     } catch (err) {
@@ -188,8 +191,11 @@ export function useNoticiaComentarios(
         throw new Error(errorData.error || `Error ${response.status}`);
       }
       
-      // Invalidar la caché completamente y refetch inmediatamente
-      await queryClient.resetQueries({ queryKey: ['comentarios', 'noticia', contentId] });
+      // Invalidar la caché para refetch en background (sin recargar el componente)
+      queryClient.invalidateQueries({ 
+        queryKey: ['comentarios', 'noticia', contentId],
+        refetchType: 'active'
+      });
       
       return true;
     } catch (err) {
@@ -259,41 +265,7 @@ export function useNoticiaComentarios(
       setSubmitting(true);
       setError(null);
       
-      // Guardar el estado anterior para poder revertir si falla
-      const previousData = queryClient.getQueryData(['comentarios', 'noticia', contentId]);
-      
-      // Actualización optimista: eliminar el comentario inmediatamente
-      queryClient.setQueryData(['comentarios', 'noticia', contentId], (old: any) => {
-        if (!old) return old;
-        
-        // Función recursiva para eliminar el comentario
-        const removeComment = (comments: Comment[]): Comment[] => {
-          return comments
-            .filter(comment => comment.id !== commentId)
-            .map(comment => {
-              if (comment.replies && comment.replies.length > 0) {
-                // Buscar recursivamente en las respuestas
-                return {
-                  ...comment,
-                  replies: removeComment(comment.replies)
-                };
-              }
-              return comment;
-            });
-        };
-
-        // Actualizar todas las páginas
-        return {
-          ...old,
-          pages: old.pages.map((page: any) => ({
-            ...page,
-            comentarios: removeComment(page.comentarios),
-            total: page.total - 1 // Decrementar el total
-          }))
-        };
-      });
-      
-      // Enviar la petición al servidor
+      // Enviar la petición al servidor primero (sin actualización optimista)
       const response = await fetch(`/api/comentarios/delete?id=${commentId}`, {
         method: 'DELETE',
         credentials: 'same-origin',
@@ -301,28 +273,23 @@ export function useNoticiaComentarios(
       
       if (!response.ok) {
         const errorData = await response.json();
-        // Revertir la actualización optimista
-        queryClient.setQueryData(['comentarios', 'noticia', contentId], previousData);
         throw new Error(errorData.error || `Error ${response.status}`);
       }
       
       const data = await response.json();
       
       if (!data.success) {
-        // Revertir la actualización optimista
-        queryClient.setQueryData(['comentarios', 'noticia', contentId], previousData);
         throw new Error(data.error || 'Error al eliminar comentario');
       }
       
       console.log('[useNoticiaComentarios] Comentario eliminado exitosamente');
       
-      // Invalidar en background para sincronizar con el servidor
-      setTimeout(() => {
-        queryClient.invalidateQueries({ 
-          queryKey: ['comentarios', 'noticia', contentId],
-          refetchType: 'none'
-        });
-      }, 500);
+      // Invalidar la caché para refetch en background (sin recargar el componente)
+      queryClient.invalidateQueries({ 
+        queryKey: ['comentarios', 'noticia', contentId],
+        exact: true,
+        refetchType: 'active'
+      });
       
       return true;
     } catch (err) {

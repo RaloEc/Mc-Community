@@ -144,10 +144,11 @@ export default function HiloPage() {
         }
 
         const hiloData: HiloConDetalles = await hiloRes.json();
-        const postsData: PostConAutor[] = await postsRes.json();
+        const postsResponse = await postsRes.json();
 
         setHilo(hiloData);
-        setPosts(postsData);
+        // El endpoint devuelve { data: [...], total: ... }
+        setPosts(postsResponse.data || []);
 
       } catch (err: any) {
         setError(err.message);

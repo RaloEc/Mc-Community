@@ -191,14 +191,14 @@ export default function UserProfilePage() {
                 profile.ultimosHilos.map(hilo => (
                   <li key={hilo.id} className="flex items-center justify-between">
                     <div>
-                      <Link href={`/foro/hilo/${hilo.id}`} className="font-semibold hover:underline">
+                      <Link href={`/foro/hilos/${hilo.id}`} className="font-semibold hover:underline">
                         {hilo.titulo}
                       </Link>
                       <p className="text-xs text-muted-foreground">
                         en {hilo.categoria_titulo} - {new Date(hilo.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                    <Link href={`/foro/hilo/${hilo.id}`}><ExternalLink className="h-4 w-4" /></Link>
+                    <Link href={`/foro/hilos/${hilo.id}`}><ExternalLink className="h-4 w-4" /></Link>
                   </li>
                 ))
               ) : (
@@ -218,7 +218,7 @@ export default function UserProfilePage() {
                 profile.ultimosPosts.map(post => (
                   <li key={post.id} className="border-l-2 pl-4">
                     <p className="text-sm italic">\"{post.contenido}\"</p>
-                    <Link href={`/foro/hilo/${post.hilo_id}#post-${post.id}`} className="text-xs font-semibold text-muted-foreground hover:underline">
+                    <Link href={`/foro/hilos/${post.hilo_id}#post-${post.id}`} className="text-xs font-semibold text-muted-foreground hover:underline">
                       en {post.hilo_titulo} - {new Date(post.created_at).toLocaleDateString()}
                     </Link>
                   </li>

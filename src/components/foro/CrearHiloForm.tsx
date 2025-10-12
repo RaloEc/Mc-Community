@@ -107,7 +107,7 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
 
       const nuevoHilo = await response.json();
       toast.success('¡Hilo creado con éxito!');
-      router.push(`/foro/hilo/${nuevoHilo.id}`);
+      router.push(`/foro/hilos/${nuevoHilo.id}`);
 
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Ocurrió un error inesperado.';

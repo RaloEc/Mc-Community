@@ -566,7 +566,7 @@ export default function ForoRespuestas({ hiloId, limite = 6 }: ForoRespuestasPro
           <p className="mb-2">Inicia sesión para dejar una respuesta</p>
           <Button 
             variant="outline" 
-            onClick={() => window.location.href = `/login?redirect=/foro/hilo/${hiloId}`}
+            onClick={() => window.location.href = `/login?redirect=/foro/hilos/${hiloId}`}
             size="sm"
           >
             Iniciar sesión

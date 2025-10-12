@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       categoria:foro_categorias!categoria_id(nombre, slug, color)
     `;
 
-    let query = supabase.from('foro_hilos').select(baseSelect);
+    let query = supabase.from('foro_hilos').select(baseSelect).is('deleted_at', null);
 
     // Filtrar por categoría si se especificó
     if (categoriaId) {

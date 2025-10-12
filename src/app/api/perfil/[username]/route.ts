@@ -26,6 +26,7 @@ export async function GET(
       .from('foro_hilos')
       .select('*', { count: 'exact', head: true })
       .eq('autor_id', perfil.id)
+      .is('deleted_at', null)
 
     const { count: postsCount, error: postsCountError } = await supabase
       .from('foro_posts')
@@ -42,6 +43,7 @@ export async function GET(
       .from('foro_hilos')
       .select('id, titulo, created_at, (select titulo from foro_categorias where id = foro_hilos.categoria_id) as categoria_titulo')
       .eq('autor_id', perfil.id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5)
 

@@ -25,6 +25,7 @@ export async function GET(request: Request) {
           slug
         )
       `)
+      .is('deleted_at', null)
       .order('ultimo_post_at', { ascending: false })
       .limit(limite);
     

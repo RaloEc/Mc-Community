@@ -66,6 +66,7 @@ export async function GET(request: NextRequest) {
           categoria:foro_categorias(nombre)
         `)
         .eq('autor_id', userId)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1),
       

@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { CommentForm } from '@/components/comentarios/CommentForm';
 import { CommentCard } from '@/components/comentarios/CommentCard';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -74,22 +73,17 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
   if (isLoading && comentarios.length === 0) {
     return (
       <div className="max-w-4xl mx-auto">
-        <Card>
-          <CardContent>
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
-              <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mr-3"></div>
+          <span className="text-gray-600 dark:text-gray-400">Cargando comentarios...</span>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      <Card>
-        <CardContent>
+      <div className="space-y-4">
           {/* Mostrar errores */}
           {error && (
             <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-md">
@@ -161,8 +155,7 @@ const NoticiaComentariosOptimizado: React.FC<NoticiaComentariosOptimizadoProps> 
               </div>
             )}
           </div>
-        </CardContent>
-      </Card>
+      </div>
       
       {/* Modal de autenticación */}
       <AuthModal
