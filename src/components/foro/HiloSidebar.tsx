@@ -29,6 +29,7 @@ export default function HiloSidebar({
         .select("id, slug, titulo")
         .eq("categoria_id", categoriaId)
         .neq("id", hiloActualId)
+        .is("deleted_at", null)
         .order("created_at", { ascending: false })
         .limit(5);
 

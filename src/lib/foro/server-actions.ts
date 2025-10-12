@@ -28,6 +28,7 @@ export async function getHiloPorSlugOId(
     `
     )
     .eq("slug", slugOrId)
+    .is("deleted_at", null)
     .single();
 
   // Fallback por ID si no se encontró por slug
@@ -42,6 +43,7 @@ export async function getHiloPorSlugOId(
       `
       )
       .eq("id", slugOrId)
+      .is("deleted_at", null)
       .single();
     hilo = byId.data;
     error = byId.error;
@@ -135,6 +137,7 @@ export async function getHilosRelacionados(
     .select("id, slug, titulo")
     .eq("categoria_id", categoriaId)
     .neq("id", hiloActualId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 

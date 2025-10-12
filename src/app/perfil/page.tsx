@@ -161,7 +161,8 @@ export default function PerfilPage() {
           supabase
             .from("foro_hilos")
             .select("id", { count: "exact" })
-            .eq("autor_id", user.id),
+            .eq("autor_id", user.id)
+            .is("deleted_at", null),
           supabase
             .from("foro_posts")
             .select("id", { count: "exact" })
