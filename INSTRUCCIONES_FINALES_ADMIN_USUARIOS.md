@@ -1,3 +1,83 @@
+# Instrucciones Finales - Integración Admin Usuarios
+
+## 🔧 Pasos Críticos para Completar
+
+### 1. Actualizar Tipos TypeScript
+
+**Archivo:** `src/types/index.ts`
+
+Buscar la interfaz `Perfil` y agregar los nuevos campos:
+
+```typescript
+export interface Perfil {
+  id: string
+  username: string | null
+  avatar_url: string | null
+  bio: string | null
+  role: string | null
+  created_at: string
+  updated_at: string | null
+  color: string | null
+  activo: boolean | null
+  ubicacion: string | null
+  sitio_web: string | null
+  fecha_ultimo_acceso: string | null
+  banner_url: string | null
+  // NUEVOS CAMPOS - AGREGAR ESTOS:
+  email_verificado?: boolean
+  racha_dias?: number
+  badges?: any[]
+  notas_moderador?: string
+  ip_registro?: string
+}
+```
+
+### 2. Aplicar Migración de Base de Datos
+
+**Opción A - Usando Supabase CLI:**
+```cmd
+cd r:\Proyectos\BitArena\Mc-Community
+supabase db push
+```
+
+**Opción B - Dashboard de Supabase:**
+1. Ir a SQL Editor en Supabase Dashboard
+2. Copiar contenido de `supabase/migrations/20251012000100_admin_usuarios_mejoras.sql`
+3. Ejecutar el script
+4. Verificar que no haya errores
+
+### 3. Verificar React Query
+
+Asegurarse de que React Query esté configurado en la aplicación.
+
+**Archivo:** `src/app/layout.tsx` o `src/components/Providers.tsx`
+
+Debe incluir:
+```typescript
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 2 * 60 * 1000,
+      gcTime: 5 * 60 * 1000,
+    },
+  },
+})
+
+// En el return:
+<QueryClientProvider client={queryClient}>
+  {children}
+</QueryClientProvider>
+```
+
+### 4. Reemplazar Página Principal
+
+El archivo `src/app/admin/usuarios/page.tsx` tiene errores de sintaxis por ediciones parciales.
+
+**Solución:** Eliminar el archivo actual y crear uno nuevo con este contenido mínimo funcional:
+
+```typescript
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
@@ -317,3 +397,26 @@ export default function AdminUsuarios() {
     </AdminProtection>
   )
 }
+```
+
+## ✅ Checklist Final
+
+- [ ] Tipos actualizados en `src/types/index.ts`
+- [ ] Migración aplicada en Supabase
+- [ ] React Query configurado
+- [ ] Archivo `page.tsx` reemplazado
+- [ ] Compilación sin errores (`npm run build`)
+- [ ] Probado en desarrollo (`npm run dev`)
+
+## 🎯 Resultado
+
+Tendrás un sistema completo de administración de usuarios con:
+- Filtros avanzados
+- Ordenamiento dinámico
+- Acciones en lote
+- Sistema de moderación
+- Exportación CSV
+- Logs de auditoría
+- Estadísticas detalladas
+
+¡Todo listo para producción!

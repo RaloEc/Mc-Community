@@ -3,6 +3,11 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   register: true,
   skipWaiting: true,
+  // Forzar la recarga del SW en cada actualización
+  buildExcludes: [/middleware-manifest\.json$/],
+  // Configuración adicional para evitar problemas de caché
+  cacheOnFrontEndNav: true,
+  reloadOnOnline: true,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
@@ -85,13 +90,14 @@ const withPWA = require('next-pwa')({
     },
     {
       urlPattern: /\.(?:js)$/i,
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkFirst',
       options: {
         cacheName: 'static-js-assets',
         expiration: {
           maxEntries: 32,
           maxAgeSeconds: 24 * 60 * 60 // 24 horas
-        }
+        },
+        networkTimeoutSeconds: 10
       }
     },
     {

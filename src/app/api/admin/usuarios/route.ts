@@ -10,10 +10,16 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || ''
     const role = searchParams.get('role') || ''
     const activo = searchParams.get('activo')
+    const fechaDesde = searchParams.get('fechaDesde')
+    const fechaHasta = searchParams.get('fechaHasta')
+    const inactivoDias = searchParams.get('inactivoDias')
+    const emailVerificado = searchParams.get('emailVerificado')
+    const ordenCampo = searchParams.get('ordenCampo') || 'created_at'
+    const ordenDireccion = searchParams.get('ordenDireccion') || 'DESC'
 
     const offset = (page - 1) * limit
 
-    // Construir la consulta base
+    // Construir la consulta base con más campos
     let query = supabase
       .from('perfiles')
       .select(`
@@ -27,31 +33,65 @@ export async function GET(request: NextRequest) {
         fecha_ultimo_acceso,
         bio,
         ubicacion,
-        sitio_web
+        sitio_web,
+        email_verificado,
+        racha_dias,
+        badges,
+        notas_moderador
       `)
 
-    // Aplicar filtros
+    // Construir query de conteo con los mismos filtros
+    let countQuery = supabase
+      .from('perfiles')
+      .select('*', { count: 'exact', head: true })
+
+    // Aplicar filtros a ambas queries
     if (search) {
-      query = query.ilike('username', `%${search}%`)
+      query = query.or(`username.ilike.%${search}%,bio.ilike.%${search}%`)
+      countQuery = countQuery.or(`username.ilike.%${search}%,bio.ilike.%${search}%`)
     }
 
     if (role) {
       query = query.eq('role', role)
+      countQuery = countQuery.eq('role', role)
     }
 
     if (activo !== null && activo !== '') {
       query = query.eq('activo', activo === 'true')
+      countQuery = countQuery.eq('activo', activo === 'true')
     }
 
-    // Obtener el total de registros para la paginación
-    const { count } = await supabase
-      .from('perfiles')
-      .select('*', { count: 'exact', head: true })
+    if (fechaDesde) {
+      query = query.gte('created_at', fechaDesde)
+      countQuery = countQuery.gte('created_at', fechaDesde)
+    }
 
-    // Aplicar paginación y ordenamiento
+    if (fechaHasta) {
+      query = query.lte('created_at', fechaHasta)
+      countQuery = countQuery.lte('created_at', fechaHasta)
+    }
+
+    if (inactivoDias) {
+      const diasAtras = new Date()
+      diasAtras.setDate(diasAtras.getDate() - parseInt(inactivoDias))
+      query = query.or(`fecha_ultimo_acceso.is.null,fecha_ultimo_acceso.lt.${diasAtras.toISOString()}`)
+      countQuery = countQuery.or(`fecha_ultimo_acceso.is.null,fecha_ultimo_acceso.lt.${diasAtras.toISOString()}`)
+    }
+
+    if (emailVerificado !== null && emailVerificado !== '') {
+      query = query.eq('email_verificado', emailVerificado === 'true')
+      countQuery = countQuery.eq('email_verificado', emailVerificado === 'true')
+    }
+
+    // Obtener el total de registros con filtros aplicados
+    const { count } = await countQuery
+
+    // Aplicar ordenamiento dinámico
+    const ascending = ordenDireccion.toUpperCase() === 'ASC'
+    query = query.order(ordenCampo, { ascending })
+
+    // Aplicar paginación
     const { data: perfiles, error } = await query
-      .order('role', { ascending: true })
-      .order('username', { ascending: true })
       .range(offset, offset + limit - 1)
 
     if (error) {
@@ -187,23 +227,44 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 })
     }
 
+    // Obtener información del usuario antes de eliminarlo (para logs)
+    const { data: perfilAEliminar } = await supabase
+      .from('perfiles')
+      .select('username, role')
+      .eq('id', userId)
+      .single()
+
+    // Obtener el ID del admin que está haciendo la eliminación
+    // Nota: En producción deberías obtener esto del token de autenticación
+    const adminId = request.headers.get('x-user-id') // Ajustar según tu implementación
+
     // --- INICIO DE LÓGICA DE ELIMINACIÓN EN CASCADA MANUAL ---
     // Es crucial eliminar las dependencias en el orden correcto para evitar errores de foreign key.
 
-    // 1. Eliminar reacciones, seguimientos, etc. (tablas que apuntan a posts, hilos o perfiles)
+    // 1. Eliminar datos de las nuevas tablas de admin
+    await supabase.from('usuario_estadisticas').delete().eq('usuario_id', userId)
+    await supabase.from('usuario_advertencias').delete().eq('usuario_id', userId)
+    await supabase.from('usuario_suspensiones').delete().eq('usuario_id', userId)
+    // Los admin_logs tienen ON DELETE SET NULL, no es necesario eliminarlos
+
+    // 2. Eliminar reacciones, seguimientos, etc. (tablas que apuntan a posts, hilos o perfiles)
     await supabase.from('foro_reacciones').delete().eq('user_id', userId)
     await supabase.from('foro_seguimiento').delete().eq('user_id', userId)
+    await supabase.from('foro_votos_hilos').delete().eq('usuario_id', userId)
 
-    // 2. Eliminar posts del foro
+    // 3. Eliminar comentarios
+    await supabase.from('comentarios').delete().eq('usuario_id', userId)
+
+    // 4. Eliminar posts del foro
     await supabase.from('foro_posts').delete().eq('autor_id', userId)
 
-    // 3. Eliminar hilos del foro
+    // 5. Eliminar hilos del foro
     await supabase.from('foro_hilos').delete().eq('autor_id', userId)
 
-    // 4. Eliminar noticias
+    // 6. Eliminar noticias
     await supabase.from('noticias').delete().eq('autor_id', userId)
 
-    // 5. Eliminar el perfil del usuario
+    // 7. Eliminar el perfil del usuario
     // Aunque auth.deleteUser podría tener CASCADE, es más seguro hacerlo explícitamente.
     const { error: perfilError } = await supabase.from('perfiles').delete().eq('id', userId)
     if (perfilError) {
@@ -212,16 +273,45 @@ export async function DELETE(request: NextRequest) {
     }
 
     // 6. Finalmente, eliminar el usuario de auth.users
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+    // Primero verificar si el usuario existe en auth.users
+    const { data: authUser, error: getUserError } = await supabase.auth.admin.getUserById(userId)
+    
+    if (!getUserError && authUser?.user) {
+      // El usuario existe en auth, intentar eliminarlo
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
 
-    if (authError) {
-      console.error('Error al eliminar usuario de Supabase Auth:', authError)
-      // Si esto falla, puede que el usuario ya no exista o haya otro problema.
-      // Podríamos intentar recrear el perfil si la eliminación de auth falla, pero por ahora solo logueamos.
-      return NextResponse.json({ error: 'Error al eliminar el usuario del sistema de autenticación.' }, { status: 500 })
+      if (authError) {
+        console.error('Error al eliminar usuario de Supabase Auth:', authError)
+        return NextResponse.json({ 
+          error: 'Error al eliminar el usuario del sistema de autenticación.',
+          details: authError.message 
+        }, { status: 500 })
+      }
+    } else {
+      // El usuario no existe en auth.users, solo existía en perfiles
+      console.log(`Usuario ${userId} no existe en auth.users, solo se eliminó de perfiles`)
     }
 
     // --- FIN DE LÓGICA DE ELIMINACIÓN ---
+
+    // Registrar la acción en los logs de auditoría (si tenemos el adminId)
+    if (adminId && perfilAEliminar) {
+      try {
+        await supabase.rpc('registrar_accion_admin', {
+          p_admin_id: adminId,
+          p_usuario_afectado_id: null, // Ya fue eliminado
+          p_accion: 'eliminar_usuario',
+          p_detalles: {
+            username: perfilAEliminar.username,
+            role: perfilAEliminar.role,
+            userId: userId
+          }
+        })
+      } catch (logError) {
+        console.error('Error al registrar log de auditoría:', logError)
+        // No fallar la eliminación por un error en el log
+      }
+    }
 
     return NextResponse.json({ message: 'Usuario y todos sus datos asociados eliminados correctamente' })
 

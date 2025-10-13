@@ -4,27 +4,42 @@
 
   console.log('🧹 Iniciando limpieza de Service Workers y caché...');
 
+  let swUnregistered = false;
+  let cachesCleared = false;
+
   // Desregistrar todos los Service Workers
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.getRegistrations().then(function(registrations) {
       if (registrations.length === 0) {
         console.log('✅ No hay Service Workers registrados');
+        swUnregistered = true;
       } else {
         console.log(`🔍 Encontrados ${registrations.length} Service Worker(s)`);
         
-        for (let registration of registrations) {
-          registration.unregister().then(function(success) {
+        const unregisterPromises = registrations.map(function(registration) {
+          return registration.unregister().then(function(success) {
             if (success) {
               console.log('✅ Service Worker desregistrado:', registration.scope);
             } else {
               console.log('❌ No se pudo desregistrar:', registration.scope);
             }
+            return success;
           });
-        }
+        });
+
+        Promise.all(unregisterPromises).then(function() {
+          swUnregistered = true;
+          console.log('✅ Todos los Service Workers han sido desregistrados');
+          checkAndReload();
+        });
       }
     }).catch(function(error) {
       console.error('❌ Error al obtener registros:', error);
+      swUnregistered = true;
+      checkAndReload();
     });
+  } else {
+    swUnregistered = true;
   }
 
   // Limpiar todos los cachés
@@ -32,6 +47,8 @@
     caches.keys().then(function(cacheNames) {
       if (cacheNames.length === 0) {
         console.log('✅ No hay cachés para limpiar');
+        cachesCleared = true;
+        checkAndReload();
       } else {
         console.log(`🔍 Encontrados ${cacheNames.length} caché(s)`);
         
@@ -43,11 +60,16 @@
         );
       }
     }).then(function() {
+      cachesCleared = true;
       console.log('✅ Todos los cachés han sido eliminados');
-      console.log('🔄 Por favor, recarga la página (Ctrl+Shift+R o Cmd+Shift+R)');
+      checkAndReload();
     }).catch(function(error) {
       console.error('❌ Error al limpiar cachés:', error);
+      cachesCleared = true;
+      checkAndReload();
     });
+  } else {
+    cachesCleared = true;
   }
 
   // Limpiar localStorage relacionado con PWA
@@ -73,5 +95,18 @@
     console.error('❌ Error al limpiar localStorage:', error);
   }
 
-  console.log('✨ Limpieza completada!');
+  // Función para verificar si todo está listo y recargar
+  function checkAndReload() {
+    if (swUnregistered && cachesCleared) {
+      console.log('✨ Limpieza completada!');
+      console.log('🔄 Recargando página en 2 segundos...');
+      
+      // Mostrar alerta al usuario
+      setTimeout(function() {
+        alert('Limpieza completada. La página se recargará ahora.');
+        // Forzar recarga completa sin caché
+        window.location.reload(true);
+      }, 2000);
+    }
+  }
 })();

@@ -13,6 +13,12 @@ export type Perfil = {
   sitio_web?: string | null;
   activo?: boolean;
   fecha_ultimo_acceso?: string | null;
+  // Nuevos campos para admin de usuarios
+  email_verificado?: boolean;
+  racha_dias?: number;
+  badges?: any[];
+  notas_moderador?: string;
+  ip_registro?: string;
 };
 
 export type UsuarioCompleto = {
