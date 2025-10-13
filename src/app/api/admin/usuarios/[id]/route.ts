@@ -38,34 +38,62 @@ export async function GET(
 
     let authUser = null;
 
-    // Solo buscar datos de autenticación si tenemos un auth_id válido
-    if (usuario.auth_id && typeof usuario.auth_id === 'string' && usuario.auth_id.length > 0) {
-      console.log(`[API] auth_id del perfil encontrado: '${usuario.auth_id}'. Intentando buscar en Supabase Auth...`);
-      const { data, error: authError } = await supabase.auth.admin.getUserById(usuario.auth_id);
+    // Intentar buscar datos de autenticación usando el id del perfil (que es el mismo que auth.users.id)
+    console.log(`[API] Buscando datos de autenticación para usuario con id: ${usuario.id}`);
+    const { data, error: authError } = await supabase.auth.admin.getUserById(usuario.id);
 
-      if (authError) {
-        console.error('Error Auth:', authError);
-        // No devolvemos un error 404, simplemente no tendremos datos de auth
-      } else {
-        authUser = data.user;
+    if (authError) {
+      console.error('[API] Error al obtener datos de auth:', authError.message);
+      // Si falla con el id del perfil, intentar con auth_id si existe
+      if (usuario.auth_id && typeof usuario.auth_id === 'string' && usuario.auth_id.length > 0) {
+        console.log(`[API] Intentando con auth_id: ${usuario.auth_id}`);
+        const { data: dataFallback, error: authErrorFallback } = await supabase.auth.admin.getUserById(usuario.auth_id);
+        if (!authErrorFallback && dataFallback) {
+          authUser = dataFallback.user;
+          console.log('[API] Datos de auth obtenidos usando auth_id');
+        }
       }
     } else {
-      console.warn(`[API] El perfil con id ${usuario.id} no tiene un auth_id válido.`);
+      authUser = data.user;
+      console.log('[API] Datos de auth obtenidos correctamente:', {
+        email: authUser?.email,
+        provider: authUser?.app_metadata?.provider
+      });
     }
 
     // Combinar datos del perfil y de autenticación (si existen)
     const usuarioCompleto = {
-      ...usuario,
-      ...(authUser || {}),
-      id: usuario.id, // Priorizar el id de perfiles (uuid)
+      id: usuario.id,
       email: authUser?.email || '',
-      role: usuario.role,
-      activo: usuario.activo,
-      auth_id: usuario.auth_id,
-      // Asegurarnos de que los campos de authUser no sobreescriban los de perfiles si son nulos
       created_at: authUser?.created_at || usuario.created_at,
       updated_at: authUser?.updated_at || null,
+      perfil: {
+        id: usuario.id,
+        username: usuario.username,
+        role: usuario.role,
+        avatar_url: usuario.avatar_url,
+        color: usuario.color,
+        activo: usuario.activo,
+        fecha_ultimo_acceso: usuario.fecha_ultimo_acceso,
+        bio: usuario.bio,
+        ubicacion: usuario.ubicacion,
+        sitio_web: usuario.sitio_web,
+        banner_url: usuario.banner_url,
+        email_verificado: usuario.email_verificado,
+        racha_dias: usuario.racha_dias,
+        badges: usuario.badges,
+        notas_moderador: usuario.notas_moderador
+      },
+      auth_id: usuario.auth_id,
+      last_sign_in_at: authUser?.last_sign_in_at || null,
     };
+
+    console.log('[API] Usuario completo preparado:', { 
+      id: usuarioCompleto.id, 
+      email: usuarioCompleto.email,
+      fecha_ultimo_acceso: usuarioCompleto.perfil.fecha_ultimo_acceso,
+      last_sign_in_at: usuarioCompleto.last_sign_in_at
+    });
 
     return NextResponse.json(usuarioCompleto, { status: 200 })
 

@@ -33,6 +33,11 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login', redirectTo }
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
+  // Actualizar el modo cuando cambie defaultMode
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
+
   const { refreshAuth } = useAuth()
   const router = useRouter()
   const supabase = createClient()

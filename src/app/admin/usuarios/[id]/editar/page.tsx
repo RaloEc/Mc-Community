@@ -40,7 +40,7 @@ function EditarUsuarioContent() {
   const params = useParams()
   const userId = params.id as string
 
-  const [usuario, setUsuario] = useState<UsuarioCompleto | null>(null)
+  const [usuario, setUsuario] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState<FormData>({
@@ -62,6 +62,7 @@ function EditarUsuarioContent() {
       const data = await response.json()
 
       if (response.ok) {
+        console.log('Datos recibidos del usuario:', data)
         setUsuario(data)
         setFormData({
           username: data.username || '',
@@ -128,7 +129,7 @@ function EditarUsuarioContent() {
       }
 
       // Solo incluir email si cambió
-      if (formData.email !== usuario?.email) {
+      if (formData.email && formData.email !== usuario?.email) {
         updates.email = formData.email.trim()
       }
 
@@ -203,7 +204,7 @@ function EditarUsuarioContent() {
           </Button>
           <div>
             <h1 className="text-3xl font-bold text-white">Editar Usuario</h1>
-            <p className="text-gray-400">Modificar información de {usuario.perfil?.username || 'Usuario'}</p>
+            <p className="text-gray-400">Modificar información de {usuario.username || formData.username || 'Usuario'}</p>
           </div>
         </div>
       </div>
@@ -267,22 +268,26 @@ function EditarUsuarioContent() {
               </div>
               <div>
                 <Label htmlFor="avatar_url" className="text-gray-300">
-                  {usuario?.perfil?.avatar_url && (
-                    <img
-                      src={usuario.perfil.avatar_url}
-                      alt="Avatar actual"
-                      className="w-16 h-16 rounded-full mt-2"
-                    />
-                  )}
                   URL del Avatar
                 </Label>
+                {formData.avatar_url && (
+                  <img
+                    src={formData.avatar_url}
+                    alt="Avatar actual"
+                    className="w-16 h-16 rounded-full mt-2 mb-2 object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                )}
                 <Input
                   id="avatar_url"
                   type="url"
                   value={formData.avatar_url}
                   onChange={(e) => handleInputChange('avatar_url', e.target.value)}
                   className="bg-gray-800 border-gray-700 text-white"
-                  placeholder={usuario?.perfil?.username || 'Cargando...'}
+                  placeholder="https://ejemplo.com/avatar.jpg"
                 />
               </div>
             </div>

@@ -25,6 +25,7 @@ export type UsuarioCompleto = {
   id: string;
   email: string | undefined;
   created_at: string;
+  updated_at?: string | null;
   perfil: Perfil | null;
   user_metadata?: {
     avatar_url?: string;
@@ -32,6 +33,8 @@ export type UsuarioCompleto = {
     full_name?: string;
     name?: string;
   };
+  auth_id?: string | null;
+  last_sign_in_at?: string | null;
 };
 
 // =================================================================
