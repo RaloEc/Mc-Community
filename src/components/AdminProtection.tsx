@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAdminAuth } from '@/hooks/useAdminAuth'
 import { Button } from '@/components/ui/button'
-import { Shield, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 interface AdminProtectionProps {
   children: React.ReactNode
@@ -18,59 +18,46 @@ export default function AdminProtection({
   fallbackUrl = '/login'
 }: AdminProtectionProps) {
   const router = useRouter()
-  
-  console.log('[AdminProtection] Componente montándose...')
-  
   const { isLoading, isAdmin, user, profile } = useAdminAuth()
-  const [showError, setShowError] = useState(false)
-  const [hasRedirected, setHasRedirected] = useState(false)
+  const hasRedirectedRef = useRef(false)
   
-  console.log('[AdminProtection] Hook useAdminAuth ejecutado:', {
+  console.log('[AdminProtection] Render:', {
     isLoading,
     isAdmin,
     hasUser: !!user,
-    hasProfile: !!profile
+    hasProfile: !!profile,
+    role: profile?.role,
   })
 
   useEffect(() => {
     // Solo actuar cuando ya no esté cargando
     if (isLoading) {
-      console.log('[AdminProtection] Aún cargando, esperando...', { 
-        hasUser: !!user, 
-        hasProfile: !!profile,
-        profileRole: profile?.role 
-      })
+      console.log('[AdminProtection] Cargando autenticación...')
       return
     }
 
     console.log('[AdminProtection] Verificación completa:', {
-      isLoading,
       isAdmin,
       hasUser: !!user,
       hasProfile: !!profile,
-      profileRole: profile?.role,
-      userId: user?.id
+      role: profile?.role,
     })
 
     // Si no hay usuario, redirigir al login (solo una vez)
-    if (!user && !hasRedirected) {
+    if (!user && !hasRedirectedRef.current) {
       const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
       const redirectUrl = `${fallbackUrl}?redirect=${encodeURIComponent(currentPath)}`
       console.log('[AdminProtection] No hay sesión, redirigiendo a:', redirectUrl)
-      setHasRedirected(true)
+      hasRedirectedRef.current = true
       router.push(redirectUrl)
       return
     }
 
-    // Si hay usuario pero no es admin, mostrar error
-    if (user && !isAdmin) {
-      console.log('[AdminProtection] Usuario no es admin:', user.id, 'Profile role:', profile?.role)
-      setShowError(true)
-    } else if (user && isAdmin) {
+    // Si hay usuario y es admin, todo bien
+    if (user && isAdmin) {
       console.log('[AdminProtection] ✅ Usuario es admin, acceso permitido')
-      setShowError(false)
     }
-  }, [isLoading, isAdmin, user, profile, router, fallbackUrl, hasRedirected])
+  }, [isLoading, isAdmin, user, profile, router, fallbackUrl])
 
   // Mientras está cargando, mostrar spinner
   if (isLoading) {
@@ -82,8 +69,13 @@ export default function AdminProtection({
     )
   }
 
-  // Si hay error de permisos, mostrar mensaje
-  if (showError) {
+  // Si no hay usuario después de cargar, no mostrar nada (ya se redirigió)
+  if (!user) {
+    return null
+  }
+
+  // Si hay usuario pero no es admin, mostrar error de permisos
+  if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 max-w-md mx-auto">
         <div className="flex items-center justify-center w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 mb-4">
@@ -110,20 +102,6 @@ export default function AdminProtection({
     )
   }
 
-  // Si no hay usuario después de cargar, no mostrar nada (ya se redirigió)
-  if (!user) {
-    return null
-  }
-
-  // Si no es admin después de cargar, no mostrar nada (ya se mostró el error)
-  if (!isAdmin) {
-    return null
-  }
-
-  // Si todo está bien, mostrar el contenido
-  return (
-    <>
-      {children}
-    </>
-  )
+  // Si todo está bien (usuario autenticado y es admin), mostrar el contenido
+  return <>{children}</>
 }
