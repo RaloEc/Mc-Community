@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { AlertTriangle, ArrowLeft, Calendar, Clock, KeyRound, MoreVertical, Send, SquarePen, Trash2, UserCheck, UserX } from 'lucide-react'
+import { AlertTriangle, ArrowLeft, Calendar, CheckCircle2, Clock, KeyRound, MoreVertical, Send, SquarePen, Trash2, UserCheck, UserX } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import Link from 'next/link'
 import { toast } from 'sonner'
