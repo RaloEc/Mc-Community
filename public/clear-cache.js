@@ -1,10 +1,49 @@
 // Script para limpiar la caché del navegador
 (function() {
-  function clearBrowserCache() {
+  async function clearBrowserCache() {
     try {
       const statusEl = document.getElementById('status');
       statusEl.textContent = 'Limpiando caché...';
       statusEl.className = '';
+      
+      // Limpiar Service Workers
+      console.log('Limpiando Service Workers...');
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          if (registrations.length > 0) {
+            for (let registration of registrations) {
+              await registration.unregister();
+              console.log('✅ Service Worker desregistrado:', registration.scope);
+            }
+          } else {
+            console.log('✅ No hay Service Workers registrados');
+          }
+        } catch (e) {
+          console.error('Error limpiando Service Workers:', e);
+        }
+      }
+      
+      // Limpiar cachés de Workbox/PWA
+      console.log('Limpiando cachés...');
+      if ('caches' in window) {
+        try {
+          const cacheNames = await caches.keys();
+          if (cacheNames.length > 0) {
+            await Promise.all(
+              cacheNames.map(cacheName => {
+                console.log('🗑️ Eliminando caché:', cacheName);
+                return caches.delete(cacheName);
+              })
+            );
+            console.log('✅ Todos los cachés eliminados');
+          } else {
+            console.log('✅ No hay cachés para limpiar');
+          }
+        } catch (e) {
+          console.error('Error limpiando cachés:', e);
+        }
+      }
       
       // Limpiar localStorage
       console.log('Limpiando localStorage...');
@@ -45,7 +84,7 @@
         console.error('Error limpiando cookies:', e);
       }
       
-      statusEl.textContent = '✅ Caché limpiada exitosamente. Redirigiendo...';
+      statusEl.textContent = '✅ Caché y Service Workers limpiados exitosamente. Redirigiendo...';
       statusEl.className = 'success';
       
       // Redirigir después de 2 segundos

@@ -14,7 +14,7 @@ export async function GET() {
       usuariosResult
     ] = await Promise.allSettled([
       supabase.from('foro_hilos').select('id, vistas').is('deleted_at', null),
-      supabase.from('foro_posts').select('id'),
+      supabase.from('foro_posts').select('id').is('deleted_at', null),
       supabase.from('perfiles')
         .select('id')
         .or('foro_hilos.count.gt.0,foro_posts.count.gt.0')
@@ -58,6 +58,7 @@ export async function GET() {
       supabase
         .from('foro_posts')
         .select('id')
+        .is('deleted_at', null)
         .gt('created_at', fechaLimiteStr)
     ])
     
@@ -116,6 +117,7 @@ export async function GET() {
                 .from('foro_posts')
                 .select('id', { count: 'exact', head: true })
                 .eq('hilo_id', hilo.id)
+                .is('deleted_at', null)
 
               return {
                 id: hilo.id,

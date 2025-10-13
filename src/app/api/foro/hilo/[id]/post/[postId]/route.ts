@@ -89,12 +89,13 @@ export async function PUT(
   }
 }
 
-// Eliminar una respuesta
+// Eliminar una respuesta (soft delete con cascada)
 export async function DELETE(
   request: Request, 
   { params }: { params: { id: string, postId: string } }
 ) {
   const supabase = createRouteHandlerClient({ cookies });
+  const serviceSupabase = getServiceClient();
   const hiloId = params.id;
   const postId = params.postId;
 
@@ -108,13 +109,18 @@ export async function DELETE(
     // 2. Verificar que el post existe y pertenece al usuario o es admin
     const { data: post, error: postError } = await supabase
       .from('foro_posts')
-      .select('autor_id')
+      .select('autor_id, deleted')
       .eq('id', postId)
       .eq('hilo_id', hiloId)
       .single();
 
-    if (postError) {
+    if (postError || !post) {
       return NextResponse.json({ error: 'No se encontró la respuesta.' }, { status: 404 });
+    }
+
+    // Verificar si ya está eliminado
+    if (post.deleted) {
+      return NextResponse.json({ error: 'Esta respuesta ya ha sido eliminada.' }, { status: 400 });
     }
 
     // Verificar si el usuario es el autor o es admin
@@ -131,21 +137,29 @@ export async function DELETE(
       return NextResponse.json({ error: 'No tienes permiso para eliminar esta respuesta.' }, { status: 403 });
     }
 
-    // 3. Eliminar el post
-    const { error } = await supabase
-      .from('foro_posts')
-      .delete()
-      .eq('id', postId);
+    // 3. Eliminar el post y sus respuestas en cascada usando la función RPC
+    const { data: resultado, error } = await serviceSupabase.rpc('soft_delete_post_cascade', {
+      p_post_id: postId,
+      p_deleted_by: session.user.id
+    });
 
     if (error) {
       console.error('Error al eliminar la respuesta:', error);
       return NextResponse.json({ error: 'No se pudo eliminar la respuesta.' }, { status: 500 });
     }
 
+    // Verificar el resultado de la función
+    if (!resultado.success) {
+      console.error('Error en soft_delete_post_cascade:', resultado.error);
+      return NextResponse.json({ error: resultado.error || 'No se pudo eliminar la respuesta.' }, { status: 500 });
+    }
+
     // 4. Devolver respuesta exitosa
     return NextResponse.json({ 
-      message: 'Respuesta eliminada correctamente',
-      success: true
+      message: resultado.message || 'Respuesta eliminada correctamente',
+      success: true,
+      affected_count: resultado.affected_count,
+      deleted_at: resultado.deleted_at
     });
 
   } catch (error: any) {

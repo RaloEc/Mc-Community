@@ -147,15 +147,30 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // Obtener conteos correctos de respuestas (solo no eliminadas) usando consultas individuales
+    const hilosConRespuestas = await Promise.all(
+      (data || []).map(async (hilo: any) => {
+        const { count: respuestasCount } = await supabase
+          .from('foro_posts')
+          .select('*', { count: 'exact', head: true })
+          .eq('hilo_id', hilo.id)
+          .is('deleted_at', null);
+        
+        return {
+          ...hilo,
+          respuestas_conteo_correcto: respuestasCount || 0
+        };
+      })
+    );
+
     // Normalizar los conteos y estructurar los datos para el frontend
-    let hilosNormalizados = data?.map((hilo: any) => {
+    let hilosNormalizados = hilosConRespuestas?.map((hilo: any) => {
       const votos = Array.isArray(hilo.votos_conteo) 
         ? (hilo.votos_conteo[0]?.count ?? 0) 
         : (hilo.votos_conteo as any)?.count ?? 0;
       
-      const respuestas = Array.isArray(hilo.respuestas_conteo) 
-        ? (hilo.respuestas_conteo[0]?.count ?? 0) 
-        : (hilo.respuestas_conteo as any)?.count ?? 0;
+      // Usar el conteo corregido que excluye posts eliminados
+      const respuestas = hilo.respuestas_conteo_correcto;
       
       // Asegurar que los datos del autor estén en el formato esperado
       const autor = {

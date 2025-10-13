@@ -23,6 +23,7 @@ import HiloSidebar from "@/components/foro/HiloSidebar";
 import HilosRelacionadosInline from "@/components/foro/HilosRelacionadosInline";
 import BotonReportar from "@/components/foro/BotonReportar";
 import { Votacion } from "@/components/ui/Votacion";
+import ContadorRespuestasRealtime from "@/components/foro/ContadorRespuestasRealtime";
 
 // Importación dinámica del componente de comentarios para evitar problemas de SSR
 const HiloComentariosOptimizado = dynamic(
@@ -225,10 +226,10 @@ export default async function HiloPage({ params }: PageProps) {
                         <span className="font-medium">{hilo.vistas ?? 0}</span>
                       </div>
                       <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
-                      <div className="flex items-center gap-1.5">
-                        <MessageSquare className="h-4 w-4" />
-                        <span className="font-medium">{hilo.respuestas ?? 0}</span>
-                      </div>
+                      <ContadorRespuestasRealtime 
+                        hiloId={hilo.id}
+                        respuestasIniciales={hilo.respuestas ?? 0}
+                      />
                       {hilo.updated_at && hilo.updated_at !== hilo.created_at && (
                         <>
                           <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />

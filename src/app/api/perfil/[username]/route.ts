@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: 'Perfil no encontrado' }, { status: 404 })
     }
 
-    // 2. Obtener estadísticas de actividad
+    // 2. Obtener estadísticas de actividad (solo contenido no eliminado)
     const { count: hilosCount, error: hilosCountError } = await supabase
       .from('foro_hilos')
       .select('*', { count: 'exact', head: true })
@@ -32,6 +32,7 @@ export async function GET(
       .from('foro_posts')
       .select('*', { count: 'exact', head: true })
       .eq('autor_id', perfil.id)
+      .is('deleted_at', null)
 
     if (hilosCountError || postsCountError) {
       console.error('Error fetching stats:', hilosCountError, postsCountError)
@@ -51,11 +52,13 @@ export async function GET(
       console.error('Error fetching threads:', hilosError)
     }
 
-    // 4. Obtener últimos posts (respuestas)
+    // 4. Obtener últimos posts (respuestas) - solo posts no eliminados de hilos no eliminados
     const { data: ultimosPosts, error: postsError } = await supabase
       .from('foro_posts')
-      .select('id, contenido, created_at, hilo_id, foro_hilos(titulo)')
+      .select('id, contenido, created_at, hilo_id, foro_hilos!inner(titulo, deleted_at)')
       .eq('autor_id', perfil.id)
+      .is('deleted_at', null)
+      .is('foro_hilos.deleted_at', null)
       .order('created_at', { ascending: false })
       .limit(5)
 

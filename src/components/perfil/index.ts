@@ -1,0 +1,5 @@
+export { PerfilHeader } from './PerfilHeader'
+export { EstadisticasUsuario } from './EstadisticasUsuario'
+export { TabsActividad } from './TabsActividad'
+export { PerfilSkeleton } from './PerfilSkeleton'
+export { PerfilError } from './PerfilError'

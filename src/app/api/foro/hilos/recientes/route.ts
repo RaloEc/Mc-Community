@@ -58,11 +58,12 @@ export async function GET(request: Request) {
           .eq('id', hilo.autor_id)
           .single();
         
-        // Contar respuestas
+        // Contar respuestas (solo las no eliminadas)
         const { count: respuestasCount } = await supabase
           .from('foro_posts')
           .select('*', { count: 'exact', head: true })
-          .eq('hilo_id', hilo.id);
+          .eq('hilo_id', hilo.id)
+          .is('deleted_at', null);
         
         return {
           id: hilo.id,

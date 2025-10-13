@@ -6,6 +6,7 @@ import Providers from "@/components/Providers";
 import { createServerClient } from "@/utils/supabase-server";
 import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import PWAManager from "@/components/pwa/PWAManager";
 
 const nunito = Nunito({
   subsets: ["latin"],
@@ -16,6 +17,43 @@ export const metadata: Metadata = {
   title: "Minecraft Community",
   description:
     "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MC Community",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Minecraft Community",
+    title: "Minecraft Community",
+    description:
+      "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+  },
+  twitter: {
+    card: "summary",
+    title: "Minecraft Community",
+    description:
+      "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 5,
+    userScalable: true,
+  },
 };
 
 // Script para prevenir FOUC (Flash of Unstyled Content)
@@ -170,6 +208,7 @@ export default async function RootLayout({
         <Providers session={session} userColor={userColor}>
           <Header />
           <main className="container mx-auto px-0">{children}</main>
+          <PWAManager />
         </Providers>
       </body>
     </html>
