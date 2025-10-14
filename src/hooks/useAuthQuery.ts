@@ -46,10 +46,10 @@ export function useSessionQuery() {
       return data.session
     },
     // Configuración optimizada para autenticación
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 1 * 60 * 1000, // 1 minuto (reducido para mejor reactividad)
     gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: true, // Revalidar al volver a la pestaña
-    refetchOnMount: false, // No refetch en cada mount, usar caché
+    refetchOnMount: 'always', // Siempre refetch al montar para capturar cambios
     retry: 1, // Solo 1 reintento para auth
   })
 }

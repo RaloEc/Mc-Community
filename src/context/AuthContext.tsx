@@ -89,8 +89,22 @@ export function AuthProvider({
   const signOut = React.useCallback(async () => {
     console.log('[AuthProvider] Cerrando sesión...')
     await supabase.auth.signOut()
-    // Las queries se invalidarán automáticamente por el listener
-  }, [supabase])
+    
+    // Forzar actualización inmediata de las queries
+    console.log('[AuthProvider] Forzando actualización de queries...')
+    await queryClient.invalidateQueries({ 
+      queryKey: authKeys.session,
+      refetchType: 'active' // Forzar refetch inmediato
+    })
+    
+    // Limpiar todas las queries de perfil
+    queryClient.removeQueries({ 
+      queryKey: ['auth', 'profile'],
+      exact: false 
+    })
+    
+    console.log('[AuthProvider] Queries actualizadas')
+  }, [supabase, queryClient])
 
   const refreshAuth = React.useCallback(async () => {
     console.log('[AuthProvider] Refrescando autenticación...')

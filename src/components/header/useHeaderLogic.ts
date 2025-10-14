@@ -131,6 +131,11 @@ export const useHeaderLogic = () => {
     try {
       await signOut();
       console.log("[Header] handleLogout: signOut() del contexto OK");
+      
+      // Esperar un momento para que React Query actualice el estado
+      await new Promise(resolve => setTimeout(resolve, 100));
+      console.log("[Header] handleLogout: esperando actualización de estado...");
+      
     } catch (e) {
       console.warn(
         "[Header] handleLogout: error en signOut() del contexto, intento fallback directo",
@@ -144,15 +149,19 @@ export const useHeaderLogic = () => {
         console.error("[Header] handleLogout: fallback signOut falló", e2);
       }
     }
-    try {
-      router.push("/");
-      console.log("[Header] handleLogout: router.push('/') OK");
-    } catch (e) {
-      console.error("[Header] handleLogout: error en router.push", e);
-      window.location.href = "/";
-    }
+    
+    // Cerrar menús antes de redirigir
     setIsUserMenuOpen(false);
     setIsMenuOpen(false);
+    
+    try {
+      // Forzar recarga completa de la página para asegurar que se actualice todo
+      console.log("[Header] handleLogout: redirigiendo a home...");
+      window.location.href = "/";
+    } catch (e) {
+      console.error("[Header] handleLogout: error en redirección", e);
+    }
+    
     console.log("[Header] handleLogout: fin");
   };
 
