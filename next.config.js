@@ -138,18 +138,15 @@ const withPWA = require('next-pwa')({
         const isSameOrigin = self.origin === url.origin;
         if (!isSameOrigin) return false;
         const pathname = url.pathname;
-        // Excluir rutas de API
-        if (pathname.startsWith('/api/')) return false;
+        // Excluir rutas de API y archivos estáticos que ya tienen su propia política
+        if (pathname.startsWith('/api/') || pathname.startsWith('/_next/static/')) {
+          return false;
+        }
         return true;
       },
-      handler: 'NetworkFirst',
+      handler: 'NetworkOnly', // Cambiado a NetworkOnly para evitar HTML cacheado
       options: {
-        cacheName: 'others',
-        expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60 // 24 horas
-        },
-        networkTimeoutSeconds: 10
+        cacheName: 'pages',
       }
     }
   ]
