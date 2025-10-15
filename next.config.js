@@ -4,7 +4,7 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   // Forzar la recarga del SW en cada actualización
-  buildExcludes: [/middleware-manifest\.json$/],
+  buildExcludes: [/middleware-manifest\.json$/, /_next\/app-build-manifest\.json$/],
   // Configuración adicional para evitar problemas de caché
   cacheOnFrontEndNav: true,
   reloadOnOnline: true,
