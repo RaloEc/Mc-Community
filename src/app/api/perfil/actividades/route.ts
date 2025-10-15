@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Crear cliente de Supabase
     const cookieStore = cookies()
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // Verificar sesión
     const { data: { session } } = await supabase.auth.getSession()

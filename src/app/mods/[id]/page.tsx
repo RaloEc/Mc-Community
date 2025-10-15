@@ -11,7 +11,7 @@ export default async function ModDetailPage({
 }: {
   params: { id: string };
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // Obtener los detalles del mod
   const { data: mod, error } = await supabase

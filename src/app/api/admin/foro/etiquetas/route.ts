@@ -1,12 +1,11 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { isAdmin } from '@/lib/auth/admin'
+import { createClient } from '@/lib/supabase/server';
 
 // GET - Obtener todas las etiquetas
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
     
     // Verificar si el usuario es administrador
     const isUserAdmin = await isAdmin(supabase)
@@ -38,7 +37,7 @@ export async function GET(request: NextRequest) {
 // POST - Crear una nueva etiqueta
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
     
     // Verificar si el usuario es administrador
     const isUserAdmin = await isAdmin(supabase)
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
 // PUT - Actualizar una etiqueta existente
 export async function PUT(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
     
     // Verificar si el usuario es administrador
     const isUserAdmin = await isAdmin(supabase)
@@ -138,7 +137,7 @@ export async function PUT(request: NextRequest) {
 // DELETE - Eliminar una etiqueta
 export async function DELETE(request: NextRequest) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
+    const supabase = await createClient()
     
     // Verificar si el usuario es administrador
     const isUserAdmin = await isAdmin(supabase)

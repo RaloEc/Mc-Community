@@ -2,8 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // Función para calcular trends (porcentaje de cambio)
@@ -102,7 +101,7 @@ export interface NoticiaReciente {
 // Hook para obtener estadísticas con actualización en tiempo real
 export function useAdminEstadisticas() {
   const queryClient = useQueryClient();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isRealTimeActive, setIsRealTimeActive] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -209,7 +208,7 @@ export function useAdminEstadisticas() {
 // Hook para obtener noticias recientes con actualización en tiempo real
 export function useNoticiasRecientes(limit: number = 5) {
   const queryClient = useQueryClient();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   const {
@@ -274,7 +273,7 @@ export function useNoticiasRecientes(limit: number = 5) {
 // Hook para obtener actividad reciente (últimas acciones)
 export function useActividadReciente() {
   const queryClient = useQueryClient();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
 
   return useQuery({
     queryKey: ['admin-actividad-reciente'],

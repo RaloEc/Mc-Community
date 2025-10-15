@@ -94,20 +94,12 @@ export function CategorySelector({
                 onClick={() => onSelectCategory(category.id)}
               >
                 <div className="flex items-center gap-2 flex-1">
-                  {category.color && (
-                    <div
-                      className="w-3 h-3 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: category.color }}
-                    />
+                  <span className="truncate">{category.nombre}</span>
+                  {category.descripcion && (
+                    <span className="text-xs text-muted-foreground block mt-0.5">
+                      {category.descripcion}
+                    </span>
                   )}
-                  <div className="flex-1">
-                    <span className="block">{category.nombre}</span>
-                    {category.descripcion && (
-                      <span className="text-xs text-muted-foreground block mt-0.5">
-                        {category.descripcion}
-                      </span>
-                    )}
-                  </div>
                   {selected && (
                     <div className="ml-auto flex-shrink-0">
                       <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">

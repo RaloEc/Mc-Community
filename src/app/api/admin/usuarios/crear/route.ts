@@ -5,7 +5,7 @@ import { getServiceClient } from '@/utils/supabase-service'
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: Request) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const { data: { session } } = await supabase.auth.getSession()
 
   if (!session) {

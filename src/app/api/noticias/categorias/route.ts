@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function GET() {
   try {
     console.log('[API Categorías] Iniciando consulta de categorías...');
-    const supabase = createClient()
+    const supabase = await createClient()
     
     console.log('[API Categorías] Cliente Supabase creado');
     

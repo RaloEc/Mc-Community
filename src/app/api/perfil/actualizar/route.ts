@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceClient } from '@/utils/supabase-service';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
     
     if (!userIdToUse) {
       // Obtener el ID de usuario de la sesión actual
-      const supabaseClient = createClient();
+      const supabaseClient = await createClient();
       const { data: { session } } = await supabaseClient.auth.getSession();
       
       if (!session?.user?.id) {

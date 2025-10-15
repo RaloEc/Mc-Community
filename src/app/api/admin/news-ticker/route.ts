@@ -1,13 +1,12 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
 // Obtener todos los mensajes del ticker (público)
 const GET = async () => {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
 
     // Primero obtenemos los mensajes del ticker
     const { data: tickerData, error: tickerError } = await supabase
@@ -57,7 +56,7 @@ const GET = async () => {
 // Crear un nuevo mensaje en el ticker
 const POST = async (request: Request) => {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const supabase = await createClient();
     
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -84,7 +83,7 @@ const POST = async (request: Request) => {
 
 // Actualizar múltiples mensajes del ticker
 const PUT = async (request: Request) => {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = await createClient();
   
   try {
     // Verificar autenticación

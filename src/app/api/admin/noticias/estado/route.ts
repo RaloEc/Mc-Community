@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/supabase'
 import { getServiceClient } from '@/utils/supabase-service'
 import { revalidatePath } from 'next/cache'
+import { createClient } from '@/lib/supabase/server';
 
 // Función para verificar si el usuario es administrador
 async function esAdmin(supabase: any) {
@@ -26,7 +24,7 @@ async function esAdmin(supabase: any) {
 
 // PATCH - Actualizar estado de una noticia (destacada, es_activa)
 export async function PATCH(request: NextRequest) {
-  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const supabase = await createClient()
   const searchParams = request.nextUrl.searchParams
   const admin = searchParams.get('admin') === 'true'
   

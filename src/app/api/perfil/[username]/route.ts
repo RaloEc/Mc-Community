@@ -5,7 +5,7 @@ export async function GET(
   request: Request,
   { params }: { params: { username: string } }
 ) {
-  const supabase = createClient()
+  const supabase = await createClient()
   const username = params.username
 
   try {

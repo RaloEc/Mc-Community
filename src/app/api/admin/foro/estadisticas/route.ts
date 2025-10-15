@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/utils/supabase-server';
+import { createClient } from '@/lib/supabase/server';
 
 // Configuración para deshabilitar cache de Next.js
 export const dynamic = 'force-dynamic'
@@ -7,7 +7,7 @@ export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createClient();
     
     // Verificar autenticación
     const { data: { user }, error: authError } = await supabase.auth.getUser();

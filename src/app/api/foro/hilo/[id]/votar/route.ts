@@ -53,7 +53,7 @@ async function getVotesTotalFor(supabase: SupabaseClient<Database>, hiloId: stri
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   console.log('Iniciando POST /api/foro/hilo/[id]/votar');
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Validar sesión
     const { data: { session } } = await supabase.auth.getSession();
@@ -133,7 +133,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const hiloId = params.id;
     
     if (!hiloId) {

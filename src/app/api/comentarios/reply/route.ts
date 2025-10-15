@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const { parent_id, text } = body;
     
     // Obtener usuario autenticado
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {

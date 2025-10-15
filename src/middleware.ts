@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 
 // Rutas que requieren autenticación de administrador
 const ADMIN_ROUTES = ['/admin']
@@ -10,59 +10,50 @@ export async function middleware(request: NextRequest) {
 
   console.log('[Middleware] Procesando ruta:', pathname)
 
+  // Crear respuesta que será retornada
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
+
+  // Crear cliente de Supabase para refrescar la sesión
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request,
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // Refrescar la sesión si es necesario
+  // Esto actualizará automáticamente las cookies a través de los métodos set/remove
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+  console.log('[Middleware] Sesión refrescada:', {
+    hasSession: !!session,
+    userId: session?.user?.id,
+    error: sessionError?.message
+  })
+
   // Verificar si la ruta es administrativa
   const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route))
 
   if (isAdminRoute) {
     try {
-      // Crear cliente de Supabase para el servidor con las cookies de la request
-      const response = NextResponse.next()
-      
-      const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-        {
-          cookies: {
-            get(name: string) {
-              return request.cookies.get(name)?.value
-            },
-            set(name: string, value: string, options: CookieOptions) {
-              request.cookies.set({
-                name,
-                value,
-                ...options,
-              })
-              response.cookies.set({
-                name,
-                value,
-                ...options,
-              })
-            },
-            remove(name: string, options: CookieOptions) {
-              request.cookies.set({
-                name,
-                value: '',
-                ...options,
-              })
-              response.cookies.set({
-                name,
-                value: '',
-                ...options,
-              })
-            },
-          },
-        }
-      )
-
-      // Verificar sesión
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-
-      console.log('[Middleware] Verificación de sesión:', {
-        hasSession: !!session,
-        userId: session?.user?.id,
-        error: sessionError?.message
-      })
-
       // Si no hay sesión, redirigir al login con parámetro de redirección
       if (!session) {
         console.log('[Middleware] No hay sesión, redirigiendo a login')
@@ -91,22 +82,27 @@ export async function middleware(request: NextRequest) {
       }
 
       console.log('[Middleware] ✅ Usuario es admin, permitiendo acceso')
-      return response
     } catch (error) {
       console.error('[Middleware] Error inesperado:', error)
-      // En caso de error, permitir que el componente cliente maneje la verificación
-      return NextResponse.next()
+      // En caso de error en rutas admin, redirigir a home
+      return NextResponse.redirect(new URL('/', request.url))
     }
   }
 
-  // Si todo está bien o no es una ruta protegida, continuar
-  return NextResponse.next()
+  // Retornar la respuesta con las cookies actualizadas
+  return response
 }
 
 // Configurar las rutas en las que se ejecutará el middleware
 export const config = {
   matcher: [
-    // Rutas administrativas
-    '/admin/:path*',
+    /*
+     * Ejecutar en todas las rutas excepto:
+     * - _next/static (archivos estáticos)
+     * - _next/image (optimización de imágenes)
+     * - favicon.ico (favicon)
+     * - Archivos públicos (imágenes, etc.)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

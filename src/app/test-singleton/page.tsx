@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient, createNonPersistentClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/supabase/client'
+// createNonPersistentClient ya no existe después de la migración a @supabase/ssr
 
 export default function TestSingletonPage() {
   const [testResults, setTestResults] = useState<string[]>([])
@@ -17,13 +18,14 @@ export default function TestSingletonPage() {
       const client3 = createClient()
       
       // Crear múltiples instancias del cliente sin persistencia
-      const nonPersistentClient1 = createNonPersistentClient()
-      const nonPersistentClient2 = createNonPersistentClient()
+      // NOTA: createNonPersistentClient ya no existe después de la migración a @supabase/ssr
+      // const nonPersistentClient1 = createNonPersistentClient()
+      // const nonPersistentClient2 = createNonPersistentClient()
       
       // Verificar si son la misma instancia
       results.push(`Cliente normal: ¿client1 === client2? ${client1 === client2}`)
       results.push(`Cliente normal: ¿client2 === client3? ${client2 === client3}`)
-      results.push(`Cliente sin persistencia: ¿nonPersistentClient1 === nonPersistentClient2? ${nonPersistentClient1 === nonPersistentClient2}`)
+      // results.push(`Cliente sin persistencia: ¿nonPersistentClient1 === nonPersistentClient2? ${nonPersistentClient1 === nonPersistentClient2}`)
       
       // Verificar si hay advertencias en la consola
       results.push('Revisa la consola del navegador para ver si hay advertencias de múltiples instancias de GoTrueClient')

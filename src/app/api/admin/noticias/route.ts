@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServiceClient } from '@/utils/supabase-service';
 import { revalidatePath } from 'next/cache';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { Database } from '@/types/supabase';
+import { createClient } from '@/lib/supabase/server';
 
 
 // Hacer que la ruta sea dinámica
@@ -39,7 +37,7 @@ async function esAdmin(supabase: any) {
 
 // GET - Obtener noticias con paginación y filtros
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const supabase = await createClient()
   const serviceClient = getServiceClient();
   const searchParams = request.nextUrl.searchParams
   const admin = searchParams.get('admin') === 'true'

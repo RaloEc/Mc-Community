@@ -4,9 +4,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Providers from "@/components/Providers";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
-import type { CookieOptions } from "@supabase/ssr";
+import { createClient } from "@/lib/supabase/server";
 import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import PWAManager from "@/components/pwa/PWAManager";
@@ -176,24 +174,7 @@ export default async function RootLayout({
   let userColor = "#3b82f6"; // Color por defecto
 
   try {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            cookieStore.set({ name, value, ...options });
-          },
-          remove(name: string, options: CookieOptions) {
-            cookieStore.set({ name, value: "", ...options, maxAge: 0 });
-          },
-        },
-      }
-    );
+    const supabase = await createClient();
     const { data } = await supabase.auth.getSession();
     session = data.session;
 

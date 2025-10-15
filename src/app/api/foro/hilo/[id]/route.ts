@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const hiloId = params.id;
 
   if (!hiloId) {

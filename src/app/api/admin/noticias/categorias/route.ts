@@ -1,8 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
+import { createServerClient } from '@supabase/ssr'
 import { Database } from '@/types/supabase'
 import { getServiceClient } from '@/utils/supabase-service'
+
+// Función helper para crear cliente de Supabase en Route Handler
+function createClient() {
+  const cookieStore = cookies()
+  
+  return createServerClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value
+        },
+        set(name: string, value: string, options: any) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch (error) {
+            // Ignorar errores de cookies en Route Handlers
+          }
+        },
+        remove(name: string, options: any) {
+          try {
+            cookieStore.set({ name, value: '', ...options })
+          } catch (error) {
+            // Ignorar errores de cookies en Route Handlers
+          }
+        },
+      },
+    }
+  )
+}
 
 // Función para organizar categorías en estructura jerárquica
 function organizarCategoriasJerarquicas(categorias: any[]) {
@@ -108,7 +139,7 @@ export async function GET(request: NextRequest) {
   console.log('GET - Recibida solicitud para obtener categorías')
   
   // Primero verificamos si el usuario es administrador
-  const clienteAuth = createRouteHandlerClient<Database>({ cookies })
+  const clienteAuth = await createClient()
   const admin = await esAdmin(clienteAuth, request)
   
   if (!admin) {
@@ -185,7 +216,7 @@ export async function POST(request: NextRequest) {
   console.log('POST - Recibida solicitud para crear categoría')
   
   // Primero verificamos si el usuario es administrador
-  const clienteAuth = createRouteHandlerClient<Database>({ cookies })
+  const clienteAuth = await createClient()
   const admin = await esAdmin(clienteAuth, request)
   
   if (!admin) {
@@ -246,7 +277,7 @@ export async function PUT(request: NextRequest) {
   console.log('PUT - Recibida solicitud para actualizar categoría')
   
   // Primero verificamos si el usuario es administrador
-  const clienteAuth = createRouteHandlerClient<Database>({ cookies })
+  const clienteAuth = await createClient()
   const admin = await esAdmin(clienteAuth, request)
   
   if (!admin) {
@@ -318,7 +349,7 @@ export async function DELETE(request: NextRequest) {
   console.log('DELETE - Recibida solicitud para eliminar categoría')
   
   // Primero verificamos si el usuario es administrador
-  const clienteAuth = createRouteHandlerClient<Database>({ cookies })
+  const clienteAuth = await createClient()
   const admin = await esAdmin(clienteAuth, request)
   
   if (!admin) {

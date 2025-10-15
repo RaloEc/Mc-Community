@@ -15,7 +15,7 @@ import type {
 export async function getHiloPorSlugOId(
   slugOrId: string
 ): Promise<ForoHiloCompleto> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Primero intentar por slug
   let { data: hilo, error } = await supabase
@@ -82,7 +82,7 @@ export async function getHiloPorSlugOId(
 export async function getEtiquetasHilo(
   hiloId: string
 ): Promise<ForoEtiqueta[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("foro_hilos_etiquetas")
@@ -107,7 +107,7 @@ export async function getEtiquetasHilo(
 export async function getCategoriaParent(
   parentId: string
 ): Promise<ForoCategoria | null> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("foro_categorias")
@@ -131,7 +131,7 @@ export async function getHilosRelacionados(
   hiloActualId: string,
   limit: number = 5
 ): Promise<ForoHiloRelacionado[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("foro_hilos")
@@ -154,7 +154,7 @@ export async function getHilosRelacionados(
  * Obtiene todas las categorías para el sidebar
  */
 export async function getCategoriasForo(): Promise<ForoCategoria[]> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from("foro_categorias")
@@ -175,7 +175,7 @@ export async function getCategoriasForo(): Promise<ForoCategoria[]> {
 export async function getCategoriasJerarquicas(): Promise<any[]> {
   try {
     console.log("[getCategoriasJerarquicas] Cargando categorías desde Supabase");
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const { data, error } = await supabase
       .from("foro_categorias")
@@ -234,7 +234,7 @@ export async function getCategoriasJerarquicas(): Promise<any[]> {
  * Se ejecuta de forma asíncrona sin bloquear
  */
 export async function incrementarVistasHilo(hiloId: string): Promise<void> {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   await supabase.rpc("incrementar_vistas_hilo", {
     hilo_id: hiloId,

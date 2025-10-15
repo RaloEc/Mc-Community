@@ -24,7 +24,7 @@ export async function GET(
     const id = params.id;
     
     // Verificar autenticación
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -84,7 +84,7 @@ export async function PUT(
     const id = params.id;
     
     // Verificar autenticación
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const { data: { session } } = await supabase.auth.getSession();
     
@@ -200,7 +200,7 @@ export async function DELETE(
     const id = params.id;
     
     // Verificar autenticación
-    const supabase = createClient();
+    const supabase = await createClient();
     
     const { data: { session } } = await supabase.auth.getSession();
     

@@ -8,7 +8,7 @@ import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getForoCategorias(): Promise<CategoriaForo[]> {
   noStore();
-  const supabase = createClient();
+  const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('foro_categorias')

@@ -2,8 +2,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
-import type { Database } from '@/lib/database.types';
+import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 // =====================================================
@@ -76,7 +75,7 @@ export function useNoticiasDashboard(
   } = options;
 
   const queryClient = useQueryClient();
-  const supabase = createClientComponentClient<Database>();
+  const supabase = createClient();
   const channelRef = useRef<RealtimeChannel | null>(null);
   const [isRealTimeActive, setIsRealTimeActive] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);

@@ -1,12 +1,11 @@
 import CategoriaPageClient from '@/components/foro/CategoriaPageClient'
 import ForoSidebar from '@/components/foro/ForoSidebar'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { getCategoriasJerarquicas } from '@/lib/foro/server-actions'
 
 async function getCategoriaBySlugOrId(slugOrId: string) {
-  const supabase = createServerComponentClient({ cookies })
+  const supabase = await createClient()
   // Intentar por slug primero, si no existe, por id
   let { data: categoria, error } = await supabase
     .from('foro_categorias')

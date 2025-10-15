@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
 import { syncModrinthMod, syncModrinthMods } from '@/lib/modrinth/sync';
 import { getServiceClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/server';
 
 /**
  * Endpoint para sincronizar un mod específico de Modrinth
@@ -13,8 +12,7 @@ import { getServiceClient } from '@/lib/supabase';
 export async function GET(request: Request) {
   try {
     // Verificar autenticación
-    const cookieStore = cookies();
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
+    const supabase = await createClient();
     const { data: { session } } = await supabase.auth.getSession();
     
     if (!session) {

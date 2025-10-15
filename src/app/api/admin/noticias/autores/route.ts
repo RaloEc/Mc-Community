@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { Database } from '@/types/supabase'
 import { getServiceClient } from '@/utils/supabase-service'
+import { createClient } from '@/lib/supabase/server';
 
 // Función para verificar si el usuario es administrador
 async function esAdmin(supabase: any) {
@@ -25,7 +23,7 @@ async function esAdmin(supabase: any) {
 
 // GET - Obtener lista de autores únicos que han escrito noticias
 export async function GET(request: NextRequest) {
-  const supabase = createRouteHandlerClient<Database>({ cookies })
+  const supabase = await createClient()
   const searchParams = request.nextUrl.searchParams
   const admin = searchParams.get('admin') === 'true'
   

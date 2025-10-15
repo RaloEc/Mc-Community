@@ -52,7 +52,8 @@ type Categoria = {
   color?: string | null;
   icono?: string | null;
   tipo?: string;
-  hijos?: Categoria[];
+  hijos?: Categoria[]; // Mantener para compatibilidad
+  subcategories?: Categoria[]; // Nueva propiedad para el selector
   nivel?: number; // Nivel jerárquico (1, 2, 3)
 }
 
@@ -544,12 +545,18 @@ function CrearNoticiaContent() {
                                   nombre: cat.nombre,
                                   color: cat.color || undefined,
                                   descripcion: cat.descripcion || undefined,
-                                  subcategories: cat.hijos?.map(subcat => ({
+                                  subcategories: cat.subcategories?.map(subcat => ({
                                     id: subcat.id,
                                     nombre: subcat.nombre,
                                     color: subcat.color || undefined,
                                     descripcion: subcat.descripcion || undefined,
-                                  })),
+                                    subcategories: subcat.subcategories?.map(subsubcat => ({
+                                      id: subsubcat.id,
+                                      nombre: subsubcat.nombre,
+                                      color: subsubcat.color || undefined,
+                                      descripcion: subsubcat.descripcion || undefined,
+                                    })) || []
+                                  })) || []
                                 }))}
                                 selectedCategoryIds={field.value || []}
                                 onSelectCategory={(id) => handleSeleccionarCategoria(field, id)}

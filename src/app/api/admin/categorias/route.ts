@@ -32,26 +32,18 @@ export async function GET(request: Request) {
       .is('parent_id', null) // Solo obtener las categorías raíz
       .order('orden');
       
-    // Mapear los campos al formato esperado
-    const categoriasMapeadas = (data || []).map(cat => {
-      // Crear un nuevo objeto con las propiedades básicas
-      const categoriaMapeada = {
-        ...cat,
-        parent_id: cat.categoria_padre_id,
-        // Incluir las subcategorías en la propiedad 'hijos'
-        hijos: (cat.subcategorias || []).map(sub => ({
-          ...sub,
-          parent_id: sub.categoria_padre_id,
-          // Incluir sub-subcategorías si existen
-          hijos: sub.subcategorias || []
-        }))
-      };
-      
-      // Eliminar la propiedad subcategorias para evitar duplicados
-      delete categoriaMapeada.subcategorias;
-      
-      return categoriaMapeada;
-    });
+    // Mapear los campos al formato esperado por el CategorySelector
+    const categoriasMapeadas = (data || []).map(cat => ({
+      ...cat,
+      parent_id: cat.categoria_padre_id,
+      // Mapear subcategorías a la propiedad 'subcategories' que espera el componente
+      subcategories: (cat.subcategorias || []).map(sub => ({
+        ...sub,
+        parent_id: sub.categoria_padre_id,
+        // Mapear sub-subcategorías si existen
+        subcategories: sub.subcategorias || []
+      }))
+    }));
 
     if (error) {
       console.error('Error al cargar categorías:', error);
