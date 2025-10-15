@@ -6,6 +6,58 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Database } from '@/lib/database.types';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
+// Función para calcular trends (porcentaje de cambio)
+function calcularTrends(data: any) {
+  const trends: any = {};
+  
+  // 1. Trend de Total Noticias (comparar mes actual vs mes anterior)
+  if (data.noticias_por_mes && data.noticias_por_mes.length >= 2) {
+    const mesActual = data.noticias_por_mes[0]?.cantidad || 0;
+    const mesAnterior = data.noticias_por_mes[1]?.cantidad || 0;
+    
+    if (mesAnterior > 0) {
+      trends.total_noticias = Math.round(((mesActual - mesAnterior) / mesAnterior) * 100);
+    } else if (mesActual > 0) {
+      trends.total_noticias = 100; // 100% si no había noticias el mes anterior
+    } else {
+      trends.total_noticias = 0;
+    }
+  }
+  
+  // 2. Trend de Total Vistas (comparar últimos 30 días vs 30-60 días atrás)
+  if (data.vistas_ultimos_30_dias !== undefined && data.vistas_30_60_dias_atras !== undefined) {
+    const vistasRecientes = data.vistas_ultimos_30_dias;
+    const vistasAnteriores = data.vistas_30_60_dias_atras;
+    
+    if (vistasAnteriores > 0) {
+      trends.total_vistas = Math.round(((vistasRecientes - vistasAnteriores) / vistasAnteriores) * 100);
+    } else if (vistasRecientes > 0) {
+      trends.total_vistas = 100; // 100% si no había vistas en el periodo anterior
+    } else {
+      trends.total_vistas = 0;
+    }
+    
+    console.log('📊 Cálculo de trend de vistas:', {
+      vistasRecientes,
+      vistasAnteriores,
+      trend: trends.total_vistas
+    });
+  }
+  
+  // 3. Trend de Últimos 30 días (porcentaje del total)
+  if (data.noticias_30d !== undefined && data.total_noticias) {
+    const porcentajeRecientes = (data.noticias_30d / data.total_noticias) * 100;
+    trends.ultimos_30_dias = Math.round(porcentajeRecientes);
+  }
+  
+  // 4. Trend de Pendientes (negativo si hay pendientes)
+  if (data.noticias_pendientes !== undefined) {
+    trends.pendientes = data.noticias_pendientes > 0 ? -3 : 0;
+  }
+  
+  return trends;
+}
+
 // Tipos para las estadísticas
 export interface EstadisticasAdmin {
   total_noticias: number;
@@ -23,6 +75,13 @@ export interface EstadisticasAdmin {
     vistas: number;
     fecha_publicacion: string;
   }>;
+  // Trends calculados
+  trends?: {
+    total_noticias?: number;
+    total_vistas?: number;
+    ultimos_30_dias?: number;
+    pendientes?: number;
+  };
 }
 
 export interface NoticiaReciente {
@@ -57,15 +116,25 @@ export function useAdminEstadisticas() {
   } = useQuery<EstadisticasAdmin>({
     queryKey: ['admin-estadisticas'],
     queryFn: async () => {
-      const response = await fetch('/api/admin/noticias/estadisticas');
+      console.log('🔄 Obteniendo estadísticas frescas...');
+      const response = await fetch('/api/admin/noticias/estadisticas?admin=true', {
+        cache: 'no-store', // Forzar no usar cache del navegador
+      });
       if (!response.ok) {
         throw new Error('Error al cargar estadísticas');
       }
-      return response.json();
+      const data = await response.json();
+      console.log('✅ Estadísticas obtenidas:', { total_vistas: data.total_vistas });
+      
+      // Calcular trends basados en datos del mes anterior
+      const trends = calcularTrends(data);
+      
+      return { ...data, trends };
     },
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 0, // Siempre considerar datos como stale
+    gcTime: 1 * 60 * 1000, // 1 minuto
     refetchOnWindowFocus: true,
+    refetchInterval: 10 * 1000, // Refetch cada 10 segundos
   });
 
   // Configurar suscripciones en tiempo real

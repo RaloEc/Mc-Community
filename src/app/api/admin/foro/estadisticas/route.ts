@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/utils/supabase-server';
 
+// Configuración para deshabilitar cache de Next.js
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createServerClient();
@@ -40,6 +44,13 @@ export async function GET(request: NextRequest) {
     switch (tipo) {
       case 'generales':
         ({ data, error } = await supabase.rpc('get_estadisticas_generales_foro'));
+        if (!error && data) {
+          console.log('📊 Estadísticas generales del foro:', {
+            total_hilos: data.total_hilos,
+            total_vistas: data.total_vistas,
+            total_comentarios: data.total_comentarios
+          });
+        }
         break;
 
       case 'hilos-populares':
@@ -81,7 +92,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      }
+    });
   } catch (error) {
     console.error('Error en endpoint de estadísticas:', error);
     return NextResponse.json(

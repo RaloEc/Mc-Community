@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { createClient } from "@/lib/supabase/client";
 import { useNoticia } from "@/components/noticias/hooks/useNoticia";
@@ -41,6 +41,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
   const [cargandoAuth, setCargandoAuth] = useState(true);
   const [usuario, setUsuario] = useState<any>(null);
   const [esAdmin, setEsAdmin] = useState(false);
+  const hasCountedView = useRef(false);
 
   // Usar el hook personalizado para obtener la noticia
   const {
@@ -89,6 +90,44 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
 
     checkUsuario();
   }, []);
+
+  // Incrementar vistas de la noticia una sola vez cuando esté cargada
+  useEffect(() => {
+    const incrementarVista = async () => {
+      // Verificar si ya se incrementó en esta sesión
+      const sessionKey = `vista_contada_${params.id}`;
+      const yaContado = sessionStorage.getItem(sessionKey);
+      
+      if (hasCountedView.current || yaContado) {
+        console.log('⚠️ Vista ya contada para esta noticia en esta sesión');
+        return;
+      }
+      
+      try {
+        console.log('👁️ Incrementando vista para noticia:', params.id);
+        const supabase = createClient();
+        const { data, error } = await supabase.rpc('incrementar_vista_noticia', { 
+          noticia_id: params.id 
+        });
+        
+        if (error) {
+          console.error('❌ Error al incrementar vista:', error);
+          return;
+        }
+        
+        console.log('✅ Vista incrementada exitosamente. Nuevo total:', data);
+        hasCountedView.current = true;
+        sessionStorage.setItem(sessionKey, 'true');
+      } catch (e) {
+        console.error('❌ Error al incrementar vista de noticia:', e);
+      }
+    };
+
+    // Ejecutar tras montar con un pequeño delay para evitar doble ejecución
+    const timer = setTimeout(incrementarVista, 100);
+    
+    return () => clearTimeout(timer);
+  }, [params.id]);
 
   // Mostrar estado de carga
   if (isLoading) {

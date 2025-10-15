@@ -96,7 +96,7 @@ export default function InstallPWA() {
         
         <div className="pr-6">
           <h3 className="font-bold text-lg mb-2">
-            ¡Instala MC Community!
+            ¡Instala BitArena!
           </h3>
           <p className="text-sm text-white/90 mb-4">
             Instala nuestra aplicación para acceder más rápido y usar funciones sin conexión.

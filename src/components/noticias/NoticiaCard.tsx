@@ -140,14 +140,14 @@ const NoticiaCard = React.forwardRef<HTMLDivElement, NoticiaCardProps>(({
                     parent.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-primary/40');
                     const fallback = document.createElement('div');
                     fallback.className = 'absolute inset-0 flex items-center justify-center text-primary-foreground text-lg font-medium';
-                    fallback.textContent = 'MC Community';
+                    fallback.textContent = 'BitArena';
                     parent.appendChild(fallback);
                   }
                 }}
               />
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-primary-foreground text-lg font-medium">MC Community</span>
+                <span className="text-primary-foreground text-lg font-medium">BitArena</span>
               </div>
             )}
             

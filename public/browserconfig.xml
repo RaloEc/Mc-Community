@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<browserconfig>
+  <msapplication>
+    <tile>
+      <square70x70logo src="/icons/icon-70x70.png"/>
+      <square150x150logo src="/icons/icon-150x150.png"/>
+      <square310x310logo src="/icons/icon-310x310.png"/>
+      <TileColor>#3b82f6</TileColor>
+      <TileImage src="/icons/icon-144x144.png"/>
+    </tile>
+    <notification>
+      <polling-uri src="/api/notifications/check"/>
+      <polling-uri src="https://api.bitarena.com/notifications/check" />
+      <frequency>30</frequency>
+      <cycle>1</cycle>
+    </notification>
+  </msapplication>
+  <msapplication-tooltip>BitArena - Comunidad de Minecraft</msapplication-tooltip>
+  <msapplication-navbutton-hint>0</msapplication-navbutton-hint>
+  <msapplication-window>
+    <width>1200</width>
+    <height>800</height>
+    <minimized>false</minimized>
+  </msapplication-window>
+  <msapplication-task>
+    <action>https://bitarena.com</action>
+    <caption>BitArena Web</caption>
+    <icon-uri>/icons/icon-144x144.png</icon-uri>
+  </msapplication-task>
+</browserconfig>

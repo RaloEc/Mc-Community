@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
 import Providers from "@/components/Providers";
-import { createServerClient } from "@/utils/supabase-server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
+import type { CookieOptions } from "@supabase/ssr";
 import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import PWAManager from "@/components/pwa/PWAManager";
@@ -14,30 +17,30 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Minecraft Community",
+  title: "BitArena",
   description:
-    "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+    "La plataforma definitiva para la comunidad de Minecraft",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MC Community",
+    title: "BitArena",
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: "website",
-    siteName: "Minecraft Community",
-    title: "Minecraft Community",
+    siteName: "BitArena",
+    title: "BitArena",
     description:
-      "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+      "La plataforma definitiva para la comunidad de Minecraft",
   },
   twitter: {
     card: "summary",
-    title: "Minecraft Community",
+    title: "BitArena",
     description:
-      "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+      "La plataforma definitiva para la comunidad de Minecraft",
   },
   icons: {
     icon: [
@@ -48,12 +51,13 @@ export const metadata: Metadata = {
       { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 5,
-    userScalable: true,
-  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
 };
 
 // Script para prevenir FOUC (Flash of Unstyled Content)
@@ -172,7 +176,24 @@ export default async function RootLayout({
   let userColor = "#3b82f6"; // Color por defecto
 
   try {
-    const supabase = createServerClient();
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: CookieOptions) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: CookieOptions) {
+            cookieStore.set({ name, value: "", ...options, maxAge: 0 });
+          },
+        },
+      }
+    );
     const { data } = await supabase.auth.getSession();
     session = data.session;
 

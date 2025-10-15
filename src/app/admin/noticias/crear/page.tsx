@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ArrowLeft, Save, Image as ImageIcon, Upload } from 'lucide-react'
-import { ArbolCategorias } from '@/components/categorias/ArbolCategorias'
+import { CategorySelector, type NoticiaCategory } from '@/components/noticias/CategorySelector'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
@@ -78,61 +78,18 @@ function CrearNoticiaContent() {
   const [nombreUsuario, setNombreUsuario] = useState('Admin') // Valor predeterminado
   const router = useRouter()
   const { user, session, profile } = useAuth() // Usar el contexto de autenticación
-  
-  // Estado para controlar categorías expandidas
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
-  // Función para alternar la expansión de una categoría
-  const toggleCategory = (categoryId: string) => {
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId);
-      } else {
-        newSet.add(categoryId);
-      }
-      return newSet;
-    });
-  };
-  
-  // Función para verificar si una categoría tiene hijos
-  const hasChildren = (categoryId: string, categorias: Categoria[]) => {
-    return categorias.some(cat => cat.parent_id === categoryId);
-  };
-
-  // Función para manejar la selección de categorías y expansión
-  const handleSeleccionarCategoria = (field: any, categoriaId: string | number) => {
-    const id = categoriaId.toString();
-    const isSelected = field.value?.includes(id);
+  // Función para manejar la selección de categorías
+  const handleSeleccionarCategoria = (field: any, categoriaId: string) => {
+    const isSelected = field.value?.includes(categoriaId);
     
-    // Primero, verificar si la categoría tiene hijos para manejar la expansión
-    const findCategoria = (cats: Categoria[], targetId: string): Categoria | undefined => {
-      for (const cat of cats) {
-        if (cat.id.toString() === targetId) return cat;
-        if (cat.hijos?.length) {
-          const found = findCategoria(cat.hijos, targetId);
-          if (found) return found;
-        }
-      }
-      return undefined;
-    };
-    
-    const categoria = findCategoria(categorias, id);
-    const tieneHijos = categoria?.hijos && categoria.hijos.length > 0;
-    
-    // Si tiene hijos, manejar la expansión/colapso
-    if (tieneHijos) {
-      toggleCategory(id);
-    }
-    
-    // Luego manejar la selección/deselección
     if (isSelected) {
       // Si ya está seleccionada, la quitamos
-      const updatedCategories = field.value.filter((catId: string) => catId !== id);
+      const updatedCategories = field.value.filter((catId: string) => catId !== categoriaId);
       field.onChange(updatedCategories);
     } else if (field.value.length < 4) {
       // Si no está seleccionada y no hemos llegado al límite, la añadimos
-      field.onChange([...field.value, id]);
+      field.onChange([...field.value, categoriaId]);
     }
   };
 
@@ -580,98 +537,28 @@ function CrearNoticiaContent() {
                           {cargandoCategorias ? (
                             <div className="text-sm text-muted-foreground">Cargando categorías...</div>
                           ) : categorias.length > 0 ? (
-                            <>
-                              <div className="border rounded-md p-3 max-h-[300px] overflow-y-auto">
-                                <div className="flex justify-between mb-2">
-                                  <button
-                                    type="button"
-                                    className="text-xs text-blue-600 hover:text-blue-800"
-                                    onClick={() => {
-                                      // Obtener todas las categorías que tienen hijos
-                                      const categoriasConHijos = categorias
-                                        .filter(cat => cat.hijos && cat.hijos.length > 0)
-                                        .map(cat => cat.id.toString());
-                                      
-                                      // Si todas están expandidas, colapsar todas
-                                      if (categoriasConHijos.every(id => expandedCategories.has(id))) {
-                                        setExpandedCategories(new Set());
-                                      } else {
-                                        // Si alguna está colapsada, expandir todas
-                                        setExpandedCategories(new Set(categoriasConHijos));
-                                      }
-                                    }}
-                                  >
-                                    {categorias
-                                      .filter(cat => cat.hijos && cat.hijos.length > 0)
-                                      .every(cat => expandedCategories.has(cat.id.toString())) 
-                                      ? 'Colapsar todo' 
-                                      : 'Expandir todo'}
-                                  </button>
-                                </div>
-                                {/* Verificar si hay categorías antes de renderizar */}
-                                {categorias.length > 0 && (
-                                  <ArbolCategorias
-                                    categorias={categorias}
-                                    seleccionadas={field.value || []}
-                                    onSeleccionar={(id) => handleSeleccionarCategoria(field, id)}
-                                    expandirTodo={expandedCategories.size > 0}
-                                    className="max-h-64"
-                                    estiloVisual="arbol"
-                                    mostrarIconos={true}
-                                    colorPorNivel={true}
-                                  />
-                                )}
-                              </div>
-                            </>
+                            <div className="border rounded-md p-4 max-h-[400px] overflow-y-auto">
+                              <CategorySelector
+                                categories={categorias.map(cat => ({
+                                  id: cat.id,
+                                  nombre: cat.nombre,
+                                  color: cat.color || undefined,
+                                  descripcion: cat.descripcion || undefined,
+                                  subcategories: cat.hijos?.map(subcat => ({
+                                    id: subcat.id,
+                                    nombre: subcat.nombre,
+                                    color: subcat.color || undefined,
+                                    descripcion: subcat.descripcion || undefined,
+                                  })),
+                                }))}
+                                selectedCategoryIds={field.value || []}
+                                onSelectCategory={(id) => handleSeleccionarCategoria(field, id)}
+                                maxSelection={4}
+                                showSelectedBadges={true}
+                              />
+                            </div>
                           ) : (
                             <div className="text-sm text-muted-foreground">No hay categorías disponibles</div>
-                          )}
-                          {field.value.length > 0 && (
-                            <div className="mt-3 p-2 bg-muted/50 rounded-md">
-                              <p className="text-sm font-medium mb-2">Categorías seleccionadas:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {field.value.map((catId: string) => {
-                                  // Buscar la categoría por ID (función recursiva)
-                                  const findCategoria = (cats: Categoria[]): Categoria | undefined => {
-                                    for (const cat of cats) {
-                                      if (cat.id === catId) return cat;
-                                      if (cat.hijos?.length) {
-                                        const found = findCategoria(cat.hijos);
-                                        if (found) return found;
-                                      }
-                                    }
-                                    return undefined;
-                                  };
-                                  
-                                  const categoria = findCategoria(categorias);
-                                  
-                                  return categoria ? (
-                                    <div 
-                                      key={catId} 
-                                      className="flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded-md text-xs"
-                                    >
-                                      {categoria.nombre}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const updatedCategories = field.value.filter((id: string) => id !== catId);
-                                          field.onChange(updatedCategories);
-                                        }}
-                                        className="ml-1 hover:text-destructive focus:outline-none"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <line x1="18" y1="6" x2="6" y2="18"></line>
-                                          <line x1="6" y1="6" x2="18" y2="18"></line>
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  ) : null;
-                                })}
-                              </div>
-                            </div>
-                          )}
-                          {field.value.length >= 4 && (
-                            <p className="text-xs text-amber-500 mt-2">Has alcanzado el límite de 4 categorías</p>
                           )}
                         </div>
                       </FormControl>

@@ -110,7 +110,30 @@ const HtmlContentWithYoutube = React.memo(function HtmlContentWithYoutube({
       img.setAttribute("decoding", "async");
     });
     
-    return allImages.map((img) => img.src).filter((src) => src);
+    const pickBestSrc = (img: HTMLImageElement): string | null => {
+      // Preferir data-fullsrc / data-original / data-src si existen
+      const dataFull = img.getAttribute('data-fullsrc') || img.getAttribute('data-full') || img.getAttribute('data-original') || img.getAttribute('data-src');
+      if (dataFull) return dataFull;
+
+      // Si hay srcset, elegir el candidato con mayor ancho
+      const srcset = img.getAttribute('srcset');
+      if (srcset) {
+        const candidates = srcset.split(',').map(s => s.trim()).map(part => {
+          const [url, size] = part.split(' ').map(p => p.trim());
+          const width = size && size.endsWith('w') ? parseInt(size) : (size && size.endsWith('x') ? parseFloat(size) * 1000 : 0);
+          return { url, width: isNaN(width) ? 0 : width };
+        });
+        const best = candidates.sort((a, b) => b.width - a.width)[0];
+        if (best?.url) return best.url;
+      }
+
+      // Fallback al src normal
+      return img.getAttribute('src');
+    };
+
+    return allImages
+      .map((img) => pickBestSrc(img))
+      .filter((src): src is string => Boolean(src));
   };
 
   // Extraer el iframe de YouTube del HTML
@@ -300,7 +323,8 @@ function HiloCard(props: HiloCardProps) {
     const target = e.target as HTMLElement;
     if (
       target.closest("iframe") ||
-      target.closest(".youtube-embed-container")
+      target.closest(".youtube-embed-container") ||
+      target.closest(".image-gallery")
     ) {
       e.preventDefault();
       e.stopPropagation();

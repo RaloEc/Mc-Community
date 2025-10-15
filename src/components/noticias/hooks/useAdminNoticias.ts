@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export interface NoticiaAdmin {
   id: string
@@ -173,9 +174,12 @@ export function usePrefetchAdminNoticias(
   }, [paginaActual, limite, filtros, totalPaginas, queryClient])
 }
 
-// Hook para obtener estadísticas
+// Hook para obtener estadísticas en tiempo real
 export function useEstadisticasNoticias() {
-  return useQuery<EstadisticasNoticias>({
+  const queryClient = useQueryClient()
+  const [realtimeEnabled, setRealtimeEnabled] = useState(false)
+
+  const query = useQuery<EstadisticasNoticias>({
     queryKey: ['admin-noticias-estadisticas'],
     queryFn: async () => {
       const respuesta = await fetch('/api/admin/noticias/estadisticas?admin=true')
@@ -186,9 +190,61 @@ export function useEstadisticasNoticias() {
 
       return respuesta.json()
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    staleTime: 30 * 1000, // 30 segundos para tiempo real
+    gcTime: 5 * 60 * 1000, // 5 minutos
+    refetchOnWindowFocus: true,
   })
+
+  // Configurar Supabase Realtime para escuchar cambios en noticias
+  useEffect(() => {
+    const supabase = createClient()
+    
+    console.log('🔴 Configurando Realtime para estadísticas de noticias...')
+
+    // Suscribirse a cambios en la tabla noticias
+    const channel = supabase
+      .channel('admin-noticias-estadisticas-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'noticias',
+        },
+        (payload) => {
+          console.log('🔴 Cambio detectado en noticias:', payload.eventType)
+          
+          // Invalidar y refetch de estadísticas cuando hay cambios
+          queryClient.invalidateQueries({ queryKey: ['admin-noticias-estadisticas'] })
+          
+          // También invalidar la lista de noticias
+          queryClient.invalidateQueries({ queryKey: ['admin-noticias'] })
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime conectado para estadísticas de noticias')
+          setRealtimeEnabled(true)
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Error en canal Realtime de estadísticas')
+          setRealtimeEnabled(false)
+        } else if (status === 'TIMED_OUT') {
+          console.warn('⏱️ Timeout en conexión Realtime de estadísticas')
+          setRealtimeEnabled(false)
+        }
+      })
+
+    // Cleanup al desmontar
+    return () => {
+      console.log('🔴 Desconectando Realtime de estadísticas...')
+      supabase.removeChannel(channel)
+    }
+  }, [queryClient])
+
+  return {
+    ...query,
+    realtimeEnabled,
+  }
 }
 
 // Hook para eliminar noticia

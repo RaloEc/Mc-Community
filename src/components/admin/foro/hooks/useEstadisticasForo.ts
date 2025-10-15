@@ -100,7 +100,10 @@ export function useEstadisticasGenerales() {
   return useQuery({
     queryKey: ESTADISTICAS_FORO_KEYS.generales(),
     queryFn: async (): Promise<EstadisticasGenerales> => {
-      const response = await fetch('/api/admin/foro/estadisticas?tipo=generales');
+      console.log('🔄 Obteniendo estadísticas generales del foro...');
+      const response = await fetch('/api/admin/foro/estadisticas?tipo=generales', {
+        cache: 'no-store', // Forzar no usar cache del navegador
+      });
       
       if (!response.ok) {
         const error = await response.json();
@@ -109,12 +112,18 @@ export function useEstadisticasGenerales() {
       }
       
       const data = await response.json();
-      return data[0] as EstadisticasGenerales;
+      const estadisticas = data[0] as EstadisticasGenerales;
+      console.log('✅ Estadísticas del foro obtenidas:', {
+        total_hilos: estadisticas.total_hilos,
+        total_vistas: estadisticas.total_vistas,
+        total_comentarios: estadisticas.total_comentarios
+      });
+      return estadisticas;
     },
-    staleTime: 1000 * 60 * 2, // 2 minutos
-    gcTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 0, // Siempre considerar datos como stale
+    gcTime: 1000 * 60, // 1 minuto
     refetchOnWindowFocus: true,
-    refetchInterval: 1000 * 60 * 5, // Actualizar cada 5 minutos
+    refetchInterval: 1000 * 10, // Actualizar cada 10 segundos
   });
 }
 

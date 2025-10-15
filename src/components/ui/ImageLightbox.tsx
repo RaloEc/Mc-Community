@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageLightboxProps {
@@ -17,6 +18,7 @@ export function ImageLightbox({
   alt = "Imagen",
 }: ImageLightboxProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const [mounted, setMounted] = useState(false);
   
   // Cerrar con la tecla Escape
   useEffect(() => {
@@ -36,6 +38,11 @@ export function ImageLightbox({
       document.body.style.overflow = "";
     };
   }, [onClose]);
+
+  // Asegurar portal solo en cliente
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
   const next = () => {
     setCurrentIndex((prevIndex) => 
@@ -49,9 +56,9 @@ export function ImageLightbox({
     );
   };
   
-  return (
+  const content = (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
       onClick={onClose}
     >
       {/* Botón de cierre */}
@@ -64,13 +71,13 @@ export function ImageLightbox({
       
       {/* Imagen actual */}
       <div 
-        className="relative max-w-[90vw] max-h-[90vh]"
+        className="relative w-[98vw] h-[90vh] max-w-[98vw] max-h-[98vh]"
         onClick={(e) => e.stopPropagation()}
       >
         <img 
           src={images[currentIndex]} 
           alt={`${alt} ${currentIndex + 1}`}
-          className="max-w-full max-h-[90vh] object-contain rounded-md shadow-xl"
+          className="block w-full h-full object-contain rounded-md shadow-xl"
           style={{ aspectRatio: 'auto' }}
         />
         
@@ -106,4 +113,7 @@ export function ImageLightbox({
       </div>
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(content, document.body);
 }

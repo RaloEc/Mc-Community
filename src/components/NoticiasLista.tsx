@@ -493,13 +493,13 @@ export default function NoticiasLista({
                       e.currentTarget.parentElement?.classList.add('bg-gradient-to-br', 'from-primary/20', 'to-primary/40');
                       const fallback = document.createElement('span');
                       fallback.className = 'text-primary-foreground text-lg font-medium absolute inset-0 flex items-center justify-center';
-                      fallback.textContent = 'MC Community';
+                      fallback.textContent = 'BitArena';
                       e.currentTarget.parentElement?.appendChild(fallback);
                     }}
                   />
                 ) : (
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                    <span className="text-primary-foreground text-lg font-medium">MC Community</span>
+                    <span className="text-primary-foreground text-lg font-medium">BitArena</span>
                   </div>
                 )}
               </div>

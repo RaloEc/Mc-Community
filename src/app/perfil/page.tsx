@@ -46,21 +46,16 @@ interface PerfilCompleto {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const {
-    user,
-    session,
-    profile,
-    loading: authLoading,
-    refreshAuth,
-    refreshProfile,
-  } = useAuth();
+  const { user, profile, signOut, loading: authLoading, session, refreshProfile, refreshAuth } = useAuth();
   const { toast } = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setSaving] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [perfil, setPerfil] = useState<PerfilCompleto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [estadisticas, setEstadisticas] = useState({
     noticias: 0,
     comentarios: 0,
@@ -304,13 +299,43 @@ export default function PerfilPage() {
   };
 
   const handleSignOut = async () => {
+    if (isSigningOut) return; // Evitar múltiples clics
+    
+    console.log('[Perfil] Iniciando proceso de cierre de sesión...');
+    setIsSigningOut(true);
+    
     try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      router.push("/");
+      // 1. Intentar con el signOut del contexto de autenticación
+      console.log('[Perfil] Intentando cierre de sesión con el contexto de autenticación...');
+      await signOut();
+      console.log('[Perfil] Cierre de sesión exitoso con el contexto');
+      
+      // 2. Redirigir y forzar recarga para limpiar todo el estado
+      console.log('[Perfil] Redirigiendo a la página principal...');
+      window.location.href = '/';
+      return; // Salir de la función para evitar ejecutar el código restante
+      
     } catch (error) {
-      console.error("Error al cerrar sesión:", error);
+      console.error('[Perfil] Error en cierre de sesión con contexto:', error);
+      
+      // 3. Si falla, intentar con una instancia directa de Supabase
+      try {
+        console.log('[Perfil] Intentando cierre de sesión con instancia directa...');
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        console.log('[Perfil] Cierre de sesión exitoso con instancia directa');
+      } catch (innerError) {
+        console.error('[Perfil] Error en cierre de sesión con instancia directa:', innerError);
+      } finally {
+        // 4. En cualquier caso, forzar recarga para asegurar limpieza
+        console.log('[Perfil] Forzando recarga de la página...');
+        window.location.href = '/';
+      }
+    } finally {
+      // 5. Asegurarse de que el estado se limpie
+      console.log('[Perfil] Limpiando estado de carga...');
+      setIsSigningOut(false);
     }
   };
 
@@ -402,9 +427,11 @@ export default function PerfilPage() {
                   variant="light"
                   startContent={<LogOut className="w-4 h-4" />}
                   onPress={handleSignOut}
+                  isLoading={isSigningOut}
+                  isDisabled={isSigningOut}
                   className="w-full"
                 >
-                  Cerrar Sesión
+                  {isSigningOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
                 </Button>
               </CardBody>
             </Card>
@@ -612,11 +639,11 @@ export default function PerfilPage() {
               color="danger"
               variant="light"
               onPress={onClose}
-              disabled={saving}
+              disabled={isSaving}
             >
               Cancelar
             </Button>
-            <Button color="primary" onPress={handleSave} isLoading={saving}>
+            <Button color="primary" onPress={handleSave} isLoading={isSaving}>
               Guardar Cambios
             </Button>
           </ModalFooter>

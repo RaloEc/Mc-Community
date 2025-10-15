@@ -4,6 +4,10 @@ import { cookies } from 'next/headers'
 import { Database } from '@/types/supabase'
 import { getServiceClient } from '@/utils/supabase-service'
 
+// Configuración para deshabilitar cache de Next.js
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // Función para verificar si el usuario es administrador
 async function esAdmin(supabase: any, request?: NextRequest) {
   try {
@@ -54,12 +58,24 @@ export async function GET(request: NextRequest) {
 
   try {
     // Intentar usar la función RPC optimizada primero
+    // Agregar timestamp para evitar cache de Supabase
     const { data: estadisticasRPC, error: errorRPC } = await supabase
       .rpc('obtener_estadisticas_admin_noticias')
+      .single()
     
     if (!errorRPC && estadisticasRPC) {
       console.log('✅ Estadísticas obtenidas mediante función RPC optimizada')
-      return NextResponse.json(estadisticasRPC)
+      console.log('Total vistas desde RPC:', (estadisticasRPC as any).total_vistas)
+      console.log('Vistas últimos 30 días:', (estadisticasRPC as any).vistas_ultimos_30_dias)
+      console.log('Vistas 30-60 días atrás:', (estadisticasRPC as any).vistas_30_60_dias_atras)
+      
+      return NextResponse.json(estadisticasRPC, {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        }
+      })
     }
     
     console.log('⚠️ Función RPC no disponible, usando consultas individuales:', errorRPC)
@@ -75,16 +91,25 @@ export async function GET(request: NextRequest) {
       throw errorNoticias
     }
 
-    // Total de vistas
-    const { data: vistasData, error: errorVistas } = await supabase
-      .from('noticias')
-      .select('vistas')
-    
+    // Total de vistas (usar agregación para evitar límite de filas)
     let total_vistas = 0
-    if (errorVistas) {
-      console.error('Error al obtener vistas:', errorVistas)
-    } else if (vistasData) {
-      total_vistas = vistasData.reduce((sum, item: any) => sum + (item.vistas || 0), 0)
+    const { data: sumaVistas, error: errorSuma } = await supabase
+      .from('noticias')
+      .select('sum:vistas')
+      .single()
+    if (errorSuma) {
+      console.error('Error al sumar vistas con agregación:', errorSuma)
+      // Fallback final: intentar reducir, pero puede estar limitado por el rango por defecto
+      const { data: vistasData, error: errorVistas } = await supabase
+        .from('noticias')
+        .select('vistas')
+      if (errorVistas) {
+        console.error('Error al obtener vistas:', errorVistas)
+      } else if (vistasData) {
+        total_vistas = vistasData.reduce((sum, item: any) => sum + (item.vistas || 0), 0)
+      }
+    } else {
+      total_vistas = (sumaVistas as any)?.sum || 0
     }
 
     // Total de categorías

@@ -44,6 +44,7 @@ export const useHeaderLogic = () => {
   const [foroCategorias, setForoCategorias] = useState<ForoCategoria[]>([]);
   const [foroMobileOpen, setForoMobileOpen] = useState(false);
   const [noticiasMobileOpen, setNoticiasMobileOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   // Referencias
   const adminMenuRef = useRef<HTMLLIElement | null>(null);
@@ -128,41 +129,42 @@ export const useHeaderLogic = () => {
   // Función para cerrar sesión
   const handleLogout = async () => {
     console.log("[Header] handleLogout: inicio");
-    try {
-      await signOut();
-      console.log("[Header] handleLogout: signOut() del contexto OK");
-      
-      // Esperar un momento para que React Query actualice el estado
-      await new Promise(resolve => setTimeout(resolve, 100));
-      console.log("[Header] handleLogout: esperando actualización de estado...");
-      
-    } catch (e) {
-      console.warn(
-        "[Header] handleLogout: error en signOut() del contexto, intento fallback directo",
-        e
-      );
-      try {
-        const sb = createClient();
-        await sb.auth.signOut();
-        console.log("[Header] handleLogout: fallback signOut OK");
-      } catch (e2) {
-        console.error("[Header] handleLogout: fallback signOut falló", e2);
-      }
-    }
     
-    // Cerrar menús antes de redirigir
+    // 1. Activar estado de carga para feedback visual inmediato
+    setIsLoggingOut(true);
+    
+    // 2. Cerrar menús inmediatamente
     setIsUserMenuOpen(false);
     setIsMenuOpen(false);
     
     try {
-      // Forzar recarga completa de la página para asegurar que se actualice todo
+      // 3. signOut() hace actualización optimista: queryClient.setQueryData(null)
+      //    La UI reacciona INMEDIATAMENTE aquí
+      await signOut();
+      console.log("[Header] handleLogout: signOut() completado");
+      
+      // 4. Navegar a home (no necesitamos setIsLoggingOut(false) porque navegamos)
       console.log("[Header] handleLogout: redirigiendo a home...");
-      window.location.href = "/";
+      router.push("/");
+      router.refresh(); // Refresca Server Components si es necesario
+      
     } catch (e) {
-      console.error("[Header] handleLogout: error en redirección", e);
+      console.error("[Header] handleLogout: error en signOut()", e);
+      
+      // Fallback: intentar signOut directo
+      try {
+        const sb = createClient();
+        await sb.auth.signOut();
+        console.log("[Header] handleLogout: fallback signOut OK");
+        router.push("/");
+        router.refresh();
+      } catch (e2) {
+        console.error("[Header] handleLogout: fallback signOut falló", e2);
+        // Último recurso: recarga completa
+        window.location.href = "/";
+      }
     }
-    
-    console.log("[Header] handleLogout: fin");
+    // No hay finally con setIsLoggingOut(false) porque navegamos fuera de la página
   };
 
   // Función para cerrar todos los menús
@@ -231,6 +233,7 @@ export const useHeaderLogic = () => {
     setForoMobileOpen,
     noticiasMobileOpen,
     setNoticiasMobileOpen,
+    isLoggingOut,
     
     // Referencias
     adminMenuRef,

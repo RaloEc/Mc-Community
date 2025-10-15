@@ -22,6 +22,7 @@ interface HeaderRightControlsProps {
   userMenuRef: React.RefObject<HTMLDivElement>;
   handleLogout: () => void;
   openAuthModal: (mode: "login" | "register") => void;
+  isLoggingOut: boolean;
 }
 
 export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
@@ -36,6 +37,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
   userMenuRef,
   handleLogout,
   openAuthModal,
+  isLoggingOut,
 }) => {
   return (
     <div className="flex items-center gap-1 md:gap-3">
@@ -110,6 +112,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
             profile={profile}
             userButtonRef={userButtonRef}
             userMenuRef={userMenuRef}
+            isLoggingOut={isLoggingOut}
           />
         ) : (
           <div className="flex items-center gap-2">

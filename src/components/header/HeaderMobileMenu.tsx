@@ -13,6 +13,7 @@ import {
   Plus,
   Search,
   ChevronDown,
+  Loader2,
 } from "lucide-react";
 import { ForoCategoria } from "./useHeaderLogic";
 
@@ -38,6 +39,7 @@ interface HeaderMobileMenuProps {
   expandedCategories: Record<string, boolean>;
   setExpandedCategories: (value: React.SetStateAction<Record<string, boolean>>) => void;
   isAdmin: boolean;
+  isLoggingOut?: boolean;
 }
 
 export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
@@ -58,6 +60,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   expandedCategories,
   setExpandedCategories,
   isAdmin,
+  isLoggingOut = false,
 }) => {
   const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
   
@@ -487,9 +490,15 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
               <div className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center justify-center gap-2 p-2 rounded-md w-full text-center text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  disabled={isLoggingOut}
+                  className="flex items-center justify-center gap-2 p-2 rounded-md w-full text-center text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <LogOut size={18} /> Cerrar Sesión
+                  {isLoggingOut ? (
+                    <Loader2 size={18} className="animate-spin" />
+                  ) : (
+                    <LogOut size={18} />
+                  )}
+                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
                 </button>
               </div>
             )}

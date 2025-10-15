@@ -129,15 +129,16 @@ export function AuthModal({ isOpen, onClose, defaultMode = 'login', redirectTo }
       }
 
       if (data.user) {
-        await refreshAuth()
+        // Refrescar auth inmediatamente (sin esperar)
+        refreshAuth()
+        
         setMessage('¡Inicio de sesión exitoso!')
         
-        setTimeout(() => {
-          handleClose()
-          // Usar la URL guardada para redirección, o el redirectTo proporcionado, o la página principal
-          const targetRedirect = redirectTo || getRedirectUrl('/')
-          router.push(targetRedirect)
-        }, 1000)
+        // Cerrar modal y redirigir inmediatamente
+        handleClose()
+        const targetRedirect = redirectTo || getRedirectUrl('/')
+        router.push(targetRedirect)
+        router.refresh() // Forzar refresh de la página
       }
     } catch (error) {
       console.error('Error en login:', error)

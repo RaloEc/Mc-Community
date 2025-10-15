@@ -1,12 +1,16 @@
 {
   "name": "BitArena",
   "short_name": "BitArena",
-  "description": "La plataforma definitiva para la comunidad de Minecraft",
-  "start_url": "/",
+  "description": "La comunidad de Minecraft más completa para jugadores competitivos, técnicos y casuales",
+  "start_url": "/?source=pwa",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#0f172a",
   "theme_color": "#3b82f6",
   "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "categories": ["games", "social", "entertainment"],
+  "lang": "es-ES",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -57,12 +61,12 @@
       "purpose": "maskable any"
     }
   ],
-  "categories": ["games", "social", "entertainment"],
   "screenshots": [
     {
       "src": "/screenshots/screenshot-1.png",
       "sizes": "1280x720",
-      "type": "image/png"
+      "type": "image/png",
+      "form_factor": "wide"
     }
   ],
   "shortcuts": [
@@ -80,5 +84,8 @@
       "url": "/noticias",
       "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
     }
-  ]
+  ],
+  "related_applications": [],
+  "scope": "/",
+  "id": "/"
 }

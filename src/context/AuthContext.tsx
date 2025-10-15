@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useQueryClient } from '@tanstack/react-query'
 import { useAuthData, authKeys } from '@/hooks/useAuthQuery'
@@ -21,6 +22,7 @@ interface AuthState {
   session: Session | null
   loading: boolean
   profile: Profile | null
+  supabase: ReturnType<typeof createClient>
   signOut: () => Promise<void>
   refreshAuth: () => Promise<void>
   refreshProfile: () => Promise<void>
@@ -31,6 +33,7 @@ const defaultAuthState: AuthState = {
   session: null,
   loading: true,
   profile: null,
+  supabase: createClient(),
   signOut: async () => {},
   refreshAuth: async () => {},
   refreshProfile: async () => {}
@@ -45,6 +48,7 @@ export function AuthProvider({
   children: React.ReactNode
   session?: Session | null 
 }) {
+  const router = useRouter()
   const supabase = React.useMemo(() => createClient(), [])
   const queryClient = useQueryClient()
   
@@ -68,14 +72,66 @@ export function AuthProvider({
         userId: newSession?.user?.id,
       })
       
-      // Invalidar queries para forzar recarga con el nuevo estado
-      await queryClient.invalidateQueries({ queryKey: authKeys.session })
-      
-      // Si hay un nuevo usuario, invalidar su perfil también
-      if (newSession?.user?.id) {
-        await queryClient.invalidateQueries({ 
-          queryKey: authKeys.profile(newSession.user.id) 
+      // Manejar eventos de autenticación de forma optimizada
+      if (event === 'SIGNED_OUT') {
+        // En logout, limpiar todo inmediatamente
+        console.log('[AuthProvider] SIGNED_OUT: Limpiando caché de autenticación')
+        queryClient.setQueryData(authKeys.session, null)
+        queryClient.removeQueries({ 
+          queryKey: ['auth'],
+          exact: false 
         })
+        console.log('[AuthProvider] Estado de auth limpiado inmediatamente')
+        
+      } else if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        // Restauración de sesión o refresh de token: refetch inmediato
+        console.log(`[AuthProvider] ${event}: Sincronizando sesión y perfil`)
+        
+        // 1. Refetch de la sesión
+        await queryClient.refetchQueries({ 
+          queryKey: authKeys.session,
+          type: 'active'
+        })
+        
+        // 2. Si hay sesión, refetch del perfil para sincronizar datos
+        if (newSession?.user?.id) {
+          console.log(`[AuthProvider] Refetching perfil para usuario: ${newSession.user.id}`)
+          await queryClient.refetchQueries({ 
+            queryKey: authKeys.profile(newSession.user.id),
+            type: 'active'
+          })
+        }
+        
+        console.log('[AuthProvider] Sesión y perfil sincronizados correctamente')
+        
+      } else if (event === 'SIGNED_IN') {
+        // Login nuevo: refetch inmediato
+        console.log('[AuthProvider] SIGNED_IN: Actualizando sesión y perfil')
+        
+        await queryClient.refetchQueries({ 
+          queryKey: authKeys.session,
+          type: 'active'
+        })
+        
+        if (newSession?.user?.id) {
+          await queryClient.refetchQueries({ 
+            queryKey: authKeys.profile(newSession.user.id),
+            type: 'active'
+          })
+        }
+        
+        console.log('[AuthProvider] Login completado, datos actualizados')
+        
+      } else {
+        // Para otros eventos (USER_UPDATED, PASSWORD_RECOVERY, etc.)
+        console.log(`[AuthProvider] ${event}: Invalidando queries de autenticación`)
+        await queryClient.invalidateQueries({ queryKey: authKeys.session })
+        
+        if (newSession?.user?.id) {
+          await queryClient.invalidateQueries({ 
+            queryKey: authKeys.profile(newSession.user.id) 
+          })
+        }
       }
     })
 
@@ -88,23 +144,23 @@ export function AuthProvider({
   // Funciones de utilidad
   const signOut = React.useCallback(async () => {
     console.log('[AuthProvider] Cerrando sesión...')
-    await supabase.auth.signOut()
     
-    // Forzar actualización inmediata de las queries
-    console.log('[AuthProvider] Forzando actualización de queries...')
-    await queryClient.invalidateQueries({ 
-      queryKey: authKeys.session,
-      refetchType: 'active' // Forzar refetch inmediato
+    // 1. Limpiar TODA la caché de React Query inmediatamente
+    queryClient.clear()
+    console.log('[AuthProvider] Caché de React Query limpiada completamente')
+    
+    // 2. Redirigir inmediatamente a la página principal (UX optimista)
+    router.push('/')
+    console.log('[AuthProvider] Redirigiendo a la página principal...')
+    
+    // 3. Ejecutar signOut de Supabase en segundo plano (no bloqueante)
+    supabase.auth.signOut().then(() => {
+      console.log('[AuthProvider] Sesión cerrada exitosamente en Supabase')
+    }).catch((error) => {
+      console.error('[AuthProvider] Error al cerrar sesión en Supabase:', error)
+      // Aunque falle, el usuario ya fue redirigido y la caché limpiada
     })
-    
-    // Limpiar todas las queries de perfil
-    queryClient.removeQueries({ 
-      queryKey: ['auth', 'profile'],
-      exact: false 
-    })
-    
-    console.log('[AuthProvider] Queries actualizadas')
-  }, [supabase, queryClient])
+  }, [router, supabase, queryClient])
 
   const refreshAuth = React.useCallback(async () => {
     console.log('[AuthProvider] Refrescando autenticación...')
@@ -121,10 +177,11 @@ export function AuthProvider({
     session,
     loading: isLoading,
     profile,
+    supabase,
     signOut,
     refreshAuth,
     refreshProfile,
-  }), [user, session, isLoading, profile, signOut, refreshAuth, refreshProfile])
+  }), [user, session, isLoading, profile, supabase, signOut, refreshAuth, refreshProfile])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

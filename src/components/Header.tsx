@@ -31,6 +31,7 @@ const Header: React.FC = () => {
     setNoticiasMobileOpen,
     expandedCategories,
     setExpandedCategories,
+    isLoggingOut,
     
     // Referencias
     adminMenuRef,
@@ -74,7 +75,7 @@ const Header: React.FC = () => {
             >
               <img
                 src="/images/logo.png"
-                alt="MC Community Logo"
+                alt="BitArena Logo"
                 className="h-8 w-8"
               />
               <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
@@ -109,6 +110,7 @@ const Header: React.FC = () => {
             userMenuRef={userMenuRef}
             handleLogout={handleLogout}
             openAuthModal={openAuthModal}
+            isLoggingOut={isLoggingOut}
           />
         </div>
       </div>
@@ -132,6 +134,7 @@ const Header: React.FC = () => {
         expandedCategories={expandedCategories}
         setExpandedCategories={setExpandedCategories}
         isAdmin={isAdmin}
+        isLoggingOut={isLoggingOut}
       />
 
       {/* Auth Modal */}

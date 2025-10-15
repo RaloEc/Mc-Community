@@ -307,7 +307,7 @@ export default function BuscarPage() {
           <div className="max-w-2xl mx-auto text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Buscar en MC Community
+              Buscar en BitArena
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Encuentra noticias, hilos del foro y más contenido de la comunidad
