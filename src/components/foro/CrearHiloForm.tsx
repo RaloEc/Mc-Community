@@ -32,26 +32,24 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const router = useRouter();
   const { userColor } = useUserTheme();
   
-  // Convertir categorías al formato esperado por CategorySelector
+  // Convertir categorías al formato esperado por CategorySelector (recursivo para 3 niveles)
+  const formatCategory = (cat: CategoriaForo): Category => ({
+    id: cat.id,
+    nombre: cat.nombre,
+    color: cat.color || undefined,
+    subcategories: cat.subcategorias?.map(formatCategory),
+  });
+
   const formattedCategories: Category[] = useMemo(() => {
-    return categorias.map(cat => ({
-      id: cat.id,
-      nombre: cat.nombre,
-      color: cat.color || undefined,
-      subcategories: cat.subcategorias?.map(subcat => ({
-        id: subcat.id,
-        nombre: subcat.nombre,
-        color: subcat.color || undefined,
-      })),
-    }));
+    return categorias.map(formatCategory);
   }, [categorias]);
 
-  // Función para encontrar una categoría por ID (incluyendo subcategorías)
-  const findCategoryById = (id: string): Category | null => {
-    for (const cat of formattedCategories) {
+  // Función recursiva para encontrar una categoría por ID (soporta 3 niveles)
+  const findCategoryById = (id: string, categories: Category[] = formattedCategories): Category | null => {
+    for (const cat of categories) {
       if (cat.id === id) return cat;
       if (cat.subcategories) {
-        const found = cat.subcategories.find(sub => sub.id === id);
+        const found = findCategoryById(id, cat.subcategories);
         if (found) return found;
       }
     }

@@ -2,9 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Reserva espacio para la barra de scroll para evitar saltos de layout */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Animaciones personalizadas para comentarios */
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -144,7 +150,6 @@ body {
   transform-origin: top center;
 }
 
-
 /* Estilos de Swapy eliminados */
 
 /* Definición de variables y estilos base */
@@ -258,7 +263,6 @@ body {
   position: relative;
   transition: all 0.1s ease;
 }
-
 
 /* Estado del servidor (online/offline) con borde superior */
 .servidor-card.online .border-t-status {
@@ -425,7 +429,6 @@ body {
   transition: all 0.1s ease;
 }
 
-
 .card-hover-effect:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
@@ -461,7 +464,6 @@ body {
   transition: all 0.2s ease;
 }
 
-
 .button-hover-effect:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -481,7 +483,6 @@ body {
   border-radius: 9999px;
   transition: all 0.1s ease;
 }
-
 
 .icon-container:hover {
   transform: scale(1.1);
@@ -530,7 +531,6 @@ select {
   overflow: hidden;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-
 
 /* Estilos específicos para el modo oscuro */
 .dark .tiptap-container {
@@ -666,7 +666,6 @@ select {
   transition: background-color 0.2s ease, color 0.2s ease,
     border-color 0.2s ease;
 }
-
 
 /* Estilos para encabezados en el editor */
 .tiptap h1 {
@@ -1213,4 +1212,8 @@ body.menu-open header {
 .animate-gradient {
   background-size: 200% 200%;
   animation: gradient 15s ease infinite;
+}
+
+body[data-scroll-locked] {
+  margin-right: 0 !important;
 }

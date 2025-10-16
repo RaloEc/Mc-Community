@@ -38,22 +38,15 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useEstadisticasCategorias } from './hooks/useEstadisticasForo';
+import { useValidatedCategories, type CategoriaForo } from '@/hooks/useValidatedCategories';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FolderOpen, Plus, Edit, Trash2, GripVertical, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Categoria {
-  id: string;
-  nombre: string;
-  slug: string;
-  descripcion: string;
-  color: string | null;
-  icono: string | null;
-  parent_id: string | null;
-  nivel: number;
-  es_activa: boolean;
+// Usar el tipo validado del hook
+type Categoria = CategoriaForo & {
   orden: number;
   total_hilos: number;
 }
@@ -64,7 +57,7 @@ interface CategoriaFormData {
   descripcion: string;
   color: string;
   icono: string;
-  parent_id: string;
+  parent_id: string | null;
   es_activa: boolean;
 }
 
@@ -149,7 +142,8 @@ function CategoriaItem({ categoria, onEdit, onDelete }: {
 }
 
 export default function GestorCategorias() {
-  const { data: categoriasData, refetch } = useEstadisticasCategorias();
+  // Usar hook validado con Zod
+  const { data: categoriasData, refetch, isLoading, error } = useValidatedCategories();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [categoriaEditando, setCategoriaEditando] = useState<Categoria | null>(null);
@@ -160,7 +154,7 @@ export default function GestorCategorias() {
     descripcion: '',
     color: '#3b82f6',
     icono: '',
-    parent_id: '',
+    parent_id: null,
     es_activa: true,
   });
 
@@ -169,11 +163,20 @@ export default function GestorCategorias() {
     if (categoriasData) {
       const categoriasConOrden = categoriasData.map((cat, index) => ({
         ...cat,
-        orden: index,
+        orden: cat.orden ?? index,
+        total_hilos: cat.total_hilos ?? 0,
       }));
       setCategorias(categoriasConOrden);
     }
   }, [categoriasData]);
+
+  // Mostrar error si falla la carga
+  React.useEffect(() => {
+    if (error) {
+      console.error('Error al cargar categorías:', error)
+      toast.error('Error al cargar las categorías del foro')
+    }
+  }, [error]);
 
   // Sensores para drag & drop
   const sensors = useSensors(
@@ -233,7 +236,7 @@ export default function GestorCategorias() {
         descripcion: categoria.descripcion,
         color: categoria.color || '#3b82f6',
         icono: categoria.icono || '',
-        parent_id: categoria.parent_id || '',
+        parent_id: categoria.parent_id || null,
         es_activa: categoria.es_activa,
       });
     } else {
@@ -244,7 +247,7 @@ export default function GestorCategorias() {
         descripcion: '',
         color: '#3b82f6',
         icono: '',
-        parent_id: '',
+        parent_id: null,
         es_activa: true,
       });
     }
@@ -262,7 +265,7 @@ export default function GestorCategorias() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          nivel: formData.parent_id ? 2 : 1,
+          nivel: nivelCalculado, // Usar nivel calculado automáticamente
           orden: categorias.length,
         }),
       });
@@ -312,7 +315,39 @@ export default function GestorCategorias() {
       .replace(/(^-|-$)/g, '');
   };
 
-  const categoriasPrincipales = categorias.filter(c => c.nivel === 1);
+  // Filtrar categorías que pueden ser padres (nivel 1 o 2)
+  // Una categoría de nivel 3 no puede tener hijas
+  const categoriasPadrePosibles = React.useMemo(() => {
+    return categorias.filter(c => {
+      // Excluir la categoría que se está editando para evitar auto-referencia
+      if (categoriaEditando && c.id === categoriaEditando.id) {
+        return false;
+      }
+      // Solo nivel 1 y 2 pueden ser padres (nivel 3 es el máximo)
+      return c.nivel === 1 || c.nivel === 2;
+    });
+  }, [categorias, categoriaEditando]);
+
+  // Categorías principales solo para visualización
+  const categoriasPrincipales = React.useMemo(() => {
+    return categorias.filter(c => c.nivel === 1 || (!c.nivel && !c.parent_id));
+  }, [categorias]);
+
+  // Calcular nivel automáticamente según el padre seleccionado
+  const nivelCalculado = React.useMemo(() => {
+    if (!formData.parent_id) return 1;
+    const padre = categorias.find(c => c.id === formData.parent_id);
+    return padre ? (padre.nivel || 1) + 1 : 1;
+  }, [formData.parent_id, categorias]);
+
+  // Debug: Log para verificar categorías
+  React.useEffect(() => {
+    if (categorias.length > 0) {
+      console.log('Total categorías cargadas:', categorias.length);
+      console.log('Categorías que pueden ser padres:', categoriasPadrePosibles.length);
+      console.log('Nivel calculado:', nivelCalculado);
+    }
+  }, [categorias, categoriasPadrePosibles.length, nivelCalculado]);
 
   return (
     <Card>
@@ -334,32 +369,44 @@ export default function GestorCategorias() {
         </div>
       </CardHeader>
       <CardContent>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={categorias.map(c => c.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="space-y-2">
-              {categorias.map((categoria) => (
-                <CategoriaItem
-                  key={categoria.id}
-                  categoria={categoria}
-                  onEdit={handleAbrirFormulario}
-                  onDelete={setDialogEliminar}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-
-        {categorias.length === 0 && (
+        {isLoading ? (
           <div className="text-center py-8 text-muted-foreground">
-            No hay categorías. Crea una para comenzar.
+            Cargando categorías...
           </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            Error al cargar las categorías. Por favor, recarga la página.
+          </div>
+        ) : (
+          <>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={categorias.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {categorias.map((categoria) => (
+                    <CategoriaItem
+                      key={categoria.id}
+                      categoria={categoria}
+                      onEdit={handleAbrirFormulario}
+                      onDelete={setDialogEliminar}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+
+            {categorias.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No hay categorías. Crea una para comenzar.
+              </div>
+            )}
+          </>
         )}
       </CardContent>
 
@@ -431,23 +478,55 @@ export default function GestorCategorias() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="parent">Categoría Padre</Label>
+                <Label htmlFor="parent">Categoría Padre (Opcional)</Label>
                 <Select
-                  value={formData.parent_id}
-                  onValueChange={(value) => setFormData({ ...formData, parent_id: value })}
+                  value={formData.parent_id || 'none'}
+                  onValueChange={(value) => {
+                    // Convertir 'none' a null para la base de datos
+                    const parentId = value === 'none' ? null : value;
+                    setFormData({ ...formData, parent_id: parentId });
+                  }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Ninguna" />
+                    <SelectValue placeholder="Ninguna (Principal)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Ninguna (Principal)</SelectItem>
-                    {categoriasPrincipales
-                      .filter(c => c.id !== categoriaEditando?.id)
-                      .map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.nombre}
-                        </SelectItem>
-                      ))}
+                    <SelectItem value="none">📁 Ninguna (Principal - Nivel 1)</SelectItem>
+                    {categoriasPadrePosibles.map((cat, index) => {
+                        // ---- VALIDACIÓN ROBUSTA ----
+                        // Verificar que la categoría y su ID sean válidos
+                        if (!cat || typeof cat.id !== 'string' || cat.id.trim() === '') {
+                          console.error(
+                            `Error de datos: Se encontró una categoría inválida en el índice ${index}.`,
+                            cat
+                          );
+                          return null; // No renderizar el SelectItem defectuoso
+                        }
+                        
+                        // Verificar que tenga nombre válido
+                        if (!cat.nombre || typeof cat.nombre !== 'string' || cat.nombre.trim() === '') {
+                          console.error(
+                            `Error de datos: Categoría con ID "${cat.id}" tiene nombre inválido.`,
+                            cat
+                          );
+                          return null;
+                        }
+                        // ---- FIN VALIDACIÓN ----
+
+                        // Obtener emoji según nivel
+                        const nivelEmoji = cat.nivel === 1 ? '📁' : '📂';
+                        const indent = cat.nivel === 2 ? '  ↳ ' : '';
+                        
+                        return (
+                          <SelectItem 
+                            key={cat.id} 
+                            value={cat.id}
+                            className={cat.nivel === 2 ? 'pl-6' : ''}
+                          >
+                            {indent}{nivelEmoji} {cat.nombre} (Nivel {cat.nivel})
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>

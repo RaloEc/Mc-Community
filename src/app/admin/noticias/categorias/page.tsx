@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import AdminProtection from '@/components/AdminProtection';
 import { MagicMotion } from 'react-magic-motion';
 import { PlusCircle, Expand, Minimize, Trash2, Edit, Check, MoreVertical, MoreHorizontal, ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
@@ -18,27 +18,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from "@/components/ui/use-toast"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { useCategoriasPadre, type CategoriaNoticia as CategoriaNoticiaImport } from '@/hooks/useCategorias'
 import './animations.css'
 
 // Tipos
-interface CategoriaNoticia {
-  id: number | string;
-  nombre: string;
-  slug: string;
-  descripcion?: string;
-  orden?: number;
-  color?: string;
-  es_activa?: boolean;
-  noticias_count?: number;
-  parent_id?: string | null;
-  categoria_padre_id?: string | null; // Campo antiguo, mantener por compatibilidad
-  categoria_padre?: {
-    id: string;
-    nombre: string;
-  } | null;
-  nivel?: number; // Nivel jerárquico (1, 2, 3)
-  hijos?: CategoriaNoticia[]; // Subcategorías
-}
+type CategoriaNoticia = CategoriaNoticiaImport
 
 interface CategoriaFormProps {
   categoria: CategoriaNoticia | null
@@ -58,9 +42,15 @@ function CategoriaForm({ categoria, onSave, onCancel, onFormModifiedChange, isSu
   const [color, setColor] = useState(categoria?.color || '#3b82f6')
   const [esActiva, setEsActiva] = useState(categoria?.es_activa !== false)
   const [categoriaPadreId, setCategoriaPadreId] = useState<string | null>(categoria?.parent_id || null)
-  const [categoriasPadre, setCategoriasPadre] = useState<CategoriaNoticia[]>([])
-  const [loadingCategorias, setLoadingCategorias] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [formModified, setFormModified] = useState(false)
+  
+  // Usar React Query para obtener categorías padre con validación automática
+  const { 
+    data: categoriasPadre = [], 
+    isLoading: loadingCategorias,
+    error: errorCategorias 
+  } = useCategoriasPadre(categoria?.id, 2)
   
   // Actualizar estados cuando cambia la categoría a editar
   useEffect(() => {
@@ -74,7 +64,6 @@ function CategoriaForm({ categoria, onSave, onCancel, onFormModifiedChange, isSu
       setCategoriaPadreId(categoria.parent_id || null)
     }
   }, [categoria])
-  const [formModified, setFormModified] = useState(false)
 
   // Detectar cambios en el formulario
   useEffect(() => {
@@ -86,45 +75,17 @@ function CategoriaForm({ categoria, onSave, onCancel, onFormModifiedChange, isSu
     setFormModified(isModified);
     onFormModifiedChange(isModified);
   }, [nombre, descripcion, esActiva, categoriaPadreId, categoria, onFormModifiedChange])
-
-  // Cargar las categorías disponibles para ser padre
+  
+  // Mostrar error si falla la carga de categorías
   useEffect(() => {
-    const fetchCategoriasPadre = async () => {
-      setLoadingCategorias(true)
-      try {
-        const response = await fetch('/api/admin/noticias/categorias?admin=true')
-        if (!response.ok) throw new Error('Error al cargar las categorías')
-        const data = await response.json()
-        
-        // Calcular niveles y filtrar para evitar ciclos
-        const categoriasConNivel = calcularNiveles(data)
-        
-        // Si estamos editando, filtramos la categoría actual y sus descendientes para evitar ciclos
-        let categoriasFiltradas = categoriasConNivel
-        if (categoria?.id) {
-          const descendientes = obtenerDescendientes(categoria.id.toString(), categoriasConNivel)
-          categoriasFiltradas = categoriasConNivel.filter(cat => 
-            cat.id !== categoria.id && !descendientes.includes(cat.id.toString())
-          )
-        }
-        
-        // Solo permitir categorías de nivel 1 y 2 como padres (para máximo 3 niveles)
-        const categoriasPadreValidas = categoriasFiltradas.filter(cat => (cat.nivel || 1) <= 2)
-          
-        setCategoriasPadre(categoriasPadreValidas)
-      } catch (error) {
-        console.error('Error al cargar categorías padre:', error)
-        toast({
-          description: 'Error al cargar las categorías disponibles',
-          variant: "destructive"
-        })
-      } finally {
-        setLoadingCategorias(false)
-      }
+    if (errorCategorias) {
+      console.error('Error al cargar categorías padre:', errorCategorias)
+      toast({
+        description: 'Error al cargar las categorías disponibles',
+        variant: "destructive"
+      })
     }
-    
-    fetchCategoriasPadre()
-  }, [])
+  }, [errorCategorias])
 
   // Generar slug automáticamente a partir del nombre
   useEffect(() => {
@@ -132,11 +93,14 @@ function CategoriaForm({ categoria, onSave, onCancel, onFormModifiedChange, isSu
     setSlug(slugify(nombre));
   }, [nombre])
 
-  // Filtrar categorías padre según término de búsqueda
-  const categoriasFiltradas = searchTerm
-    ? categoriasPadre.filter(cat => 
-        cat.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
-    : categoriasPadre;
+  // Filtrar categorías padre según término de búsqueda (memoizado para mejor rendimiento)
+  const categoriasFiltradas = useMemo(() => {
+    if (!searchTerm) return categoriasPadre
+    
+    return categoriasPadre.filter(cat => 
+      cat.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [categoriasPadre, searchTerm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

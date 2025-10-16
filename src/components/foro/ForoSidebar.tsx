@@ -179,32 +179,10 @@ const CategoryItem = ({ category, isRoot = false }: { category: Categoria; isRoo
               transition: { duration: 0.15, ease: 'easeInOut' }
             }}
           >
-            {category.subcategorias?.map((sub) => {
-              const subSlug = (sub.slug || sub.id).toLowerCase()
-              const subActive = currentPath === `/foro/categoria/${subSlug}`
-              return (
-                <motion.li 
-                  key={sub.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.15 }}
-                  className="pl-4"
-                >
-                  <Link
-                    href={`/foro/categoria/${subSlug}`}
-                    className={
-                      `flex items-center px-3 py-1.5 text-sm transition-colors rounded-md ` +
-                      `text-gray-600 hover:bg-gray-100 focus:bg-gray-100 ` +
-                      `dark:text-gray-300 dark:hover:bg-gray-800/80 dark:focus:bg-gray-800/80 ` +
-                      `${subActive ? 'text-blue-600 dark:text-blue-300 font-medium' : ''}`
-                    }
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-gray-500 mr-2 flex-shrink-0"></span>
-                    <span className="truncate">{sub.nombre}</span>
-                  </Link>
-                </motion.li>
-              )
-            })}
+            {category.subcategorias?.map((sub) => (
+              // Renderizar recursivamente para soportar 3 niveles
+              <CategoryItem key={sub.id} category={sub} isRoot={false} />
+            ))}
           </motion.ul>
         )}
       </AnimatePresence>
