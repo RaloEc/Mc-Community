@@ -19,6 +19,7 @@ import React from "react";
 import { useUserTheme } from "@/hooks/useUserTheme";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ImageGallery } from "@/components/ui/ImageGallery";
+import { HighlightedContent } from "@/components/ui/HighlightedContent";
 
 export type HiloCardProps = {
   id: string;
@@ -88,6 +89,7 @@ const HtmlContentWithYoutube = React.memo(function HtmlContentWithYoutube({
   html: string;
   className?: string;
 }) {
+  const { userColor } = useUserTheme();
   // Verificar si hay un video en el contenido
   const hasVideo = (content: string): boolean => {
     if (!content) return false;
@@ -251,9 +253,15 @@ const HtmlContentWithYoutube = React.memo(function HtmlContentWithYoutube({
       {/* Mostrar el contenido de texto si existe */}
       {hasTextContent && (
         <div
-          className="prose prose-sm max-w-none dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: contentWithoutMedias }}
-        />
+          style={{
+            '--user-color': userColor,
+          } as React.CSSProperties}
+        >
+          <HighlightedContent
+            html={contentWithoutMedias}
+            className="prose prose-sm max-w-none dark:prose-invert"
+          />
+        </div>
       )}
     </div>
   );

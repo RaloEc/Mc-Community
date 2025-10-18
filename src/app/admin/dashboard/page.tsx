@@ -252,10 +252,10 @@ function DashboardContent() {
         </CardHeader>
         <CardContent className="pt-2">
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-            <Link href="/admin/noticias/crear">
+            <Link href="/admin/noticias/ticker">
               <Button variant="outline" className="w-full justify-start gap-2 dark:bg-zinc-950 dark:border-zinc-800/70 dark:hover:bg-zinc-900">
-                <Newspaper className="h-4 w-4" />
-                <span className="text-sm">Nueva noticia</span>
+                <TrendingUp className="h-4 w-4" />
+                <span className="text-sm">Configurar Ticker</span>
               </Button>
             </Link>
             <Link href="/admin/eventos/crear">

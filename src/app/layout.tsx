@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import "@/styles/code-highlight.css";
 import Header from "@/components/Header";
 import Providers from "@/components/Providers";
 import { createClient } from "@/lib/supabase/server";

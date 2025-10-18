@@ -1,0 +1,226 @@
+/* Estilos para bloques de código con resaltado de sintaxis */
+
+/* Contenedor del bloque de código */
+.tiptap pre.editor-code-block {
+  background-color: rgb(245 245 244); /* stone-100 */
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  border: 1px solid rgb(231 229 228); /* stone-200 */
+}
+
+/* Modo oscuro */
+.dark .tiptap pre.editor-code-block {
+  background-color: rgb(41 37 36); /* stone-800 */
+  border-color: rgb(68 64 60); /* stone-700 */
+}
+
+/* Código dentro del bloque */
+.tiptap pre.editor-code-block code {
+  background: none;
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  border-radius: 0;
+}
+
+/* Estilos de resaltado de sintaxis con lowlight */
+
+/* Comentarios */
+.tiptap pre.editor-code-block .hljs-comment,
+.tiptap pre.editor-code-block .hljs-quote {
+  color: rgb(120 113 108); /* stone-500 */
+  font-style: italic;
+}
+
+.dark .tiptap pre.editor-code-block .hljs-comment,
+.dark .tiptap pre.editor-code-block .hljs-quote {
+  color: rgb(168 162 158); /* stone-400 */
+}
+
+/* Palabras clave (keywords) */
+.tiptap pre.editor-code-block .hljs-keyword,
+.tiptap pre.editor-code-block .hljs-selector-tag,
+.tiptap pre.editor-code-block .hljs-literal,
+.tiptap pre.editor-code-block .hljs-section,
+.tiptap pre.editor-code-block .hljs-link {
+  color: rgb(147 51 234); /* purple-600 */
+  font-weight: 600;
+}
+
+.dark .tiptap pre.editor-code-block .hljs-keyword,
+.dark .tiptap pre.editor-code-block .hljs-selector-tag,
+.dark .tiptap pre.editor-code-block .hljs-literal,
+.dark .tiptap pre.editor-code-block .hljs-section,
+.dark .tiptap pre.editor-code-block .hljs-link {
+  color: rgb(192 132 252); /* purple-400 */
+}
+
+/* Strings (cadenas de texto) */
+.tiptap pre.editor-code-block .hljs-string,
+.tiptap pre.editor-code-block .hljs-title,
+.tiptap pre.editor-code-block .hljs-name,
+.tiptap pre.editor-code-block .hljs-type,
+.tiptap pre.editor-code-block .hljs-attribute {
+  color: rgb(22 163 74); /* green-600 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-string,
+.dark .tiptap pre.editor-code-block .hljs-title,
+.dark .tiptap pre.editor-code-block .hljs-name,
+.dark .tiptap pre.editor-code-block .hljs-type,
+.dark .tiptap pre.editor-code-block .hljs-attribute {
+  color: rgb(74 222 128); /* green-400 */
+}
+
+/* Números */
+.tiptap pre.editor-code-block .hljs-number,
+.tiptap pre.editor-code-block .hljs-symbol,
+.tiptap pre.editor-code-block .hljs-bullet {
+  color: rgb(234 88 12); /* orange-600 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-number,
+.dark .tiptap pre.editor-code-block .hljs-symbol,
+.dark .tiptap pre.editor-code-block .hljs-bullet {
+  color: rgb(251 146 60); /* orange-400 */
+}
+
+/* Funciones */
+.tiptap pre.editor-code-block .hljs-function,
+.tiptap pre.editor-code-block .hljs-title.function_,
+.tiptap pre.editor-code-block .hljs-built_in {
+  color: rgb(37 99 235); /* blue-600 */
+  font-weight: 500;
+}
+
+.dark .tiptap pre.editor-code-block .hljs-function,
+.dark .tiptap pre.editor-code-block .hljs-title.function_,
+.dark .tiptap pre.editor-code-block .hljs-built_in {
+  color: rgb(96 165 250); /* blue-400 */
+}
+
+/* Variables y parámetros */
+.tiptap pre.editor-code-block .hljs-variable,
+.tiptap pre.editor-code-block .hljs-params,
+.tiptap pre.editor-code-block .hljs-attr {
+  color: rgb(220 38 38); /* red-600 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-variable,
+.dark .tiptap pre.editor-code-block .hljs-params,
+.dark .tiptap pre.editor-code-block .hljs-attr {
+  color: rgb(248 113 113); /* red-400 */
+}
+
+/* Clases y tipos */
+.tiptap pre.editor-code-block .hljs-class,
+.tiptap pre.editor-code-block .hljs-title.class_,
+.tiptap pre.editor-code-block .hljs-title.class_.inherited__ {
+  color: rgb(202 138 4); /* yellow-600 */
+  font-weight: 600;
+}
+
+.dark .tiptap pre.editor-code-block .hljs-class,
+.dark .tiptap pre.editor-code-block .hljs-title.class_,
+.dark .tiptap pre.editor-code-block .hljs-title.class_.inherited__ {
+  color: rgb(250 204 21); /* yellow-400 */
+}
+
+/* Operadores */
+.tiptap pre.editor-code-block .hljs-operator,
+.tiptap pre.editor-code-block .hljs-selector-class,
+.tiptap pre.editor-code-block .hljs-selector-id {
+  color: rgb(14 165 233); /* sky-500 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-operator,
+.dark .tiptap pre.editor-code-block .hljs-selector-class,
+.dark .tiptap pre.editor-code-block .hljs-selector-id {
+  color: rgb(56 189 248); /* sky-400 */
+}
+
+/* Meta información */
+.tiptap pre.editor-code-block .hljs-meta,
+.tiptap pre.editor-code-block .hljs-meta .hljs-keyword {
+  color: rgb(168 85 247); /* purple-500 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-meta,
+.dark .tiptap pre.editor-code-block .hljs-meta .hljs-keyword {
+  color: rgb(192 132 252); /* purple-400 */
+}
+
+/* Etiquetas HTML/XML */
+.tiptap pre.editor-code-block .hljs-tag {
+  color: rgb(59 130 246); /* blue-500 */
+}
+
+.dark .tiptap pre.editor-code-block .hljs-tag {
+  color: rgb(96 165 250); /* blue-400 */
+}
+
+/* Énfasis (negrita, cursiva) */
+.tiptap pre.editor-code-block .hljs-emphasis {
+  font-style: italic;
+}
+
+.tiptap pre.editor-code-block .hljs-strong {
+  font-weight: 700;
+}
+
+/* Texto tachado */
+.tiptap pre.editor-code-block .hljs-deletion {
+  text-decoration: line-through;
+}
+
+/* Texto añadido */
+.tiptap pre.editor-code-block .hljs-addition {
+  text-decoration: underline;
+}
+
+/* Scrollbar personalizado para bloques de código */
+.tiptap pre.editor-code-block::-webkit-scrollbar {
+  height: 8px;
+}
+
+.tiptap pre.editor-code-block::-webkit-scrollbar-track {
+  background: rgb(231 229 228); /* stone-200 */
+  border-radius: 4px;
+}
+
+.tiptap pre.editor-code-block::-webkit-scrollbar-thumb {
+  background: rgb(168 162 158); /* stone-400 */
+  border-radius: 4px;
+}
+
+.tiptap pre.editor-code-block::-webkit-scrollbar-thumb:hover {
+  background: rgb(120 113 108); /* stone-500 */
+}
+
+.dark .tiptap pre.editor-code-block::-webkit-scrollbar-track {
+  background: rgb(68 64 60); /* stone-700 */
+}
+
+.dark .tiptap pre.editor-code-block::-webkit-scrollbar-thumb {
+  background: rgb(120 113 108); /* stone-500 */
+}
+
+.dark .tiptap pre.editor-code-block::-webkit-scrollbar-thumb:hover {
+  background: rgb(168 162 158); /* stone-400 */
+}
+
+/* Efecto de selección en bloques de código */
+.tiptap pre.editor-code-block::selection,
+.tiptap pre.editor-code-block *::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark .tiptap pre.editor-code-block::selection,
+.dark .tiptap pre.editor-code-block *::selection {
+  background-color: rgba(96, 165, 250, 0.3);
+}

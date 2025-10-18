@@ -8,6 +8,9 @@ interface VoteBody {
   value: -1 | 0 | 1; // -1: downvote, 0: quitar voto, 1: upvote
 }
 
+// Tipo para filas de votos con sólo el campo necesario (no dependemos de Database porque la tabla puede no estar en types)
+type VotoRow = { valor_voto: number | null };
+
 // Helper para obtener el total de votos del post/comentario
 async function getVotesTotalFor(
   supabase: SupabaseClient<Database>, 
@@ -28,8 +31,9 @@ async function getVotesTotalFor(
     return { total: 0, userVote: 0 };
   }
 
-  // Sumar todos los votos
-  const total = votos?.reduce((sum, voto) => sum + (voto.valor_voto || 0), 0) ?? 0;
+  // Sumar todos los votos con tipado estricto
+  const votosList: VotoRow[] = (votos ?? []) as VotoRow[];
+  const total = votosList.reduce((sum: number, voto: VotoRow) => sum + (voto.valor_voto ?? 0), 0);
 
   // Si no hay usuario, devolvemos solo el total
   if (!userId) {
@@ -47,9 +51,13 @@ async function getVotesTotalFor(
     .eq('usuario_id', userId)
     .single();
 
+  const userVoteValue: -1 | 0 | 1 = (userVote && typeof (userVote as VotoRow).valor_voto === 'number'
+    ? ((userVote as VotoRow).valor_voto as -1 | 0 | 1)
+    : 0);
+
   return { 
     total, 
-    userVote: (userVote?.valor_voto as -1 | 0 | 1) ?? 0 
+    userVote: userVoteValue 
   };
 }
 

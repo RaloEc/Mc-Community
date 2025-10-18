@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { HighlightedContent } from "@/components/ui/HighlightedContent";
 import dynamic from "next/dynamic";
 import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
+import { useUserTheme } from "@/hooks/useUserTheme";
+import { toast } from "sonner";
 
 // Cargar dinámicamente el componente YoutubePlayer para evitar problemas de hidratación
 const YoutubePlayer = dynamic<{
@@ -51,6 +54,8 @@ export default function HiloContenido({
   className = "",
 }: HiloContenidoProps) {
   const [isClient, setIsClient] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { userColor } = useUserTheme();
 
   // Activar sincronización en tiempo real de votos de hilos
   useRealtimeVotosHilos();
@@ -58,6 +63,44 @@ export default function HiloContenido({
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  // Manejar clics en elementos con data-click-to-copy
+  useEffect(() => {
+    const handleClickToCopy = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const copyableElement = target.closest('[data-click-to-copy="true"]');
+
+      if (copyableElement) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const textToCopy = (copyableElement as HTMLElement).innerText;
+
+        navigator.clipboard
+          .writeText(textToCopy)
+          .then(() => {
+            toast.success('¡Texto copiado al portapapeles!', {
+              duration: 2000,
+            });
+          })
+          .catch((err) => {
+            console.error('Error al copiar texto: ', err);
+            toast.error('No se pudo copiar el texto.');
+          });
+      }
+    };
+
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener('click', handleClickToCopy);
+    }
+
+    return () => {
+      if (contentElement) {
+        contentElement.removeEventListener('click', handleClickToCopy);
+      }
+    };
+  }, [isClient, html]);
 
   // No renderizar nada en el servidor para evitar problemas de hidratación
   if (!isClient) {
@@ -114,12 +157,18 @@ export default function HiloContenido({
   const contentWithoutYoutube = getContentWithoutYoutube(html);
 
   return (
-    <div className={className}>
+    <div 
+      className={className} 
+      ref={contentRef}
+      style={{
+        '--user-color': userColor,
+      } as React.CSSProperties}
+    >
       {youtubeEmbed && <div className="mb-4">{youtubeEmbed}</div>}
       {contentWithoutYoutube && (
-        <div
+        <HighlightedContent
+          html={contentWithoutYoutube}
           className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)]"
-          dangerouslySetInnerHTML={{ __html: contentWithoutYoutube }}
         />
       )}
     </div>

@@ -296,7 +296,11 @@ export function EstadisticasGraficos({
                   cx="50%"
                   cy="50%"
                   labelLine={true}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={(p: { name?: string; percent?: number }) => {
+                    const name = p.name ?? ''
+                    const percent = typeof p.percent === 'number' ? p.percent : 0
+                    return `${name}: ${(percent * 100).toFixed(0)}%`
+                  }}
                   outerRadius={120}
                   fill="#8884d8"
                   dataKey="value"

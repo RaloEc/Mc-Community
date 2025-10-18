@@ -22,6 +22,7 @@ import HorizontalRule from '@tiptap/extension-horizontal-rule'
 import { common, createLowlight } from 'lowlight'
 import { Extension } from '@tiptap/core'
 import { NodeSelection } from '@tiptap/pm/state'
+import { ClickToCopy } from './extensions/click-to-copy'
 
 // Crear instancia de lowlight con lenguajes comunes
 export const lowlight = createLowlight(common)
@@ -301,6 +302,8 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
   }),
   CodeBlockLowlight.configure({
     lowlight,
+    // Asignar un lenguaje por defecto para mejorar el coloreado cuando el usuario no elige uno
+    defaultLanguage: 'javascript',
     HTMLAttributes: {
       class: 'editor-code-block',
     },
@@ -311,4 +314,7 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
     },
   }),
   createLinkPasteRules(),
+  ClickToCopy.configure({
+    HTMLAttributes: {},
+  }),
 ]

@@ -25,6 +25,7 @@ import {
   Heart, 
   ShieldCheck 
 } from 'lucide-react';
+import { HighlightedContent } from '@/components/ui/HighlightedContent';
 
 // --- TIPOS LOCALES ---
 
@@ -96,9 +97,9 @@ function PostItem({ post, isInitial = false }: { post: PostConAutor | HiloConDet
           </div>
           {fecha && <span className="text-xs text-muted-foreground">{fecha}</span>}
         </div>
-        <div
+        <HighlightedContent
+          html={post.contenido}
           className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]"
-          dangerouslySetInnerHTML={{ __html: post.contenido }}
         />
       </div>
     </div>

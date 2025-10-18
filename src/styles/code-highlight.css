@@ -1,0 +1,323 @@
+/* Estilos globales para bloques de código con resaltado de sintaxis */
+/* Estos estilos se aplican al contenido HTML renderizado en toda la aplicación */
+
+/* Contenedor del bloque de código */
+.prose pre.editor-code-block,
+pre.editor-code-block {
+  /* Fondo con color personalizado del usuario muy atenuado */
+  background-color: color-mix(in srgb, var(--user-color, #6366f1) 8%, transparent) !important;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 1rem 0;
+  overflow-x: auto;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  /* Borde con el mismo color pero más visible */
+  border: 1px solid color-mix(in srgb, var(--user-color, #6366f1) 20%, transparent);
+}
+
+/* Modo oscuro */
+.dark .prose pre.editor-code-block,
+.dark pre.editor-code-block {
+  /* Fondo con color personalizado del usuario más visible en oscuro */
+  background-color: color-mix(in srgb, var(--user-color, #6366f1) 12%, transparent) !important;
+  /* Borde con el mismo color pero más visible */
+  border-color: color-mix(in srgb, var(--user-color, #6366f1) 25%, transparent);
+}
+
+/* Modo oscuro: color base para texto no tokenizado */
+.dark .prose pre.editor-code-block code,
+.dark pre.editor-code-block code,
+.dark .prose pre.editor-code-block code.hljs,
+.dark pre.editor-code-block code.hljs {
+  color: rgb(231 229 228) !important; /* stone-200 */
+}
+
+/* Código dentro del bloque */
+.prose pre.editor-code-block code,
+pre.editor-code-block code {
+  background: none !important;
+  padding: 0;
+  font-size: inherit;
+  color: rgb(17 24 39) !important; /* slate-900 como base para texto no tokenizado */
+  border-radius: 0;
+}
+
+/* Base para la raíz de highlight.js */
+.prose pre.editor-code-block code.hljs,
+pre.editor-code-block code.hljs {
+  color: rgb(17 24 39) !important; /* slate-900 */
+}
+
+/* Estilos de resaltado de sintaxis con lowlight */
+
+/* Comentarios */
+.prose pre.editor-code-block .hljs-comment,
+.prose pre.editor-code-block .hljs-quote,
+pre.editor-code-block .hljs-comment,
+pre.editor-code-block .hljs-quote {
+  color: rgb(120 113 108) !important; /* stone-500 */
+  font-style: italic;
+}
+
+.dark .prose pre.editor-code-block .hljs-comment,
+.dark .prose pre.editor-code-block .hljs-quote,
+.dark pre.editor-code-block .hljs-comment,
+.dark pre.editor-code-block .hljs-quote {
+  color: rgb(168 162 158) !important; /* stone-400 */
+}
+
+/* Palabras clave (keywords) */
+.prose pre.editor-code-block .hljs-keyword,
+.prose pre.editor-code-block .hljs-selector-tag,
+.prose pre.editor-code-block .hljs-literal,
+.prose pre.editor-code-block .hljs-section,
+.prose pre.editor-code-block .hljs-link,
+pre.editor-code-block .hljs-keyword,
+pre.editor-code-block .hljs-selector-tag,
+pre.editor-code-block .hljs-literal,
+pre.editor-code-block .hljs-section,
+pre.editor-code-block .hljs-link {
+  color: rgb(147 51 234) !important; /* purple-600 */
+  font-weight: 600;
+}
+
+.dark .prose pre.editor-code-block .hljs-keyword,
+.dark .prose pre.editor-code-block .hljs-selector-tag,
+.dark .prose pre.editor-code-block .hljs-literal,
+.dark .prose pre.editor-code-block .hljs-section,
+.dark .prose pre.editor-code-block .hljs-link,
+.dark pre.editor-code-block .hljs-keyword,
+.dark pre.editor-code-block .hljs-selector-tag,
+.dark pre.editor-code-block .hljs-literal,
+.dark pre.editor-code-block .hljs-section,
+.dark pre.editor-code-block .hljs-link {
+  color: rgb(192 132 252) !important; /* purple-400 */
+}
+
+/* Strings (cadenas de texto) */
+.prose pre.editor-code-block .hljs-string,
+.prose pre.editor-code-block .hljs-title,
+.prose pre.editor-code-block .hljs-name,
+.prose pre.editor-code-block .hljs-type,
+.prose pre.editor-code-block .hljs-attribute,
+pre.editor-code-block .hljs-string,
+pre.editor-code-block .hljs-title,
+pre.editor-code-block .hljs-name,
+pre.editor-code-block .hljs-type,
+pre.editor-code-block .hljs-attribute {
+  color: rgb(22 163 74) !important; /* green-600 */
+}
+
+.dark .prose pre.editor-code-block .hljs-string,
+.dark .prose pre.editor-code-block .hljs-title,
+.dark .prose pre.editor-code-block .hljs-name,
+.dark .prose pre.editor-code-block .hljs-type,
+.dark .prose pre.editor-code-block .hljs-attribute,
+.dark pre.editor-code-block .hljs-string,
+.dark pre.editor-code-block .hljs-title,
+.dark pre.editor-code-block .hljs-name,
+.dark pre.editor-code-block .hljs-type,
+.dark pre.editor-code-block .hljs-attribute {
+  color: rgb(74 222 128) !important; /* green-400 */
+}
+
+/* Números */
+.prose pre.editor-code-block .hljs-number,
+.prose pre.editor-code-block .hljs-symbol,
+.prose pre.editor-code-block .hljs-bullet,
+pre.editor-code-block .hljs-number,
+pre.editor-code-block .hljs-symbol,
+pre.editor-code-block .hljs-bullet {
+  color: rgb(234 88 12) !important; /* orange-600 */
+}
+
+.dark .prose pre.editor-code-block .hljs-number,
+.dark .prose pre.editor-code-block .hljs-symbol,
+.dark .prose pre.editor-code-block .hljs-bullet,
+.dark pre.editor-code-block .hljs-number,
+.dark pre.editor-code-block .hljs-symbol,
+.dark pre.editor-code-block .hljs-bullet {
+  color: rgb(251 146 60) !important; /* orange-400 */
+}
+
+/* Funciones */
+.prose pre.editor-code-block .hljs-function,
+.prose pre.editor-code-block .hljs-title.function_,
+.prose pre.editor-code-block .hljs-built_in,
+pre.editor-code-block .hljs-function,
+pre.editor-code-block .hljs-title.function_,
+pre.editor-code-block .hljs-built_in {
+  color: rgb(37 99 235) !important; /* blue-600 */
+  font-weight: 500;
+}
+
+.dark .prose pre.editor-code-block .hljs-function,
+.dark .prose pre.editor-code-block .hljs-title.function_,
+.dark .prose pre.editor-code-block .hljs-built_in,
+.dark pre.editor-code-block .hljs-function,
+.dark pre.editor-code-block .hljs-title.function_,
+.dark pre.editor-code-block .hljs-built_in {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* Variables y parámetros */
+.prose pre.editor-code-block .hljs-variable,
+.prose pre.editor-code-block .hljs-params,
+.prose pre.editor-code-block .hljs-attr,
+pre.editor-code-block .hljs-variable,
+pre.editor-code-block .hljs-params,
+pre.editor-code-block .hljs-attr {
+  color: rgb(220 38 38) !important; /* red-600 */
+}
+
+.dark .prose pre.editor-code-block .hljs-variable,
+.dark .prose pre.editor-code-block .hljs-params,
+.dark .prose pre.editor-code-block .hljs-attr,
+.dark pre.editor-code-block .hljs-variable,
+.dark pre.editor-code-block .hljs-params,
+.dark pre.editor-code-block .hljs-attr {
+  color: rgb(248 113 113) !important; /* red-400 */
+}
+
+/* Clases y tipos */
+.prose pre.editor-code-block .hljs-class,
+.prose pre.editor-code-block .hljs-title.class_,
+.prose pre.editor-code-block .hljs-title.class_.inherited__,
+pre.editor-code-block .hljs-class,
+pre.editor-code-block .hljs-title.class_,
+pre.editor-code-block .hljs-title.class_.inherited__ {
+  color: rgb(202 138 4) !important; /* yellow-600 */
+  font-weight: 600;
+}
+
+.dark .prose pre.editor-code-block .hljs-class,
+.dark .prose pre.editor-code-block .hljs-title.class_,
+.dark .prose pre.editor-code-block .hljs-title.class_.inherited__,
+.dark pre.editor-code-block .hljs-class,
+.dark pre.editor-code-block .hljs-title.class_,
+.dark pre.editor-code-block .hljs-title.class_.inherited__ {
+  color: rgb(250 204 21) !important; /* yellow-400 */
+}
+
+/* Operadores */
+.prose pre.editor-code-block .hljs-operator,
+.prose pre.editor-code-block .hljs-selector-class,
+.prose pre.editor-code-block .hljs-selector-id,
+pre.editor-code-block .hljs-operator,
+pre.editor-code-block .hljs-selector-class,
+pre.editor-code-block .hljs-selector-id {
+  color: rgb(14 165 233) !important; /* sky-500 */
+}
+
+.dark .prose pre.editor-code-block .hljs-operator,
+.dark .prose pre.editor-code-block .hljs-selector-class,
+.dark .prose pre.editor-code-block .hljs-selector-id,
+.dark pre.editor-code-block .hljs-operator,
+.dark pre.editor-code-block .hljs-selector-class,
+.dark pre.editor-code-block .hljs-selector-id {
+  color: rgb(56 189 248) !important; /* sky-400 */
+}
+
+/* Meta información */
+.prose pre.editor-code-block .hljs-meta,
+.prose pre.editor-code-block .hljs-meta .hljs-keyword,
+pre.editor-code-block .hljs-meta,
+pre.editor-code-block .hljs-meta .hljs-keyword {
+  color: rgb(168 85 247) !important; /* purple-500 */
+}
+
+.dark .prose pre.editor-code-block .hljs-meta,
+.dark .prose pre.editor-code-block .hljs-meta .hljs-keyword,
+.dark pre.editor-code-block .hljs-meta,
+.dark pre.editor-code-block .hljs-meta .hljs-keyword {
+  color: rgb(192 132 252) !important; /* purple-400 */
+}
+
+/* Etiquetas HTML/XML */
+.prose pre.editor-code-block .hljs-tag,
+pre.editor-code-block .hljs-tag {
+  color: rgb(59 130 246) !important; /* blue-500 */
+}
+
+.dark .prose pre.editor-code-block .hljs-tag,
+.dark pre.editor-code-block .hljs-tag {
+  color: rgb(96 165 250) !important; /* blue-400 */
+}
+
+/* Énfasis (negrita, cursiva) */
+.prose pre.editor-code-block .hljs-emphasis,
+pre.editor-code-block .hljs-emphasis {
+  font-style: italic;
+}
+
+.prose pre.editor-code-block .hljs-strong,
+pre.editor-code-block .hljs-strong {
+  font-weight: 700;
+}
+
+/* Texto tachado */
+.prose pre.editor-code-block .hljs-deletion,
+pre.editor-code-block .hljs-deletion {
+  text-decoration: line-through;
+}
+
+/* Texto añadido */
+.prose pre.editor-code-block .hljs-addition,
+pre.editor-code-block .hljs-addition {
+  text-decoration: underline;
+}
+
+/* Scrollbar personalizado para bloques de código */
+.prose pre.editor-code-block::-webkit-scrollbar,
+pre.editor-code-block::-webkit-scrollbar {
+  height: 8px;
+}
+
+.prose pre.editor-code-block::-webkit-scrollbar-track,
+pre.editor-code-block::-webkit-scrollbar-track {
+  background: rgb(231 229 228); /* stone-200 */
+  border-radius: 4px;
+}
+
+.prose pre.editor-code-block::-webkit-scrollbar-thumb,
+pre.editor-code-block::-webkit-scrollbar-thumb {
+  background: rgb(168 162 158); /* stone-400 */
+  border-radius: 4px;
+}
+
+.prose pre.editor-code-block::-webkit-scrollbar-thumb:hover,
+pre.editor-code-block::-webkit-scrollbar-thumb:hover {
+  background: rgb(120 113 108); /* stone-500 */
+}
+
+.dark .prose pre.editor-code-block::-webkit-scrollbar-track,
+.dark pre.editor-code-block::-webkit-scrollbar-track {
+  background: rgb(68 64 60); /* stone-700 */
+}
+
+.dark .prose pre.editor-code-block::-webkit-scrollbar-thumb,
+.dark pre.editor-code-block::-webkit-scrollbar-thumb {
+  background: rgb(120 113 108); /* stone-500 */
+}
+
+.dark .prose pre.editor-code-block::-webkit-scrollbar-thumb:hover,
+.dark pre.editor-code-block::-webkit-scrollbar-thumb:hover {
+  background: rgb(168 162 158); /* stone-400 */
+}
+
+/* Efecto de selección en bloques de código */
+.prose pre.editor-code-block::selection,
+.prose pre.editor-code-block *::selection,
+pre.editor-code-block::selection,
+pre.editor-code-block *::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+}
+
+.dark .prose pre.editor-code-block::selection,
+.dark .prose pre.editor-code-block *::selection,
+.dark pre.editor-code-block::selection,
+.dark pre.editor-code-block *::selection {
+  background-color: rgba(96, 165, 250, 0.3);
+}

@@ -67,6 +67,19 @@ export function useUserTheme() {
     return hexToRgba(userColor, opacity);
   };
   
+  // Función para convertir un color hexadecimal a RGBA con opacidad
+  const hexToRgba = (hex: string, opacity: number): string => {
+    // Eliminar el # si está presente
+    const hexValue = hex.replace('#', '');
+    
+    // Convertir a valores RGB
+    const r = parseInt(hexValue.substring(0, 2), 16);
+    const g = parseInt(hexValue.substring(2, 4), 16);
+    const b = parseInt(hexValue.substring(4, 6), 16);
+    
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+  
   // Obtener color de fondo atenuado según el tema
   const getFadedBackground = (): string => {
     return isDarkMode 
@@ -128,8 +141,8 @@ export function useUserTheme() {
     getRingColor,
     getThemeAdjustedBorderColor,
     getThemeAdjustedBgColor,
-    // Nuevas funciones añadidas
     getFadedBackground,
     getColorWithOpacity,
+    hexToRgba, // Añadimos hexToRgba al objeto de retorno
   } as const;
 }

@@ -35,6 +35,7 @@ import { Button } from "@/components/ui/button";
 import EditorStyles from "./styles";
 import "./youtube-styles.css";
 import "./editor-styles.css"; // Estilos específicos para encabezados
+import "./code-block-styles.css"; // Estilos para bloques de código con resaltado de sintaxis
 
 interface TiptapEditorProps {
   value: string;

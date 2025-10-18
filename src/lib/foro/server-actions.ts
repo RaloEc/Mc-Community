@@ -60,7 +60,8 @@ export async function getHiloPorSlugOId(
     .select("value")
     .eq("hilo_id", hilo.id);
 
-  const votos = votosData?.reduce((sum, voto) => sum + voto.value, 0) || 0;
+  const votosList: { value: number | null }[] = (votosData ?? []) as { value: number | null }[];
+  const votos = votosList.reduce((sum: number, voto: { value: number | null }) => sum + (voto.value ?? 0), 0);
 
   // Obtener el conteo de respuestas (posts que no son el hilo principal y no están eliminados)
   const { count: respuestas } = await supabase

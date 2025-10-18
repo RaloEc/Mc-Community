@@ -37,6 +37,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   Eraser,
+  Copy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -322,7 +323,21 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
       title: "Tachado",
     },
     {
+      icon: Copy,
+      onClick: (e: React.MouseEvent) =>
+        applyStyle(() => editor.chain().focus().toggleClickToCopy().run(), e),
+      isActive: editor.isActive("clickToCopy"),
+      title: "Texto copiable",
+    },
+    {
       icon: Code,
+      onClick: (e: React.MouseEvent) =>
+        applyStyle(() => editor.chain().focus().toggleCode().run(), e),
+      isActive: editor.isActive("code"),
+      title: "Código inline (selecciona texto primero)",
+    },
+    {
+      icon: Grid,
       onClick: (e: React.MouseEvent) =>
         applyStyle(() => editor.chain().focus().toggleCodeBlock().run(), e),
       isActive: editor.isActive("codeBlock"),
