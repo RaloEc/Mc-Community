@@ -31,7 +31,8 @@ pre.editor-code-block {
 .dark pre.editor-code-block code,
 .dark .prose pre.editor-code-block code.hljs,
 .dark pre.editor-code-block code.hljs {
-  color: rgb(231 229 228) !important; /* stone-200 */
+  color: #e0e0e0 !important;
+  opacity: 1;
 }
 
 /* Código dentro del bloque */
@@ -40,14 +41,20 @@ pre.editor-code-block code {
   background: none !important;
   padding: 0;
   font-size: inherit;
-  color: rgb(17 24 39) !important; /* slate-900 como base para texto no tokenizado */
+  color: #333333 !important;
   border-radius: 0;
+  transition: color 0.2s ease;
 }
 
 /* Base para la raíz de highlight.js */
 .prose pre.editor-code-block code.hljs,
 pre.editor-code-block code.hljs {
-  color: rgb(17 24 39) !important; /* slate-900 */
+  color: #333333 !important;
+}
+
+.dark .prose pre.editor-code-block code.hljs,
+.dark pre.editor-code-block code.hljs {
+  color: #e0e0e0 !important;
 }
 
 /* Estilos de resaltado de sintaxis con lowlight */
@@ -57,7 +64,7 @@ pre.editor-code-block code.hljs {
 .prose pre.editor-code-block .hljs-quote,
 pre.editor-code-block .hljs-comment,
 pre.editor-code-block .hljs-quote {
-  color: rgb(120 113 108) !important; /* stone-500 */
+  color: #6b7280 !important;
   font-style: italic;
 }
 
@@ -65,7 +72,8 @@ pre.editor-code-block .hljs-quote {
 .dark .prose pre.editor-code-block .hljs-quote,
 .dark pre.editor-code-block .hljs-comment,
 .dark pre.editor-code-block .hljs-quote {
-  color: rgb(168 162 158) !important; /* stone-400 */
+  color: #6b7280 !important;
+  opacity: 1;
 }
 
 /* Palabras clave (keywords) */
@@ -79,8 +87,9 @@ pre.editor-code-block .hljs-selector-tag,
 pre.editor-code-block .hljs-literal,
 pre.editor-code-block .hljs-section,
 pre.editor-code-block .hljs-link {
-  color: rgb(147 51 234) !important; /* purple-600 */
+  color: #0066cc !important;
   font-weight: 600;
+  opacity: 1;
 }
 
 .dark .prose pre.editor-code-block .hljs-keyword,
@@ -93,7 +102,8 @@ pre.editor-code-block .hljs-link {
 .dark pre.editor-code-block .hljs-literal,
 .dark pre.editor-code-block .hljs-section,
 .dark pre.editor-code-block .hljs-link {
-  color: rgb(192 132 252) !important; /* purple-400 */
+  color: #569cd6 !important;
+  opacity: 1;
 }
 
 /* Strings (cadenas de texto) */
@@ -107,7 +117,8 @@ pre.editor-code-block .hljs-title,
 pre.editor-code-block .hljs-name,
 pre.editor-code-block .hljs-type,
 pre.editor-code-block .hljs-attribute {
-  color: rgb(22 163 74) !important; /* green-600 */
+  color: #008000 !important;
+  opacity: 1;
 }
 
 .dark .prose pre.editor-code-block .hljs-string,
@@ -120,7 +131,8 @@ pre.editor-code-block .hljs-attribute {
 .dark pre.editor-code-block .hljs-name,
 .dark pre.editor-code-block .hljs-type,
 .dark pre.editor-code-block .hljs-attribute {
-  color: rgb(74 222 128) !important; /* green-400 */
+  color: #6a9955 !important;
+  opacity: 1;
 }
 
 /* Números */
@@ -130,7 +142,8 @@ pre.editor-code-block .hljs-attribute {
 pre.editor-code-block .hljs-number,
 pre.editor-code-block .hljs-symbol,
 pre.editor-code-block .hljs-bullet {
-  color: rgb(234 88 12) !important; /* orange-600 */
+  color: #098658 !important;
+  opacity: 1;
 }
 
 .dark .prose pre.editor-code-block .hljs-number,
@@ -139,7 +152,8 @@ pre.editor-code-block .hljs-bullet {
 .dark pre.editor-code-block .hljs-number,
 .dark pre.editor-code-block .hljs-symbol,
 .dark pre.editor-code-block .hljs-bullet {
-  color: rgb(251 146 60) !important; /* orange-400 */
+  color: #b5cea8 !important;
+  opacity: 1;
 }
 
 /* Funciones */
@@ -149,8 +163,9 @@ pre.editor-code-block .hljs-bullet {
 pre.editor-code-block .hljs-function,
 pre.editor-code-block .hljs-title.function_,
 pre.editor-code-block .hljs-built_in {
-  color: rgb(37 99 235) !important; /* blue-600 */
+  color: #795e26 !important;
   font-weight: 500;
+  opacity: 1;
 }
 
 .dark .prose pre.editor-code-block .hljs-function,
@@ -159,7 +174,8 @@ pre.editor-code-block .hljs-built_in {
 .dark pre.editor-code-block .hljs-function,
 .dark pre.editor-code-block .hljs-title.function_,
 .dark pre.editor-code-block .hljs-built_in {
-  color: rgb(96 165 250) !important; /* blue-400 */
+  color: #dcdcaa !important;
+  opacity: 1;
 }
 
 /* Variables y parámetros */
@@ -169,7 +185,8 @@ pre.editor-code-block .hljs-built_in {
 pre.editor-code-block .hljs-variable,
 pre.editor-code-block .hljs-params,
 pre.editor-code-block .hljs-attr {
-  color: rgb(220 38 38) !important; /* red-600 */
+  color: #d4a574 !important;
+  opacity: 1;
 }
 
 .dark .prose pre.editor-code-block .hljs-variable,
@@ -178,7 +195,8 @@ pre.editor-code-block .hljs-attr {
 .dark pre.editor-code-block .hljs-variable,
 .dark pre.editor-code-block .hljs-params,
 .dark pre.editor-code-block .hljs-attr {
-  color: rgb(248 113 113) !important; /* red-400 */
+  color: #9cdcfe !important;
+  opacity: 1;
 }
 
 /* Clases y tipos */
@@ -188,7 +206,7 @@ pre.editor-code-block .hljs-attr {
 pre.editor-code-block .hljs-class,
 pre.editor-code-block .hljs-title.class_,
 pre.editor-code-block .hljs-title.class_.inherited__ {
-  color: rgb(202 138 4) !important; /* yellow-600 */
+  color: #267f99 !important;
   font-weight: 600;
 }
 
@@ -198,7 +216,7 @@ pre.editor-code-block .hljs-title.class_.inherited__ {
 .dark pre.editor-code-block .hljs-class,
 .dark pre.editor-code-block .hljs-title.class_,
 .dark pre.editor-code-block .hljs-title.class_.inherited__ {
-  color: rgb(250 204 21) !important; /* yellow-400 */
+  color: #4ec9b0 !important;
 }
 
 /* Operadores */
@@ -208,7 +226,7 @@ pre.editor-code-block .hljs-title.class_.inherited__ {
 pre.editor-code-block .hljs-operator,
 pre.editor-code-block .hljs-selector-class,
 pre.editor-code-block .hljs-selector-id {
-  color: rgb(14 165 233) !important; /* sky-500 */
+  color: #d4d4d4 !important;
 }
 
 .dark .prose pre.editor-code-block .hljs-operator,
@@ -217,7 +235,7 @@ pre.editor-code-block .hljs-selector-id {
 .dark pre.editor-code-block .hljs-operator,
 .dark pre.editor-code-block .hljs-selector-class,
 .dark pre.editor-code-block .hljs-selector-id {
-  color: rgb(56 189 248) !important; /* sky-400 */
+  color: #d4d4d4 !important;
 }
 
 /* Meta información */
@@ -225,25 +243,25 @@ pre.editor-code-block .hljs-selector-id {
 .prose pre.editor-code-block .hljs-meta .hljs-keyword,
 pre.editor-code-block .hljs-meta,
 pre.editor-code-block .hljs-meta .hljs-keyword {
-  color: rgb(168 85 247) !important; /* purple-500 */
+  color: #0066cc !important;
 }
 
 .dark .prose pre.editor-code-block .hljs-meta,
 .dark .prose pre.editor-code-block .hljs-meta .hljs-keyword,
 .dark pre.editor-code-block .hljs-meta,
 .dark pre.editor-code-block .hljs-meta .hljs-keyword {
-  color: rgb(192 132 252) !important; /* purple-400 */
+  color: #569cd6 !important;
 }
 
 /* Etiquetas HTML/XML */
 .prose pre.editor-code-block .hljs-tag,
 pre.editor-code-block .hljs-tag {
-  color: rgb(59 130 246) !important; /* blue-500 */
+  color: #800000 !important;
 }
 
 .dark .prose pre.editor-code-block .hljs-tag,
 .dark pre.editor-code-block .hljs-tag {
-  color: rgb(96 165 250) !important; /* blue-400 */
+  color: #ce7e7e !important;
 }
 
 /* Énfasis (negrita, cursiva) */

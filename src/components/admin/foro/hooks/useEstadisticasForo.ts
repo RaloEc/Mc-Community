@@ -34,6 +34,7 @@ export interface HiloPopular {
   autor_avatar_url: string | null;
   categoria_id: string;
   categoria_nombre: string;
+  categoria_slug: string;
   vistas: number;
   comentarios_count: number;
   votos_conteo: number;

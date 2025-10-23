@@ -231,7 +231,12 @@ body {
 body {
   @apply bg-background text-foreground;
   font-feature-settings: "rlig" 1, "calt" 1;
-  padding-top: 64px; /* Compensar el header fijo */
+  /* El padding-top se movió al contenedor main */
+}
+
+/* Compensar el header fijo en el contenedor principal */
+main {
+  margin-top: 64px;
 }
 
 /* Animaciones y efectos */
@@ -1216,4 +1221,24 @@ body.menu-open header {
 
 body[data-scroll-locked] {
   margin-right: 0 !important;
+}
+
+/* --- Corrección definitiva para el salto del Dialog --- */
+
+/* Mantener scroll visible siempre */
+html {
+  overflow-y: scroll;
+}
+
+/* Evitar cambios en el padding-right */
+body[data-scroll-locked] {
+  padding-right: 0 !important;
+}
+
+/* Evitar movimiento vertical al abrir Dialogs (Radix) */
+body[data-scroll-locked] {
+  position: relative !important;
+  top: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
 }

@@ -26,7 +26,7 @@ const HilosPopulares = lazy(() => import('@/components/admin/foro/HilosPopulares
 const UsuariosActivos = lazy(() => import('@/components/admin/foro/UsuariosActivos'));
 const EstadisticasCategorias = lazy(() => import('@/components/admin/foro/EstadisticasCategorias'));
 const PanelModeracion = lazy(() => import('@/components/admin/foro/PanelModeracion'));
-const GestorCategorias = lazy(() => import('@/components/admin/foro/GestorCategoriasSimplificado'));
+const GestorCategorias = lazy(() => import('@/components/admin/foro/GestorCategoriasNuevo'));
 const BusquedaAvanzada = lazy(() => import('@/components/admin/foro/BusquedaAvanzada'));
 const NotificacionesRealTime = lazy(() => import('@/components/admin/foro/NotificacionesRealTime'));
 

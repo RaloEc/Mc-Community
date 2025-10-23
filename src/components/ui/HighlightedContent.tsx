@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { highlightCodeBlocks } from '@/lib/utils/highlightCode'
+import '@/components/tiptap-editor/editor-styles.css'
 
 interface HighlightedContentProps {
   html: string

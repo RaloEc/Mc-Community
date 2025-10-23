@@ -64,7 +64,7 @@ export const ClickToCopy = Mark.create<ClickToCopyOptions>({
       'span',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         'data-click-to-copy': 'true',
-        class: 'cursor-copy rounded-md bg-primary/10 px-1.5 py-0.5 text-primary hover:bg-primary/20 transition-colors',
+        class: 'click-to-copy-text',
         title: 'Haz clic para copiar',
       }),
       0, // El '0' indica dónde debe ir el contenido del texto

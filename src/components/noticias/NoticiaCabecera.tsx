@@ -4,15 +4,18 @@ import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeftIcon, Pencil } from 'lucide-react';
+import { ShareButton } from '@/components/shared/ShareButton';
 
 interface NoticiaCabeceraProps {
   titulo: string;
+  descripcion?: string;
   esAdmin?: boolean;
   noticiaId: string;
 }
 
 const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({ 
   titulo, 
+  descripcion = '',
   esAdmin = false,
   noticiaId
 }) => {
@@ -38,9 +41,19 @@ const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({
         {/* Espacio entre título e información del autor */}
         <div className="mb-6"></div>
 
-        {/* Botón de edición (solo visible para administradores) */}
-        {esAdmin && (
-          <div className="flex justify-end mb-4">
+        {/* Botones de acción */}
+        <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
+          <div className="flex gap-2">
+            <ShareButton
+              url={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/noticias/${noticiaId}`}
+              title={titulo}
+              description={descripcion}
+              shareText="Compartir"
+              variant="outline"
+              size="sm"
+            />
+          </div>
+          {esAdmin && (
             <Button
               variant="outline"
               size="sm"
@@ -52,8 +65,8 @@ const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({
                 Editar
               </Link>
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </>
   );

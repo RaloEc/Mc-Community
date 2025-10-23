@@ -121,3 +121,49 @@
   vertical-align: middle;
   transition: all 0.2s ease;
 }
+
+/* Estilos para texto copiable (click-to-copy) */
+.click-to-copy-text {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: copy;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.9em;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  
+  /* Modo claro */
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.08);
+  color: var(--user-color, #0066cc);
+  border: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+}
+
+.click-to-copy-text:hover {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.15);
+  border-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.4);
+  box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 59, 130, 246), 0.1);
+}
+
+.click-to-copy-text:active {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+  transform: scale(0.98);
+}
+
+/* Modo oscuro */
+.dark .click-to-copy-text {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.12);
+  color: var(--user-color, #569cd6);
+  border: 1px solid rgba(var(--user-color-rgb, 96, 165, 250), 0.25);
+}
+
+.dark .click-to-copy-text:hover {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.2);
+  border-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.5);
+  box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 96, 165, 250), 0.15);
+}
+
+.dark .click-to-copy-text:active {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.25);
+  transform: scale(0.98);
+}

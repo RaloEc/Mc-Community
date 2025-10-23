@@ -8,7 +8,6 @@ import { es } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   MessageSquare,
-  Share2,
   Star,
   Lock,
   Eye,
@@ -23,6 +22,7 @@ import HiloContenido from "@/components/foro/HiloContenido";
 import { useAuth } from "@/context/AuthContext";
 import type { ForoHiloCompleto } from "@/types/foro";
 import dynamic from "next/dynamic";
+import { ShareButton } from "@/components/shared/ShareButton";
 
 // Importar dinámicamente el editor para evitar problemas de SSR
 const TiptapEditor = dynamic(() => import("@/components/tiptap-editor"), {
@@ -245,30 +245,15 @@ export default function HiloHeader({ hilo, etiquetas }: HiloHeaderProps) {
                 <Star size={16} />
                 <span className="hidden sm:inline">Seguir</span>
               </button>
-              <button
-                className="inline-flex items-center gap-2 text-sm font-medium px-3 sm:px-4 py-2 rounded-lg transition-all duration-200"
-                style={{
-                  borderColor: getColorWithOpacity(0.3),
-                  color: getColorWithOpacity(0.6),
-                  borderWidth: '1px',
-                  backgroundColor: 'transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = userColor;
-                  e.currentTarget.style.color = userColor;
-                  e.currentTarget.style.backgroundColor = getColorWithOpacity(0.1);
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = getColorWithOpacity(0.3);
-                  e.currentTarget.style.color = getColorWithOpacity(0.6);
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-                title="Compartir"
-                type="button"
-              >
-                <Share2 size={16} />
-                <span className="hidden sm:inline">Compartir</span>
-              </button>
+              <ShareButton
+                url={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/foro/hilos/${hilo.slug}`}
+                title={hilo.titulo}
+                description={hilo.contenido.substring(0, 160).replace(/<[^>]*>/g, '')}
+                shareText="Compartir"
+                variant="outline"
+                size="sm"
+                className="text-sm font-medium px-3 sm:px-4 py-2"
+              />
 
               {/* Botón de editar (solo para el autor) */}
               {esAutor && (

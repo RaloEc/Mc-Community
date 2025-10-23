@@ -40,13 +40,14 @@ export async function GET() {
   try {
     const supabase = getServiceClient();
 
-    // Incluir conteo de hilos relacionados por categoría
+    // Incluir conteo de hilos relacionados por categoría (solo hilos no borrados)
     const { data: categoriasRaw, error } = await supabase
       .from('foro_categorias')
       .select(`
         *,
         hilos:foro_hilos!foro_hilos_categoria_id_fkey(count)
       `)
+      .is('foro_hilos.deleted_at', null)
       .order('orden', { ascending: true });
 
     if (error) {

@@ -155,6 +155,7 @@ export default function NoticiaDetalle({ params }: { params: { id: string } }) {
           {/* Cabecera con título y botón de volver */}
           <NoticiaCabecera
             titulo={noticia.titulo}
+            descripcion={noticia.contenido?.substring(0, 160).replace(/<[^>]*>/g, '') || ''}
             esAdmin={esAdmin}
             noticiaId={params.id}
           />

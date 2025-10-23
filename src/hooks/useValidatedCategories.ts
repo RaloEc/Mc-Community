@@ -26,8 +26,16 @@ export type CategoriaForo = z.infer<typeof categoriaSchema>
  */
 function validarCategorias(data: unknown): CategoriaForo[] {
   try {
+    // Mapear hilos_total a total_hilos si es necesario
+    const dataMapeada = Array.isArray(data)
+      ? data.map((item: any) => ({
+          ...item,
+          total_hilos: item.total_hilos ?? item.hilos_total ?? 0,
+        }))
+      : data;
+    
     // Intentar validar todo el array
-    return categoriasArraySchema.parse(data)
+    return categoriasArraySchema.parse(dataMapeada)
   } catch (error) {
     // Si falla la validación completa, validar elemento por elemento
     if (!Array.isArray(data)) {
@@ -39,7 +47,12 @@ function validarCategorias(data: unknown): CategoriaForo[] {
     const categoriasInvalidas: Array<{ index: number; data: unknown; error: string }> = []
 
     data.forEach((item, index) => {
-      const result = categoriaSchema.safeParse(item)
+      // Mapear hilos_total a total_hilos
+      const itemMapeado = {
+        ...item,
+        total_hilos: item.total_hilos ?? item.hilos_total ?? 0,
+      }
+      const result = categoriaSchema.safeParse(itemMapeado)
       
       if (result.success) {
         categoriasValidas.push(result.data)

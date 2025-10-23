@@ -365,7 +365,27 @@ export const CommentCard: React.FC<CommentCardProps> = ({
             {/* Botón responder y votación a la izquierda */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => user ? setIsReplying(!isReplying) : null}
+                onClick={() => {
+                  if (user) {
+                    const wasReplying = isReplying;
+                    setIsReplying(!wasReplying);
+                    
+                    // Si se está activando el modo de respuesta, hacer scroll al formulario
+                    if (!wasReplying) {
+                      // Usar setTimeout para asegurar que el DOM se haya actualizado
+                      setTimeout(() => {
+                        const replyForm = document.getElementById(`reply-form-${comment.id}`);
+                        if (replyForm) {
+                          replyForm.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'center',
+                            inline: 'nearest'
+                          });
+                        }
+                      }, 100);
+                    }
+                  }
+                }}
                 disabled={!user}
                 className={`text-sm font-medium transition-opacity ${!user ? 'opacity-50 cursor-not-allowed' : 'hover:opacity-80'}`}
                 style={{ 
@@ -445,6 +465,7 @@ export const CommentCard: React.FC<CommentCardProps> = ({
           <AnimatePresence>
             {isReplying && (
               <motion.div 
+                id={`reply-form-${comment.id}`}
                 className="mt-3"
                 initial={{ opacity: 0, height: 0, y: -10 }}
                 animate={{ 

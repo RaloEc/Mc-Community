@@ -122,7 +122,7 @@ export default function HilosPopulares() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1">
                     <Link
-                      href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${hilo.slug}`}
+                      href={`/foro/hilos/${hilo.slug}`}
                       className="font-medium hover:underline line-clamp-2"
                     >
                       {hilo.titulo}
@@ -136,7 +136,7 @@ export default function HilosPopulares() {
                     </div>
                   </div>
                   <Link
-                    href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${hilo.slug}`}
+                    href={`/foro/hilos/${hilo.slug}`}
                     target="_blank"
                   >
                     <Button variant="ghost" size="sm">
