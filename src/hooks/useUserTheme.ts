@@ -48,14 +48,16 @@ export const hexToRgba = (hex: string, opacity: number): string => {
 
 export function useUserTheme() {
   const { profile } = useAuth();
-  const { theme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
+  const currentTheme = resolvedTheme ?? theme;
   
   // Color por defecto si no hay perfil o color definido
   const defaultColor = '#2563eb'; // blue-600
   const userColor = profile?.color || defaultColor;
   
   // Determinar si estamos en modo oscuro o claro
-  const isDarkMode = theme === 'dark';
+  const isDarkMode = currentTheme === 'dark';
+  const selectionBg = currentTheme === 'dark' 
   
   // Ajustar el color según el modo
   const adjustedColor = isDarkMode 

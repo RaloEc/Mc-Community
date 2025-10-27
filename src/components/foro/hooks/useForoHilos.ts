@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/lib/database.types";
+import type { WeaponStatsRecord } from "@/types/foro";
 import { useAuth } from "@/context/AuthContext";
 
 // Tipos locales
@@ -36,6 +37,7 @@ export type Hilo = HiloDb & {
   created_at: string;
   updated_at: string;
   ultimo_post_at?: string | null;
+  weapon_stats_record?: Pick<WeaponStatsRecord, "id" | "weapon_name" | "stats"> | null;
 };
 
 export type TabKey = "recientes" | "populares" | "sin_respuesta" | "siguiendo" | "mios";
@@ -232,7 +234,8 @@ export function useForoHilos(initialTab: TabKey = "recientes", initialTimeRange:
       const baseSelect = `
         *,
         perfiles:autor_id(username, role, avatar_url),
-        foro_categorias:categoria_id(nombre, color)
+        foro_categorias:categoria_id(nombre, color),
+        weapon_stats_record:weapon_stats_records!weapon_stats_id( id, weapon_name, stats )
       `;
 
       // Calcular el rango para la paginación

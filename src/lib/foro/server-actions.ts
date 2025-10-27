@@ -24,7 +24,8 @@ export async function getHiloPorSlugOId(
       `
       *,
       autor:perfiles!foro_hilos_autor_id_fkey ( id, username, avatar_url ),
-      categoria:foro_categorias!foro_hilos_categoria_id_fkey ( id, nombre, color, slug, parent_id )
+      categoria:foro_categorias!foro_hilos_categoria_id_fkey ( id, nombre, color, slug, parent_id ),
+      weapon_stats_record:weapon_stats_records!weapon_stats_id ( id, weapon_name, stats, created_at, updated_at )
     `
     )
     .eq("slug", slugOrId)
@@ -39,7 +40,8 @@ export async function getHiloPorSlugOId(
         `
         *,
         autor:perfiles!foro_hilos_autor_id_fkey ( id, username, avatar_url ),
-        categoria:foro_categorias!foro_hilos_categoria_id_fkey ( id, nombre, color, slug, parent_id )
+        categoria:foro_categorias!foro_hilos_categoria_id_fkey ( id, nombre, color, slug, parent_id ),
+        weapon_stats_record:weapon_stats_records!weapon_stats_id ( id, weapon_name, stats, created_at, updated_at )
       `
       )
       .eq("id", slugOrId)

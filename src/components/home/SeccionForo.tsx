@@ -15,6 +15,7 @@ interface HiloForo {
   created_at: string;
   ultimo_post_at: string;
   autor?: {
+    id?: string;
     username: string;
     avatar_url?: string;
     rol?: string;
@@ -27,6 +28,11 @@ interface HiloForo {
   votos_conteo: number;
   respuestas_conteo: number;
   vistas: number;
+  weapon_stats_record?: {
+    id: string;
+    weapon_name: string | null;
+    stats: any;
+  } | null;
 }
 
 interface SeccionForoProps {
@@ -101,11 +107,12 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
         color: hilo.categoria.color
       } : null,
       autor: hilo.autor ? {
-        id: hilo.autor.username || '',
+        id: hilo.autor.id || hilo.autor.username || '',
         username: hilo.autor.username,
         avatar_url: hilo.autor.avatar_url
       } : null,
-      votos: hilo.votos_conteo
+      votos: hilo.votos_conteo,
+      weapon_stats_record: hilo.weapon_stats_record ?? null
     };
   };
 

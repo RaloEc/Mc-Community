@@ -225,12 +225,14 @@ export default function ForoCliente() {
                         }
                         autorUsername={hilo.perfiles?.username || "Anónimo"}
                         autorAvatarUrl={hilo.perfiles?.avatar_url || null}
+                        autorId={hilo.autor_id || null}
                         createdAt={hilo.created_at}
                         vistas={hilo.vistas || 0}
                         respuestas={hilo.respuestas_conteo || 0}
                         votosIniciales={hilo.votos_conteo || 0}
                         showSinRespuestasAlert={false}
                         className="w-full"
+                        weaponStats={hilo.weapon_stats_record?.stats ?? null}
                       />
                     </motion.div>
                   ))}

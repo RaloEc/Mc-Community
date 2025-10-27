@@ -6,6 +6,7 @@ import { MessageSquare, Eye } from 'lucide-react'
 import { Votacion } from '@/components/ui/Votacion'
 import { useState, useEffect } from 'react'
 import HiloCard from '@/components/foro/HiloCard'
+import type { WeaponStats } from '@/app/api/analyze-weapon/route'
 
 export type HiloDTO = {
   id: string
@@ -21,6 +22,11 @@ export type HiloDTO = {
   media_preview_url?: string | null
   votos?: number | null
   contenido?: string | null
+  weapon_stats_record?: {
+    id: string
+    weapon_name: string | null
+    stats: WeaponStats | null
+  } | null
 }
 
 function formatDate(dateStr?: string | null) {
@@ -52,10 +58,12 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
       categoriaColor={hilo.subcategoria?.color || undefined}
       autorUsername={hilo.autor?.username || 'Anónimo'}
       autorAvatarUrl={hilo.autor?.avatar_url || null}
+      autorId={hilo.autor?.id || null}
       createdAt={hilo.created_at}
       vistas={hilo.vistas ?? 0}
       respuestas={hilo.respuestas_count ?? 0}
       votosIniciales={hilo.votos ?? 0}
+      weaponStats={hilo.weapon_stats_record?.stats ?? null}
     />
   )
 }

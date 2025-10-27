@@ -14,6 +14,7 @@ import {
   Clock,
   ExternalLink,
   Pencil,
+  Trash2,
 } from "lucide-react";
 import BotonReportar from "@/components/foro/BotonReportar";
 import { Votacion } from "@/components/ui/Votacion";
@@ -45,8 +46,34 @@ export default function HiloHeader({ hilo, etiquetas }: HiloHeaderProps) {
   const [modoEdicion, setModoEdicion] = useState(false);
   const [contenidoEditado, setContenidoEditado] = useState(hilo.contenido);
   const [guardando, setGuardando] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
 
   const esAutor = user?.id === hilo.autor_id;
+
+  const handleEliminar = async () => {
+    if (!confirm("¿Estás seguro de que deseas eliminar este hilo? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    setEliminando(true);
+    try {
+      const response = await fetch(`/api/foro/hilos/${hilo.id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el hilo");
+      }
+
+      // Redirigir al foro después de eliminar
+      window.location.href = "/foro";
+    } catch (error) {
+      console.error("Error al eliminar:", error);
+      alert("No se pudo eliminar el hilo. Por favor, intenta de nuevo.");
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   const handleGuardarEdicion = async () => {
     if (!contenidoEditado.trim()) {
@@ -255,27 +282,52 @@ export default function HiloHeader({ hilo, etiquetas }: HiloHeaderProps) {
                 className="text-sm font-medium px-3 sm:px-4 py-2"
               />
 
-              {/* Botón de editar (solo para el autor) */}
+              {/* Botones de editar y eliminar (solo para el autor) */}
               {esAutor && (
-                <button
-                  onClick={() => setModoEdicion(true)}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-                  style={{
-                    backgroundColor: getColorWithOpacity(0.5),
-                    ...getHoverTextColor(),
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = userColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = getColorWithOpacity(0.5);
-                  }}
-                  title="Editar hilo"
-                  type="button"
-                >
-                  <Pencil size={16} />
-                  <span className="hidden sm:inline">Editar</span>
-                </button>
+                <>
+                  <button
+                    onClick={() => setModoEdicion(true)}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                    style={{
+                      backgroundColor: getColorWithOpacity(0.5),
+                      ...getHoverTextColor(),
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = userColor;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = getColorWithOpacity(0.5);
+                    }}
+                    title="Editar hilo"
+                    type="button"
+                  >
+                    <Pencil size={16} />
+                    <span className="hidden sm:inline">Editar</span>
+                  </button>
+                  <button
+                    onClick={handleEliminar}
+                    disabled={eliminando}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-white px-3 sm:px-4 py-2 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
+                    style={{
+                      backgroundColor: eliminando ? "#9ca3af" : "#ef4444",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!eliminando) {
+                        e.currentTarget.style.backgroundColor = "#dc2626";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!eliminando) {
+                        e.currentTarget.style.backgroundColor = "#ef4444";
+                      }
+                    }}
+                    title="Eliminar hilo"
+                    type="button"
+                  >
+                    <Trash2 size={16} />
+                    <span className="hidden sm:inline">{eliminando ? "Eliminando..." : "Eliminar"}</span>
+                  </button>
+                </>
               )}
 
               <div className="ml-auto">
@@ -319,6 +371,7 @@ export default function HiloHeader({ hilo, etiquetas }: HiloHeaderProps) {
           <HiloContenido
             html={hilo.contenido ?? ""}
             className="prose max-w-none prose-headings:my-4 prose-p:my-3 prose-strong:text-gray-900 dark:prose-invert dark:prose-strong:text-white amoled:prose-invert amoled:prose-strong:text-white"
+            weaponStatsRecord={hilo.weapon_stats_record ?? undefined}
           />
         ) : (
           <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-4">

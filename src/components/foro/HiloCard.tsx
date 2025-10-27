@@ -13,13 +13,17 @@ import {
   AlertCircle,
   ExternalLink,
   Image as ImageIcon,
+  Trash2,
 } from "lucide-react";
 import { Votacion } from "@/components/ui/Votacion";
 import React from "react";
 import { useUserTheme } from "@/hooks/useUserTheme";
+import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ImageGallery } from "@/components/ui/ImageGallery";
 import { HighlightedContent } from "@/components/ui/HighlightedContent";
+import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
+import type { WeaponStats } from "@/app/api/analyze-weapon/route";
 
 export type HiloCardProps = {
   id: string;
@@ -30,12 +34,15 @@ export type HiloCardProps = {
   categoriaColor?: string;
   autorUsername?: string;
   autorAvatarUrl?: string | null;
+  autorId?: string | null;
   createdAt: string;
   vistas?: number;
   respuestas?: number;
   votosIniciales?: number;
   showSinRespuestasAlert?: boolean;
   className?: string;
+  weaponStats?: WeaponStats | string | null;
+  onDelete?: (hiloId: string) => void;
 };
 
 function stripHtml(text?: string | null, maxLen: number = 80): string {
@@ -53,6 +60,31 @@ const getYoutubeVideoId = (url: string): string | null => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : null;
+};
+
+// Función pura para parsear weaponStats
+const parseWeaponStats = (
+  weaponStats: HiloCardProps["weaponStats"]
+): WeaponStats | null => {
+  if (!weaponStats) return null;
+
+  // Si ya es un objeto (ha sido pasado así desde un contexto de React/servidor)
+  if (typeof weaponStats !== "string") {
+    return weaponStats;
+  }
+
+  // Intentar parsear el string
+  try {
+    const parsed = JSON.parse(weaponStats) as WeaponStats;
+    // Asegurar que es un objeto válido y no simplemente 'null' como string
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch (error) {
+    console.error(
+      "[HiloCard] Error al parsear weaponStats (JSON inválido):",
+      error
+    );
+    return null;
+  }
 };
 
 // Importar dinámicamente el componente YoutubePlayer para evitar problemas de hidratación
@@ -82,212 +114,229 @@ const YoutubePlayer = dynamic<{
 );
 
 // Componente para renderizar contenido HTML con soporte para videos de YouTube e imágenes
-const HtmlContentWithYoutube = React.memo(function HtmlContentWithYoutube({
-  html,
-  className = "",
-}: {
-  html: string;
-  className?: string;
-}) {
-  const { userColor } = useUserTheme();
-  // Verificar si hay un video en el contenido
-  const hasVideo = (content: string): boolean => {
-    if (!content) return false;
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = content;
-    return tempDiv.querySelector("iframe") !== null;
-  };
-
-  // Extraer imágenes del HTML y optimizarlas con loading="lazy"
-  const extractImages = (content: string): string[] => {
-    if (!content) return [];
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = content;
-
-    // Añadir loading="lazy" a todas las imágenes en el contenido
-    const allImages = Array.from(tempDiv.querySelectorAll("img"));
-    allImages.forEach(img => {
-      img.setAttribute("loading", "lazy");
-      // También añadir decoding="async" para mejorar el rendimiento
-      img.setAttribute("decoding", "async");
-    });
-    
-    const pickBestSrc = (img: HTMLImageElement): string | null => {
-      // Preferir data-fullsrc / data-original / data-src si existen
-      const dataFull = img.getAttribute('data-fullsrc') || img.getAttribute('data-full') || img.getAttribute('data-original') || img.getAttribute('data-src');
-      if (dataFull) return dataFull;
-
-      // Si hay srcset, elegir el candidato con mayor ancho
-      const srcset = img.getAttribute('srcset');
-      if (srcset) {
-        const candidates = srcset.split(',').map(s => s.trim()).map(part => {
-          const [url, size] = part.split(' ').map(p => p.trim());
-          const width = size && size.endsWith('w') ? parseInt(size) : (size && size.endsWith('x') ? parseFloat(size) * 1000 : 0);
-          return { url, width: isNaN(width) ? 0 : width };
-        });
-        const best = candidates.sort((a, b) => b.width - a.width)[0];
-        if (best?.url) return best.url;
-      }
-
-      // Fallback al src normal
-      return img.getAttribute('src');
+const HtmlContentWithYoutube = React.memo(
+  function HtmlContentWithYoutube({
+    html,
+    className = "",
+  }: {
+    html: string;
+    className?: string;
+  }) {
+    const { userColor } = useUserTheme();
+    // Verificar si hay un video en el contenido
+    const hasVideo = (content: string): boolean => {
+      if (!content) return false;
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
+      return tempDiv.querySelector("iframe") !== null;
     };
 
-    return allImages
-      .map((img) => pickBestSrc(img))
-      .filter((src): src is string => Boolean(src));
-  };
+    // Extraer imágenes del HTML y optimizarlas con loading="lazy"
+    const extractImages = (content: string): string[] => {
+      if (!content) return [];
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
 
-  // Extraer el iframe de YouTube del HTML
-  const extractYoutubeIframe = (content: string) => {
-    if (!content) return null;
+      // Añadir loading="lazy" a todas las imágenes en el contenido
+      const allImages = Array.from(tempDiv.querySelectorAll("img"));
+      allImages.forEach((img) => {
+        img.setAttribute("loading", "lazy");
+        // También añadir decoding="async" para mejorar el rendimiento
+        img.setAttribute("decoding", "async");
+      });
 
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = content;
+      const pickBestSrc = (img: HTMLImageElement): string | null => {
+        // Preferir data-fullsrc / data-original / data-src si existen
+        const dataFull =
+          img.getAttribute("data-fullsrc") ||
+          img.getAttribute("data-full") ||
+          img.getAttribute("data-original") ||
+          img.getAttribute("data-src");
+        if (dataFull) return dataFull;
 
-    const iframe = tempDiv.querySelector("iframe");
-    if (!iframe) return null;
+        // Si hay srcset, elegir el candidato con mayor ancho
+        const srcset = img.getAttribute("srcset");
+        if (srcset) {
+          const candidates = srcset
+            .split(",")
+            .map((s) => s.trim())
+            .map((part) => {
+              const [url, size] = part.split(" ").map((p) => p.trim());
+              const width =
+                size && size.endsWith("w")
+                  ? parseInt(size)
+                  : size && size.endsWith("x")
+                  ? parseFloat(size) * 1000
+                  : 0;
+              return { url, width: isNaN(width) ? 0 : width };
+            });
+          const best = candidates.sort((a, b) => b.width - a.width)[0];
+          if (best?.url) return best.url;
+        }
 
-    const src = iframe.getAttribute("src") || "";
-    const videoId = getYoutubeVideoId(src);
+        // Fallback al src normal
+        return img.getAttribute("src");
+      };
 
-    if (!videoId) return null;
+      return allImages
+        .map((img) => pickBestSrc(img))
+        .filter((src): src is string => Boolean(src));
+    };
 
-    // Usar el componente YoutubePlayer importado al nivel superior
-    return <YoutubePlayer videoId={videoId} className="mb-4" />;
-  };
+    // Extraer el iframe de YouTube del HTML
+    const extractYoutubeIframe = (content: string) => {
+      if (!content) return null;
 
-  // Extraer el contenido sin el iframe de YouTube y sin imágenes si hay video
-  const getContentWithoutMedias = (
-    content: string,
-    removeImages: boolean = false
-  ) => {
-    if (!content) return "";
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = content;
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
 
-    // Eliminar el iframe de YouTube si existe
-    const iframes = tempDiv.querySelectorAll("iframe");
-    iframes.forEach((iframe) => iframe.remove());
+      const iframe = tempDiv.querySelector("iframe");
+      if (!iframe) return null;
 
-    // Si hay que eliminar las imágenes (porque hay un video o múltiples imágenes)
-    if (removeImages) {
-      const images = tempDiv.querySelectorAll("img");
-      images.forEach((img) => img.remove());
-    }
+      const src = iframe.getAttribute("src") || "";
+      const videoId = getYoutubeVideoId(src);
 
-    // Limpiar elementos vacíos que puedan haber quedado
-    const emptyParagraphs = tempDiv.querySelectorAll("p:empty");
-    emptyParagraphs.forEach((p) => p.remove());
+      if (!videoId) return null;
 
-    return tempDiv.innerHTML;
-  };
+      // Usar el componente YoutubePlayer importado al nivel superior
+      return <YoutubePlayer videoId={videoId} className="mb-4" />;
+    };
 
-  const youtubeEmbed = extractYoutubeIframe(html);
-  const images = extractImages(html);
-  const containsVideo = hasVideo(html);
-  const imageCount = images.length;
-  const containsMultipleImages = imageCount > 1;
+    // Extraer el contenido sin el iframe de YouTube y sin imágenes si hay video
+    const getContentWithoutMedias = (
+      content: string,
+      removeImages: boolean = false
+    ) => {
+      if (!content) return "";
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = content;
 
-  // Determinar si debemos eliminar las imágenes del contenido HTML
-  // Evita duplicación: si hay al menos una imagen (o video), removemos las <img> del HTML base
-  const shouldRemoveImages = containsVideo || imageCount > 0;
-  const contentWithoutMedias = getContentWithoutMedias(
-    html,
-    shouldRemoveImages
-  );
+      // Eliminar el iframe de YouTube si existe
+      const iframes = tempDiv.querySelectorAll("iframe");
+      iframes.forEach((iframe) => iframe.remove());
 
-  // Verificar si hay contenido de texto después de eliminar medios
-  const hasTextContent =
-    contentWithoutMedias.replace(/<[^>]*>/g, "").trim().length > 0;
+      // Si hay que eliminar las imágenes (porque hay un video o múltiples imágenes)
+      if (removeImages) {
+        const images = tempDiv.querySelectorAll("img");
+        images.forEach((img) => img.remove());
+      }
 
-  return (
-    <div className={className}>
-      {/* Si hay video, mostrarlo primero */}
-      {containsVideo && (
-        <div
-          className="mb-3 youtube-embed-container"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        >
-          {youtubeEmbed}
-        </div>
-      )}
+      // Limpiar elementos vacíos que puedan haber quedado
+      const emptyParagraphs = tempDiv.querySelectorAll("p:empty");
+      emptyParagraphs.forEach((p) => p.remove());
 
-      {/* Si no hay video pero hay múltiples imágenes, mostrar galería */}
-      {!containsVideo && containsMultipleImages && (
-        <div className="mb-3 relative">
-          <div className="absolute top-2 right-2 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" />
-            {images.length}
+      return tempDiv.innerHTML;
+    };
+
+    const youtubeEmbed = extractYoutubeIframe(html);
+    const images = extractImages(html);
+    const containsVideo = hasVideo(html);
+    const imageCount = images.length;
+    const containsMultipleImages = imageCount > 1;
+
+    // Determinar si debemos eliminar las imágenes del contenido HTML
+    // Evita duplicación: si hay al menos una imagen (o video), removemos las <img> del HTML base
+    const shouldRemoveImages = containsVideo || imageCount > 0;
+    const contentWithoutMedias = getContentWithoutMedias(
+      html,
+      shouldRemoveImages
+    );
+
+    // Verificar si hay contenido de texto después de eliminar medios
+    const hasTextContent =
+      contentWithoutMedias.replace(/<[^>]*>/g, "").trim().length > 0;
+
+    return (
+      <div className={className}>
+        {/* Si hay video, mostrarlo primero */}
+        {containsVideo && (
+          <div
+            className="mb-3 youtube-embed-container"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+          >
+            {youtubeEmbed}
           </div>
-          <ImageGallery images={images} />
-        </div>
-      )}
+        )}
 
-      {/* Si no hay video ni múltiples imágenes, pero hay una sola imagen */}
-      {!containsVideo && !containsMultipleImages && images.length === 1 && (
-        <div className="mb-3 w-full flex justify-center">
-          <div className="w-full max-w-4xl">
-            <div className="relative w-full h-[300px] rounded-lg overflow-hidden p-0">
-              <img
-                src={images[0]}
-                alt="Imagen"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                decoding="async"
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  margin: "0 0",
-                  display: "inline-block",
-                }}
-              />
+        {/* Si no hay video pero hay múltiples imágenes, mostrar galería */}
+        {!containsVideo && containsMultipleImages && (
+          <div className="mb-3 relative">
+            <div className="absolute top-2 right-2 z-10 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+              <ImageIcon className="h-3 w-3" />
+              {images.length}
+            </div>
+            <ImageGallery images={images} />
+          </div>
+        )}
+
+        {/* Si no hay video ni múltiples imágenes, pero hay una sola imagen */}
+        {!containsVideo && !containsMultipleImages && images.length === 1 && (
+          <div className="mb-3 w-full flex justify-center">
+            <div className="w-full max-w-4xl">
+              <div className="relative w-full h-[300px] rounded-lg overflow-hidden p-0">
+                <img
+                  src={images[0]}
+                  alt="Imagen"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    margin: "0 0",
+                    display: "inline-block",
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Mostrar el contenido de texto si existe */}
-      {hasTextContent && (
-        <div
-          style={{
-            '--user-color': userColor,
-          } as React.CSSProperties}
-        >
-          <HighlightedContent
-            html={contentWithoutMedias}
-            className="prose prose-sm max-w-none dark:prose-invert"
-          />
-        </div>
-      )}
-    </div>
-  );
-}, (prevProps, nextProps) => {
-  // Memoización para evitar re-renderizados innecesarios
-  if (!prevProps.html && !nextProps.html) return true;
-  if (!prevProps.html || !nextProps.html) return false;
-  
-  // Si el contenido es exactamente igual, no re-renderizar
-  if (prevProps.html === nextProps.html) return true;
-  
-  // Si la diferencia de longitud es pequeña, comparar más a fondo
-  const lengthDiff = Math.abs(prevProps.html.length - nextProps.html.length);
-  if (lengthDiff < 10) {
-    // Verificar si ambos tienen o no tienen videos/imágenes
-    const prevHasVideo = prevProps.html.includes('<iframe');
-    const nextHasVideo = nextProps.html.includes('<iframe');
-    const prevHasImg = prevProps.html.includes('<img');
-    const nextHasImg = nextProps.html.includes('<img');
-    
-    return prevHasVideo === nextHasVideo && prevHasImg === nextHasImg;
+        {/* Mostrar el contenido de texto si existe */}
+        {hasTextContent && (
+          <div
+            style={
+              {
+                "--user-color": userColor,
+              } as React.CSSProperties
+            }
+          >
+            <HighlightedContent
+              html={contentWithoutMedias}
+              className="prose prose-sm max-w-none dark:prose-invert"
+            />
+          </div>
+        )}
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Memoización para evitar re-renderizados innecesarios
+    if (!prevProps.html && !nextProps.html) return true;
+    if (!prevProps.html || !nextProps.html) return false;
+
+    // Si el contenido es exactamente igual, no re-renderizar
+    if (prevProps.html === nextProps.html) return true;
+
+    // Si la diferencia de longitud es pequeña, comparar más a fondo
+    const lengthDiff = Math.abs(prevProps.html.length - nextProps.html.length);
+    if (lengthDiff < 10) {
+      // Verificar si ambos tienen o no tienen videos/imágenes
+      const prevHasVideo = prevProps.html.includes("<iframe");
+      const nextHasVideo = nextProps.html.includes("<iframe");
+      const prevHasImg = prevProps.html.includes("<img");
+      const nextHasImg = nextProps.html.includes("<img");
+
+      return prevHasVideo === nextHasVideo && prevHasImg === nextHasImg;
+    }
+
+    // Si hay una diferencia significativa, re-renderizar
+    return false;
   }
-  
-  // Si hay una diferencia significativa, re-renderizar
-  return false;
-});
+);
 
 function HiloCard(props: HiloCardProps) {
   const {
@@ -299,13 +348,51 @@ function HiloCard(props: HiloCardProps) {
     categoriaColor,
     autorUsername = "Anónimo",
     autorAvatarUrl,
+    autorId,
     createdAt,
     vistas = 0,
     respuestas = 0,
     votosIniciales = 0,
     showSinRespuestasAlert = false,
     className = "",
+    weaponStats,
+    onDelete,
   } = props;
+
+  const { user } = useAuth();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const isAuthor = user?.id === autorId;
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirm("¿Estás seguro de que deseas eliminar este hilo?")) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/foro/hilos/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el hilo");
+      }
+
+      if (onDelete) {
+        onDelete(id);
+      }
+    } catch (error) {
+      console.error("Error al eliminar hilo:", error);
+      alert("No se pudo eliminar el hilo");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const parsedWeaponStats = parseWeaponStats(weaponStats);
 
   const badgeBg = (categoriaColor || "#3B82F6") + "20";
   const badgeFg = categoriaColor || "#3B82F6";
@@ -353,9 +440,9 @@ function HiloCard(props: HiloCardProps) {
           transition: "border-color 0.3s ease, box-shadow 0.3s ease",
         }}
       >
-        <Link 
-          href={href} 
-          className="block flex-1" 
+        <Link
+          href={href}
+          className="block flex-1"
           onClick={handleCardClick}
           onMouseEnter={handleHiloHover}
         >
@@ -444,6 +531,15 @@ function HiloCard(props: HiloCardProps) {
                           border: 0;
                         }
                       `}</style>
+
+                      {parsedWeaponStats && (
+                        <div className="mb-4 md:flex md:justify-center">
+                          <WeaponStatsCard
+                            stats={parsedWeaponStats}
+                            className="max-w-sm md:max-w-xl md:w-full md:mx-auto"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -485,7 +581,7 @@ function HiloCard(props: HiloCardProps) {
                   </div>
                 </div>
 
-                {/* Derecha: Fecha */}
+                {/* Derecha: Fecha y botón de eliminar */}
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
                   <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
@@ -495,6 +591,17 @@ function HiloCard(props: HiloCardProps) {
                       month: "short",
                     })}
                   </span>
+                  {isAuthor && (
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="ml-2 p-1 text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-50 transition-colors"
+                      title="Eliminar hilo"
+                      type="button"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             </article>
@@ -506,46 +613,55 @@ function HiloCard(props: HiloCardProps) {
 }
 
 // Función de comparación mejorada para memoización
-const arePropsEqual = (prevProps: HiloCardProps, nextProps: HiloCardProps): boolean => {
+const arePropsEqual = (
+  prevProps: HiloCardProps,
+  nextProps: HiloCardProps
+): boolean => {
   // Comparación de propiedades principales que afectan al renderizado
-  const basicPropsEqual = (
+  const basicPropsEqual =
     prevProps.id === nextProps.id &&
     prevProps.titulo === nextProps.titulo &&
     prevProps.votosIniciales === nextProps.votosIniciales &&
     prevProps.respuestas === nextProps.respuestas &&
-    prevProps.vistas === nextProps.vistas
-  );
-  
+    prevProps.vistas === nextProps.vistas;
+
   // Si las propiedades básicas son diferentes, definitivamente hay que re-renderizar
   if (!basicPropsEqual) return false;
-  
+
   // Comparación de contenido solo si ambos tienen contenido
   // Si uno tiene contenido y el otro no, o si el contenido cambió, hay que re-renderizar
   if (prevProps.contenido || nextProps.contenido) {
     // Si uno tiene contenido y el otro no, son diferentes
     if (!prevProps.contenido || !nextProps.contenido) return false;
-    
+
     // Si el contenido cambió significativamente (más de 10 caracteres de diferencia)
     // o si contiene diferentes videos/imágenes, hay que re-renderizar
-    const prevHasVideo = prevProps.contenido?.includes('<iframe') || false;
-    const nextHasVideo = nextProps.contenido?.includes('<iframe') || false;
-    const prevHasImage = prevProps.contenido?.includes('<img') || false;
-    const nextHasImage = nextProps.contenido?.includes('<img') || false;
-    
-    if (prevHasVideo !== nextHasVideo || prevHasImage !== nextHasImage) return false;
-    
+    const prevHasVideo = prevProps.contenido?.includes("<iframe") || false;
+    const nextHasVideo = nextProps.contenido?.includes("<iframe") || false;
+    const prevHasImage = prevProps.contenido?.includes("<img") || false;
+    const nextHasImage = nextProps.contenido?.includes("<img") || false;
+
+    if (prevHasVideo !== nextHasVideo || prevHasImage !== nextHasImage)
+      return false;
+
     // Si la longitud del contenido cambió significativamente, hay que re-renderizar
-    const lengthDiff = Math.abs((prevProps.contenido?.length || 0) - (nextProps.contenido?.length || 0));
+    const lengthDiff = Math.abs(
+      (prevProps.contenido?.length || 0) - (nextProps.contenido?.length || 0)
+    );
     if (lengthDiff > 10) return false;
   }
-  
+
   // Comparación de otras propiedades que podrían afectar la apariencia
   if (prevProps.categoriaColor !== nextProps.categoriaColor) return false;
   if (prevProps.categoriaNombre !== nextProps.categoriaNombre) return false;
   if (prevProps.autorUsername !== nextProps.autorUsername) return false;
   if (prevProps.autorAvatarUrl !== nextProps.autorAvatarUrl) return false;
-  if (prevProps.showSinRespuestasAlert !== nextProps.showSinRespuestasAlert) return false;
-  
+  if (prevProps.autorId !== nextProps.autorId) return false;
+  if (prevProps.showSinRespuestasAlert !== nextProps.showSinRespuestasAlert)
+    return false;
+  if (prevProps.weaponStats !== nextProps.weaponStats) return false;
+  if (prevProps.onDelete !== nextProps.onDelete) return false;
+
   // Si todas las comparaciones pasaron, las props son iguales
   return true;
 };

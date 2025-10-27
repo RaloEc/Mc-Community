@@ -8,6 +8,8 @@ export interface ForoAutor {
   color?: string;
 }
 
+import type { WeaponStats } from "@/app/api/analyze-weapon/route";
+
 export interface ForoCategoria {
   id: string;
   nombre: string;
@@ -45,12 +47,22 @@ export interface ForoHilo {
   updated_at: string | null;
   autor?: ForoAutor;
   categoria?: ForoCategoria;
+  weapon_stats_id?: string | null;
 }
 
 export interface ForoHiloCompleto extends ForoHilo {
   autor: ForoAutor;
   categoria: ForoCategoria;
   etiquetas?: ForoEtiqueta[];
+  weapon_stats_record?: WeaponStatsRecord | null;
+}
+
+export interface WeaponStatsRecord {
+  id: string;
+  weapon_name: string | null;
+  stats: WeaponStats;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ForoPost {

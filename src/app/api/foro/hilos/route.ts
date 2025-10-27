@@ -73,7 +73,8 @@ export async function GET(request: NextRequest) {
       votos_conteo:foro_votos_hilos(count),
       respuestas_conteo:foro_posts(count),
       autor:perfiles!autor_id(username, role, avatar_url),
-      categoria:foro_categorias!categoria_id(nombre, slug, color)
+      categoria:foro_categorias!categoria_id(nombre, slug, color),
+      weapon_stats_record:weapon_stats_records!weapon_stats_id( id, weapon_name, stats )
     `;
 
     let query = supabase.from('foro_hilos').select(baseSelect).is('deleted_at', null);
@@ -186,12 +187,41 @@ export async function GET(request: NextRequest) {
         color: hilo.categoria.color || '#3b82f6'
       } : undefined;
       
+      let weaponStatsRecord = null as null | {
+        id: string;
+        weapon_name: string | null;
+        stats: any;
+      };
+
+      if (hilo.weapon_stats_record) {
+        const statsValue = hilo.weapon_stats_record.stats;
+        let parsedStats = null;
+        if (typeof statsValue === 'string') {
+          try {
+            parsedStats = JSON.parse(statsValue);
+          } catch (err) {
+            console.error('Error al parsear stats de arma en API de hilos:', err);
+          }
+        } else {
+          parsedStats = statsValue;
+        }
+
+        if (parsedStats) {
+          weaponStatsRecord = {
+            id: hilo.weapon_stats_record.id,
+            weapon_name: hilo.weapon_stats_record.weapon_name ?? null,
+            stats: parsedStats,
+          };
+        }
+      }
+
       return { 
         ...hilo, 
         votos_conteo: votos, 
         respuestas_conteo: respuestas,
         autor,
-        categoria
+        categoria,
+        weapon_stats_record: weaponStatsRecord
       };
     }) || [];
     

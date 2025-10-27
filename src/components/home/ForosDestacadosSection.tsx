@@ -26,6 +26,7 @@ interface HiloForo {
   respuestas_count?: number;
   respuestas_conteo?: number;
   autor: {
+    id?: string;
     username: string;
     avatar_url?: string;
   };
@@ -34,6 +35,11 @@ interface HiloForo {
     color?: string;
     slug: string;
   };
+  weapon_stats_record?: {
+    id: string;
+    weapon_name: string | null;
+    stats: any;
+  } | null;
 }
 
 interface CategoriaForo {
@@ -96,8 +102,9 @@ export default function ForosDestacadosSection({
               vistas,
               votos_conteo:foro_votos_hilos(count),
               respuestas_conteo:foro_posts(count),
-              autor:perfiles!autor_id(username, avatar_url),
-              categoria:foro_categorias!categoria_id(nombre, color, slug)
+              autor:perfiles!autor_id(id, username, avatar_url),
+              categoria:foro_categorias!categoria_id(nombre, color, slug),
+              weapon_stats_record:weapon_stats_records!weapon_stats_id(id, weapon_name, stats)
             `)
             .is('deleted_at', null);
 
@@ -129,12 +136,42 @@ export default function ForosDestacadosSection({
               ? (hilo.respuestas_conteo[0]?.count ?? 0) 
               : (hilo.respuestas_conteo as any)?.count ?? 0;
             
+            // Normalizar weapon_stats_record
+            let weaponStatsRecord = null;
+            if (Array.isArray(hilo.weapon_stats_record) && hilo.weapon_stats_record.length > 0) {
+              const record = hilo.weapon_stats_record[0] as any;
+              let stats = record.stats;
+              if (typeof stats === 'string') {
+                try {
+                  stats = JSON.parse(stats);
+                } catch (e) {
+                  stats = null;
+                }
+              }
+              if (stats) {
+                weaponStatsRecord = { id: record.id, weapon_name: record.weapon_name, stats };
+              }
+            } else if (hilo.weapon_stats_record && !Array.isArray(hilo.weapon_stats_record)) {
+              let stats = (hilo.weapon_stats_record as any).stats;
+              if (typeof stats === 'string') {
+                try {
+                  stats = JSON.parse(stats);
+                } catch (e) {
+                  stats = null;
+                }
+              }
+              if (stats) {
+                weaponStatsRecord = hilo.weapon_stats_record as any;
+              }
+            }
+            
             return { 
               ...hilo, 
               votos_conteo: votos, 
               respuestas_conteo: respuestas,
               autor: Array.isArray(hilo.autor) ? hilo.autor[0] : hilo.autor,
               categoria: Array.isArray(hilo.categoria) ? hilo.categoria[0] : hilo.categoria,
+              weapon_stats_record: weaponStatsRecord,
               fecha_creacion: hilo.created_at // Para compatibilidad con el código existente
             };
           }) || [];
@@ -283,11 +320,13 @@ export default function ForosDestacadosSection({
                 categoriaColor={hilo.categoria?.color}
                 autorUsername={hilo.autor?.username || 'Anónimo'}
                 autorAvatarUrl={hilo.autor?.avatar_url || null}
+                autorId={hilo.autor?.id || null}
                 createdAt={hilo.fecha_creacion}
                 vistas={hilo.vistas || 0}
                 respuestas={hilo.respuestas_conteo || 0}
                 votosIniciales={hilo.votos_conteo || 0}
                 showSinRespuestasAlert={tipo === 'sin-respuestas'}
+                weaponStats={hilo.weapon_stats_record?.stats ?? null}
               />
             </motion.div>
           ))}

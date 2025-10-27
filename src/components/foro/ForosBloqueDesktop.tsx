@@ -8,11 +8,13 @@ import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import HiloItem, { HiloDTO } from './HiloItem';
+import type { WeaponStats } from '@/app/api/analyze-weapon/route';
 
 // Tipos
 type Hilo = {
   id: string;
   titulo: string;
+  contenido?: string | null;
   autor_id: string;
   created_at: string;
   ultimo_post_at: string;
@@ -26,6 +28,11 @@ type Hilo = {
   foro_categorias: {
     nombre: string;
     color?: string | null;
+  } | null;
+  weapon_stats_record?: {
+    id: string;
+    weapon_name: string | null;
+    stats: string | WeaponStats;
   } | null;
 };
 
@@ -109,68 +116,49 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       return;
     }
     
-    const supabase = createClient();
+    setLoading(prev => ({ ...prev, [tab]: true }));
+    setErrors(prev => ({ ...prev, [tab]: null }));
     
     try {
-      // Base select para hilos
-      const baseSelect = `
-        id, 
-        titulo, 
-        autor_id,
-        created_at,
-        ultimo_post_at,
-        votos_conteo:foro_votos_hilos(count),
-        respuestas_conteo:foro_posts(count),
-        perfiles:autor_id(username, rol:role, avatar_url),
-        foro_categorias:categoria_id(nombre, color)
-      `;
-
-      let query = supabase.from('foro_hilos').select(baseSelect).is('deleted_at', null);
-
-      // Configurar la consulta según la pestaña
-      switch (tab) {
-        case 'destacados':
-          // Hilos con más votos y respuestas
-          query = query.order('votos_conteo', { ascending: false });
-          break;
-        case 'recientes':
-          // Hilos más recientes
-          query = query.order('created_at', { ascending: false });
-          break;
-        case 'sin_respuestas':
-          // Hilos sin respuestas - No podemos filtrar directamente por respuestas_conteo
-          // porque es un alias, así que traemos todos y filtramos en el cliente
-          query = query.order('created_at', { ascending: false });
-          break;
+      // Usar la API en lugar de consultar directamente a Supabase
+      const response = await fetch(`/api/foro/hilos?tipo=${tab}&limit=${limit}`);
+      
+      if (!response.ok) {
+        throw new Error(`Error al obtener hilos: ${response.statusText}`);
       }
-
-      // Limitar resultados - para sin_respuestas traemos más para poder filtrar
-      const limit_query = tab === 'sin_respuestas' ? limit * 3 : limit;
-      const { data, error: queryError } = await query.limit(limit_query);
-
-      if (queryError) throw new Error(queryError.message);
-
-      // Normalizar los conteos (convertir de objetos a números)
-      const hilosNormalizados = data?.map(hilo => {
-        const votos = Array.isArray(hilo.votos_conteo) 
-          ? (hilo.votos_conteo[0] ? (hilo.votos_conteo[0] as any).count || 0 : 0) 
-          : ((hilo.votos_conteo as any)?.count || 0);
-        
-        const respuestas = Array.isArray(hilo.respuestas_conteo) 
-          ? (hilo.respuestas_conteo[0] ? (hilo.respuestas_conteo[0] as any).count || 0 : 0) 
-          : ((hilo.respuestas_conteo as any)?.count || 0);
-        
-        return { 
-          ...hilo, 
-          votos_conteo: votos, 
-          respuestas_conteo: respuestas 
-        };
-      }) || [];
+      
+      const apiData = await response.json();
+      
+      if (!apiData.success || !apiData.items) {
+        throw new Error('Respuesta inválida de la API');
+      }
+      
+      // Transformar los datos de la API al formato esperado
+      const hilosTransformados = apiData.items.map((hilo: any) => ({
+        id: hilo.id,
+        titulo: hilo.titulo,
+        contenido: hilo.contenido,
+        autor_id: hilo.autor_id,
+        created_at: hilo.created_at,
+        ultimo_post_at: hilo.ultimo_post_at,
+        votos_conteo: hilo.votos_conteo,
+        respuestas_conteo: hilo.respuestas_conteo,
+        perfiles: hilo.autor ? {
+          username: hilo.autor.username,
+          rol: hilo.autor.rol,
+          avatar_url: hilo.autor.avatar_url
+        } : null,
+        foro_categorias: hilo.categoria ? {
+          nombre: hilo.categoria.nombre,
+          color: hilo.categoria.color
+        } : null,
+        weapon_stats_record: hilo.weapon_stats_record
+      }));
 
       // Para la pestaña sin_respuestas, filtramos en el cliente
-      let hilosFiltrados = hilosNormalizados;
+      let hilosFiltrados = hilosTransformados;
       if (tab === 'sin_respuestas') {
-        hilosFiltrados = hilosNormalizados.filter(hilo => hilo.respuestas_conteo === 0).slice(0, limit);
+        hilosFiltrados = hilosTransformados.filter(hilo => hilo.respuestas_conteo === 0).slice(0, limit);
       }
 
       // Actualizar estado
@@ -258,6 +246,27 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       }
     }
     
+    // Normalizar weapon_stats_record (puede venir como array o como objeto)
+    let record = hilo.weapon_stats_record ?? null;
+    if (Array.isArray(record) && record.length > 0) {
+      record = record[0];
+    } else if (Array.isArray(record)) {
+      record = null;
+    }
+    
+    let parsedStats: WeaponStats | null = null;
+    if (record?.stats) {
+      if (typeof record.stats === 'string') {
+        try {
+          parsedStats = JSON.parse(record.stats) as WeaponStats;
+        } catch (error) {
+          console.error('[ForosBloqueDesktop] No se pudieron parsear las estadísticas del arma', error);
+        }
+      } else {
+        parsedStats = record.stats as WeaponStats;
+      }
+    }
+
     return {
       id: hilo.id,
       titulo: hilo.titulo,
@@ -276,7 +285,10 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
         id: hilo.autor_id,
         username: hilo.perfiles.username,
         avatar_url: hilo.perfiles.avatar_url
-      } : null
+      } : null,
+      weapon_stats_record: record && parsedStats
+        ? { id: record.id, weapon_name: record.weapon_name ?? null, stats: parsedStats }
+        : null
     };
   };
   

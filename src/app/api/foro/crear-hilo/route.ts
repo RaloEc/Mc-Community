@@ -19,7 +19,7 @@ function createSlug(title: string): string {
 }
 
 export async function POST(request: Request) {
-  const { titulo, contenido, categoria_id } = await request.json();
+  const { titulo, contenido, categoria_id, weapon_stats_id } = await request.json();
 
   const supabase = await createClient();
   const { data: { session } } = await supabase.auth.getSession();
@@ -43,6 +43,7 @@ export async function POST(request: Request) {
       categoria_id,
       autor_id: session.user.id,
       slug,
+      weapon_stats_id: weapon_stats_id ?? null,
     })
     .select('id, slug') // Solo seleccionamos lo necesario para la redirección
     .single();
