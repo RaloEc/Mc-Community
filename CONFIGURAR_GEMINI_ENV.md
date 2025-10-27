@@ -8,8 +8,8 @@ Agrega estas líneas a tu archivo `.env.local`:
 
 ```bash
 # Google Gemini AI
-GEMINI_API_KEY=AIzaSyDgIJ98S98ASKi5NmogR3XD0-qLsmLbY_g
-GEMINI_PROJECT_ID=54873002207
+GEMINI_API_KEY="TU_CLAVE_GEMINI"
+GEMINI_PROJECT_ID="TU_PROJECT_ID"
 ```
 
 ### 2. Configurar variables en Supabase Dashboard
@@ -20,10 +20,10 @@ GEMINI_PROJECT_ID=54873002207
 4. En la sección **Environment Variables**, agrega:
 
    - **Variable Name:** `GEMINI_API_KEY`
-   - **Value:** `AIzaSyDgIJ98S98ASKi5NmogR3XD0-qLsmLbY_g`
+   - **Value:** *(pega aquí la clave rotada que obtuviste en Google Cloud)*
 
    - **Variable Name:** `GEMINI_PROJECT_ID`  
-   - **Value:** `54873002207`
+   - **Value:** *(usa el ID del proyecto configurado en Google Cloud)*
 
 ### 3. Verificar que la función de borde esté desplegada
 

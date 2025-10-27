@@ -12,12 +12,12 @@
 
    ```
    Variable Name: GEMINI_API_KEY
-   Value: AIzaSyDgIJ98S98ASKi5NmogR3XD0-qLsmLbY_g
+   Value: <TU_CLAVE_GEMINI_ROTADA>
    ```
 
    ```
    Variable Name: GEMINI_PROJECT_ID
-   Value: 54873002207
+   Value: <TU_PROJECT_ID>
    ```
 
 6. **Haz clic en "Save"** para cada variable
@@ -55,8 +55,8 @@ En tu archivo `.env.local` (en la raíz del proyecto):
 
 ```bash
 # Google Gemini AI
-GEMINI_API_KEY=AIzaSyDgIJ98S98ASKi5NmogR3XD0-qLsmLbY_g
-GEMINI_PROJECT_ID=54873002207
+GEMINI_API_KEY="TU_CLAVE_GEMINI"
+GEMINI_PROJECT_ID="TU_PROJECT_ID"
 ```
 
 **Importante:** Este archivo está en `.gitignore`, así que no se subirá a Git.
