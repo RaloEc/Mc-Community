@@ -18,6 +18,7 @@ import { WeaponStats } from "@/app/api/analyze-weapon/route";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -272,6 +273,9 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
               <div className="p-4 border-b border-gray-200 dark:border-gray-700">
                 <DialogHeader>
                   <DialogTitle>Análisis de Estadísticas de Arma</DialogTitle>
+                  <DialogDescription>
+                    Sube una captura de pantalla de las estadísticas de tu arma para analizarlas automáticamente
+                  </DialogDescription>
                 </DialogHeader>
               </div>
               <div
