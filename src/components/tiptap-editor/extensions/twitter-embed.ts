@@ -4,7 +4,7 @@ import { Node, mergeAttributes, nodeInputRule, nodePasteRule } from '@tiptap/cor
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import TwitterEmbedComponent from './twitter-embed-component'
 
-const TWITTER_URL_REGEX = /(https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+)(?:\?[^\s]*)?/i
+const TWITTER_URL_REGEX = /(https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[A-Za-z0-9_]+\/status\/\d+)(?:\?[^\s]*)?/gi
 
 const buildTwitterAttributes = (url: string) => ({
   twitterData: {
