@@ -1,13 +1,16 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
-  disable: process.env.NODE_ENV === 'development',
-  register: true,
-  skipWaiting: true,
+  // Deshabilitar PWA en producción (Netlify) para evitar errores de ServiceWorker
+  // Solo activar en desarrollo local
+  disable: process.env.NODE_ENV === 'development' || process.env.NETLIFY === 'true',
+  register: false, // No registrar automáticamente
+  skipWaiting: false, // No forzar activación inmediata
+  clientsClaim: false, // No reclamar clientes inmediatamente
   // Forzar la recarga del SW en cada actualización
-  buildExcludes: [/middleware-manifest\.json$/, /_next\/app-build-manifest\.json$/],
+  buildExcludes: [/middleware-manifest\.json$/, /_next\/app-build-manifest\.json$/, /\.map$/],
   // Configuración adicional para evitar problemas de caché
-  cacheOnFrontEndNav: true,
-  reloadOnOnline: true,
+  cacheOnFrontEndNav: false,
+  reloadOnOnline: false,
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/fonts\.(?:gstatic)\.com\/.*/i,
