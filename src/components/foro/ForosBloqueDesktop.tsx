@@ -22,8 +22,10 @@ type Hilo = {
   respuestas_conteo: number | null | { count?: number } | any[];
   perfiles: {
     username: string;
+    public_id?: string | null;
     rol: string;
     avatar_url: string | null;
+    color?: string | null;
   } | null;
   foro_categorias: {
     nombre: string;
@@ -120,7 +122,7 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
     setErrors(prev => ({ ...prev, [tab]: null }));
     
     try {
-      // Usar la API en lugar de consultar directamente a Supabase
+      // Usar la API con el nuevo formato
       const response = await fetch(`/api/foro/hilos?tipo=${tab}&limit=${limit}`);
       
       if (!response.ok) {
@@ -129,12 +131,13 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       
       const apiData = await response.json();
       
-      if (!apiData.success || !apiData.items) {
+      // El nuevo formato de la API devuelve { hilos: [...], hasNextPage: boolean, total: number }
+      if (!apiData.hilos) {
         throw new Error('Respuesta inválida de la API');
       }
       
       // Transformar los datos de la API al formato esperado
-      const hilosTransformados = apiData.items.map((hilo: any) => ({
+      const hilosTransformados = apiData.hilos.map((hilo: any) => ({
         id: hilo.id,
         titulo: hilo.titulo,
         contenido: hilo.contenido,
@@ -284,7 +287,9 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
       autor: hilo.perfiles ? {
         id: hilo.autor_id,
         username: hilo.perfiles.username,
-        avatar_url: hilo.perfiles.avatar_url
+        avatar_url: hilo.perfiles.avatar_url,
+        public_id: hilo.perfiles.public_id ?? null,
+        color: hilo.perfiles.color ?? undefined
       } : null,
       weapon_stats_record: record && parsedStats
         ? { id: record.id, weapon_name: record.weapon_name ?? null, stats: parsedStats }

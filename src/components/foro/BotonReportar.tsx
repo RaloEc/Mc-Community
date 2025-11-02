@@ -27,6 +27,7 @@ interface BotonReportarProps {
   contenido_id: string;
   variant?: 'default' | 'ghost' | 'outline';
   size?: 'default' | 'sm' | 'lg' | 'icon';
+  hideLabelBelow?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
 const RAZONES_REPORTE = [
@@ -44,6 +45,7 @@ export default function BotonReportar({
   contenido_id,
   variant = 'ghost',
   size = 'sm',
+  hideLabelBelow,
 }: BotonReportarProps) {
   const [dialogAbierto, setDialogAbierto] = useState(false);
   const [razon, setRazon] = useState('');
@@ -105,9 +107,17 @@ export default function BotonReportar({
   return (
     <Dialog open={dialogAbierto} onOpenChange={setDialogAbierto}>
       <DialogTrigger asChild>
-        <Button variant={variant} size={size}>
-          <Flag className="h-4 w-4 mr-2" />
-          Reportar
+        <Button
+          variant={variant}
+          size={size}
+          aria-label="Reportar"
+        >
+          <Flag
+            className={`h-4 w-4 ${hideLabelBelow ? `${hideLabelBelow}:mr-2` : 'mr-2'}`}
+          />
+          <span className={hideLabelBelow ? `hidden ${hideLabelBelow}:inline` : ''}>
+            Reportar
+          </span>
         </Button>
       </DialogTrigger>
       <DialogContent>

@@ -3,6 +3,7 @@
 export interface ForoAutor {
   id: string;
   username: string;
+  public_id?: string;
   avatar_url: string | null;
   role?: string;
   color?: string;

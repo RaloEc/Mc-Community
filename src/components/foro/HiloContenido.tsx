@@ -1,15 +1,98 @@
 "use client";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
-import { HighlightedContent } from "@/components/ui/HighlightedContent";
+import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
+import { HighlightedContent } from "@/components/ui/HighlightedContent";
 import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
 import { useUserTheme } from "@/hooks/useUserTheme";
 import { toast } from "sonner";
 import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
+import { ChevronUp } from "lucide-react";
 import type { WeaponStats } from "@/app/api/analyze-weapon/route";
 
-// Cargar dinámicamente el componente YoutubePlayer para evitar problemas de hidratación
+// Declarar el tipo para el objeto twttr de Twitter
+declare global {
+  interface Window {
+    twttr: {
+      widgets: {
+        load: (element?: HTMLElement) => Promise<void>;
+      };
+    };
+  }
+}
+
+// Hook personalizado para rastrear el valor anterior de una variable
+function usePrevious(value: string | undefined) {
+  const ref = useRef<string | undefined>();
+  useEffect(() => {
+    ref.current = value;
+  }, [value]);
+  return ref.current;
+}
+
+// Componente para cargar tweets desde la API
+const TwitterEmbedLoader = ({ url }: { url: string }) => {
+  const [html, setHtml] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const fetchTweet = async () => {
+      try {
+        const response = await fetch(
+          `/api/twitter/oembed?url=${encodeURIComponent(url)}`
+        );
+        if (!response.ok) throw new Error("Failed to fetch tweet");
+        const data = await response.json();
+        setHtml(data.html);
+        setLoading(false);
+
+        // Cargar el script de Twitter después de obtener el HTML
+        setTimeout(() => {
+          if (window.twttr && window.twttr.widgets && containerRef.current) {
+            window.twttr.widgets.load(containerRef.current);
+          }
+        }, 100);
+      } catch (err) {
+        console.error("Error fetching tweet:", err);
+        setError("No se pudo cargar el tweet");
+        setLoading(false);
+      }
+    };
+
+    fetchTweet();
+  }, [url]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+        <span className="text-gray-600 dark:text-gray-400">
+          Cargando tweet...
+        </span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+        <span className="text-red-600 dark:text-red-400">{error}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="twitter-embed-content"
+      dangerouslySetInnerHTML={{ __html: html || "" }}
+    />
+  );
+};
+
+// Cargar dinámicamente componentes que dependen del cliente
 const YoutubePlayer = dynamic<{
   videoId: string;
   title?: string;
@@ -35,6 +118,20 @@ const YoutubePlayer = dynamic<{
   }
 );
 
+const DynamicHighlightedContent = dynamic<{
+  html: string;
+  className?: string;
+}>(
+  () =>
+    import("@/components/ui/HighlightedContent").then(
+      (mod) => mod.HighlightedContent
+    ),
+  {
+    ssr: false,
+    loading: () => <ContentSkeleton />,
+  }
+);
+
 interface HiloContenidoProps {
   html: string;
   className?: string;
@@ -43,6 +140,37 @@ interface HiloContenidoProps {
     weapon_name: string | null;
     stats: WeaponStats;
   } | null;
+}
+
+// Skeleton de carga mejorado
+function ContentSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      {/* Título */}
+      <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded-lg w-3/4"></div>
+
+      {/* Párrafos */}
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6"></div>
+      </div>
+
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-11/12"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-4/5"></div>
+      </div>
+
+      {/* Subtítulo */}
+      <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded-lg w-2/3 mt-8"></div>
+
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+      </div>
+    </div>
+  );
 }
 
 // Extraer el ID de video de YouTube de una URL
@@ -54,33 +182,170 @@ const getYoutubeVideoId = (url: string): string | null => {
 };
 
 /**
- * Componente para renderizar contenido HTML con soporte optimizado para videos de YouTube
+ * Componente para renderizar contenido HTML con diseño minimalista optimizado
  */
 export default function HiloContenido({
   html,
   className = "",
   weaponStatsRecord,
 }: HiloContenidoProps) {
-  const [isClient, setIsClient] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { userColor } = useUserTheme();
-  const [processedContent, setProcessedContent] = useState(html);
-  const [weaponStatsBlocks, setWeaponStatsBlocks] = useState<WeaponStats[]>(() => {
-    if (weaponStatsRecord?.stats) {
-      return [weaponStatsRecord.stats];
-    }
-    return [];
-  });
-  const [youtubeEmbedNode, setYoutubeEmbedNode] = useState<ReactNode>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Obtener el tema actual (light o dark)
+  const { resolvedTheme } = useTheme();
+
+  // Rastrear el tema anterior para detectar cambios
+  const previousTheme = usePrevious(resolvedTheme);
 
   // Activar sincronización en tiempo real de votos de hilos
   useRealtimeVotosHilos();
 
+  // Hidratar tweets en el lugar (sin extraerlos del flujo)
   useEffect(() => {
-    setIsClient(true);
+    // 1. Capturamos la referencia actual
+    const currentContentRef = contentRef.current;
+    if (!html || !currentContentRef || typeof document === "undefined") return;
+
+    // Pequeño delay para asegurar que HighlightedContent ha renderizado el contenido
+    const timeoutId = setTimeout(() => {
+      // Ahora encontrar todos los tweets en su lugar
+      const tweetNodes = currentContentRef.querySelectorAll<HTMLDivElement>(
+        'div[data-type="twitter-embed"]'
+      );
+
+      if (tweetNodes.length === 0) {
+        console.log("[HiloContenido] No hay tweets para hidratar");
+        return;
+      }
+
+      const theme = resolvedTheme === "dark" ? "dark" : "light";
+      const themeChanged = previousTheme && previousTheme !== resolvedTheme;
+
+      console.log(
+        `[HiloContenido] Hidratando ${tweetNodes.length} tweets en el lugar (tema: ${theme})`
+      );
+
+      // Procesar cada nodo de tweet DE FORMA NATIVA (Mutación del DOM)
+      tweetNodes.forEach((node, index) => {
+        const dataTwitterAttribute = node.getAttribute("data-twitter");
+        if (!dataTwitterAttribute) {
+          console.warn(
+            `[HiloContenido] Tweet ${index} - No tiene atributo data-twitter`
+          );
+          return;
+        }
+
+        try {
+          const data = JSON.parse(dataTwitterAttribute);
+          if (!data.html) {
+            console.warn(`[HiloContenido] Tweet ${index} - No tiene HTML`);
+            return;
+          }
+
+          // Si el tema cambió, preparar la animación
+          if (themeChanged) {
+            const currentHeight = node.offsetHeight;
+            console.log(
+              `[HiloContenido] Tweet ${index} - Fijando altura a ${currentHeight}px`
+            );
+            node.style.minHeight = `${currentHeight}px`;
+            node.style.transition = "opacity 0.3s ease-in-out";
+            node.style.opacity = "0";
+          }
+
+          // Decodificar e inyectar el tema
+          let decodedHtml = decodeURIComponent(escape(atob(data.html)));
+          decodedHtml = decodedHtml.replace(
+            '<blockquote class="twitter-tweet"',
+            `<blockquote class="twitter-tweet" data-theme="${theme}"`
+          );
+
+          console.log(
+            `[HiloContenido] Tweet ${index} - Inyectado data-theme="${theme}"`
+          );
+
+          // Inyectar el nuevo HTML (el <blockquote>)
+          // Si el tema cambió, esto pasa mientras el nodo es invisible
+          node.innerHTML = decodedHtml;
+        } catch (e) {
+          console.error(`[HiloContenido] Tweet ${index} - Error:`, e);
+          node.innerHTML = "<p>Error al cargar el tweet.</p>";
+        }
+      });
+
+      // Cargar el script de Twitter si no existe
+      // El script de Twitter es seguro dejar cargado permanentemente
+      // No intentamos eliminarlo en la limpieza para evitar conflictos con React
+      let existingScript = document.querySelector(
+        'script[src*="platform.twitter.com"]'
+      );
+
+      if (!existingScript) {
+        console.log("[HiloContenido] Creando script de Twitter");
+        const script = document.createElement("script");
+        script.src = "https://platform.twitter.com/widgets.js";
+        script.async = true;
+        script.id = "twitter-wjs"; // ID estándar de Twitter
+        document.head.appendChild(script);
+        existingScript = script;
+      }
+
+      // Esperar a que el script esté disponible y llamar a load()
+      const loadTwitterWidgets = () => {
+        if (window.twttr && window.twttr.widgets) {
+          console.log(
+            `[HiloContenido] Hidratando ${tweetNodes.length} tweets con window.twttr.widgets.load()`
+          );
+
+          window.twttr.widgets
+            .load(currentContentRef)
+            .then(() => {
+              console.log("[HiloContenido] Tweets hidratados exitosamente");
+
+              // Si el tema cambió, revelar los tweets
+              if (themeChanged) {
+                tweetNodes.forEach((node) => {
+                  node.style.opacity = "1";
+
+                  // Liberar la altura después de que termine la animación
+                  setTimeout(() => {
+                    node.style.minHeight = "auto";
+                  }, 300);
+                });
+              }
+            })
+            .catch((e) => {
+              console.error("[HiloContenido] Error hidratando tweets:", e);
+            });
+        } else {
+          // Reintentar si window.twttr aún no está disponible
+          setTimeout(loadTwitterWidgets, 100);
+        }
+      };
+
+      // Pequeño delay para asegurar que el script esté cargado
+      setTimeout(loadTwitterWidgets, 100);
+    }, 100);
+
+    // NO usar función de limpieza que intente modificar el DOM
+    // Esto causa conflictos con React durante la reconciliación
+    // React maneja el desmontaje automáticamente con suppressHydrationWarning
+    return () => clearTimeout(timeoutId);
+  }, [html, resolvedTheme, previousTheme]);
+
+  // Manejar scroll para mostrar botón "Volver arriba"
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Manejar clics en elementos con data-click-to-copy
+  // Manejar clics en elementos copiables
   useEffect(() => {
     const handleClickToCopy = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -95,122 +360,97 @@ export default function HiloContenido({
         navigator.clipboard
           .writeText(textToCopy)
           .then(() => {
-            toast.success('¡Texto copiado al portapapeles!', {
+            toast.success("¡Texto copiado al portapapeles!", {
               duration: 2000,
             });
           })
           .catch((err) => {
-            console.error('Error al copiar texto: ', err);
-            toast.error('No se pudo copiar el texto.');
+            console.error("Error al copiar:", err);
+            toast.error("No se pudo copiar el texto.");
           });
       }
     };
 
     const contentElement = contentRef.current;
     if (contentElement) {
-      contentElement.addEventListener('click', handleClickToCopy);
+      contentElement.addEventListener("click", handleClickToCopy);
     }
 
     return () => {
       if (contentElement) {
-        contentElement.removeEventListener('click', handleClickToCopy);
+        contentElement.removeEventListener("click", handleClickToCopy);
       }
     };
-  }, [isClient, html]);
+  }, []);
 
-  useEffect(() => {
-    if (!isClient || typeof document === "undefined") {
-      return;
-    }
-
-    const workingDiv = document.createElement("div");
-    workingDiv.innerHTML = html;
-
-    // Extraer posible iframe de YouTube
-    const iframe = workingDiv.querySelector("iframe");
-    if (iframe) {
-      const src = iframe.getAttribute("src") || "";
-      const videoId = getYoutubeVideoId(src);
-
-      if (videoId) {
-        setYoutubeEmbedNode(
-          <YoutubePlayer
-            videoId={videoId}
-            title="Video de YouTube"
-            className="mb-4"
-          />
-        );
-      } else {
-        setYoutubeEmbedNode(null);
-      }
-
-      iframe.remove();
-    } else {
-      setYoutubeEmbedNode(null);
-    }
-
-    // Si ya tenemos estadísticas asociadas al hilo, evitar volver a insertarlas
-    const statsList: WeaponStats[] = weaponStatsRecord?.stats
-      ? [weaponStatsRecord.stats]
-      : [];
-
-    const blocks = weaponStatsRecord?.stats
-      ? []
-      : Array.from(
-          workingDiv.querySelectorAll<HTMLDivElement>("[data-weapon-stats]")
-        );
-
-    blocks.forEach((block) => {
-      const dataAttr = block.getAttribute("data-weapon-stats");
-      if (!dataAttr) return;
-
-      try {
-        const parsed = JSON.parse(decodeURIComponent(dataAttr)) as WeaponStats;
-        statsList.push(parsed);
-      } catch (error) {
-        console.error("No se pudieron parsear las estadísticas del arma:", error);
-      }
-
-      block.remove();
-    });
-
-    setWeaponStatsBlocks(statsList);
-    setProcessedContent(workingDiv.innerHTML || "");
-  }, [isClient, html]);
-
-  // No renderizar nada en el servidor para evitar problemas de hidratación
-  if (!isClient) {
-    return (
-      <div className={className}>
-        <div className="prose prose-sm max-w-none dark:prose-invert">
-          <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-32 rounded"></div>
-        </div>
-      </div>
-    );
-  }
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
-    <div 
-      className={className} 
-      ref={contentRef}
-      style={{
-        '--user-color': userColor,
-      } as React.CSSProperties}
-    >
-      {youtubeEmbedNode && <div className="mb-4">{youtubeEmbedNode}</div>}
-      {processedContent && (
-        <HighlightedContent
-          html={processedContent}
-          className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)]"
-        />
+    <>
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+            /* Estilos para embeds de Twitter */
+            div[data-type="twitter-embed"] {
+              overflow: hidden;
+              border-radius: 12px;
+              width: var(--twitter-embed-width, 100%);
+              max-width: var(--twitter-embed-max-width, 600px);
+              margin: var(--twitter-embed-margin, 1.5rem auto);
+            }
+
+            div[data-type="twitter-embed"] iframe {
+              border: none !important;
+              border-radius: 12px !important;
+            }
+
+            div[data-type="twitter-embed"] blockquote.twitter-tweet {
+              border: none !important;
+              border-radius: 12px !important;
+              margin: 0 !important;
+              width: 100% !important;
+            }
+
+            /* Remover bordes de Twitter en todos los niveles */
+            div[data-type="twitter-embed"] * {
+              border: none !important;
+            }
+
+            /* Asegurar que los iframes tengan bordes redondeados */
+            div[data-type="twitter-embed"] iframe {
+              display: block;
+              width: 100%;
+              border-radius: 12px !important;
+            }
+          `,
+        }}
+      />
+      <div
+        className={`relative ${className}`}
+        ref={contentRef}
+        suppressHydrationWarning
+        style={
+          {
+            "--user-color": userColor,
+            "--user-color-rgb": userColor ? userColor.replace("#", "").match(/.{1,2}/g)?.map(x => parseInt(x, 16)).join(", ") : "59, 130, 246",
+          } as React.CSSProperties
+        }
+      >
+        <HighlightedContent html={html} className="foro-hilo-content text-base leading-relaxed space-y-4" />
+
+      {/* Botón volver arriba */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 bg-gray-900 dark:bg-gray-700 text-white p-3 rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+          aria-label="Volver arriba"
+        >
+          <ChevronUp className="w-6 h-6" />
+        </button>
       )}
-      {weaponStatsBlocks.length > 0 && (
-        <div className="mt-4 space-y-4">
-          {weaponStatsBlocks.map((stats, index) => (
-            <WeaponStatsCard key={index} stats={stats} className="max-w-sm" />
-          ))}
-        </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }

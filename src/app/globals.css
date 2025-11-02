@@ -236,7 +236,7 @@ body {
 
 /* Compensar el header fijo en el contenedor principal */
 main {
-  margin-top: 64px;
+  margin-top: 54px;
 }
 
 /* Animaciones y efectos */

@@ -18,8 +18,9 @@ import ForoBtnFlotante from "./ForoBtnFlotante";
 import ForoFiltrosModal, { ForoFiltersState } from "./ForoFiltrosModal";
 import BtnFlotanteUnificado from "@/components/BtnFlotanteUnificado";
 import HiloCard from "./HiloCard";
-import { useForoHilos } from "./hooks/useForoHilos";
+import { useForoHilos, type Categoria } from "./hooks/useForoHilos";
 import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
+import { useInView } from 'react-intersection-observer';
 
 const InvitacionRegistro = () => (
   <motion.div
@@ -55,11 +56,21 @@ const InvitacionRegistro = () => (
 
 // Componente Row eliminado temporalmente
 
-export default function ForoCliente() {
+// Props para el componente ForoCliente
+interface ForoClienteProps {
+  initialCategorias?: Categoria[];
+}
+
+export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
   const router = useRouter();
   const { user, profile, loading: userLoading } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+
+  // OPTIMIZACIÓN #5: Configura Intersection Observer
+  const { ref: scrollTriggerRef, inView } = useInView({
+    threshold: 0.5, // Activa cuando esté 50% visible
+  });
 
   // Usar nuestro hook personalizado para gestionar los hilos
   const {
@@ -77,7 +88,7 @@ export default function ForoCliente() {
     loadMoreHilos,
     hasNextPage,
     isFetchingNextPage,
-  } = useForoHilos();
+  } = useForoHilos({ initialCategorias });
   
   // Activar sincronización en tiempo real de votos de hilos
   useRealtimeVotosHilos();
@@ -100,6 +111,13 @@ export default function ForoCliente() {
     setActiveTab(filters.tab);
     setTimeRange(filters.timeRange);
   };
+
+  // 👇 OPTIMIZACIÓN #5: useEffect para scroll infinito con Intersection Observer
+  useEffect(() => {
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      loadMoreHilos();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, loadMoreHilos]);
 
   if ((isLoading && hilos.length === 0) || userLoading) {
     return (
@@ -198,14 +216,7 @@ export default function ForoCliente() {
                     Inicia sesión para ver tus hilos.
                   </div>
                 )}
-                <div className="w-full space-y-6" ref={containerRef}
-                  onScroll={(e: React.UIEvent<HTMLDivElement>) => {
-                    const target = e.target as HTMLDivElement;
-                    const { scrollTop, scrollHeight, clientHeight } = target;
-                    if (scrollTop + clientHeight >= scrollHeight - 100) {
-                      loadMoreHilos();
-                    }
-                  }}>
+                <div className="w-full space-y-6" ref={containerRef}>
                   {hilos.map((hilo, index) => (
                     <motion.div
                       key={`${hilo.id}-${index}`}
@@ -226,6 +237,8 @@ export default function ForoCliente() {
                         autorUsername={hilo.perfiles?.username || "Anónimo"}
                         autorAvatarUrl={hilo.perfiles?.avatar_url || null}
                         autorId={hilo.autor_id || null}
+                        autorPublicId={hilo.perfiles?.public_id ?? null}
+                        autorColor={hilo.perfiles?.color ?? undefined}
                         createdAt={hilo.created_at}
                         vistas={hilo.vistas || 0}
                         respuestas={hilo.respuestas_conteo || 0}
@@ -236,6 +249,10 @@ export default function ForoCliente() {
                       />
                     </motion.div>
                   ))}
+
+                  {/* 👇 OPTIMIZACIÓN #5: Añade el 'ref' del trigger aquí */}
+                  {/* Este div invisible al final de la lista activará 'inView' */}
+                  <div ref={scrollTriggerRef} />
                 </div>
 
                 {/* Mostrar indicador de carga al final de la lista */}

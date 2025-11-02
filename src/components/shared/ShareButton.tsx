@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Share2, 
   Link as LinkIcon,
@@ -19,29 +19,44 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from 'sonner'
 
-interface ShareButtonProps {
+interface ShareButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   url: string
   title: string
   description?: string
-  className?: string
   shareText?: string
   variant?: 'default' | 'outline' | 'ghost'
   size?: 'default' | 'sm' | 'lg'
+  hideLabelBelow?: 'sm' | 'md' | 'lg' | 'xl'
+  grouped?: boolean
 }
 
 export function ShareButton({ 
   url, 
   title, 
   description = '',
-  className = '',
   shareText = 'Compartir',
   variant = 'outline',
-  size = 'sm'
+  size = 'sm',
+  hideLabelBelow,
+  grouped = false,
+  className = '',
+  ...buttonProps
 }: ShareButtonProps) {
+  const [isMounted, setIsMounted] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  // Asegurar que el componente solo se renderice en el cliente después de hidratación
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   // Verificar si la Web Share API está disponible
   const canUseNativeShare = typeof window !== 'undefined' && navigator.share
+
+  // No renderizar nada hasta que esté montado en el cliente
+  if (!isMounted) {
+    return null
+  }
 
   const handleCopyLink = async () => {
     try {
@@ -96,6 +111,16 @@ export function ShareButton({
   }
 
   // Si la Web Share API está disponible, usamos el menú nativo
+  const labelVisibilityClass = hideLabelBelow
+    ? `hidden ${hideLabelBelow}:inline`
+    : ''
+
+  const iconMarginClass = hideLabelBelow
+    ? `${hideLabelBelow}:${grouped ? 'mr-0' : 'mr-2'}`
+    : grouped
+      ? 'mr-0'
+      : 'mr-2'
+
   if (canUseNativeShare) {
     return (
       <Button 
@@ -103,9 +128,11 @@ export function ShareButton({
         size={size}
         className={className}
         onClick={handleNativeShare}
+        aria-label={shareText}
+        {...buttonProps}
       >
-        <Share2 className="h-4 w-4 mr-2" />
-        {shareText}
+        <Share2 className={`h-4 w-4 ${iconMarginClass}`} />
+        <span className={labelVisibilityClass}>{shareText}</span>
       </Button>
     )
   }
@@ -114,9 +141,15 @@ export function ShareButton({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
-          <Share2 className="h-4 w-4 mr-2" />
-          {shareText}
+        <Button
+          variant={variant}
+          size={size}
+          className={className}
+          aria-label={shareText}
+          {...buttonProps}
+        >
+          <Share2 className={`h-4 w-4 ${iconMarginClass}`} />
+          <span className={labelVisibilityClass}>{shareText}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">

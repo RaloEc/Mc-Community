@@ -1,220 +1,165 @@
-'use client';
+import type { Metadata } from "next";
+import Link from "next/link";
+import dynamic from "next/dynamic";
 
-import { useState, useEffect } from 'react';
-import { useParams, notFound } from 'next/navigation';
-import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
-import type { Database } from '@/lib/database.types';
+import ForoSidebar from "@/components/foro/ForoSidebar";
+import HiloHeader from "@/components/foro/HiloHeader";
+import HiloSidebar from "@/components/foro/HiloSidebar";
+import HilosRelacionadosInline from "@/components/foro/HilosRelacionadosInline";
+import {
+  getHiloPorSlugOId,
+  getEtiquetasHilo,
+  getCategoriaParent,
+  getHilosRelacionados,
+  getCategoriasJerarquicas,
+  incrementarVistasHilo,
+} from "@/lib/foro/server-actions";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Badge } from '@/components/ui/badge';
-import AdBanner from '@/components/ads/AdBanner';
-import ComentariosNuevo from '@/components/ComentariosNuevo';
-import { 
-  Breadcrumb, 
-  BreadcrumbItem, 
-  BreadcrumbLink, 
-  BreadcrumbList, 
-  BreadcrumbPage, 
-  BreadcrumbSeparator 
-} from '@/components/ui/breadcrumb';
-import { 
-  Eye, 
-  MessageSquare, 
-  Heart, 
-  ShieldCheck 
-} from 'lucide-react';
-import { HighlightedContent } from '@/components/ui/HighlightedContent';
-
-// --- TIPOS LOCALES ---
-
-type HiloRow = Database['public']['Tables']['foro_hilos']['Row'];
-type PostRow = Database['public']['Tables']['foro_posts']['Row'];
-type CategoriaRow = Database['public']['Tables']['foro_categorias']['Row'];
-type PerfilRow = Database['public']['Tables']['perfiles']['Row'];
-
-// Tipos para los datos enriquecidos de la API
-interface HiloConDetalles extends HiloRow {
-  autor: PerfilRow;
-  categoria: CategoriaRow;
-}
-
-interface PostConAutor extends PostRow {
-  autor: PerfilRow;
-}
-
-// --- SUBCOMPONENTES ---
-
-function HiloHeader({ hilo, numRespuestas }: { hilo: HiloConDetalles; numRespuestas: number }) {
-  return (
-    <header>
-      <div className="flex items-center gap-2 mb-2">
-        {hilo.es_importante && <Badge variant="default">Destacado</Badge>}
-        {hilo.estado === 'cerrado' && <Badge variant="destructive">Cerrado</Badge>}
+// Cargar comentarios de forma dinámica para evitar problemas de SSR
+const HiloComentariosOptimizado = dynamic(
+  () => import("@/components/foro/HiloComentariosOptimizado"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center py-8">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">{hilo.titulo}</h1>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-        <div className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={hilo.autor.avatar_url ?? undefined} alt={hilo.autor.username ?? ''} />
-            <AvatarFallback>{hilo.autor.username?.charAt(0).toUpperCase()}</AvatarFallback>
-          </Avatar>
-          <span className="font-semibold">{hilo.autor.username}</span>
-        </div>
-        <span>Publicado {new Date(hilo.creado_en).toLocaleDateString()}</span>
-        <div className="flex items-center gap-1">
-          <Eye className="h-4 w-4" />
-          <span>{hilo.vistas}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <MessageSquare className="h-4 w-4" />
-          <span>{numRespuestas}</span>
-        </div>
-      </div>
-    </header>
-  );
+    ),
+  }
+);
+
+interface PageProps {
+  params: {
+    id: string;
+  };
 }
 
-function PostItem({ post, isInitial = false }: { post: PostConAutor | HiloConDetalles; isInitial?: boolean }) {
-  const fecha = 'creado_en' in post ? new Date(post.creado_en).toLocaleString() : '';
-  return (
-    <div className={`flex gap-4 ${isInitial ? 'bg-card/50 p-4 rounded-lg' : ''}`}>
-      {!isInitial && (
-        <Avatar className="hidden sm:block mt-1">
-          <AvatarImage src={post.autor.avatar_url ?? undefined} alt={post.autor.username ?? ''} />
-          <AvatarFallback>{post.autor.username?.charAt(0).toUpperCase()}</AvatarFallback>
-        </Avatar>
-      )}
-      <div className="flex-1">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1">
-            {'es_respuesta' in post && post.es_respuesta && (
-              <Badge variant="success" className="mr-2">
-                <ShieldCheck className="h-3 w-3 mr-1" /> Respuesta
-              </Badge>
-            )}
-          </div>
-          {fecha && <span className="text-xs text-muted-foreground">{fecha}</span>}
-        </div>
-        <HighlightedContent
-          html={post.contenido}
-          className="prose prose-sm max-w-none dark:prose-invert amoled:prose-invert amoled:[--tw-prose-body:theme(colors.white)] amoled:[--tw-prose-headings:theme(colors.white)] amoled:[--tw-prose-quotes:theme(colors.white)] amoled:[--tw-prose-bullets:theme(colors.slate.300)] amoled:[--tw-prose-links:theme(colors.sky.400)]"
-        />
-      </div>
-    </div>
-  );
-}
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  try {
+    const hilo = await getHiloPorSlugOId(params.id);
 
+    const descripcion = hilo.contenido
+      .substring(0, 160)
+      .replace(/<[^>]*>/g, "");
 
-
-// --- COMPONENTE PRINCIPAL ---
-
-export default function HiloPage() {
-  const params = useParams();
-  const id = params.id as string;
-  
-  // Log para depurar el valor del ID
-  console.log('ID del hilo:', id, 'Tipo:', typeof id);
-
-  const [hilo, setHilo] = useState<HiloConDetalles | null>(null);
-  const [posts, setPosts] = useState<PostConAutor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!id) return;
-
-    const fetchDatos = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [hiloRes, postsRes] = await Promise.all([
-          fetch(`/api/foro/hilo/${id}`),
-          fetch(`/api/foro/hilo/${id}/posts`)
-        ]);
-
-        if (!hiloRes.ok) {
-          if (hiloRes.status === 404) return notFound();
-          throw new Error('No se pudo cargar el hilo.');
-        }
-
-        if (!postsRes.ok) {
-          throw new Error('No se pudieron cargar las respuestas.');
-        }
-
-        const hiloData: HiloConDetalles = await hiloRes.json();
-        const postsResponse = await postsRes.json();
-
-        setHilo(hiloData);
-        // El endpoint devuelve { data: [...], total: ... }
-        setPosts(postsResponse.data || []);
-
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
+    return {
+      title: `${hilo.titulo} | Foro - Mc-Community`,
+      description: descripcion,
+      openGraph: {
+        title: hilo.titulo,
+        description: descripcion,
+        type: "article",
+        publishedTime: hilo.created_at,
+        modifiedTime: hilo.updated_at || hilo.created_at,
+        authors: [hilo.autor?.username || "Usuario"],
+      },
     };
-
-    fetchDatos();
-  }, [id]);
-
-
-
-  if (loading) {
-    return <div className="container mx-auto px-4 py-8 text-center">Cargando hilo...</div>;
+  } catch {
+    return {
+      title: "Hilo no encontrado | Foro - Mc-Community",
+    };
   }
+}
 
-  if (error) {
-    return <div className="container mx-auto px-4 py-8 text-center text-red-500">Error: {error}</div>;
-  }
+export default async function HiloPage({ params }: PageProps) {
+  const hilo = await getHiloPorSlugOId(params.id);
 
-  if (!hilo) {
-    return notFound();
-  }
+  incrementarVistasHilo(hilo.id).catch(() => {
+    // Silenciar errores al incrementar vistas
+  });
+
+  const [etiquetas, categorias, hilosRelacionados, categoriaParent] =
+    await Promise.all([
+      getEtiquetasHilo(hilo.id),
+      getCategoriasJerarquicas(),
+      getHilosRelacionados(hilo.categoria_id, hilo.id),
+      hilo.categoria?.parent_id
+        ? getCategoriaParent(hilo.categoria.parent_id)
+        : Promise.resolve(null),
+    ]);
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <Breadcrumb className="mb-6">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="/foro">Foro</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href={`/foro/categoria/${hilo.categoria.slug}`}>{hilo.categoria.nombre}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{hilo.titulo}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+    <div className="container mx-auto py-6 px-0 lg:px-0">
+      <div className="flex flex-col lg:flex-row gap-8">
+        <ForoSidebar categorias={categorias} />
 
-      <HiloHeader hilo={hilo} numRespuestas={posts.length} />
+        <main className="w-full lg:flex-1 min-w-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-9">
+              <nav className="text-sm mb-3 text-gray-600 dark:text-gray-300 amoled:text-gray-200">
+                <ol className="flex flex-wrap items-center gap-1">
+                  <li>
+                    <Link href="/" className="hover:underline">
+                      Inicio
+                    </Link>
+                  </li>
+                  <li>›</li>
+                  <li>
+                    <Link href="/foro" className="hover:underline">
+                      Foro
+                    </Link>
+                  </li>
+                  <li>›</li>
+                  {categoriaParent && (
+                    <>
+                      <li>
+                        <Link
+                          href={`/foro/categoria/${categoriaParent.slug}`}
+                          className="hover:underline"
+                        >
+                          {categoriaParent.nombre}
+                        </Link>
+                      </li>
+                      <li>›</li>
+                    </>
+                  )}
+                  {hilo.categoria && (
+                    <>
+                      <li>
+                        <Link
+                          href={`/foro/categoria/${hilo.categoria.slug}`}
+                          className="hover:underline"
+                        >
+                          {hilo.categoria.nombre}
+                        </Link>
+                      </li>
+                      <li>›</li>
+                    </>
+                  )}
+                  <li className="text-gray-800 dark:text-gray-200 amoled:text-white truncate max-w-[60%]">
+                    {hilo.titulo}
+                  </li>
+                </ol>
+              </nav>
 
-      <Separator className="my-8" />
+              <HiloHeader hilo={hilo} etiquetas={etiquetas} />
 
-      <div className="space-y-8">
-        <PostItem post={hilo} isInitial={true} />
-      </div>
-      
-      {hilo.estado !== 'cerrado' ? (
-        <ComentariosNuevo contentType="hilo" contentId={id.toString()} />
-      ) : (
-        <div className="bg-card border border-border rounded-lg p-6 text-center mt-8">
-          <p>Este hilo está cerrado y no acepta nuevas respuestas.</p>
-        </div>
-      )}
+              <HilosRelacionadosInline
+                categoriaId={hilo.categoria_id}
+                categoriaNombre={hilo.categoria?.nombre || "la categoría"}
+                hiloActualId={hilo.id}
+                hilosRelacionadosIniciales={hilosRelacionados}
+              />
 
-      <div className="mt-8">
-        <AdBanner />
+              <section className="mt-6" id="responder">
+                <HiloComentariosOptimizado
+                  hiloId={hilo.id}
+                  autorHiloId={hilo.autor_id}
+                  hiloCerrado={hilo.es_cerrado}
+                  pageSize={5}
+                  order="desc"
+                />
+              </section>
+            </div>
+
+            <HiloSidebar
+              categoriaId={hilo.categoria_id}
+              categoriaNombre={hilo.categoria?.nombre || "la categoría"}
+              hiloActualId={hilo.id}
+              hilosRelacionadosIniciales={hilosRelacionados}
+            />
+          </div>
+        </main>
       </div>
     </div>
   );

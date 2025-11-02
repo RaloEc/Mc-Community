@@ -28,7 +28,7 @@ export default async function ForoPage() {
 
       {/* Contenido principal con scroll */}
       <main className="flex-1 min-w-0">
-        <ForoCliente />
+        <ForoCliente initialCategorias={categorias} />
       </main>
     </div>
   );

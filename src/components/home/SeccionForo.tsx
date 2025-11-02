@@ -19,6 +19,8 @@ interface HiloForo {
     username: string;
     avatar_url?: string;
     rol?: string;
+    public_id?: string;
+    color?: string;
   };
   categoria?: {
     nombre: string;
@@ -61,24 +63,24 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
     const fetchHilos = async () => {
       try {
         const [votadosRes, vistosRes, sinRespuestasRes, recientesRes] = await Promise.all([
-          fetch('/api/foro/hilos?tipo=mas-votados&limit=6'),
-          fetch('/api/foro/hilos?tipo=mas-vistos&limit=6'),
-          fetch('/api/foro/hilos?tipo=sin-respuestas&limit=6'),
+          fetch('/api/foro/hilos?tipo=mas_votados&limit=6'),
+          fetch('/api/foro/hilos?tipo=mas_vistos&limit=6'),
+          fetch('/api/foro/hilos?tipo=sin_respuestas&limit=6'),
           fetch('/api/foro/hilos?tipo=recientes&limit=6')
         ]);
 
         const [votadosData, vistosData, sinRespuestasData, recientesData] = await Promise.all([
-          votadosRes.ok ? votadosRes.json() : { items: [] },
-          vistosRes.ok ? vistosRes.json() : { items: [] },
-          sinRespuestasRes.ok ? sinRespuestasRes.json() : { items: [] },
-          recientesRes.ok ? recientesRes.json() : { items: [] }
+          votadosRes.ok ? votadosRes.json() : { hilos: [] },
+          vistosRes.ok ? vistosRes.json() : { hilos: [] },
+          sinRespuestasRes.ok ? sinRespuestasRes.json() : { hilos: [] },
+          recientesRes.ok ? recientesRes.json() : { hilos: [] }
         ]);
 
         setHilos({
-          masVotados: votadosData.items || [],
-          masVistos: vistosData.items || [],
-          sinRespuestas: sinRespuestasData.items || [],
-          recientes: recientesData.items || []
+          masVotados: votadosData.hilos || [],
+          masVistos: vistosData.hilos || [],
+          sinRespuestas: sinRespuestasData.hilos || [],
+          recientes: recientesData.hilos || []
         });
       } catch (error) {
         console.error('Error al cargar hilos del foro:', error);
@@ -109,7 +111,9 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
       autor: hilo.autor ? {
         id: hilo.autor.id || hilo.autor.username || '',
         username: hilo.autor.username,
-        avatar_url: hilo.autor.avatar_url
+        avatar_url: hilo.autor.avatar_url,
+        public_id: hilo.autor.public_id ?? null,
+        color: hilo.autor.color ?? undefined
       } : null,
       votos: hilo.votos_conteo,
       weapon_stats_record: hilo.weapon_stats_record ?? null

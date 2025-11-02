@@ -167,3 +167,380 @@
   background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.25);
   transform: scale(0.98);
 }
+
+/* Estilos para imágenes con descripción */
+.image-with-caption-figure {
+  margin: 1.5rem 0;
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.image-with-caption-wrapper {
+  text-align: left;
+}
+
+.image-with-caption-wrapper[style*="text-align: center"] {
+  text-align: center;
+}
+
+.image-with-caption-wrapper[style*="text-align: right"] {
+  text-align: right;
+}
+
+.image-with-caption-figure img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Alineación específica para imágenes */
+.image-with-caption-figure[style*="text-align: left"] img {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+.image-with-caption-figure[style*="text-align: right"] img {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+.image-with-caption-figure[style*="text-align: center"] img {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.image-with-caption-figure.selected img {
+  box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 59, 130, 246), 0.5);
+}
+
+.image-caption {
+  display: block;
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  font-style: italic;
+  color: #6b7280;
+  line-height: 1.4;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.dark .image-caption {
+  color: #9ca3af;
+}
+
+/* Estilos para el modo de edición */
+.image-with-caption-wrapper {
+  display: block;
+  margin: 1rem 0;
+}
+
+.image-with-caption-figure:hover .group-hover\:opacity-100 {
+  opacity: 1;
+}
+
+/* Estilos para redimensionado */
+.image-with-caption-figure.selected {
+  outline: 2px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.5);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.image-with-caption-figure img.cursor-nw-resize {
+  cursor: nw-resize !important;
+}
+
+.image-with-caption-figure .resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: rgba(var(--user-color-rgb, 59, 130, 246), 0.8);
+  border-radius: 50%;
+  cursor: nw-resize;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-with-caption-figure.selected .resize-handle,
+.image-with-caption-figure:hover .resize-handle {
+  opacity: 1;
+}
+
+/* Indicador de redimensionado activo */
+.image-with-caption-figure.resizing {
+  user-select: none;
+}
+
+.image-with-caption-figure.resizing img {
+  pointer-events: none;
+}
+
+/* Estilos para embeds de Twitter/X */
+.twitter-embed-wrapper {
+  margin: 1.5rem 0;
+}
+
+.twitter-embed-container {
+  position: relative;
+  max-width: 550px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.twitter-embed-container.selected {
+  outline: 2px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.5);
+  outline-offset: 2px;
+}
+
+.twitter-embed-content {
+  position: relative;
+}
+
+.twitter-embed-content blockquote {
+  margin: 0 !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.twitter-embed-loading,
+.twitter-embed-error {
+  margin: 1rem 0;
+}
+
+.twitter-embed-loading .flex {
+  min-height: 120px;
+}
+
+/* Modo oscuro para embeds de Twitter */
+.dark .twitter-embed-container {
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive para embeds de Twitter */
+@media (max-width: 640px) {
+  .twitter-embed-container {
+    max-width: 100%;
+    margin: 0;
+  }
+}
+
+/* Animación de carga */
+@keyframes twitter-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.twitter-embed-loading .animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Estilos para bloques de código (simular IDE) */
+pre {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.04);
+  border: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.15);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.dark pre {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.03);
+  border-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.15);
+  color: #e5e7eb;
+}
+
+pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* Estilos para syntax highlighting con lowlight */
+.hljs-attr,
+.hljs-attribute {
+  color: #0066cc;
+}
+
+.dark .hljs-attr,
+.dark .hljs-attribute {
+  color: #569cd6;
+}
+
+.hljs-string {
+  color: #22863a;
+}
+
+.dark .hljs-string {
+  color: #85e89d;
+}
+
+.hljs-number {
+  color: #005cc5;
+}
+
+.dark .hljs-number {
+  color: #79b8ff;
+}
+
+.hljs-literal {
+  color: #005cc5;
+}
+
+.dark .hljs-literal {
+  color: #79b8ff;
+}
+
+.hljs-keyword {
+  color: #d73a49;
+  font-weight: 600;
+}
+
+.dark .hljs-keyword {
+  color: #ff7b72;
+  font-weight: 600;
+}
+
+.hljs-function {
+  color: #6f42c1;
+}
+
+.dark .hljs-function {
+  color: #d2a8ff;
+}
+
+.hljs-title {
+  color: #6f42c1;
+}
+
+.dark .hljs-title {
+  color: #d2a8ff;
+}
+
+.hljs-params {
+  color: #24292e;
+}
+
+.dark .hljs-params {
+  color: #e1e4e8;
+}
+
+.hljs-comment {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.dark .hljs-comment {
+  color: #8b949e;
+  font-style: italic;
+}
+
+.hljs-variable {
+  color: #24292e;
+}
+
+.dark .hljs-variable {
+  color: #e1e4e8;
+}
+
+.hljs-built_in {
+  color: #005cc5;
+}
+
+.dark .hljs-built_in {
+  color: #79b8ff;
+}
+
+.hljs-name {
+  color: #6f42c1;
+}
+
+.dark .hljs-name {
+  color: #d2a8ff;
+}
+
+/* Código inline */
+code {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.1);
+  border: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+  border-radius: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 0.9em;
+  color: var(--user-color, #0066cc);
+}
+
+.dark code {
+  background-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.12);
+  border-color: rgba(var(--user-color-rgb, 96, 165, 250), 0.25);
+  color: var(--user-color, #569cd6);
+}
+
+/* Evitar que el código dentro de pre tenga estilos duplicados */
+pre code {
+  background-color: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Estilos para encabezados en la página de lectura del hilo (HiloContenido) */
+.foro-hilo-content h1,
+.foro-hilo-content h2,
+.foro-hilo-content h3 {
+  border-left: 4px solid var(--user-color, #0066cc);
+  padding-left: 1rem;
+  margin: 1.5rem 0 0.75rem 0;
+  color: #1f2937;
+}
+
+.dark .foro-hilo-content h1,
+.dark .foro-hilo-content h2,
+.dark .foro-hilo-content h3 {
+  color: #ffffff;
+}
+
+.foro-hilo-content h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.foro-hilo-content h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.foro-hilo-content h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+}

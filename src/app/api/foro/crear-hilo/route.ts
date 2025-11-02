@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { processEditorContent } from '@/components/tiptap-editor/processImages';
 
 // Función para generar un slug a partir de un título
 function createSlug(title: string): string {
@@ -32,6 +33,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Todos los campos son requeridos.' }, { status: 400 });
   }
 
+  // Procesar imágenes temporales antes de guardar
+  let contenidoProcesado = contenido;
+  try {
+    console.log('Procesando imágenes temporales en el contenido del hilo...');
+    contenidoProcesado = await processEditorContent(contenido);
+    console.log('Imágenes procesadas correctamente');
+  } catch (error) {
+    console.error('Error al procesar imágenes:', error);
+    // Continuar con el contenido original si falla el procesamiento
+  }
+
   const slug = createSlug(titulo);
 
   // El `categoria_id` recibido del formulario es el UUID correcto para la inserción.
@@ -39,7 +51,7 @@ export async function POST(request: Request) {
     .from('foro_hilos')
     .insert({
       titulo,
-      contenido,
+      contenido: contenidoProcesado,
       categoria_id,
       autor_id: session.user.id,
       slug,

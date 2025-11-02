@@ -58,7 +58,7 @@ export const processEditorContent = async (html: string): Promise<string> => {
       }
     }
     
-    // Buscar todas las imágenes en el contenido
+    // Buscar todas las imágenes en el contenido (tanto sueltas como dentro de figure)
     const images = tempDiv.querySelectorAll('img')
     console.log(`Procesando ${images.length} imágenes en el contenido`)
     
@@ -158,6 +158,31 @@ export const processEditorContent = async (html: string): Promise<string> => {
     // Verificar que todas las imágenes se hayan procesado correctamente
     const processedImages = tempDiv.querySelectorAll('img[data-processed="true"]')
     console.log(`Procesadas ${processedImages.length} de ${images.length} imágenes`)
+    
+    // Procesar embeds de Twitter para asegurar que el HTML se preserva correctamente
+    const twitterEmbeds = tempDiv.querySelectorAll('[data-type="twitter-embed"]')
+    twitterEmbeds.forEach((embed) => {
+      // Obtener el atributo data-twitter (JSON)
+      const twitterAttr = embed.getAttribute('data-twitter')
+      if (twitterAttr) {
+        try {
+          const data = JSON.parse(twitterAttr)
+          // Si el HTML está vacío, intentar obtenerlo del contenido del div
+          if (!data.html) {
+            const contentDiv = embed.querySelector('.twitter-embed-content')
+            if (contentDiv) {
+              const htmlContent = contentDiv.innerHTML
+              if (htmlContent) {
+                data.html = btoa(unescape(encodeURIComponent(htmlContent)))
+                embed.setAttribute('data-twitter', JSON.stringify(data))
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error procesando data-twitter:', e)
+        }
+      }
+    })
     
     // Devolver el HTML actualizado
     return tempDiv.innerHTML

@@ -10,13 +10,13 @@ import HilosRelacionadosInline from "@/components/foro/HilosRelacionadosInline";
 // Importación dinámica del componente de comentarios para evitar problemas de SSR
 const HiloComentariosOptimizado = dynamic(
   () => import("@/components/foro/HiloComentariosOptimizado"),
-  { 
+  {
     ssr: false,
     loading: () => (
       <div className="flex items-center justify-center py-8">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
       </div>
-    )
+    ),
   }
 );
 import {
@@ -82,14 +82,14 @@ export default async function HiloPage({ params }: PageProps) {
     ]);
 
   return (
-    <div className="container mx-auto py-6 px-0 lg:px-0">
+    <div className="container mx-auto px-0 lg:px-0 px-4">
       <div className="flex flex-col lg:flex-row gap-8">
         <ForoSidebar categorias={categorias} />
 
         <main className="w-full lg:flex-1 min-w-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Contenido principal */}
-            <div className="lg:col-span-9">
+            <div className="lg:col-span-9 mt-0">
               {/* Breadcrumbs */}
               <nav className="text-sm mb-3 text-gray-600 dark:text-gray-300 amoled:text-gray-200">
                 <ol className="flex flex-wrap items-center gap-1">

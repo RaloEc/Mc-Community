@@ -18,7 +18,13 @@ export type HiloDTO = {
   destacado?: boolean | null
   ultima_respuesta_at?: string | null
   subcategoria?: { id: string; nombre: string | null; slug: string | null; color?: string | null } | null
-  autor?: { id: string; username: string | null; avatar_url?: string | null } | null
+  autor?: {
+    id: string
+    username: string | null
+    avatar_url?: string | null
+    public_id?: string | null
+    color?: string | null
+  } | null
   media_preview_url?: string | null
   votos?: number | null
   contenido?: string | null
@@ -59,6 +65,8 @@ export default function HiloItem({ hilo }: { hilo: HiloDTO }) {
       autorUsername={hilo.autor?.username || 'Anónimo'}
       autorAvatarUrl={hilo.autor?.avatar_url || null}
       autorId={hilo.autor?.id || null}
+      autorPublicId={hilo.autor?.public_id ?? null}
+      autorColor={hilo.autor?.color ?? undefined}
       createdAt={hilo.created_at}
       vistas={hilo.vistas ?? 0}
       respuestas={hilo.respuestas_count ?? 0}

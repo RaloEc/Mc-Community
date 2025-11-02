@@ -14,24 +14,16 @@ interface Categoria {
   color?: string;
 }
 
-interface HiloForo {
-  id: string;
-  titulo: string;
-  contenido?: string;
-  autor_id?: string;
-  created_at: string;
-  ultimo_post_at?: string;
-  vistas?: number;
-  votos_conteo: any;
-  respuestas_conteo: any;
-  autor?: Autor;
-  categoria?: Categoria;
-}
-
 export async function GET(request: NextRequest) {
   try {
     // Obtener parámetros de la URL
     const url = new URL(request.url);
+    const tab = url.searchParams.get('tab') || url.searchParams.get('tipo') || 'recientes';
+    const timeRange = url.searchParams.get('timeRange') || '24h';
+    const page = parseInt(url.searchParams.get('page') || '1', 10);
+    const pageSize = 10;
+    
+    // Parámetros legacy para compatibilidad
     const rawTipo = url.searchParams.get('tipo') || 'destacados';
     const tipo = rawTipo.replace(/-/g, '_');
     const buscar = url.searchParams.get('buscar') || '';
@@ -61,23 +53,37 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Base select para hilos
+    // Función para obtener la fecha según el rango de tiempo
+    const getDateFromRange = (range: string): string => {
+      const now = new Date();
+      const from = new Date(now);
+      if (range === "24h") {
+        from.setHours(now.getHours() - 24);
+      } else {
+        from.setDate(now.getDate() - 7);
+      }
+      return from.toISOString();
+    };
+
+    // Base select para hilos con conteos optimizados
     const baseSelect = `
       id, 
+      slug,
       titulo, 
       contenido,
       autor_id,
       created_at,
+      updated_at,
       ultimo_post_at,
       vistas,
       votos_conteo:foro_votos_hilos(count),
       respuestas_conteo:foro_posts(count),
-      autor:perfiles!autor_id(username, role, avatar_url),
+      autor:perfiles!autor_id(id, username, public_id, role, avatar_url, color),
       categoria:foro_categorias!categoria_id(nombre, slug, color),
       weapon_stats_record:weapon_stats_records!weapon_stats_id( id, weapon_name, stats )
     `;
 
-    let query = supabase.from('foro_hilos').select(baseSelect).is('deleted_at', null);
+    let query = supabase.from('foro_hilos').select(baseSelect, { count: 'exact' }).is('deleted_at', null);
 
     // Filtrar por categoría si se especificó
     if (categoriaId) {
@@ -110,34 +116,67 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Configurar la consulta según el tipo
-    switch (tipo) {
-      case 'destacados':
-      case 'mas_votados':
-        // Hilos con más votos
-        query = query.order('votos_conteo', { ascending: false });
-        break;
-      case 'mas_vistos':
-        // Hilos con más vistas
-        query = query.order('vistas', { ascending: false });
-        break;
-      case 'recientes':
-        // Hilos más recientes
-        query = query.order('created_at', { ascending: false });
-        break;
-      case 'sin_respuestas':
-        // Hilos sin respuestas
-        // No podemos filtrar directamente por respuestas_conteo ya que es una relación
-        // Primero obtenemos todos los hilos y luego filtramos por los que tienen 0 respuestas
-        query = query.order('created_at', { ascending: false });
-        break;
-      default:
-        // Por defecto, mostrar los más recientes
-        query = query.order('created_at', { ascending: false });
+    let items: any[] = [];
+    let hasNextPage = false;
+
+    // Configurar la consulta según el tipo/tab
+    // Mapear parámetros legacy a los tabs correctos
+    let activeTab: string;
+    if (tab === 'recientes' || tab === 'populares' || tab === 'sin_respuesta') {
+      activeTab = tab;
+    } else if (tipo === 'destacados') {
+      activeTab = 'populares';
+    } else if (tipo === 'sin_respuestas') {
+      activeTab = 'sin_respuesta';
+    } else {
+      activeTab = tipo;
     }
 
-    // Limitar resultados
-    const { data, error } = await query.limit(limit);
+    switch (activeTab) {
+      case 'recientes':
+        // Si se especifica limit, usarlo directamente (para página principal)
+        // Si no, usar paginación (para página del foro)
+        if (limit && limit !== 10) {
+          query = query.order('created_at', { ascending: false }).limit(limit);
+        } else {
+          const from = (page - 1) * pageSize;
+          const to = from + pageSize - 1;
+          query = query.order('created_at', { ascending: false }).range(from, to);
+        }
+        break;
+
+      case 'populares':
+        const fromIso = getDateFromRange(timeRange);
+        query = query
+          .gte("ultimo_post_at", fromIso)
+          .order("updated_at", { ascending: false })
+          .limit(limit || 50);
+        break;
+
+      case 'mas_votados':
+        query = query.order('votos_conteo', { ascending: false }).limit(limit);
+        break;
+
+      case 'mas_vistos':
+        query = query.order('vistas', { ascending: false }).limit(limit);
+        break;
+
+      case 'sin_respuesta':
+        query = query.order("created_at", { ascending: false }).limit(limit || 50);
+        break;
+
+      default:
+        // Por defecto, mostrar los más recientes
+        if (limit && limit !== 10) {
+          query = query.order('created_at', { ascending: false }).limit(limit);
+        } else {
+          const defaultFrom = (page - 1) * pageSize;
+          const defaultTo = defaultFrom + pageSize - 1;
+          query = query.order('created_at', { ascending: false }).range(defaultFrom, defaultTo);
+        }
+    }
+
+    const { data, error, count } = await query;
 
     if (error) {
       console.error('Error al obtener hilos del foro:', error);
@@ -148,36 +187,89 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Obtener conteos correctos de respuestas (solo no eliminadas) usando consultas individuales
-    const hilosConRespuestas = await Promise.all(
-      (data || []).map(async (hilo: any) => {
-        const { count: respuestasCount } = await supabase
-          .from('foro_posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('hilo_id', hilo.id)
-          .is('deleted_at', null);
-        
-        return {
-          ...hilo,
-          respuestas_conteo_correcto: respuestasCount || 0
-        };
-      })
-    );
+    items = data || [];
+    console.log(`[API Hilos] tab=${activeTab}, page=${page}, items=${items.length}, error=${error?.message}`);
+
+    // Procesamiento especial según el tipo de consulta
+    if (activeTab === 'populares') {
+      // Ordenar por "popularidad" local y paginar si es necesario
+      items = items
+        .sort((a, b) => {
+          const votosA = Array.isArray(a.votos_conteo) ? (a.votos_conteo[0]?.count ?? 0) : (a.votos_conteo as any)?.count ?? 0;
+          const votosB = Array.isArray(b.votos_conteo) ? (b.votos_conteo[0]?.count ?? 0) : (b.votos_conteo as any)?.count ?? 0;
+          const respuestasA = Array.isArray(a.respuestas_conteo) ? (a.respuestas_conteo[0]?.count ?? 0) : (a.respuestas_conteo as any)?.count ?? 0;
+          const respuestasB = Array.isArray(b.respuestas_conteo) ? (b.respuestas_conteo[0]?.count ?? 0) : (b.respuestas_conteo as any)?.count ?? 0;
+          
+          const scoreA = respuestasA * 2 + votosA;
+          const scoreB = respuestasB * 2 + votosB;
+          if (scoreB !== scoreA) return scoreB - scoreA;
+          return new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime();
+        });
+      
+      // Si se especificó limit, aplicarlo después del ordenamiento
+      if (limit && limit !== 10) {
+        items = items.slice(0, limit);
+      } else {
+        // Para paginación, aplicar slice
+        items = items.slice((page - 1) * pageSize, page * pageSize);
+        hasNextPage = items.length === pageSize;
+      }
+    } else if (activeTab === 'sin_respuesta') {
+      // Filtrar solo los hilos sin respuestas
+      items = items.filter((h) => {
+        const respuestas = Array.isArray(h.respuestas_conteo) ? (h.respuestas_conteo[0]?.count ?? 0) : (h.respuestas_conteo as any)?.count ?? 0;
+        return respuestas === 0;
+      });
+      
+      // Si se especificó limit, aplicarlo
+      if (limit && limit !== 10) {
+        items = items.slice(0, limit);
+      } else {
+        // Para paginación, aplicar slice
+        items = items.slice((page - 1) * pageSize, page * pageSize);
+        hasNextPage = items.length === pageSize;
+      }
+    } else if (activeTab === 'mas_votados') {
+      // Ya está ordenado por votos en la BD, solo aplicar limit
+      if (limit && limit !== 10) {
+        items = items.slice(0, limit);
+      } else {
+        items = items.slice((page - 1) * pageSize, page * pageSize);
+        hasNextPage = items.length === pageSize;
+      }
+    } else if (activeTab === 'mas_vistos') {
+      // Ya está ordenado por vistas en la BD, solo aplicar limit
+      if (limit && limit !== 10) {
+        items = items.slice(0, limit);
+      } else {
+        items = items.slice((page - 1) * pageSize, page * pageSize);
+        hasNextPage = items.length === pageSize;
+      }
+    } else {
+      // Para recientes y otros, usar la paginación de la base de datos si no se usó limit
+      if (!(limit && limit !== 10)) {
+        hasNextPage = (page * pageSize) < (count || 0);
+      }
+    }
 
     // Normalizar los conteos y estructurar los datos para el frontend
-    let hilosNormalizados = hilosConRespuestas?.map((hilo: any) => {
+    let hilosNormalizados = items?.map((hilo: any) => {
       const votos = Array.isArray(hilo.votos_conteo) 
         ? (hilo.votos_conteo[0]?.count ?? 0) 
         : (hilo.votos_conteo as any)?.count ?? 0;
       
-      // Usar el conteo corregido que excluye posts eliminados
-      const respuestas = hilo.respuestas_conteo_correcto;
+      const respuestas = Array.isArray(hilo.respuestas_conteo) 
+        ? (hilo.respuestas_conteo[0]?.count ?? 0) 
+        : (hilo.respuestas_conteo as any)?.count ?? 0;
       
       // Asegurar que los datos del autor estén en el formato esperado
       const autor = {
+        id: hilo.autor?.id ?? null,
         username: hilo.autor?.username || 'Anónimo',
-        avatar_url: hilo.autor?.avatar_url,
-        rol: hilo.autor?.role // Mapear 'role' a 'rol' para el frontend
+        public_id: hilo.autor?.public_id || null,
+        avatar_url: hilo.autor?.avatar_url || null,
+        rol: hilo.autor?.role,
+        color: hilo.autor?.color || null,
       };
       
       // Asegurar que los datos de categoría estén en el formato esperado
@@ -215,69 +307,37 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      return { 
-        ...hilo, 
-        votos_conteo: votos, 
+      return {
+        id: hilo.id,
+        slug: hilo.slug,
+        titulo: hilo.titulo,
+        contenido: hilo.contenido,
+        autor_id: hilo.autor_id,
+        created_at: hilo.created_at,
+        updated_at: hilo.updated_at,
+        ultimo_post_at: hilo.ultimo_post_at,
+        vistas: hilo.vistas || 0,
+        votos_conteo: votos,
         respuestas_conteo: respuestas,
-        autor,
-        categoria,
+        perfiles: autor,
+        foro_categorias: categoria,
         weapon_stats_record: weaponStatsRecord
       };
-    }) || [];
-    
-    // Filtrar hilos sin respuestas si es necesario
-    if (tipo === 'sin_respuestas') {
-      hilosNormalizados = hilosNormalizados.filter(hilo => hilo.respuestas_conteo === 0);
-      
-      // Si después del filtrado tenemos menos hilos que el límite, intentamos obtener más
-      if (hilosNormalizados.length < limit && data && data.length >= limit) {
-        console.log(`Se filtraron hilos sin respuestas: ${hilosNormalizados.length} de ${data.length}`);
-      }
-    }
-    
-    // Verificar si hay IDs duplicados
-    const idsMap = new Map();
-    const duplicados: string[] = [];
-    hilosNormalizados.forEach(hilo => {
-      if (idsMap.has(hilo.id)) {
-        duplicados.push(hilo.id);
-      } else {
-        idsMap.set(hilo.id, true);
-      }
     });
-    
-    if (duplicados.length > 0) {
-      console.warn('¡ATENCIÓN! Se encontraron IDs duplicados en los hilos:', duplicados);
-      
-      // Eliminar duplicados manteniendo solo la primera aparición de cada ID
-      const hilosSinDuplicados = [];
-      const idsVistos = new Set();
-      
-      for (const hilo of hilosNormalizados) {
-        if (!idsVistos.has(hilo.id)) {
-          hilosSinDuplicados.push(hilo);
-          idsVistos.add(hilo.id);
-        }
-      }
-      
-      hilosNormalizados = hilosSinDuplicados;
-    }
 
-    return NextResponse.json({ 
-      success: true, 
-      items: hilosNormalizados,
-      _debug: {
-        hasDuplicates: duplicados.length > 0,
-        duplicateIds: duplicados,
-        originalCount: data?.length || 0,
-        finalCount: hilosNormalizados.length
-      }
+    return NextResponse.json({
+      hilos: hilosNormalizados,
+      hasNextPage,
+      total: items.length
     });
+
   } catch (error) {
-    console.error('Error en API de foros:', error);
+    console.error('Error en API de hilos del foro:', error);
     return NextResponse.json({ 
-      success: false, 
-      error: 'Error interno del servidor' 
+      error: 'Error interno del servidor',
+      hilos: [],
+      hasNextPage: false,
+      total: 0
     }, { status: 500 });
   }
 }

@@ -8,7 +8,7 @@ import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import TextAlign from '@tiptap/extension-text-align'
 import Highlight from '@tiptap/extension-highlight'
-import Youtube from '@tiptap/extension-youtube'
+import { YoutubeEmbed } from './extensions/youtube-embed'
 import FontFamily from '@tiptap/extension-font-family'
 import Table from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
@@ -19,13 +19,23 @@ import { FloatingMenu as TiptapFloatingMenu } from '@tiptap/extension-floating-m
 import Mention from '@tiptap/extension-mention'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import HorizontalRule from '@tiptap/extension-horizontal-rule'
-import { common, createLowlight } from 'lowlight'
+import { lowlight } from './lowlight'
+import 'highlight.js/styles/atom-one-dark.css'
 import { Extension } from '@tiptap/core'
 import { NodeSelection } from '@tiptap/pm/state'
 import { ClickToCopy } from './extensions/click-to-copy'
+import { ImageWithCaption } from './extensions/image-with-caption'
+import { TwitterEmbed } from './extensions/twitter-embed'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+import { CodeBlockComponent } from './extensions/code-block-component'
 
 // Crear instancia de lowlight con lenguajes comunes
-export const lowlight = createLowlight(common)
+
+const CodeBlock = CodeBlockLowlight.extend({
+  addNodeView() {
+    return ReactNodeViewRenderer(CodeBlockComponent)
+  },
+})
 
 // Función para crear reglas de pegado para enlaces
 export const createLinkPasteRules = () => {
@@ -261,6 +271,11 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
       class: 'editor-image',
     },
   }),
+  ImageWithCaption.configure({
+    HTMLAttributes: {
+      class: 'image-with-caption-figure',
+    },
+  }),
   Underline,
   TextStyle,
   Color,
@@ -270,7 +285,7 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
   Highlight.configure({
     multicolor: true,
   }),
-  Youtube.configure({
+  YoutubeEmbed.configure({
     width: 640,
     height: 360,
     HTMLAttributes: {
@@ -300,7 +315,7 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
     },
     suggestion: createMentionSuggestions(mentionSuggestions),
   }),
-  CodeBlockLowlight.configure({
+  CodeBlock.configure({
     lowlight,
     // Asignar un lenguaje por defecto para mejorar el coloreado cuando el usuario no elige uno
     defaultLanguage: 'javascript',
@@ -316,5 +331,10 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
   createLinkPasteRules(),
   ClickToCopy.configure({
     HTMLAttributes: {},
+  }),
+  TwitterEmbed.configure({
+    HTMLAttributes: {
+      class: 'twitter-embed-container',
+    },
   }),
 ]

@@ -1,31 +1,57 @@
 /* Estilos para bloques de código con resaltado de sintaxis */
 
 /* Contenedor del bloque de código */
-.tiptap pre.editor-code-block {
-  background-color: rgb(245 245 244); /* stone-100 */
-  border-radius: 0.5rem;
-  padding: 1rem;
+.code-block-node {
+  position: relative;
   margin: 1rem 0;
-  overflow-x: auto;
-  font-family: 'Courier New', Courier, monospace;
+}
+
+.code-block-highlight {
+  pointer-events: none;
+}
+
+.code-block-highlight pre {
+  margin: 0;
+}
+
+.code-block-highlight code {
+  background: transparent !important;
+}
+
+.code-block-highlight .token {
+  text-shadow: none !important;
+}
+
+.code-block-editor-layer {
+  position: absolute;
+  inset: 0;
+  padding: 1rem;
+  margin: 0;
+  background: transparent;
+  color: transparent;
+  caret-color: #ffffff;
+  white-space: pre-wrap;
+  overflow: hidden;
+}
+
+.code-block-editor-content {
+  display: block;
+  outline: none;
+  font-family: "Courier New", Courier, monospace;
   font-size: 0.875rem;
   line-height: 1.5;
-  border: 1px solid rgb(231 229 228); /* stone-200 */
+  color: transparent !important;
 }
 
-/* Modo oscuro */
-.dark .tiptap pre.editor-code-block {
-  background-color: rgb(41 37 36); /* stone-800 */
-  border-color: rgb(68 64 60); /* stone-700 */
+.code-block-editor-content::selection {
+  background-color: rgba(96, 165, 250, 0.35);
+  color: transparent;
 }
 
-/* Código dentro del bloque */
-.tiptap pre.editor-code-block code {
-  background: none;
-  padding: 0;
-  font-size: inherit;
-  color: inherit;
-  border-radius: 0;
+.code-block-editor-content span {
+  color: transparent !important;
+  background: transparent !important;
+  text-shadow: none !important;
 }
 
 /* Estilos de resaltado de sintaxis con lowlight */

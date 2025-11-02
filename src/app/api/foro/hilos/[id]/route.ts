@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { processEditorContent } from '@/components/tiptap-editor/processImages';
 
 export async function PATCH(
   request: NextRequest,
@@ -54,11 +55,22 @@ export async function PATCH(
       );
     }
 
+    // Procesar imágenes temporales antes de actualizar
+    let contenidoProcesado = contenido;
+    try {
+      console.log('Procesando imágenes temporales en la edición del hilo...');
+      contenidoProcesado = await processEditorContent(contenido);
+      console.log('Imágenes procesadas correctamente');
+    } catch (error) {
+      console.error('Error al procesar imágenes:', error);
+      // Continuar con el contenido original si falla el procesamiento
+    }
+
     // Actualizar el hilo
     const { data: hiloActualizado, error: updateError } = await supabase
       .from("foro_hilos")
       .update({
-        contenido,
+        contenido: contenidoProcesado,
         updated_at: new Date().toISOString(),
       })
       .eq("id", params.id)

@@ -14,6 +14,10 @@ import {
   ExternalLink,
   Image as ImageIcon,
   Trash2,
+  Code,
+  Twitter,
+  Youtube,
+  AtSign,
 } from "lucide-react";
 import { Votacion } from "@/components/ui/Votacion";
 import React from "react";
@@ -23,6 +27,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ImageGallery } from "@/components/ui/ImageGallery";
 import { HighlightedContent } from "@/components/ui/HighlightedContent";
 import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
+import { HiloPreview } from "./HiloPreview";
 import type { WeaponStats } from "@/app/api/analyze-weapon/route";
 
 export type HiloCardProps = {
@@ -35,6 +40,8 @@ export type HiloCardProps = {
   autorUsername?: string;
   autorAvatarUrl?: string | null;
   autorId?: string | null;
+  autorPublicId?: string | null;
+  autorColor?: string;
   createdAt: string;
   vistas?: number;
   respuestas?: number;
@@ -113,6 +120,43 @@ const YoutubePlayer = dynamic<{
   }
 );
 
+// Función para procesar tweets en el HTML
+const processTweetsInHtml = (content: string): string => {
+  if (!content) return content;
+  
+  const tempDiv = document.createElement("div");
+  tempDiv.innerHTML = content;
+  
+  // Buscar todos los tweets
+  const twitterEmbeds = Array.from(
+    tempDiv.querySelectorAll('[data-type="twitter-embed"]')
+  );
+  
+  twitterEmbeds.forEach((embed) => {
+    const twitterAttr = embed.getAttribute("data-twitter");
+    if (twitterAttr) {
+      try {
+        const data = JSON.parse(twitterAttr);
+        
+        // Decodificar HTML si está en base64
+        if (data.html && typeof data.html === 'string' && data.html.length > 0) {
+          try {
+            const decodedHtml = decodeURIComponent(escape(atob(data.html)));
+            // Reemplazar el contenido del div con el HTML decodificado
+            embed.innerHTML = `<div class="twitter-embed-content">${decodedHtml}</div>`;
+          } catch (e) {
+            console.error('[HiloCard] Error decodificando tweet:', e);
+          }
+        }
+      } catch (e) {
+        console.error('[HiloCard] Error parseando tweet:', e);
+      }
+    }
+  });
+  
+  return tempDiv.innerHTML;
+};
+
 // Componente para renderizar contenido HTML con soporte para videos de YouTube e imágenes
 const HtmlContentWithYoutube = React.memo(
   function HtmlContentWithYoutube({
@@ -123,6 +167,10 @@ const HtmlContentWithYoutube = React.memo(
     className?: string;
   }) {
     const { userColor } = useUserTheme();
+    
+    // Procesar tweets en el HTML
+    const processedHtml = React.useMemo(() => processTweetsInHtml(html), [html]);
+    
     // Verificar si hay un video en el contenido
     const hasVideo = (content: string): boolean => {
       if (!content) return false;
@@ -228,9 +276,9 @@ const HtmlContentWithYoutube = React.memo(
       return tempDiv.innerHTML;
     };
 
-    const youtubeEmbed = extractYoutubeIframe(html);
-    const images = extractImages(html);
-    const containsVideo = hasVideo(html);
+    const youtubeEmbed = extractYoutubeIframe(processedHtml);
+    const images = extractImages(processedHtml);
+    const containsVideo = hasVideo(processedHtml);
     const imageCount = images.length;
     const containsMultipleImages = imageCount > 1;
 
@@ -238,7 +286,7 @@ const HtmlContentWithYoutube = React.memo(
     // Evita duplicación: si hay al menos una imagen (o video), removemos las <img> del HTML base
     const shouldRemoveImages = containsVideo || imageCount > 0;
     const contentWithoutMedias = getContentWithoutMedias(
-      html,
+      processedHtml,
       shouldRemoveImages
     );
 
@@ -349,6 +397,8 @@ function HiloCard(props: HiloCardProps) {
     autorUsername = "Anónimo",
     autorAvatarUrl,
     autorId,
+    autorPublicId,
+    autorColor,
     createdAt,
     vistas = 0,
     respuestas = 0,
@@ -394,6 +444,47 @@ function HiloCard(props: HiloCardProps) {
 
   const parsedWeaponStats = parseWeaponStats(weaponStats);
 
+  const contentIndicators = React.useMemo(() => {
+    if (!contenido || typeof document === "undefined") {
+      return {
+        hasCode: false,
+        hasTweet: false,
+        hasYoutube: false,
+        hasImages: false,
+        hasMentions: false,
+        hasAny: false,
+      };
+    }
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = contenido;
+
+    const hasCode =
+      tempDiv.querySelector("pre") !== null ||
+      tempDiv.querySelector("code") !== null;
+    const hasTweet =
+      tempDiv.querySelector('[data-type="twitter-embed"]') !== null;
+    const hasYoutube = Array.from(tempDiv.querySelectorAll("iframe")).some(
+      (iframe) => {
+        const src = iframe.getAttribute("src") ?? "";
+        return /youtube\.com|youtu\.be/.test(src);
+      }
+    );
+    const hasImages = tempDiv.querySelector("img") !== null;
+    const hasMentions =
+      tempDiv.querySelector(".editor-mention") !== null ||
+      /@\w+/.test(tempDiv.textContent ?? "");
+
+    return {
+      hasCode,
+      hasTweet,
+      hasYoutube,
+      hasImages,
+      hasMentions,
+      hasAny: hasCode || hasTweet || hasYoutube || hasImages || hasMentions,
+    };
+  }, [contenido]);
+
   const badgeBg = (categoriaColor || "#3B82F6") + "20";
   const badgeFg = categoriaColor || "#3B82F6";
   const { userColor, getFadedBackground, getColorWithOpacity } = useUserTheme();
@@ -401,10 +492,14 @@ function HiloCard(props: HiloCardProps) {
   // Obtener el color de fondo atenuado
   const fadedBgColor = getFadedBackground();
 
-  const handleProfileClick = (e: React.MouseEvent, username: string) => {
+  const handleProfileClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = `/perfil/${encodeURIComponent(username)}`;
+    // Usar public_id si está disponible, sino username como fallback
+    const profileId = autorPublicId || autorUsername;
+    if (profileId) {
+      window.location.href = `/perfil/${encodeURIComponent(profileId)}`;
+    }
   };
 
   // Precargar datos del hilo al hacer hover - temporalmente desactivado
@@ -454,7 +549,7 @@ function HiloCard(props: HiloCardProps) {
                   {/* Autor */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={(e) => handleProfileClick(e, autorUsername)}
+                      onClick={handleProfileClick}
                       className="flex items-center gap-2 group/author cursor-pointer hover:underline bg-transparent border-none p-0 text-inherit"
                       title={`Ver perfil de ${autorUsername}`}
                       type="button"
@@ -480,14 +575,37 @@ function HiloCard(props: HiloCardProps) {
 
                   {/* Categoría */}
                   <div className="flex items-center gap-2">
-                    {categoriaNombre && (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] px-2 py-0.5 whitespace-nowrap"
-                        style={{ backgroundColor: badgeBg, color: badgeFg }}
-                      >
-                        {categoriaNombre}
-                      </Badge>
+                    {(categoriaNombre || contentIndicators.hasAny) && (
+                      <div className="flex items-center gap-2">
+                        {categoriaNombre && (
+                          <Badge
+                            variant="secondary"
+                            className="text-[10px] px-2 py-0.5 whitespace-nowrap"
+                            style={{ backgroundColor: badgeBg, color: badgeFg }}
+                          >
+                            {categoriaNombre}
+                          </Badge>
+                        )}
+                        {contentIndicators.hasAny && (
+                          <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
+                            {contentIndicators.hasCode && (
+                              <Code className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {contentIndicators.hasTweet && (
+                              <Twitter className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {contentIndicators.hasYoutube && (
+                              <Youtube className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {contentIndicators.hasImages && (
+                              <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {contentIndicators.hasMentions && (
+                              <AtSign className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
                     {showSinRespuestasAlert && (
                       <AlertCircle className="h-3.5 w-3.5 text-orange-500" />
@@ -506,31 +624,7 @@ function HiloCard(props: HiloCardProps) {
 
                   {contenido && (
                     <div className="hilo-preview text-sm text-gray-600 dark:text-gray-400 flex-1">
-                      <HtmlContentWithYoutube
-                        html={contenido || ""}
-                        className="prose-img:max-h-20 prose-img:mx-auto prose-img:my-1 prose-img:rounded 
-                        prose-video:max-h-20 prose-video:mx-auto prose-video:my-1 
-                        prose-iframe:max-w-full prose-iframe:rounded prose-iframe:my-0
-                        prose-blockquote:my-1 prose-p:my-1"
-                      />
-                      <style jsx global>{`
-                        .youtube-embed-container {
-                          position: relative;
-                          padding-bottom: 56.25%;
-                          height: 0;
-                          overflow: hidden;
-                          max-width: 100%;
-                          margin: 8px 0;
-                        }
-                        .youtube-embed-container iframe {
-                          position: absolute;
-                          top: 0;
-                          left: 0;
-                          width: 100%;
-                          height: 100%;
-                          border: 0;
-                        }
-                      `}</style>
+                      <HiloPreview html={contenido || ""} />
 
                       {parsedWeaponStats && (
                         <div className="mb-4 md:flex md:justify-center">
@@ -546,14 +640,14 @@ function HiloCard(props: HiloCardProps) {
               </div>
               {/* Barra inferior con estadísticas */}
               <div
-                className="border-t p-2 transition-colors duration-300 relative flex items-center justify-between"
+                className="border-t p-2 transition-colors duration-300 flex flex-wrap items-center gap-x-4 gap-y-2"
                 style={{
                   borderColor: getColorWithOpacity(0.1),
                   backgroundColor: fadedBgColor,
                 }}
               >
                 {/* Izquierda: Vistas y comentarios */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-shrink-0">
                   <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                     <Eye className="h-3 w-3" />
                     {vistas || 0}
@@ -565,24 +659,22 @@ function HiloCard(props: HiloCardProps) {
                 </div>
 
                 {/* Centro: Votos */}
-                <div className="absolute left-1/2 transform -translate-x-1/2">
-                  <div
-                    className="flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Votacion
-                      id={id}
-                      tipo="hilo"
-                      votosIniciales={votosIniciales}
-                      vertical={false}
-                      size="sm"
-                      className="h-6"
-                    />
-                  </div>
+                <div
+                  className="order-last w-full flex justify-center sm:order-none sm:w-auto sm:flex-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Votacion
+                    id={id}
+                    tipo="hilo"
+                    votosIniciales={votosIniciales}
+                    vertical={false}
+                    size="sm"
+                    className="h-6"
+                  />
                 </div>
 
                 {/* Derecha: Fecha y botón de eliminar */}
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0 ml-auto">
                   <div className="h-4 w-px bg-gray-300 dark:bg-gray-600" />
                   <span className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
                     <Clock className="h-3 w-3" />

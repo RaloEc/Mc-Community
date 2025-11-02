@@ -83,12 +83,12 @@ export default async function HiloPage({ params }: PageProps) {
     ]);
 
   return (
-    <div className="container mx-auto py-6 px-0 lg:px-0">
+    <div className="container mx-auto ">
       <div className="flex flex-col lg:flex-row gap-8">
         <ForoSidebar categorias={categorias} />
 
         <main className="w-full lg:flex-1 min-w-0">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-0  ">
             {/* Contenido principal */}
             <div className="lg:col-span-9">
               {/* Breadcrumbs */}
@@ -140,7 +140,7 @@ export default async function HiloPage({ params }: PageProps) {
 
               {/* Encabezado del hilo */}
               <article className="bg-white dark:bg-black amoled:bg-black rounded-lg border-b border-gray-200 dark:border-gray-700 amoled:border-gray-800 shadow-sm">
-                <header className="p-5">
+                <header className="p-0">
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     {hilo.categoria && (
                       <span

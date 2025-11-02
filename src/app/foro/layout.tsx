@@ -46,7 +46,7 @@ export default async function ForoLayout({
         `}
       </Script>
       
-      <div className="container mx-auto px-2 sm:px-3 lg:px-4 py-2 lg:py-8">
+      <div className="container mx-auto px-2 sm:px-3 lg:px-4 pb-2 lg:pb-8">
         {children}
       </div>
     </div>

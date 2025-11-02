@@ -117,6 +117,25 @@ const TiptapEditorBase = ({
     immediatelyRender: false,
   });
 
+  // Función para detectar URLs de X/Twitter
+  const detectTwitterUrl = (text: string): string | null => {
+    const twitterUrlPattern = /https?:\/\/(www\.)?(twitter\.com|x\.com)\/\w+\/status\/\d+/g
+    const match = text.match(twitterUrlPattern)
+    return match ? match[0] : null
+  }
+
+  // Función para insertar embed de Twitter
+  const insertTwitterEmbed = async (url: string) => {
+    if (!editor) return
+
+    try {
+      // Insertar el embed inmediatamente (se cargará de forma asíncrona)
+      editor.chain().focus().setTwitterEmbed({ url }).run()
+    } catch (error) {
+      console.error('Error al insertar embed de Twitter:', error)
+    }
+  }
+
   // Actualizar imágenes y videos cuando cambie el editor
   useEffect(() => {
     if (editor) {
@@ -137,9 +156,21 @@ const TiptapEditorBase = ({
         onImageChange(hasTemporaryImages);
       }
 
-      // Agregar manejador para pegar imágenes desde el portapapeles
+      // Agregar manejador para pegar imágenes y URLs desde el portapapeles
       const handlePaste = async (event: ClipboardEvent) => {
         if (!event.clipboardData) return;
+
+        // Verificar si hay texto en el portapapeles (para URLs de Twitter)
+        const text = event.clipboardData.getData('text/plain');
+        if (text) {
+          const twitterUrl = detectTwitterUrl(text);
+          if (twitterUrl) {
+            event.preventDefault();
+            event.stopPropagation();
+            await insertTwitterEmbed(twitterUrl);
+            return;
+          }
+        }
 
         // Verificar si hay imágenes en el portapapeles
         const items = Array.from(event.clipboardData.items);
@@ -182,11 +213,11 @@ const TiptapEditorBase = ({
               "foro/contenido"
             );
 
-            // Insertar la imagen en el editor con la URL de Supabase
+            // Insertar la imagen con descripción en el editor
             editor
               .chain()
               .focus()
-              .setImage({
+              .setImageWithCaption({
                 src: imageUrl,
                 alt: file.name,
                 title: file.name,
@@ -375,8 +406,12 @@ const TiptapEditorBase = ({
         // Subir imagen a Supabase
         const imageUrl = await uploadImageToSupabase(file);
 
-        // Insertar imagen en el editor
-        editor.chain().focus().setImage({ src: imageUrl }).run();
+        // Insertar imagen con descripción en el editor
+        editor.chain().focus().setImageWithCaption({ 
+          src: imageUrl,
+          alt: file.name,
+          title: file.name 
+        }).run();
 
         // Limpiar input de archivo
         if (fileInputRef.current) {
