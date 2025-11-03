@@ -38,9 +38,9 @@ interface StatConfig {
 }
 
 const MAIN_STATS_CONFIG: StatConfig[] = [
-  { key: "dano", label: "Daño", icon: Crosshair, max: 100, isMainStat: true },
+  { key: "damage", label: "Daño", icon: Crosshair, max: 100, isMainStat: true },
   {
-    key: "alcance",
+    key: "range",
     label: "Alcance",
     icon: Target,
     unit: "m",
@@ -54,16 +54,16 @@ const MAIN_STATS_CONFIG: StatConfig[] = [
     max: 100,
     isMainStat: true,
   },
-  { key: "manejo", label: "Manejo", icon: Zap, max: 100, isMainStat: true },
+  { key: "handling", label: "Manejo", icon: Zap, max: 100, isMainStat: true },
   {
-    key: "estabilidad",
+    key: "stability",
     label: "Estabilidad",
     icon: Gauge,
     max: 100,
     isMainStat: true,
   },
   {
-    key: "precision",
+    key: "accuracy",
     label: "Precisión",
     icon: Focus,
     max: 100,
@@ -72,19 +72,17 @@ const MAIN_STATS_CONFIG: StatConfig[] = [
 ];
 
 const ADDITIONAL_STATS_CONFIG: StatConfig[] = [
-  { key: "perforacionBlindaje", label: "Perforación de blindaje", icon: Eye },
+  { key: "armorPenetration", label: "Perforación de blindaje", icon: Eye },
   {
-    key: "cadenciaDisparo",
+    key: "fireRate",
     label: "Cad. de disparo",
     icon: Clock,
     unit: "dpm",
   },
-  { key: "capacidad", label: "Capacidad", icon: Package },
-  // CAMBIO: Se eliminó la estadística "Modo"
-  // { key: "nombreArma", label: "Modo", icon: Sword },
-  { key: "velocidadBoca", label: "Velocidad de boca", icon: Wind, unit: "m/s" },
+  { key: "capacity", label: "Capacidad", icon: Package },
+  { key: "muzzleVelocity", label: "Velocidad de boca", icon: Wind, unit: "m/s" },
   {
-    key: "sonidoDisparo",
+    key: "soundRange",
     label: "Sonido de disparo",
     icon: Volume2,
     unit: "m",
@@ -97,6 +95,36 @@ export function WeaponStatsCard({
   className,
   isEditable = false,
 }: WeaponStatsCardProps) {
+  // Normalizar stats: convertir nombres en español a inglés
+  const normalizeStats = (rawStats: WeaponStats): WeaponStats => {
+    const normalized: any = { ...rawStats };
+    
+    // Mapeo de español a inglés
+    const spanishToEnglish: Record<string, string> = {
+      dano: "damage",
+      alcance: "range",
+      manejo: "handling",
+      estabilidad: "stability",
+      precision: "accuracy",
+      perforacionBlindaje: "armorPenetration",
+      cadenciaDisparo: "fireRate",
+      velocidadBoca: "muzzleVelocity",
+      sonidoDisparo: "soundRange",
+      capacidad: "capacity",
+    };
+    
+    // Copiar valores de campos en español a sus equivalentes en inglés
+    Object.entries(spanishToEnglish).forEach(([spanish, english]) => {
+      if (spanish in rawStats && !(english in rawStats)) {
+        normalized[english] = rawStats[spanish as keyof WeaponStats];
+      }
+    });
+    
+    return normalized;
+  };
+
+  const normalizedStats = normalizeStats(stats);
+
   const sanitizeToNumber = (value: unknown) => {
     if (typeof value === "number" && !Number.isNaN(value)) {
       return value;
@@ -139,21 +167,21 @@ export function WeaponStatsCard({
   return (
     <div
       className={cn(
-        "bg-slate-950/80 p-6 rounded-lg shadow-xl border border-slate-800/60 flex flex-col h-full max-w-[440px]",
+        "bg-slate-950/80 p-4 rounded-lg shadow-xl border border-slate-800/60 flex flex-col h-full",
         className
       )}
     >
       {/* Header */}
-      <div className="mb-6 pb-3 border-b border-slate-700/50 flex-shrink-0">
-        <p className="text-slate-400 text-sm mb-1">
-          {stats.nombreArma || "Estadísticas del Arma"}
+      <div className="mb-3 pb-2 border-b border-slate-700/50 flex-shrink-0">
+        <p className="text-slate-400 text-xs mb-0">
+          {normalizedStats.nombreArma || "Estadísticas del Arma"}
         </p>
       </div>
 
       {/* Main Stats with Bars */}
-      <div className="space-y-3 mb-6 flex-shrink-0">
+      <div className="space-y-2 mb-3 flex-shrink-0">
         {MAIN_STATS_CONFIG.map((config) => {
-          const rawValue = stats[config.key];
+          const rawValue = normalizedStats[config.key];
           const numericValue = sanitizeToNumber(rawValue);
           const displayValue = Number.isInteger(numericValue)
             ? numericValue
@@ -168,29 +196,28 @@ export function WeaponStatsCard({
             <div
               key={config.key}
               className={cn(
-                "flex items-center gap-3",
+                "flex items-center gap-2 text-xs",
                 isEditable && "cursor-pointer"
               )}
               onClick={() =>
                 isEditable && handleStatEdit(config.key, displayValue)
               }
             >
-              <Icon className="w-4 h-4 text-slate-500 flex-shrink-0" />
-              <span className="text-slate-300 text-sm flex-1 min-w-0">
+              <Icon className="w-3 h-3 text-slate-500 flex-shrink-0" />
+              <span className="text-slate-300 flex-1 min-w-0">
                 {config.label}
               </span>
-              <div className="flex-1 bg-slate-800/40 h-1.5 rounded-full overflow-hidden">
+              <div className="flex-1 bg-slate-800/40 h-1 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-300"
-                  // CAMBIO CRÍTICO: Aplicar el color y opacidad directamente con style
                   style={{
                     width: `${percentage}%`,
-                    backgroundColor: "var(--user-color, #6366f1)", // Color
-                    opacity: 0.4, // Opacidad (/40)
+                    backgroundColor: "var(--user-color, #6366f1)",
+                    opacity: 0.4,
                   }}
                 />
               </div>
-              <span className="text-slate-200 text-sm font-medium w-20 text-right">
+              <span className="text-slate-200 font-medium w-16 text-right">
                 {displayValue}
                 {config.unit || ""}
               </span>
@@ -200,12 +227,12 @@ export function WeaponStatsCard({
       </div>
 
       {/* Divider */}
-      <div className="my-4 border-t border-slate-700/50"></div>
+      <div className="my-2 border-t border-slate-700/50"></div>
 
       {/* Additional Stats */}
-      <div className="space-y-2.5">
+      <div className="space-y-1.5 text-xs">
         {ADDITIONAL_STATS_CONFIG.map((config) => {
-          const value = stats[config.key];
+          const value = normalizedStats[config.key];
           const displayValue =
             value === undefined || value === null
               ? ""
@@ -224,8 +251,8 @@ export function WeaponStatsCard({
                 isEditable && handleStatEdit(config.key, displayValue)
               }
             >
-              <span className="text-slate-500 text-sm">• {config.label}</span>
-              <span className="text-slate-300 text-sm font-medium">
+              <span className="text-slate-500">• {config.label}</span>
+              <span className="text-slate-300 font-medium">
                 {displayValue}
                 {config.unit ? ` ${config.unit}` : ""}
               </span>

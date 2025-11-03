@@ -440,6 +440,16 @@ export default function HiloContenido({
       >
         <HighlightedContent html={html} className="foro-hilo-content text-base leading-relaxed space-y-4" />
 
+        {/* Tarjeta de estadísticas del arma */}
+        {weaponStatsRecord?.stats && (
+          <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <WeaponStatsCard 
+              stats={weaponStatsRecord.stats} 
+              className="w-full max-w-2xl"
+            />
+          </div>
+        )}
+
       {/* Botón volver arriba */}
       {showScrollTop && (
         <button

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { ImageDropzone } from "@/components/ui/ImageDropzone";
 import { WeaponStatsCard } from "./WeaponStatsCard";
 import { useWeaponAnalyzer } from "@/hooks/useWeaponAnalyzer";
@@ -35,20 +35,29 @@ export function WeaponStatsUploader({
   className,
 }: WeaponStatsUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [extractedStats, setExtractedStats] = useState<WeaponStats | null>(
-    null
-  );
-  const [step, setStep] = useState<"upload" | "analyzing" | "results">(
-    "upload"
-  );
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  const { isAnalyzing, error, analyzeImage, clearError } = useWeaponAnalyzer();
+  // Nuevo hook con polling
+  const { status, error, stats, startAnalysis, clear } = useWeaponAnalyzer();
+
+  // Derivar el estado de la UI del estado del hook
+  const isAnalyzing = status === "uploading" || status === "analyzing";
+  const step =
+    status === "success"
+      ? "results"
+      : isAnalyzing
+      ? "analyzing"
+      : "upload";
 
   const handleFileSelect = useCallback(
     (file: File) => {
+      console.log("[WeaponStatsUploader] Archivo seleccionado", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
       setSelectedFile(file);
-      clearError();
+      clear();
 
       // Crear vista previa de la imagen
       const reader = new FileReader();
@@ -57,90 +66,128 @@ export function WeaponStatsUploader({
       };
       reader.readAsDataURL(file);
     },
-    [clearError]
+    [clear]
   );
 
   const handleFileRemove = useCallback(() => {
+    console.log("[WeaponStatsUploader] Reiniciando selección de archivo");
     setSelectedFile(null);
-    setExtractedStats(null);
     setImagePreview(null);
-    setStep("upload");
-    clearError();
-  }, [clearError]);
+    clear();
+  }, [clear]);
 
   const handleUploadAnother = useCallback(() => {
+    console.log("[WeaponStatsUploader] Solicitud de subir otra imagen");
     handleFileRemove();
   }, [handleFileRemove]);
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedFile) return;
-
-    setStep("analyzing");
-    const stats = await analyzeImage(selectedFile);
-
-    if (stats) {
-      setExtractedStats(stats);
-      setStep("results");
-    } else {
-      setStep("upload");
-    }
-  }, [selectedFile, analyzeImage]);
+    console.log("[WeaponStatsUploader] Iniciando análisis desde el modal", {
+      fileName: selectedFile.name,
+    });
+    await startAnalysis(selectedFile);
+  }, [selectedFile, startAnalysis]);
 
   const handleRetry = useCallback(() => {
-    clearError();
+    console.log("[WeaponStatsUploader] Reintentando análisis");
+    clear();
     handleAnalyze();
-  }, [clearError, handleAnalyze]);
+  }, [clear, handleAnalyze]);
 
   const handleStatEdit = useCallback(
     (field: keyof WeaponStats, value: number | string) => {
-      if (!extractedStats) return;
-
-      setExtractedStats((prev) => (prev ? { ...prev, [field]: value } : null));
+      // Las stats del hook son de solo lectura (vienen de Gemini)
+      // Si necesitas edición, copia stats a estado local después de success
     },
-    [extractedStats]
+    []
   );
 
   const handleUseStats = useCallback(() => {
-    if (extractedStats && onStatsExtracted) {
-      onStatsExtracted(extractedStats);
+    if (stats && onStatsExtracted) {
+      console.log("[WeaponStatsUploader] Estadísticas aceptadas por el usuario", {
+        stats,
+      });
+      onStatsExtracted(stats);
     }
-  }, [extractedStats, onStatsExtracted]);
+  }, [stats, onStatsExtracted]);
+
+  const normalizeStats = useCallback((rawStats: WeaponStats): WeaponStats => {
+    const normalized: any = { ...rawStats };
+    
+    // Mapeo de español a inglés
+    const spanishToEnglish: Record<string, string> = {
+      dano: "damage",
+      alcance: "range",
+      manejo: "handling",
+      estabilidad: "stability",
+      precision: "accuracy",
+      perforacionBlindaje: "armorPenetration",
+      cadenciaDisparo: "fireRate",
+      velocidadBoca: "muzzleVelocity",
+      sonidoDisparo: "soundRange",
+      capacidad: "capacity",
+    };
+    
+    // Copiar valores de campos en español a sus equivalentes en inglés
+    Object.entries(spanishToEnglish).forEach(([spanish, english]) => {
+      if (spanish in rawStats && !(english in rawStats)) {
+        normalized[english] = rawStats[spanish as keyof WeaponStats];
+      }
+    });
+    
+    return normalized;
+  }, []);
 
   const generateStatsText = useCallback(() => {
-    if (!extractedStats) return "";
+    if (!stats) return "";
+
+    const normalizedStats = normalizeStats(stats);
 
     const statsText = `
 **Estadísticas del Arma${
-      extractedStats.nombreArma ? ` - ${extractedStats.nombreArma}` : ""
+      normalizedStats.nombreArma ? ` - ${normalizedStats.nombreArma}` : ""
     }**
 
-• **Daño:** ${extractedStats.dano}
-• **Alcance:** ${extractedStats.alcance}m
-• **Control:** ${extractedStats.control}
-• **Manejo:** ${extractedStats.manejo}
-• **Estabilidad:** ${extractedStats.estabilidad}
-• **Precisión:** ${extractedStats.precision}
-• **Perforación de blindaje:** ${extractedStats.perforacionBlindaje}
-• **Cadencia de disparo:** ${extractedStats.cadenciaDisparo} dpm
-• **Capacidad:** ${extractedStats.capacidad}
-• **Velocidad de boca:** ${extractedStats.velocidadBoca} m/s
-• **Sonido de disparo:** ${extractedStats.sonidoDisparo}m
+• **Daño:** ${normalizedStats.damage ?? "N/A"}
+• **Alcance:** ${normalizedStats.range ?? "N/A"}m
+• **Control:** ${normalizedStats.control ?? "N/A"}
+• **Manejo:** ${normalizedStats.handling ?? "N/A"}
+• **Estabilidad:** ${normalizedStats.stability ?? "N/A"}
+• **Precisión:** ${normalizedStats.accuracy ?? "N/A"}
+• **Perforación de blindaje:** ${normalizedStats.armorPenetration ?? "N/A"}
+• **Cadencia de disparo:** ${normalizedStats.fireRate ?? "N/A"} dpm
+• **Capacidad:** ${normalizedStats.capacity ?? "N/A"}
+• **Velocidad de boca:** ${normalizedStats.muzzleVelocity ?? "N/A"} m/s
+• **Sonido de disparo:** ${normalizedStats.soundRange ?? "N/A"}m
 
 *Estadísticas extraídas automáticamente usando IA*
     `.trim();
 
     return statsText;
-  }, [extractedStats]);
+  }, [stats, normalizeStats]);
 
   const handleCopyStats = useCallback(async () => {
     const statsText = generateStatsText();
+    console.log("[WeaponStatsUploader] Copiando estadísticas al portapapeles", {
+      hasStats: Boolean(stats),
+    });
     try {
       await navigator.clipboard.writeText(statsText);
       // Aquí podrías mostrar un toast de éxito
     } catch (err) {
       console.error("Error copiando al portapapeles:", err);
     }
-  }, [generateStatsText]);
+  }, [generateStatsText, stats]);
+
+  useEffect(() => {
+    console.log("[WeaponStatsUploader] Estado de análisis actualizado", {
+      status,
+      step,
+      hasStats: Boolean(stats),
+      hasError: Boolean(error),
+    });
+  }, [status, step, stats, error]);
 
   return (
     <div className={cn("flex flex-col h-full", className)}>
@@ -197,7 +244,9 @@ export function WeaponStatsUploader({
           <Loader2 className="w-8 h-8 animate-spin text-[var(--user-color,#6366f1)]" />
           <div className="text-center">
             <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
-              Analizando imagen...
+              {status === "uploading"
+                ? "Subiendo imagen..."
+                : "Analizando imagen..."}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Esto puede tomar unos segundos
@@ -206,42 +255,50 @@ export function WeaponStatsUploader({
         </div>
       )}
 
-      {/* Error */}
+      {/* Error - Mostrar en modal overlay para mejor visibilidad */}
       {error && (
-        <div className="flex flex-col sm:flex-row sm:items-start gap-3 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex-shrink-0">
-          <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-sm font-medium text-red-800 dark:text-red-200">
-              Error en el análisis
-            </p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-1">
-              {error}
-            </p>
-          </div>
-          <div className="flex items-center sm:items-center gap-2 sm:ml-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleUploadAnother}
-              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Subir otra
-            </Button>
-            {/* <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRetry}
-              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </Button> */}
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-2xl max-w-sm w-full border border-red-200 dark:border-red-800 overflow-hidden">
+            {/* Header del error */}
+            <div className="bg-red-50 dark:bg-red-900/30 px-6 py-4 border-b border-red-200 dark:border-red-800 flex items-center gap-3">
+              <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+              <h3 className="text-lg font-semibold text-red-800 dark:text-red-200">
+                Error en el análisis
+              </h3>
+            </div>
+
+            {/* Contenido del error */}
+            <div className="px-6 py-4">
+              <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                {error}
+              </p>
+            </div>
+
+            {/* Acciones */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex gap-3 justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleUploadAnother}
+                className="border-red-200 dark:border-red-800 text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Cerrar
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleUploadAnother}
+                className="bg-[var(--user-color,#6366f1)] hover:bg-[var(--user-color,#6366f1)]/90 text-white"
+              >
+                Subir otra imagen
+              </Button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Resultados */}
-      {step === "results" && extractedStats && (
+      {step === "results" && stats && (
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex items-center gap-2 text-green-600 dark:text-green-400 mb-3 flex-shrink-0">
             <CheckCircle className="w-5 h-5" />
@@ -270,7 +327,7 @@ export function WeaponStatsUploader({
                 <CarouselItem>
                   <div className="flex justify-center p-2">
                     <WeaponStatsCard
-                      stats={extractedStats}
+                      stats={stats}
                       onEdit={handleStatEdit}
                       isEditable={true}
                       className="w-full max-w-[420px]"
@@ -288,30 +345,27 @@ export function WeaponStatsUploader({
           </div>
 
           {/* Diseño lado a lado en escritorio */}
-          <div className="hidden md:flex justify-center gap-8 mb-3 w-full md:max-w-[1150px] mx-auto">
+          <div className="hidden md:flex justify-center gap-4 mb-3 w-full mx-auto min-h-0 flex-1 overflow-x-auto px-4">
             {imagePreview && (
-              // Contenedor 1: Imagen (mantiene su ancho original)
-              <div className="flex-shrink-0 w-[380px] xl:w-[440px]">
+              // Contenedor 1: Imagen
+              <div className="flex-shrink-0 w-[200px] lg:w-[240px]">
                 <div className="relative w-full aspect-[2/3] bg-black rounded-lg overflow-hidden flex items-center justify-center">
                   <img
                     src={imagePreview}
                     alt="Imagen del arma"
-                    // Solución anterior: Usar object-cover para llenar el contenedor
                     className="w-full h-full object-cover"
                   />
                 </div>
               </div>
             )}
 
-            {/* Contenedor 2: Stats - Aplicar el mismo ancho para coincidir */}
-            <div className="flex-shrink-0 flex justify-center w-[380px] xl:w-[440px]">
+            {/* Contenedor 2: Stats */}
+            <div className="flex-shrink-0 flex justify-center w-[200px] lg:w-[240px] min-h-0">
               <WeaponStatsCard
-                stats={extractedStats}
+                stats={stats}
                 onEdit={handleStatEdit}
                 isEditable={true}
-                // CAMBIO: Eliminar la clase de ancho en la tarjeta,
-                // ahora el contenedor externo define el tamaño.
-                className="w-full"
+                className="w-full h-full"
               />
             </div>
           </div>

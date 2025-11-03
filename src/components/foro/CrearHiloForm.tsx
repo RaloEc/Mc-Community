@@ -88,7 +88,8 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
   const handleWeaponStatsExtracted = (stats: WeaponStats) => {
     // Guardar las estadísticas para previsualización y estado del botón
     setWeaponStatsPreview(stats);
-    setWeaponStatsRecordId(stats.recordId ?? null);
+    // El recordId se obtiene cuando se guarda el hilo, no aquí
+    setWeaponStatsRecordId(null);
 
     // Cerrar el modal
     setIsWeaponModalOpen(false);
@@ -269,8 +270,8 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
                   : "Analizar Estadísticas de Arma"}
               </Button>
             </DialogTrigger>
-            <DialogContent className="!max-w-none !w-[85vw] h-auto md:h-[90vh] p-0 overflow-y-auto md:overflow-hidden flex flex-col">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <DialogContent className="!max-w-none !w-[85vw] h-auto md:h-[90vh] p-0 overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
                 <DialogHeader>
                   <DialogTitle>Análisis de Estadísticas de Arma</DialogTitle>
                   <DialogDescription>
@@ -279,12 +280,13 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
                 </DialogHeader>
               </div>
               <div
-                className="flex-1 overflow-y-auto p-4"
+                className="flex-1 overflow-y-auto p-4 min-h-0"
                 style={{ "--user-color": userColor } as React.CSSProperties}
               >
                 <WeaponStatsUploader
                   onStatsExtracted={handleWeaponStatsExtracted}
                   onClose={() => setIsWeaponModalOpen(false)}
+                  className="h-full"
                 />
               </div>
             </DialogContent>

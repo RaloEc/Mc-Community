@@ -18,6 +18,7 @@ import {
   Twitter,
   Youtube,
   AtSign,
+  Sword,
 } from "lucide-react";
 import { Votacion } from "@/components/ui/Votacion";
 import React from "react";
@@ -445,6 +446,8 @@ function HiloCard(props: HiloCardProps) {
   const parsedWeaponStats = parseWeaponStats(weaponStats);
 
   const contentIndicators = React.useMemo(() => {
+    // Importar Sword para el icono de arma
+    // Este será usado en los indicadores de contenido
     if (!contenido || typeof document === "undefined") {
       return {
         hasCode: false,
@@ -481,9 +484,10 @@ function HiloCard(props: HiloCardProps) {
       hasYoutube,
       hasImages,
       hasMentions,
-      hasAny: hasCode || hasTweet || hasYoutube || hasImages || hasMentions,
+      hasWeapon: parsedWeaponStats !== null,
+      hasAny: hasCode || hasTweet || hasYoutube || hasImages || hasMentions || parsedWeaponStats !== null,
     };
-  }, [contenido]);
+  }, [contenido, parsedWeaponStats]);
 
   const badgeBg = (categoriaColor || "#3B82F6") + "20";
   const badgeFg = categoriaColor || "#3B82F6";
@@ -602,6 +606,9 @@ function HiloCard(props: HiloCardProps) {
                             )}
                             {contentIndicators.hasMentions && (
                               <AtSign className="h-3.5 w-3.5" aria-hidden="true" />
+                            )}
+                            {contentIndicators.hasWeapon && (
+                              <Sword className="h-3.5 w-3.5" aria-hidden="true" />
                             )}
                           </div>
                         )}

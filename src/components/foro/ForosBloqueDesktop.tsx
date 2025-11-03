@@ -144,12 +144,15 @@ export default function ForosBloqueDesktop({ limit = 5 }: ForosBloqueDesktopProp
         autor_id: hilo.autor_id,
         created_at: hilo.created_at,
         ultimo_post_at: hilo.ultimo_post_at,
+        vistas: hilo.vistas,
         votos_conteo: hilo.votos_conteo,
         respuestas_conteo: hilo.respuestas_conteo,
         perfiles: hilo.autor ? {
-          username: hilo.autor.username,
-          rol: hilo.autor.rol,
-          avatar_url: hilo.autor.avatar_url
+          username: hilo.autor.username || 'Anónimo',
+          public_id: hilo.autor.public_id ?? null,
+          rol: hilo.autor.role || 'usuario',
+          avatar_url: hilo.autor.avatar_url,
+          color: hilo.autor.color ?? null,
         } : null,
         foro_categorias: hilo.categoria ? {
           nombre: hilo.categoria.nombre,

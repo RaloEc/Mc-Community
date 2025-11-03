@@ -1,0 +1,8 @@
+# Async weapon analysis Edge Function configuration
+verify_jwt = false
+
+[env]
+GEMINI_API_KEY = "env(GEMINI_API_KEY)"
+GEMINI_MODEL = "env(GEMINI_MODEL)"
+GEMINI_API_VERSION = "env(GEMINI_API_VERSION)"
+GEMINI_API_BASE_URL = "env(GEMINI_API_BASE_URL)"

@@ -1,261 +1,197 @@
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createClient, getServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export interface WeaponStats {
-  dano: number;
-  alcance: number;
-  control: number;
-  manejo: number;
-  estabilidad: number;
-  precision: number;
-  perforacionBlindaje: number;
-  cadenciaDisparo: number;
-  capacidad: number;
-  velocidadBoca: number;
-  sonidoDisparo: number;
-  nombreArma?: string;
-  recordId?: string;
+  damage?: number;
+  range?: number;
+  control?: number;
+  handling?: number;
+  stability?: number;
+  accuracy?: number;
+  armorPenetration?: number;
+  fireRate?: number;
+  capacity?: number;
+  muzzleVelocity?: number;
+  soundRange?: number;
+  nombreArma?: string | null;
 }
 
-export interface WeaponStatsRecordResponse extends WeaponStats {
-  recordId: string;
-}
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies();
+    console.log('[analyze-weapon] Inicio de request');
+    const supabase = await createClient();
     
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll();
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) =>
-                cookieStore.set(name, value, options)
-              );
-            } catch {
-              // Ignorar errores en Route Handlers
-            }
-          },
-        },
-      }
-    );
-    
-    // Verificar autenticación
+    // Get authenticated user
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
     if (authError || !user) {
+      console.warn('[analyze-weapon] Usuario no autenticado', { authError });
       return NextResponse.json(
-        { error: 'No autorizado' },
+        { error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Obtener la imagen del FormData
+    console.log('[analyze-weapon] Usuario autenticado', { userId: user.id });
+
+    // Parse FormData
     const formData = await request.formData();
     const file = formData.get('image') as File;
-    
+
     if (!file) {
+      console.warn('[analyze-weapon] No se proporcionó archivo');
       return NextResponse.json(
-        { error: 'Imagen requerida' },
+        { error: 'No file provided' },
         { status: 400 }
       );
     }
 
-    // Validar tipo de archivo
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: 'Tipo de archivo no válido. Solo se permiten JPEG, PNG y WebP.' },
-        { status: 400 }
-      );
-    }
-
-    // Validar tamaño (5MB máximo)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return NextResponse.json(
-        { error: 'El archivo es demasiado grande. Máximo 5MB.' },
-        { status: 400 }
-      );
-    }
-
-    // Generar nombre único para el archivo
-    const timestamp = Date.now();
-    const randomId = Math.random().toString(36).substring(2);
-    const fileExtension = file.name.split('.').pop() || 'jpg';
-    const fileName = `${user.id}/${timestamp}-${randomId}.${fileExtension}`;
-
-    // Leer el archivo como ArrayBuffer
-    const fileBuffer = await file.arrayBuffer();
-    
-    // Subir imagen a Supabase Storage
-    console.log('Subiendo imagen a Supabase Storage...', {
-      bucket: 'weapon-analysis-temp',
-      fileName,
+    console.log('[analyze-weapon] Archivo recibido', {
+      name: file.name,
       size: file.size,
-      type: file.type
+      type: file.type,
     });
-    
-    const { data: uploadData, error: uploadError } = await supabase.storage
+
+    // Validate file
+    if (file.size > MAX_FILE_SIZE) {
+      console.warn('[analyze-weapon] Archivo supera el límite permitido', {
+        size: file.size,
+        maxSize: MAX_FILE_SIZE,
+      });
+      return NextResponse.json(
+        { error: `File size exceeds ${MAX_FILE_SIZE / 1024 / 1024}MB limit` },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      console.warn('[analyze-weapon] Tipo de archivo no permitido', { mimeType: file.type });
+      return NextResponse.json(
+        { error: 'Invalid file type. Allowed: JPEG, PNG, WebP' },
+        { status: 400 }
+      );
+    }
+
+    // Convert file to buffer
+    const buffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(buffer);
+
+    // Generate unique storage path
+    const timestamp = Date.now();
+    const fileExtension = file.name.split('.').pop() || 'png';
+    const storagePath = `${user.id}/${timestamp}.${fileExtension}`;
+    console.log('[analyze-weapon] Path generado para Storage', { storagePath });
+
+    // Use service role to upload file
+    const serviceSupabase = getServiceClient();
+
+    const { error: uploadError } = await serviceSupabase.storage
       .from('weapon-analysis-temp')
-      .upload(fileName, fileBuffer, {
-        cacheControl: '3600',
-        upsert: false,
+      .upload(storagePath, uint8Array, {
         contentType: file.type,
-        duplex: 'half'
+        upsert: false,
       });
 
     if (uploadError) {
-      console.error('Error subiendo imagen:', JSON.stringify(uploadError, null, 2));
-      console.error('Detalles del error:', {
-        message: uploadError?.message,
-        bucket: 'weapon-analysis-temp',
-        fileName: fileName,
-        userId: user.id
-      });
+      console.error('[analyze-weapon] Upload error:', uploadError);
       return NextResponse.json(
-        { 
-          error: 'Error al subir la imagen',
-          details: uploadError?.message || 'Error desconocido'
-        },
+        { error: 'Failed to upload file' },
         { status: 500 }
       );
     }
 
-    // Leer la imagen como ArrayBuffer
-    console.log('Leyendo imagen como ArrayBuffer...');
-    const imageBuffer = Buffer.from(await file.arrayBuffer());
-    const imageBase64 = imageBuffer.toString('base64');
-    
-    // Llamar a la función de borde para análisis
-    console.log('Invocando Edge Function con datos binarios...');
-    
-    const { data: analysisData, error: analysisError } = await supabase.functions
-      .invoke('analyze-weapon-stats', {
-        body: { 
-          imageData: imageBase64,
-          fileName: file.name,
-          contentType: file.type
-        }
-      });
+    console.log('[analyze-weapon] Archivo almacenado correctamente', { storagePath });
 
-    console.log('Respuesta de Edge Function:', { analysisData, analysisError });
-
-    if (analysisError) {
-      console.error('Error en análisis:', JSON.stringify(analysisError, null, 2));
-      
-      // Limpiar imagen temporal
-      await supabase.storage
-        .from('weapon-analysis-temp')
-        .remove([fileName]);
-      
-      let status = 500;
-      let friendlyError = 'Error analizando la imagen';
-      let code: string | undefined;
-
-      const contextResponse = (analysisError as { context?: Response }).context;
-      if (contextResponse) {
-        try {
-          const responseClone = contextResponse.clone ? contextResponse.clone() : contextResponse;
-          status = responseClone.status || status;
-          const payload = await responseClone.json().catch(() => null);
-          if (payload) {
-            friendlyError = payload.error || friendlyError;
-            code = payload.code;
-          }
-        } catch (ctxError) {
-          console.error('Error leyendo respuesta de Edge Function:', ctxError);
-        }
-      }
-
-      return NextResponse.json(
-        { 
-          error: friendlyError,
-          code: code ?? 'ANALYSIS_ERROR',
-          details: analysisError?.message || 'Error desconocido'
-        },
-        { status }
-      );
-    }
-
-    // Limpiar imagen temporal después del análisis
-    await supabase.storage
-      .from('weapon-analysis-temp')
-      .remove([fileName]);
-
-    // Validar respuesta del análisis
-    if (!analysisData.success || !analysisData.data) {
-      const friendlyError = analysisData.error || 'No se pudieron extraer las estadísticas de la imagen';
-      const statusCode = analysisData.code === 'NOT_STATS' ? 422 : 422;
-      return NextResponse.json(
-        { error: friendlyError, code: analysisData.code ?? 'ANALYSIS_ERROR' },
-        { status: statusCode }
-      );
-    }
-
-    const weaponStats = analysisData.data as WeaponStats;
-
-    // Guardar estadísticas en la nueva tabla
-    const { data: weaponStatsRecord, error: recordError } = await supabase
-      .from('weapon_stats_records')
+    // Create job record in database
+    const { data: job, error: insertError } = await serviceSupabase
+      .from('weapon_analysis_jobs')
       .insert({
         user_id: user.id,
-        weapon_name: weaponStats.nombreArma ?? null,
-        stats: weaponStats,
-        source_image_path: fileName
+        storage_path: storagePath,
+        bucket: 'weapon-analysis-temp',
+        status: 'pending',
       })
       .select('id')
       .single();
 
-    if (recordError || !weaponStatsRecord) {
-      console.error('Error guardando estadísticas del arma:', recordError);
+    if (insertError || !job) {
+      console.error('[analyze-weapon] Insert error:', insertError);
+      // Clean up uploaded file
+      await serviceSupabase.storage
+        .from('weapon-analysis-temp')
+        .remove([storagePath]);
+      
       return NextResponse.json(
-        {
-          error: 'No se pudieron almacenar las estadísticas generadas',
-          code: 'STATS_PERSISTENCE_FAILED'
-        },
+        { error: 'Failed to create analysis job' },
         { status: 500 }
       );
     }
 
-    const weaponStatsWithId: WeaponStatsRecordResponse = {
-      ...weaponStats,
-      recordId: weaponStatsRecord.id
-    };
+    console.log('[analyze-weapon] Job creado', { jobId: job.id, userId: user.id });
 
-    return NextResponse.json({
-      success: true,
-      data: weaponStatsWithId
+    // Invoke Edge Function asynchronously (fire-and-forget)
+    const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/analyze-weapon-async`;
+    const invokeKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_KEY;
+
+    console.log('[analyze-weapon] Preparando invocación de Edge Function', {
+      jobId: job.id,
+      url: edgeFunctionUrl,
+      hasKey: Boolean(invokeKey),
     });
 
-  } catch (error) {
-    console.error('Error en API analyze-weapon:', error);
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
-    
-    return NextResponse.json(
-      { 
-        error: 'Error interno del servidor',
-        message: error instanceof Error ? error.message : 'Error desconocido'
+    // Fire-and-forget: don't await this
+    fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${invokeKey}`,
       },
+      body: JSON.stringify({
+        jobId: job.id,
+      }),
+    })
+      .then((response) => {
+        console.log('[analyze-weapon] Edge Function respondió', {
+          jobId: job.id,
+          status: response.status,
+        });
+        if (!response.ok) {
+          return response.text().then((text) => {
+            console.error('[analyze-weapon] Edge Function error response', {
+              jobId: job.id,
+              status: response.status,
+              body: text,
+            });
+          });
+        }
+      })
+      .catch((error) => {
+        console.error('[analyze-weapon] Edge Function invocation error:', {
+          jobId: job.id,
+          error: error.message,
+        });
+      });
+
+    console.log('[analyze-weapon] Edge Function invocada (fire-and-forget)', {
+      jobId: job.id,
+      edgeFunctionUrl,
+    });
+
+    // Respond immediately to client
+    return NextResponse.json(
+      {
+        success: true,
+        jobId: job.id,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('[analyze-weapon] Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
-
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    },
-  });
 }
