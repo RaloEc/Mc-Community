@@ -202,6 +202,80 @@ export default function HiloContenido({
   // Activar sincronización en tiempo real de votos de hilos
   useRealtimeVotosHilos();
 
+  // Procesar imágenes blob cuando se carga el contenido
+  useEffect(() => {
+    const currentContentRef = contentRef.current;
+    if (!html || !currentContentRef || typeof document === "undefined") return;
+
+    const processImages = async () => {
+      try {
+        const images = currentContentRef.querySelectorAll<HTMLImageElement>("img");
+        console.log(`[HiloContenido] Encontradas ${images.length} imágenes para procesar`);
+
+        for (const img of Array.from(images)) {
+          const src = img.getAttribute("src");
+          if (!src) continue;
+
+          // Omitir imágenes que ya tienen URLs permanentes
+          if (src.includes("supabase.co") || src.includes("/api/storage/")) {
+            console.log(`[HiloContenido] Omitiendo imagen con URL permanente`);
+            continue;
+          }
+
+          // Procesar imágenes blob
+          if (src.startsWith("blob:")) {
+            console.log(`[HiloContenido] Procesando imagen blob: ${src.substring(0, 30)}...`);
+            try {
+              const response = await fetch(src);
+              if (!response.ok) throw new Error(`Error al obtener blob: ${response.status}`);
+
+              const blob = await response.blob();
+              if (!blob || blob.size === 0) throw new Error("Blob vacío");
+
+              // Determinar extensión
+              const fileType = blob.type.split("/")[1] || "png";
+              const fileName = `image_${Date.now()}.${fileType}`;
+              const file = new File([blob], fileName, { type: blob.type });
+
+              // Subir a Supabase
+              console.log(`[HiloContenido] Subiendo imagen a Supabase (${file.size} bytes)`);
+              const formData = new FormData();
+              formData.append("file", file);
+
+              const uploadResponse = await fetch("/api/admin/imagenes", {
+                method: "POST",
+                body: formData,
+              });
+
+              if (!uploadResponse.ok) {
+                throw new Error(`Error al subir: ${uploadResponse.status}`);
+              }
+
+              const uploadData = await uploadResponse.json();
+              if (!uploadData.success || !uploadData.url) {
+                throw new Error("No se recibió URL después de subir");
+              }
+
+              // Actualizar src de la imagen
+              console.log(`[HiloContenido] Imagen subida: ${uploadData.url}`);
+              img.setAttribute("src", uploadData.url);
+              img.setAttribute("data-processed", "true");
+            } catch (error) {
+              console.error(`[HiloContenido] Error procesando imagen blob:`, error);
+              // Dejar la imagen como está si falla
+            }
+          }
+        }
+      } catch (error) {
+        console.error("[HiloContenido] Error en processImages:", error);
+      }
+    };
+
+    // Procesar imágenes después de que el contenido se renderice
+    const timeoutId = setTimeout(processImages, 100);
+    return () => clearTimeout(timeoutId);
+  }, [html]);
+
   // Hidratar tweets en el lugar (sin extraerlos del flujo)
   useEffect(() => {
     // 1. Capturamos la referencia actual
@@ -434,32 +508,41 @@ export default function HiloContenido({
         style={
           {
             "--user-color": userColor,
-            "--user-color-rgb": userColor ? userColor.replace("#", "").match(/.{1,2}/g)?.map(x => parseInt(x, 16)).join(", ") : "59, 130, 246",
+            "--user-color-rgb": userColor
+              ? userColor
+                  .replace("#", "")
+                  .match(/.{1,2}/g)
+                  ?.map((x) => parseInt(x, 16))
+                  .join(", ")
+              : "59, 130, 246",
           } as React.CSSProperties
         }
       >
-        <HighlightedContent html={html} className="foro-hilo-content text-base leading-relaxed space-y-4" />
+        <HighlightedContent
+          html={html}
+          className="foro-hilo-content text-base leading-relaxed space-y-4"
+        />
 
         {/* Tarjeta de estadísticas del arma */}
         {weaponStatsRecord?.stats && (
           <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <WeaponStatsCard 
-              stats={weaponStatsRecord.stats} 
-              className="w-full max-w-2xl"
+            <WeaponStatsCard
+              stats={weaponStatsRecord.stats}
+              className="w-auto max-w-xs mx-auto "
             />
           </div>
         )}
 
-      {/* Botón volver arriba */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-50 bg-gray-900 dark:bg-gray-700 text-white p-3 rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-          aria-label="Volver arriba"
-        >
-          <ChevronUp className="w-6 h-6" />
-        </button>
-      )}
+        {/* Botón volver arriba */}
+        {showScrollTop && (
+          <button
+            onClick={scrollToTop}
+            className="fixed bottom-8 right-8 z-50 bg-gray-900 dark:bg-gray-700 text-white p-3 rounded-full shadow-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-all duration-300 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            aria-label="Volver arriba"
+          >
+            <ChevronUp className="w-6 h-6" />
+          </button>
+        )}
       </div>
     </>
   );

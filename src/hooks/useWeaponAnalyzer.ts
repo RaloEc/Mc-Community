@@ -29,6 +29,7 @@ interface UseWeaponAnalyzerReturn {
   status: "idle" | "uploading" | "analyzing" | "success" | "error";
   error: string | null;
   stats: WeaponStats | null;
+  weaponStatsRecordId: string | null;
   startAnalysis: (file: File) => Promise<void>;
   clear: () => void;
 }
@@ -51,6 +52,7 @@ export function useWeaponAnalyzer(): UseWeaponAnalyzerReturn {
   const [clientError, setClientError] = useState<string | null>(null);
   const [status, setStatus] = useState<UseWeaponAnalyzerReturn["status"]>("idle");
   const [finalStats, setFinalStats] = useState<WeaponStats | null>(null);
+  const [weaponStatsRecordId, setWeaponStatsRecordId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Hook de React Query para el polling
@@ -78,6 +80,7 @@ export function useWeaponAnalyzer(): UseWeaponAnalyzerReturn {
       console.log("[useWeaponAnalyzer] Job completado", {
         jobId: job.id,
         result: job.result,
+        weaponStatsRecordId: (job as any).weapon_stats_record_id,
       });
 
       let parsedStats: WeaponStats | null = null;
@@ -99,6 +102,7 @@ export function useWeaponAnalyzer(): UseWeaponAnalyzerReturn {
       }
 
       setFinalStats(parsedStats);
+      setWeaponStatsRecordId((job as any).weapon_stats_record_id || null);
       setStatus("success");
       setJobId(null); // Detener query
     } else if (job.status === "failed") {
@@ -286,6 +290,7 @@ export function useWeaponAnalyzer(): UseWeaponAnalyzerReturn {
     status,
     error: clientError || (pollError ? pollError.message : null),
     stats: finalStats,
+    weaponStatsRecordId,
     startAnalysis,
     clear,
   };

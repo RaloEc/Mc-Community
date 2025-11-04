@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/carousel";
 
 interface WeaponStatsUploaderProps {
-  onStatsExtracted?: (stats: WeaponStats) => void;
+  onStatsExtracted?: (stats: WeaponStats, recordId?: string | null) => void;
   onClose?: () => void;
   className?: string;
 }
@@ -38,7 +38,7 @@ export function WeaponStatsUploader({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Nuevo hook con polling
-  const { status, error, stats, startAnalysis, clear } = useWeaponAnalyzer();
+  const { status, error, stats, weaponStatsRecordId, startAnalysis, clear } = useWeaponAnalyzer();
 
   // Derivar el estado de la UI del estado del hook
   const isAnalyzing = status === "uploading" || status === "analyzing";
@@ -107,10 +107,11 @@ export function WeaponStatsUploader({
     if (stats && onStatsExtracted) {
       console.log("[WeaponStatsUploader] Estadísticas aceptadas por el usuario", {
         stats,
+        weaponStatsRecordId,
       });
-      onStatsExtracted(stats);
+      onStatsExtracted(stats, weaponStatsRecordId);
     }
-  }, [stats, onStatsExtracted]);
+  }, [stats, weaponStatsRecordId, onStatsExtracted]);
 
   const normalizeStats = useCallback((rawStats: WeaponStats): WeaponStats => {
     const normalized: any = { ...rawStats };

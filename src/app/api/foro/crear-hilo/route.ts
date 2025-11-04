@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { processEditorContent } from '@/components/tiptap-editor/processImages';
 
 // Función para generar un slug a partir de un título
 function createSlug(title: string): string {
@@ -33,16 +32,28 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Todos los campos son requeridos.' }, { status: 400 });
   }
 
-  // Procesar imágenes temporales antes de guardar
-  let contenidoProcesado = contenido;
-  try {
-    console.log('Procesando imágenes temporales en el contenido del hilo...');
-    contenidoProcesado = await processEditorContent(contenido);
-    console.log('Imágenes procesadas correctamente');
-  } catch (error) {
-    console.error('Error al procesar imágenes:', error);
-    // Continuar con el contenido original si falla el procesamiento
+  // IMPORTANTE: No procesar imágenes en el servidor
+  // Las imágenes blob:// no existen en el servidor
+  // Se procesarán en el cliente cuando se visualice el hilo
+  // Simplemente guardar el contenido tal como viene del editor
+  const contenidoProcesado = contenido;
+  
+  console.log('[crear-hilo] Recibido POST para crear hilo');
+  console.log('[crear-hilo] Título:', titulo);
+  console.log('[crear-hilo] Categoría ID:', categoria_id);
+  console.log('[crear-hilo] Contenido (primeros 300 chars):', contenido.substring(0, 300));
+  
+  // Verificar si hay imágenes sin src
+  const imgSinSrcRegex = /<img[^>]*(?<!src=["'][^"']*["'])[^>]*>/gi;
+  const imagenessSinSrc = contenido.match(imgSinSrcRegex) || [];
+  if (imagenessSinSrc.length > 0) {
+    console.warn('[crear-hilo] ADVERTENCIA: Se detectaron imágenes sin src:', imagenessSinSrc.length);
+    imagenessSinSrc.forEach((img, idx) => {
+      console.warn(`  [${idx + 1}] ${img.substring(0, 100)}`);
+    });
   }
+  
+  console.log('[crear-hilo] Guardando hilo con contenido (imágenes se procesarán en cliente)');
 
   const slug = createSlug(titulo);
 

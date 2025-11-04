@@ -1,11 +1,58 @@
-'use client'
-
 import { imageCache } from './ImageCache'
 import { uploadImageToSupabase } from './utils'
 
-// Función para procesar el contenido HTML y subir las imágenes temporales a Supabase
+// Función para procesar el contenido HTML en el servidor (sin usar document)
+export const processEditorContentServer = async (html: string): Promise<string> => {
+  try {
+    console.log('[processEditorContentServer] Procesando contenido en servidor')
+    
+    // Usar regex para encontrar y procesar imágenes sin usar document
+    // Patrón para encontrar todas las etiquetas img
+    const imgRegex = /<img\s+([^>]*?)src=["']([^"']+)["']([^>]*?)>/gi
+    
+    let processedHtml = html
+    const matches = Array.from(html.matchAll(imgRegex))
+    
+    console.log(`[processEditorContentServer] Encontradas ${matches.length} imágenes`)
+    
+    // Procesar cada imagen
+    for (const match of matches) {
+      const fullTag = match[0]
+      const beforeSrc = match[1]
+      const src = match[2]
+      const afterSrc = match[3]
+      
+      // Omitir imágenes que ya tienen URLs permanentes de Supabase
+      if (src.includes('supabase.co') || src.includes('/api/storage/')) {
+        console.log(`[processEditorContentServer] Omitiendo imagen con URL permanente: ${src.substring(0, 50)}...`)
+        continue
+      }
+      
+      // Las imágenes blob:// no se pueden procesar en el servidor
+      // Solo se pueden procesar en el cliente
+      if (src.startsWith('blob:') || src.startsWith('data:image')) {
+        console.log(`[processEditorContentServer] Omitiendo imagen temporal (blob/data): ${src.substring(0, 50)}...`)
+        // Dejar la imagen como está para que se procese en el cliente
+        continue
+      }
+    }
+    
+    return processedHtml
+  } catch (error) {
+    console.error('[processEditorContentServer] Error al procesar imágenes:', error)
+    return html
+  }
+}
+
+// Función para procesar el contenido HTML en el cliente (con document)
 export const processEditorContent = async (html: string): Promise<string> => {
   try {
+    // Verificar que estamos en el cliente
+    if (typeof document === 'undefined') {
+      console.warn('[processEditorContent] Ejecutándose en servidor, usando versión de servidor')
+      return await processEditorContentServer(html)
+    }
+    
     // Crear un elemento DOM temporal para analizar el HTML
     const tempDiv = document.createElement('div')
     tempDiv.innerHTML = html
@@ -60,7 +107,7 @@ export const processEditorContent = async (html: string): Promise<string> => {
     
     // Buscar todas las imágenes en el contenido (tanto sueltas como dentro de figure)
     const images = tempDiv.querySelectorAll('img')
-    console.log(`Procesando ${images.length} imágenes en el contenido`)
+    console.log(`[processEditorContent] Encontradas ${images.length} imágenes en total`)
     
     // Array para almacenar todas las promesas de procesamiento de imágenes
     const imageProcessingPromises = []
@@ -68,7 +115,59 @@ export const processEditorContent = async (html: string): Promise<string> => {
     // Procesar cada imagen (convertir NodeList a Array para compatibilidad)
     for (const img of Array.from(images)) {
       const src = img.getAttribute('src')
-      if (!src) continue
+      const alt = img.getAttribute('alt')
+      const title = img.getAttribute('title')
+      const parentFigure = img.closest('figure[data-type="image-with-caption"]')
+      
+      // Log detallado de cada imagen
+      console.log(`[processEditorContent] Imagen ${Array.from(images).indexOf(img) + 1}:`, {
+        hasSrc: !!src,
+        srcPreview: src ? src.substring(0, 50) : 'SIN SRC',
+        alt,
+        title,
+        isInFigure: !!parentFigure,
+        parentClass: parentFigure?.className || 'N/A'
+      })
+      
+      // Si no tiene src, intentar recuperarla del caché o contexto
+      if (!src) {
+        console.warn(`[processEditorContent] Imagen sin src detectada. Alt: "${alt}", Title: "${title}"`)
+        
+        // Intentar obtener la imagen del caché si existe
+        if (imageCache && alt) {
+          console.log(`[processEditorContent] Buscando imagen en caché con nombre: ${alt}`)
+          // El caché almacena por URL temporal, no por nombre
+          // Intentar buscar en el mapa de imágenes temporales
+          const allTempImages = imageCache.getAllTempImages()
+          console.log(`[processEditorContent] Total de imágenes en caché: ${allTempImages.length}`)
+          
+          if (allTempImages.length > 0) {
+            // Si hay imágenes en caché, usar la primera (asumiendo que es la más reciente)
+            const cachedImage = allTempImages[allTempImages.length - 1]
+            console.log(`[processEditorContent] Usando imagen del caché: ${cachedImage.file.name}`)
+            
+            const uploadPromise = (async () => {
+              try {
+                console.log(`[processEditorContent] Subiendo imagen desde caché: ${cachedImage.file.name} (${cachedImage.file.size} bytes)`)
+                const permanentUrl = await uploadImageToSupabase(cachedImage.file)
+                console.log(`[processEditorContent] Imagen subida correctamente. URL: ${permanentUrl}`)
+                img.setAttribute('src', permanentUrl)
+                img.setAttribute('data-processed', 'true')
+              } catch (uploadError) {
+                console.error(`[processEditorContent] Error al subir imagen desde caché:`, uploadError)
+              }
+            })()
+            imageProcessingPromises.push(uploadPromise)
+            continue
+          } else {
+            console.warn(`[processEditorContent] No hay imágenes en caché disponibles`)
+          }
+        }
+        
+        // Si no se pudo recuperar, registrar advertencia pero continuar
+        console.warn(`[processEditorContent] No se pudo recuperar imagen sin src. Se guardará sin URL.`)
+        continue
+      }
       
       // Evitar procesar imágenes que ya tienen URLs permanentes de Supabase
       if (src.includes('supabase.co') || src.includes('/api/storage/')) {
@@ -153,11 +252,29 @@ export const processEditorContent = async (html: string): Promise<string> => {
     }
     
     // Esperar a que todas las imágenes se procesen
+    console.log(`[processEditorContent] Esperando a que se procesen ${imageProcessingPromises.length} promesas de imágenes...`)
     await Promise.all(imageProcessingPromises)
     
     // Verificar que todas las imágenes se hayan procesado correctamente
     const processedImages = tempDiv.querySelectorAll('img[data-processed="true"]')
-    console.log(`Procesadas ${processedImages.length} de ${images.length} imágenes`)
+    const imagesWithSrc = tempDiv.querySelectorAll('img[src]')
+    const imagesWithoutSrc = tempDiv.querySelectorAll('img:not([src])')
+    
+    console.log(`[processEditorContent] RESUMEN FINAL:`, {
+      totalImages: images.length,
+      processedWithFlag: processedImages.length,
+      withSrc: imagesWithSrc.length,
+      withoutSrc: imagesWithoutSrc.length,
+      successRate: `${((imagesWithSrc.length / images.length) * 100).toFixed(2)}%`
+    })
+    
+    // Log detallado de imágenes sin src
+    if (imagesWithoutSrc.length > 0) {
+      console.warn(`[processEditorContent] ADVERTENCIA: ${imagesWithoutSrc.length} imagen(es) sin src:`)
+      imagesWithoutSrc.forEach((img, idx) => {
+        console.warn(`  [${idx + 1}] Alt: "${img.getAttribute('alt')}", Title: "${img.getAttribute('title')}", Clase: "${img.className}"`)
+      })
+    }
     
     // Procesar embeds de Twitter para asegurar que el HTML se preserva correctamente
     const twitterEmbeds = tempDiv.querySelectorAll('[data-type="twitter-embed"]')

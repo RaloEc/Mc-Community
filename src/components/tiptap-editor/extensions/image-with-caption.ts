@@ -45,10 +45,15 @@ export const ImageWithCaption = Node.create<ImageWithCaptionOptions>({
           return img?.getAttribute('src')
         },
         renderHTML: attributes => {
+          // Importante: retornar el src para que se incluya en el HTML serializado
           if (!attributes.src) {
+            console.warn('[ImageWithCaption] renderHTML: src es null o undefined')
             return {}
           }
-          return {}
+          console.log('[ImageWithCaption] renderHTML: incluyendo src en HTML:', attributes.src.substring(0, 50))
+          return {
+            src: attributes.src
+          }
         },
       },
       alt: {
@@ -90,6 +95,16 @@ export const ImageWithCaption = Node.create<ImageWithCaptionOptions>({
         default: 'left',
         parseHTML: element => {
           return element.style.textAlign || 'left'
+        },
+        renderHTML: attributes => {
+          // Importante: retornar textAlign para que se incluya en el style del HTML serializado
+          if (!attributes.textAlign) {
+            return {}
+          }
+          console.log('[ImageWithCaption] renderHTML: incluyendo textAlign:', attributes.textAlign)
+          return {
+            style: `text-align: ${attributes.textAlign}`
+          }
         },
       },
     }

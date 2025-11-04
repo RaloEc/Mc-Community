@@ -80,7 +80,12 @@ const ADDITIONAL_STATS_CONFIG: StatConfig[] = [
     unit: "dpm",
   },
   { key: "capacity", label: "Capacidad", icon: Package },
-  { key: "muzzleVelocity", label: "Velocidad de boca", icon: Wind, unit: "m/s" },
+  {
+    key: "muzzleVelocity",
+    label: "Velocidad de boca",
+    icon: Wind,
+    unit: "m/s",
+  },
   {
     key: "soundRange",
     label: "Sonido de disparo",
@@ -98,7 +103,7 @@ export function WeaponStatsCard({
   // Normalizar stats: convertir nombres en español a inglés
   const normalizeStats = (rawStats: WeaponStats): WeaponStats => {
     const normalized: any = { ...rawStats };
-    
+
     // Mapeo de español a inglés
     const spanishToEnglish: Record<string, string> = {
       dano: "damage",
@@ -112,14 +117,14 @@ export function WeaponStatsCard({
       sonidoDisparo: "soundRange",
       capacidad: "capacity",
     };
-    
+
     // Copiar valores de campos en español a sus equivalentes en inglés
     Object.entries(spanishToEnglish).forEach(([spanish, english]) => {
       if (spanish in rawStats && !(english in rawStats)) {
         normalized[english] = rawStats[spanish as keyof WeaponStats];
       }
     });
-    
+
     return normalized;
   };
 

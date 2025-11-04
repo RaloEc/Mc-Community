@@ -124,37 +124,41 @@ const YoutubePlayer = dynamic<{
 // Función para procesar tweets en el HTML
 const processTweetsInHtml = (content: string): string => {
   if (!content) return content;
-  
+
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = content;
-  
+
   // Buscar todos los tweets
   const twitterEmbeds = Array.from(
     tempDiv.querySelectorAll('[data-type="twitter-embed"]')
   );
-  
+
   twitterEmbeds.forEach((embed) => {
     const twitterAttr = embed.getAttribute("data-twitter");
     if (twitterAttr) {
       try {
         const data = JSON.parse(twitterAttr);
-        
+
         // Decodificar HTML si está en base64
-        if (data.html && typeof data.html === 'string' && data.html.length > 0) {
+        if (
+          data.html &&
+          typeof data.html === "string" &&
+          data.html.length > 0
+        ) {
           try {
             const decodedHtml = decodeURIComponent(escape(atob(data.html)));
             // Reemplazar el contenido del div con el HTML decodificado
             embed.innerHTML = `<div class="twitter-embed-content">${decodedHtml}</div>`;
           } catch (e) {
-            console.error('[HiloCard] Error decodificando tweet:', e);
+            console.error("[HiloCard] Error decodificando tweet:", e);
           }
         }
       } catch (e) {
-        console.error('[HiloCard] Error parseando tweet:', e);
+        console.error("[HiloCard] Error parseando tweet:", e);
       }
     }
   });
-  
+
   return tempDiv.innerHTML;
 };
 
@@ -168,10 +172,13 @@ const HtmlContentWithYoutube = React.memo(
     className?: string;
   }) {
     const { userColor } = useUserTheme();
-    
+
     // Procesar tweets en el HTML
-    const processedHtml = React.useMemo(() => processTweetsInHtml(html), [html]);
-    
+    const processedHtml = React.useMemo(
+      () => processTweetsInHtml(html),
+      [html]
+    );
+
     // Verificar si hay un video en el contenido
     const hasVideo = (content: string): boolean => {
       if (!content) return false;
@@ -485,7 +492,13 @@ function HiloCard(props: HiloCardProps) {
       hasImages,
       hasMentions,
       hasWeapon: parsedWeaponStats !== null,
-      hasAny: hasCode || hasTweet || hasYoutube || hasImages || hasMentions || parsedWeaponStats !== null,
+      hasAny:
+        hasCode ||
+        hasTweet ||
+        hasYoutube ||
+        hasImages ||
+        hasMentions ||
+        parsedWeaponStats !== null,
     };
   }, [contenido, parsedWeaponStats]);
 
@@ -593,22 +606,40 @@ function HiloCard(props: HiloCardProps) {
                         {contentIndicators.hasAny && (
                           <div className="flex items-center gap-1 text-gray-500 dark:text-gray-400">
                             {contentIndicators.hasCode && (
-                              <Code className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Code
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                             {contentIndicators.hasTweet && (
-                              <Twitter className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Twitter
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                             {contentIndicators.hasYoutube && (
-                              <Youtube className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Youtube
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                             {contentIndicators.hasImages && (
-                              <ImageIcon className="h-3.5 w-3.5" aria-hidden="true" />
+                              <ImageIcon
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                             {contentIndicators.hasMentions && (
-                              <AtSign className="h-3.5 w-3.5" aria-hidden="true" />
+                              <AtSign
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                             {contentIndicators.hasWeapon && (
-                              <Sword className="h-3.5 w-3.5" aria-hidden="true" />
+                              <Sword
+                                className="h-3.5 w-3.5"
+                                aria-hidden="true"
+                              />
                             )}
                           </div>
                         )}
@@ -637,7 +668,7 @@ function HiloCard(props: HiloCardProps) {
                         <div className="mb-4 md:flex md:justify-center">
                           <WeaponStatsCard
                             stats={parsedWeaponStats}
-                            className="max-w-sm md:max-w-xl md:w-full md:mx-auto"
+                            className="max-w-sm md:max-w-xl md:w-72 md:h-96  md:mx-auto  "
                           />
                         </div>
                       )}

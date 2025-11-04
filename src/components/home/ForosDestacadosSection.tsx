@@ -29,6 +29,8 @@ interface HiloForo {
     id?: string;
     username: string;
     avatar_url?: string;
+    public_id?: string | null;
+    color?: string | null;
   };
   categoria: {
     nombre: string;
@@ -102,7 +104,7 @@ export default function ForosDestacadosSection({
               vistas,
               votos_conteo:foro_votos_hilos(count),
               respuestas_conteo:foro_posts(count),
-              autor:perfiles!autor_id(id, username, avatar_url),
+              autor:perfiles!autor_id(id, username, avatar_url, public_id, color),
               categoria:foro_categorias!categoria_id(nombre, color, slug),
               weapon_stats_record:weapon_stats_records!weapon_stats_id(id, weapon_name, stats)
             `)
@@ -124,6 +126,9 @@ export default function ForosDestacadosSection({
           }
 
           const { data } = await query.limit(4);
+          
+          // LOG DE DEPURACIÓN - DATOS CRUDOS DE SUPABASE
+          console.log('[ForosDestacadosSection] Datos crudos de Supabase:', JSON.stringify(data, null, 2));
 
           // Transformar datos
           const hilosTransformados = data?.map(hilo => {
@@ -165,11 +170,26 @@ export default function ForosDestacadosSection({
               }
             }
             
+            // Normalizar autor
+            const autorNormalizado = Array.isArray(hilo.autor) ? hilo.autor[0] : hilo.autor;
+            
+            // LOG DE DEPURACIÓN - DESPUÉS DE NORMALIZACIÓN
+            console.log('[ForosDestacadosSection] Hilo transformado:', {
+              id: hilo.id,
+              titulo: hilo.titulo,
+              autorRaw: hilo.autor,
+              autorNormalizado: autorNormalizado,
+              autorUsername: autorNormalizado?.username,
+              autorPublicId: autorNormalizado?.public_id,
+              autorColor: autorNormalizado?.color,
+              autorAvatarUrl: autorNormalizado?.avatar_url,
+            });
+            
             return { 
               ...hilo, 
               votos_conteo: votos, 
               respuestas_conteo: respuestas,
-              autor: Array.isArray(hilo.autor) ? hilo.autor[0] : hilo.autor,
+              autor: autorNormalizado,
               categoria: Array.isArray(hilo.categoria) ? hilo.categoria[0] : hilo.categoria,
               weapon_stats_record: weaponStatsRecord,
               fecha_creacion: hilo.created_at // Para compatibilidad con el código existente
@@ -306,30 +326,44 @@ export default function ForosDestacadosSection({
       ) : (
         // Mostrar hilos
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {hilos.map((hilo) => (
-            <motion.div
-              key={hilo.id}
-              whileHover={{ y: -2, transition: { duration: 0.2 } }}
-            >
-              <HiloCard
-                id={hilo.id}
-                href={`/foro/hilos/${hilo.id}`}
-                titulo={hilo.titulo}
-                contenido={hilo.contenido}
-                categoriaNombre={hilo.categoria?.nombre}
-                categoriaColor={hilo.categoria?.color}
-                autorUsername={hilo.autor?.username || 'Anónimo'}
-                autorAvatarUrl={hilo.autor?.avatar_url || null}
-                autorId={hilo.autor?.id || null}
-                createdAt={hilo.fecha_creacion}
-                vistas={hilo.vistas || 0}
-                respuestas={hilo.respuestas_conteo || 0}
-                votosIniciales={hilo.votos_conteo || 0}
-                showSinRespuestasAlert={tipo === 'sin-respuestas'}
-                weaponStats={hilo.weapon_stats_record?.stats ?? null}
-              />
-            </motion.div>
-          ))}
+          {hilos.map((hilo) => {
+            // LOG DE DEPURACIÓN - PROPS PASADOS A HILOCARD
+            console.log('[ForosDestacadosSection] Props a HiloCard:', {
+              id: hilo.id,
+              autorUsername: hilo.autor?.username || 'Anónimo',
+              autorAvatarUrl: hilo.autor?.avatar_url || null,
+              autorId: hilo.autor?.id || null,
+              autorPublicId: hilo.autor?.public_id || null,
+              autorColor: hilo.autor?.color || undefined,
+            });
+            
+            return (
+              <motion.div
+                key={hilo.id}
+                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              >
+                <HiloCard
+                  id={hilo.id}
+                  href={`/foro/hilos/${hilo.id}`}
+                  titulo={hilo.titulo}
+                  contenido={hilo.contenido}
+                  categoriaNombre={hilo.categoria?.nombre}
+                  categoriaColor={hilo.categoria?.color}
+                  autorUsername={hilo.autor?.username || 'Anónimo'}
+                  autorAvatarUrl={hilo.autor?.avatar_url || null}
+                  autorId={hilo.autor?.id || null}
+                  autorPublicId={hilo.autor?.public_id || null}
+                  autorColor={hilo.autor?.color || undefined}
+                  createdAt={hilo.fecha_creacion}
+                  vistas={hilo.vistas || 0}
+                  respuestas={hilo.respuestas_conteo || 0}
+                  votosIniciales={hilo.votos_conteo || 0}
+                  showSinRespuestasAlert={tipo === 'sin-respuestas'}
+                  weaponStats={hilo.weapon_stats_record?.stats ?? null}
+                />
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </motion.section>

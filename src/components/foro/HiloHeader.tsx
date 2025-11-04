@@ -15,6 +15,9 @@ import {
   ExternalLink,
   Pencil,
   Trash2,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 import BotonReportar from "@/components/foro/BotonReportar";
 import { Votacion } from "@/components/ui/Votacion";
@@ -353,16 +356,49 @@ export default function HiloHeader({ hilo, etiquetas }: HiloHeaderProps) {
         {!modoEdicion ? (
           <HiloContenido
             html={hilo.contenido ?? ""}
-            className="prose max-w-none prose-headings:my-4 prose-p:my-3 prose-strong:text-gray-900 dark:prose-invert dark:prose-strong:text-white amoled:prose-invert amoled:prose-strong:text-white"
+            className="prose max-w-none prose-headings:my-4 prose-p:my-3 prose-strong:text-gray-900 dark:prose-strong:text-white amoled:prose-invert amoled:prose-strong:text-white"
             weaponStatsRecord={hilo.weapon_stats_record ?? undefined}
           />
         ) : (
-          <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-4">
-            <TiptapEditor
-              value={contenidoEditado}
-              onChange={setContenidoEditado}
-              placeholder="Edita el contenido de tu hilo..."
-            />
+          <div className="space-y-4">
+            <div className="border border-gray-300 dark:border-gray-700 rounded-lg p-4">
+              <TiptapEditor
+                value={contenidoEditado}
+                onChange={setContenidoEditado}
+                placeholder="Edita el contenido de tu hilo..."
+              />
+            </div>
+            
+            {/* Botones de guardar y cancelar */}
+            <div className="flex items-center gap-3 justify-end">
+              <button
+                type="button"
+                onClick={handleCancelarEdicion}
+                disabled={guardando}
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <X size={16} />
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGuardarEdicion}
+                disabled={guardando || !contenidoEditado.trim()}
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {guardando ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Guardando...
+                  </>
+                ) : (
+                  <>
+                    <Check size={16} />
+                    Guardar cambios
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </div>

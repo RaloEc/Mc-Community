@@ -21,6 +21,7 @@ import HiloCard from "./HiloCard";
 import { useForoHilos, type Categoria } from "./hooks/useForoHilos";
 import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
 import { useInView } from 'react-intersection-observer';
+import { Skeleton } from "@/components/ui/skeleton";
 
 const InvitacionRegistro = () => (
   <motion.div
@@ -53,6 +54,71 @@ const InvitacionRegistro = () => (
     </div>
   </motion.div>
 );
+
+function ForoSkeleton() {
+  return (
+    <div className="bg-white dark:bg-black transition-colors duration-300">
+      <div className="container mx-auto px-0 sm:px-3 lg:px-4 py-8">
+        <div className="space-y-10">
+          <header className="space-y-3">
+            <Skeleton className="h-10 w-52 rounded-lg bg-indigo-200/40 dark:bg-indigo-500/20" />
+            <Skeleton className="h-4 w-80 max-w-full rounded bg-gray-200/90 dark:bg-gray-700/90" />
+          </header>
+
+          <div className="space-y-6">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <HiloCardSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HiloCardSkeleton() {
+  return (
+    <div className="w-full px-2 py-1">
+      <div className="rounded-xl border border-gray-200/70 dark:border-gray-800/70 bg-white/80 dark:bg-black/60 shadow-sm">
+        <div className="p-5 space-y-6">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-28" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+            <Skeleton className="h-5 w-20 rounded-full" />
+          </div>
+
+          <div className="space-y-3">
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-11/12" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-4 w-4 rounded-full" />
+            ))}
+          </div>
+        </div>
+
+        <div className="border-t border-gray-200/70 dark:border-gray-800/70 px-5 py-3 flex flex-wrap items-center gap-4">
+          <Skeleton className="h-4 w-16" />
+          <Skeleton className="h-4 w-14" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+          <div className="ml-auto flex items-center gap-3">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-12" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Componente Row eliminado temporalmente
 
@@ -120,16 +186,7 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
   }, [inView, hasNextPage, isFetchingNextPage, loadMoreHilos]);
 
   if ((isLoading && hilos.length === 0) || userLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen bg-white dark:bg-black transition-colors duration-300">
-        <div className="flex items-center justify-center p-6 rounded-lg bg-gray-50 dark:bg-black border border-gray-200 dark:border-gray-800 shadow-md">
-          <Loader2 className="h-16 w-16 animate-spin text-sky-600 dark:text-sky-500" />
-          <p className="ml-4 text-xl font-medium text-gray-800 dark:text-white">
-            Cargando el foro...
-          </p>
-        </div>
-      </div>
-    );
+    return <ForoSkeleton />;
   }
 
   if (isError) {

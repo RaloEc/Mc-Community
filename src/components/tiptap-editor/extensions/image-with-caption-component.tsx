@@ -93,7 +93,12 @@ const ImageWithCaptionComponent: React.FC<ImageWithCaptionComponentProps> = ({
     document.addEventListener('mouseup', handleMouseUp)
   }, [updateAttributes])
 
-  const handleAlignChange = useCallback((align: string) => {
+  const handleAlignChange = useCallback((align: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
+    console.log('[ImageWithCaption] Cambiando alineación a:', align)
     updateAttributes({ textAlign: align })
   }, [updateAttributes])
 
@@ -103,11 +108,14 @@ const ImageWithCaptionComponent: React.FC<ImageWithCaptionComponentProps> = ({
       style={{ textAlign: textAlign || 'left' }}
     >
       <figure 
-        className={`image-with-caption-figure relative inline-block group ${selected ? 'selected' : ''} ${isResizing ? 'resizing' : ''}`}
+        className={`image-with-caption-figure relative group ${selected ? 'selected' : ''} ${isResizing ? 'resizing' : ''}`}
         data-type="image-with-caption"
         style={{
           textAlign: textAlign || 'left',
-          width: dimensions.width,
+          width: 'fit-content',
+          display: 'block',
+          marginLeft: textAlign === 'center' ? 'auto' : '0',
+          marginRight: textAlign === 'center' ? 'auto' : textAlign === 'right' ? '0' : 'auto',
         }}
       >
         {/* Imagen con redimensionado */}
@@ -144,27 +152,30 @@ const ImageWithCaptionComponent: React.FC<ImageWithCaptionComponentProps> = ({
           <div className="absolute top-2 right-2 flex gap-1 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 p-1 opacity-0 group-hover:opacity-100 transition-opacity">
             {/* Botones de alineación */}
             <Button
+              type="button"
               variant="ghost"
               size="sm"
-              onClick={() => handleAlignChange('left')}
+              onClick={(e) => handleAlignChange('left', e)}
               title="Alinear a la izquierda"
               className={`h-8 w-8 p-0 ${textAlign === 'left' ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}
             >
               <AlignLeft className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
-              onClick={() => handleAlignChange('center')}
+              onClick={(e) => handleAlignChange('center', e)}
               title="Centrar"
               className={`h-8 w-8 p-0 ${textAlign === 'center' ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}
             >
               <AlignCenter className="h-4 w-4" />
             </Button>
             <Button
+              type="button"
               variant="ghost"
               size="sm"
-              onClick={() => handleAlignChange('right')}
+              onClick={(e) => handleAlignChange('right', e)}
               title="Alinear a la derecha"
               className={`h-8 w-8 p-0 ${textAlign === 'right' ? 'bg-blue-100 dark:bg-blue-900/20' : ''}`}
             >

@@ -22,6 +22,14 @@ interface HiloForo {
     public_id?: string;
     color?: string;
   };
+  perfiles?: {
+    id?: string;
+    username: string;
+    avatar_url?: string;
+    rol?: string;
+    public_id?: string;
+    color?: string;
+  };
   categoria?: {
     nombre: string;
     slug: string;
@@ -94,6 +102,9 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
 
     // Función para convertir HiloForo a HiloDTO para el componente HiloItem
   const convertirAHiloDTO = (hilo: HiloForo): HiloDTO => {
+    const autorFuente = hilo.autor ?? hilo.perfiles ?? null;
+    const categoriaFuente = hilo.categoria ?? (hilo as any).foro_categorias ?? null;
+
     return {
       id: hilo.id,
       titulo: hilo.titulo,
@@ -102,18 +113,18 @@ export default function SeccionForo({ className = '' }: SeccionForoProps) {
       respuestas_count: hilo.respuestas_conteo,
       destacado: false,
       contenido: hilo.contenido,
-      subcategoria: hilo.categoria ? {
-        id: hilo.categoria.slug,
-        nombre: hilo.categoria.nombre,
-        slug: hilo.categoria.slug,
-        color: hilo.categoria.color
+      subcategoria: categoriaFuente ? {
+        id: categoriaFuente.slug,
+        nombre: categoriaFuente.nombre,
+        slug: categoriaFuente.slug,
+        color: categoriaFuente.color
       } : null,
-      autor: hilo.autor ? {
-        id: hilo.autor.id || hilo.autor.username || '',
-        username: hilo.autor.username,
-        avatar_url: hilo.autor.avatar_url,
-        public_id: hilo.autor.public_id ?? null,
-        color: hilo.autor.color ?? undefined
+      autor: autorFuente ? {
+        id: autorFuente.id || autorFuente.username || '',
+        username: autorFuente.username,
+        avatar_url: autorFuente.avatar_url,
+        public_id: autorFuente.public_id ?? null,
+        color: autorFuente.color ?? undefined
       } : null,
       votos: hilo.votos_conteo,
       weapon_stats_record: hilo.weapon_stats_record ?? null

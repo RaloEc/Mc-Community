@@ -26,6 +26,7 @@ import {
 import { Target, CheckCircle, Eye } from "lucide-react";
 import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
 import { cn } from "@/lib/utils";
+import { processEditorContent as processEditorImages } from "@/components/tiptap-editor/processImages";
 
 type CategoriaForo = Database["public"]["Tables"]["foro_categorias"]["Row"] & {
   subcategorias?: CategoriaForo[];
@@ -85,11 +86,13 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
     setCategoriaId(category.id);
   };
 
-  const handleWeaponStatsExtracted = (stats: WeaponStats) => {
+  const handleWeaponStatsExtracted = (stats: WeaponStats, recordId: string | null = null) => {
     // Guardar las estadísticas para previsualización y estado del botón
     setWeaponStatsPreview(stats);
-    // El recordId se obtiene cuando se guarda el hilo, no aquí
-    setWeaponStatsRecordId(null);
+    // Guardar el recordId si viene del hook
+    if (recordId) {
+      setWeaponStatsRecordId(recordId);
+    }
 
     // Cerrar el modal
     setIsWeaponModalOpen(false);
@@ -121,12 +124,37 @@ export function CrearHiloForm({ categorias }: CrearHiloFormProps) {
     setIsLoading(true);
 
     try {
+      let contenidoProcesado = contenido;
+
+      try {
+        console.log("[CrearHiloForm] Iniciando procesamiento de imágenes antes de guardar...");
+        console.log("[CrearHiloForm] Contenido original (primeros 200 chars):", contenido.substring(0, 200));
+        
+        contenidoProcesado = await processEditorImages(contenido);
+        
+        console.log("[CrearHiloForm] Procesamiento completado");
+        console.log("[CrearHiloForm] Contenido procesado (primeros 200 chars):", contenidoProcesado.substring(0, 200));
+        
+        // Verificar si hay cambios
+        if (contenidoProcesado === contenido) {
+          console.warn("[CrearHiloForm] ADVERTENCIA: El contenido no cambió después del procesamiento");
+        } else {
+          console.log("[CrearHiloForm] Contenido fue modificado durante el procesamiento");
+        }
+      } catch (processingError) {
+        console.error("[CrearHiloForm] Error al procesar imágenes antes de guardar el hilo:", processingError);
+        toast.error("No se pudieron procesar algunas imágenes. Intenta nuevamente.");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("[CrearHiloForm] Enviando hilo a API con contenido procesado...");
       const response = await fetch("/api/foro/crear-hilo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           titulo,
-          contenido,
+          contenido: contenidoProcesado,
           categoria_id: categoriaId, // Enviar el UUID directamente
           weapon_stats_id: weaponStatsRecordId,
         }),

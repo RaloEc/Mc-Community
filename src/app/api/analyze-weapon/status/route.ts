@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     // Aseguramos que el usuario solo pueda ver sus propios jobs (gracias a RLS o este .eq)
     const { data: job, error: jobError } = await supabase
       .from("weapon_analysis_jobs")
-      .select("id, status, result, error_message")
+      .select("id, status, result, error_message, weapon_stats_record_id")
       .eq("id", jobId)
       .eq("user_id", user.id) // ¡Importante!
       .single();

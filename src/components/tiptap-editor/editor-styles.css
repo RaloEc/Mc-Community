@@ -188,14 +188,33 @@
   text-align: right;
 }
 
+/* Contenedor de figura - aplicar alineación */
+.image-with-caption-figure {
+  text-align: left;
+  display: block;
+  width: fit-content;
+}
+
+.image-with-caption-figure[style*="text-align: center"] {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.image-with-caption-figure[style*="text-align: right"] {
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
+}
+
 .image-with-caption-figure img {
   max-width: 100%;
   height: auto;
   border-radius: 8px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
-  display: block;
-  margin: 0 auto;
+  display: inline-block;
+  margin: 0;
 }
 
 /* Alineación específica para imágenes */

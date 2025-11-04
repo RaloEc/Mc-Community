@@ -212,6 +212,9 @@ const TiptapEditorBase = ({
               file,
               "foro/contenido"
             );
+            
+            console.log('[handlePaste] URL recibida de uploadImageToSupabase:', imageUrl ? imageUrl.substring(0, 50) : 'null');
+            console.log('[handlePaste] Llamando a setImageWithCaption con:', { src: imageUrl, alt: file.name, title: file.name });
 
             // Insertar la imagen con descripción en el editor
             editor
@@ -223,6 +226,8 @@ const TiptapEditorBase = ({
                 title: file.name,
               })
               .run();
+              
+            console.log('[handlePaste] setImageWithCaption ejecutado');
 
             // Restaurar la posición de desplazamiento
             window.scrollTo(0, scrollPosition);
@@ -405,6 +410,8 @@ const TiptapEditorBase = ({
 
         // Subir imagen a Supabase
         const imageUrl = await uploadImageToSupabase(file);
+        console.log('[handleImageUpload] URL recibida de uploadImageToSupabase:', imageUrl ? imageUrl.substring(0, 50) : 'null');
+        console.log('[handleImageUpload] Llamando a setImageWithCaption con:', { src: imageUrl, alt: file.name, title: file.name });
 
         // Insertar imagen con descripción en el editor
         editor.chain().focus().setImageWithCaption({ 
@@ -412,6 +419,7 @@ const TiptapEditorBase = ({
           alt: file.name,
           title: file.name 
         }).run();
+        console.log('[handleImageUpload] setImageWithCaption ejecutado');
 
         // Limpiar input de archivo
         if (fileInputRef.current) {

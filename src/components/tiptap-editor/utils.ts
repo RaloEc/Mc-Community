@@ -94,17 +94,20 @@ export const uploadImageToSupabase = async (file: File, folder?: string): Promis
     
     const data = await response.json()
     
+    console.log('[uploadImageToSupabase] Respuesta de API:', { success: data.success, url: data.url ? data.url.substring(0, 50) : 'null' })
+    
     if (!data.success || !data.url) {
       throw new Error('Error al obtener la URL de la imagen')
     }
     
-    console.log(`Imagen subida exitosamente. URL: ${data.url}`)
+    console.log(`[uploadImageToSupabase] Imagen subida exitosamente. URL completa: ${data.url}`)
     
     // Verificar que la URL sea válida
     if (!data.url.startsWith('http')) {
       throw new Error(`URL de imagen inválida: ${data.url}`)
     }
     
+    console.log(`[uploadImageToSupabase] Retornando URL: ${data.url}`)
     return data.url
   } catch (error) {
     console.error('Error al subir imagen:', error)
