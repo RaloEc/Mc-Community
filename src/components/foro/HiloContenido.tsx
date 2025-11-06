@@ -520,7 +520,7 @@ export default function HiloContenido({
       >
         <HighlightedContent
           html={html}
-          className="foro-hilo-content text-base leading-relaxed space-y-4"
+          className="foro-hilo-content text-base leading-relaxed space-y-4 text-gray-800 dark:text-gray-200 amoled:text-gray-100"
         />
 
         {/* Tarjeta de estadísticas del arma */}

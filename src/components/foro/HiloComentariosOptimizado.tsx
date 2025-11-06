@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
 import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { useRealtimeComments } from "@/hooks/useRealtimeComments";
 import { useRealtimeVotos } from "@/hooks/useRealtimeVotos";
+import { useAuth } from "@/context/AuthContext";
 
 interface HiloComentariosOptimizadoProps {
   hiloId: string;
@@ -38,6 +39,21 @@ const HiloComentariosOptimizado: React.FC<HiloComentariosOptimizadoProps> = ({
   // Estado para el modal de autenticación
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  const { user: authUser, profile } = useAuth();
+
+  const initialComentariosUser = useMemo(() => {
+    if (!authUser) {
+      return null;
+    }
+
+    return {
+      ...authUser,
+      username: profile?.username ?? authUser.user_metadata?.username ?? null,
+      avatar_url: profile?.avatar_url ?? authUser.user_metadata?.avatar_url ?? null,
+      color: profile?.color ?? authUser.user_metadata?.color ?? null,
+    };
+  }, [authUser, profile]);
+
   // Estado para el ordenamiento (ANTES del hook que lo usa)
   const [sortBy, setSortBy] = useState<"recent" | "replies">("recent");
 
@@ -56,7 +72,13 @@ const HiloComentariosOptimizado: React.FC<HiloComentariosOptimizadoProps> = ({
     handleAddReply,
     handleDeleteComment,
     handleMarkSolution,
-  } = useHiloComentarios(hiloId, pageSize, order, sortBy);
+  } = useHiloComentarios(
+    hiloId,
+    pageSize,
+    order,
+    sortBy,
+    initialComentariosUser
+  );
 
   // Activar actualizaciones en tiempo real
   useRealtimeComments("hilo", hiloId);

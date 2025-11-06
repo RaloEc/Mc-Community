@@ -28,7 +28,9 @@
 }
 
 /* Asegurar que los encabezados sean visibles */
-.tiptap h1, .tiptap h2, .tiptap h3 {
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
   display: block;
   width: 100%;
   min-height: 1.5em;
@@ -110,7 +112,7 @@
 .tiptap h1:before,
 .tiptap h2:before,
 .tiptap h3:before {
-  content: '';
+  content: "";
   display: inline-block;
   width: 4px;
   height: 1em;
@@ -132,7 +134,7 @@
   font-size: 0.9em;
   font-weight: 500;
   transition: all 0.2s ease;
-  
+
   /* Modo claro */
   background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.08);
   color: var(--user-color, #0066cc);
@@ -211,7 +213,8 @@
   max-width: 100%;
   height: auto;
   border-radius: 8px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
   transition: all 0.2s ease;
   display: inline-block;
   margin: 0;
@@ -339,8 +342,8 @@
 
 /* Modo oscuro para embeds de Twitter */
 .dark .twitter-embed-container {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(1, 0, 0, 0);
+  border: 1px solid rgba(0, 0, 0, 0);
 }
 
 /* Responsive para embeds de Twitter */
@@ -353,7 +356,8 @@
 
 /* Animación de carga */
 @keyframes twitter-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

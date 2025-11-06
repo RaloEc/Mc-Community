@@ -110,6 +110,13 @@ export interface ForoHiloRelacionado {
   id: string;
   slug: string | null;
   titulo: string;
+  vistas: number;
+  respuestas?: number;
+  votos?: number;
+  created_at: string;
+  autor?: ForoAutor;
+  weapon_stats_record?: WeaponStatsRecord | null;
+  contenido: string;
 }
 
 export interface ForoBreadcrumb {

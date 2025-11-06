@@ -2,8 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { useInfiniteQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { Comment } from '@/components/comentarios/types';
+
+type ComentariosUser = User & {
+  username?: string | null;
+  avatar_url?: string | null;
+  color?: string | null;
+};
 
 // Función para mapear comentarios de la API al tipo UI
 const mapApiCommentToUI = (apiComment: any): Comment => {
@@ -38,22 +45,41 @@ export function useHiloComentarios(
   hiloId: string,
   pageSize: number = 20,
   order: 'asc' | 'desc' = 'asc',
-  sortBy: 'recent' | 'replies' = 'recent'
+  sortBy: 'recent' | 'replies' = 'recent',
+  initialUser?: ComentariosUser | null
 ) {
   const queryClient = useQueryClient();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<ComentariosUser | null>(
+    typeof initialUser === 'undefined' ? null : initialUser
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Verificar autenticación al cargar
   useEffect(() => {
+    if (typeof initialUser !== 'undefined') {
+      setUser(initialUser ?? null);
+      return;
+    }
+
+    let isMounted = true;
+
     const checkAuth = async () => {
       const supabase = createClient();
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user || null);
+      const {
+        data: { session }
+      } = await supabase.auth.getSession();
+      if (isMounted) {
+        setUser((session?.user as ComentariosUser) ?? null);
+      }
     };
+
     checkAuth();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialUser]);
 
   // Definir el tipo para la respuesta de la API
   interface ComentariosResponse {

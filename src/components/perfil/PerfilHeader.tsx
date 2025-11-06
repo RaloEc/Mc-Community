@@ -5,7 +5,9 @@ import Image from 'next/image'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { ProfileData } from '@/hooks/use-perfil-usuario'
+import { UserPlus, Mail } from 'lucide-react'
 
 interface PerfilHeaderProps {
   profile: ProfileData
@@ -93,7 +95,7 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
           {/* Info del usuario */}
           <div className="flex-grow w-full">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-              <div className="min-w-0">
+              <div className="min-w-0 flex-grow">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight truncate">
                   {profile.username}
                 </h1>
@@ -105,17 +107,52 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
                   })}
                 </p>
               </div>
-              <Badge 
-                variant={roleBadge.variant} 
-                className="w-fit text-xs sm:text-sm flex-shrink-0"
-                style={{
-                  backgroundColor: roleBadge.variant === 'default' ? `color-mix(in srgb, var(--user-color) 20%, transparent)` : undefined,
-                  color: roleBadge.variant === 'default' ? `var(--user-color)` : undefined,
-                  ...colorStyle
-                }}
-              >
-                {roleBadge.label}
-              </Badge>
+              
+              {/* Badge y Botones */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {profile.role !== 'user' && (
+                  <Badge 
+                    variant={roleBadge.variant} 
+                    className="text-xs sm:text-sm"
+                    style={{
+                      backgroundColor: roleBadge.variant === 'default' ? `color-mix(in srgb, var(--user-color) 20%, transparent)` : undefined,
+                      color: roleBadge.variant === 'default' ? `var(--user-color)` : undefined,
+                      ...colorStyle
+                    }}
+                  >
+                    {roleBadge.label}
+                  </Badge>
+                )}
+                
+                {/* Botones de acción */}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-1"
+                  style={{
+                    borderColor: `color-mix(in srgb, var(--user-color) 30%, transparent)`,
+                    color: `var(--user-color)`,
+                    ...colorStyle
+                  }}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Seguir</span>
+                </Button>
+                
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="gap-1"
+                  style={{
+                    borderColor: `color-mix(in srgb, var(--user-color) 30%, transparent)`,
+                    color: `var(--user-color)`,
+                    ...colorStyle
+                  }}
+                >
+                  <Mail className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mensaje</span>
+                </Button>
+              </div>
             </div>
             
             {/* Biografía */}

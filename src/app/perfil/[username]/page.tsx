@@ -3,10 +3,8 @@
 import { useParams } from 'next/navigation'
 import { usePerfilUsuario } from '@/hooks/use-perfil-usuario'
 import { PerfilHeader } from '@/components/perfil/PerfilHeader'
-import { EstadisticasUsuario } from '@/components/perfil/EstadisticasUsuario'
-import { EstadisticasExtendidas } from '@/components/perfil/EstadisticasExtendidas'
-import { TabsActividad } from '@/components/perfil/TabsActividad'
-import { ProximamenteBloques } from '@/components/perfil/ProximamenteBloques'
+import { EstadisticasUnificadas } from '@/components/perfil/EstadisticasUnificadas'
+import { FeedActividad } from '@/components/perfil/FeedActividad'
 import { PerfilSkeleton } from '@/components/perfil/PerfilSkeleton'
 import { PerfilError } from '@/components/perfil/PerfilError'
 
@@ -38,13 +36,10 @@ export default function UserProfilePage() {
 
         {/* Grid principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          {/* Columna izquierda - Contenido principal */}
+          {/* Columna izquierda - Feed de actividad (estilo red social) */}
           <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-            {/* Estadísticas */}
-            <EstadisticasUsuario stats={profile.stats} userColor={profile.color} />
-
-            {/* Actividad Reciente con Tabs */}
-            <TabsActividad 
+            {/* Feed unificado de hilos y respuestas */}
+            <FeedActividad 
               ultimosHilos={profile.ultimosHilos} 
               ultimosPosts={profile.ultimosPosts}
               weaponStatsRecords={profile.weaponStatsRecords}
@@ -52,10 +47,9 @@ export default function UserProfilePage() {
             />
           </div>
 
-          {/* Columna derecha - Información adicional */}
+          {/* Columna derecha - Estadísticas unificadas */}
           <div className="lg:col-span-1 space-y-6">
-            <EstadisticasExtendidas stats={profile.stats} userColor={profile.color} />
-            <ProximamenteBloques userColor={profile.color} />
+            <EstadisticasUnificadas stats={profile.stats} userColor={profile.color} />
           </div>
         </div>
       </div>

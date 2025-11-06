@@ -1,8 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { useUserTheme } from "@/hooks/useUserTheme";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
+import { HiloCarouselCard } from "./HiloCarouselCard";
 import type { ForoHiloRelacionado } from "@/types/foro";
 
 interface HilosRelacionadosInlineProps {
@@ -18,50 +26,133 @@ export default function HilosRelacionadosInline({
   hiloActualId,
   hilosRelacionadosIniciales = [],
 }: HilosRelacionadosInlineProps) {
-  const { data: hilosRelacionados } = useQuery({
+  const { userColor } = useUserTheme();
+
+  const { data: hilosRelacionados, isLoading } = useQuery({
     queryKey: ["hilos-relacionados", categoriaId, hiloActualId],
     queryFn: async () => {
       const supabase = createClient();
       const { data, error } = await supabase
         .from("foro_hilos")
-        .select("id, slug, titulo")
+        .select(
+          `
+          id,
+          slug,
+          titulo,
+          vistas,
+          created_at,
+          contenido,
+          weapon_stats_id,
+          autor:perfiles!foro_hilos_autor_id_fkey ( id, username, avatar_url ),
+          weapon_stats_record:weapon_stats_records!weapon_stats_id ( id, weapon_name, stats, created_at, updated_at )
+        `
+        )
         .eq("categoria_id", categoriaId)
         .neq("id", hiloActualId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(6);
 
       if (error) throw new Error(error.message);
-      return (data as ForoHiloRelacionado[]) || [];
+
+      // Obtener conteos de votos y respuestas
+      const hilosConConteos = await Promise.all(
+        (data || []).map(async (hilo: any) => {
+          const [votosResult, respuestasResult] = await Promise.all([
+            supabase.from("foro_votos").select("value").eq("hilo_id", hilo.id),
+            supabase
+              .from("foro_posts")
+              .select("*", { count: "exact", head: true })
+              .eq("hilo_id", hilo.id)
+              .eq("deleted", false),
+          ]);
+
+          const votos = (votosResult.data || []).reduce(
+            (sum: number, voto: any) => sum + (voto.value ?? 0),
+            0
+          );
+          const respuestas = respuestasResult.count || 0;
+
+          return {
+            ...hilo,
+            votos,
+            respuestas,
+          };
+        })
+      );
+
+      return (hilosConConteos as ForoHiloRelacionado[]) || [];
     },
     initialData: hilosRelacionadosIniciales,
     staleTime: 1000 * 60 * 5,
   });
 
-  return (
-    <section className="mt-6">
-      <div className="bg-white dark:bg-black amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-700 amoled:border-gray-800 p-4">
-        <h3 className="font-semibold mb-3">Más en {categoriaNombre}</h3>
-        <ul className="space-y-2">
-          {hilosRelacionados && hilosRelacionados.length > 0 ? (
-            hilosRelacionados.map((hilo) => (
-              <li key={hilo.id}>
-                <Link
-                  className="text-sm text-sky-600 hover:text-sky-500 dark:text-sky-400 dark:hover:text-sky-300 line-clamp-2"
-                  href={`/foro/hilos/${hilo.slug ?? hilo.id}`}
-                  prefetch={false}
-                >
-                  {hilo.titulo}
-                </Link>
-              </li>
-            ))
-          ) : (
-            <li className="text-sm text-gray-600 dark:text-gray-300 amoled:text-gray-200">
+  if (!hilosRelacionados || hilosRelacionados.length === 0) {
+    return (
+      <>
+        <div
+          className="mt-8 border-t"
+          style={{ borderColor: userColor }}
+        />
+        <section className="mt-6">
+          <div className="bg-white dark:bg-black amoled:bg-black rounded-lg border border-gray-200 dark:border-gray-800 amoled:border-gray-900 p-4">
+            <h3 className="font-semibold mb-3 text-gray-900 dark:text-gray-100 amoled:text-white">
+              Más en {categoriaNombre}
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 amoled:text-gray-500">
               No hay hilos relacionados.
-            </li>
+            </p>
+          </div>
+        </section>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div
+        className="mt-8 border-t"
+        style={{ borderColor: userColor }}
+      />
+      <section className="mt-6">
+        <div className="bg-white dark:bg-black amoled:bg-black p-4">
+          <h3 className="font-semibold mb-4 text-gray-900 dark:text-gray-100 amoled:text-white">
+            Más en {categoriaNombre}
+          </h3>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
+            </div>
+          ) : (
+            <Carousel
+              opts={{
+                align: "start",
+                loop: false,
+              }}
+              className="w-full"
+            >
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {hilosRelacionados.map((hilo) => (
+                  <CarouselItem
+                    key={hilo.id}
+                    className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
+                  >
+                    <HiloCarouselCard hilo={hilo} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+
+              {hilosRelacionados.length > 3 && (
+                <>
+                  <CarouselPrevious className="hidden md:flex -left-12" />
+                  <CarouselNext className="hidden md:flex -right-12" />
+                </>
+              )}
+            </Carousel>
           )}
-        </ul>
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

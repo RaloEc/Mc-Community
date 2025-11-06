@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useCheckUsername } from "@/hooks/use-check-username";
 import ImageUploader from "@/components/ImageUploader";
 import ProfileHeader from "@/components/perfil/profile-header";
 import { BannerUploader } from "@/components/perfil/BannerUploader";
@@ -25,7 +26,7 @@ import {
   Spinner,
   Divider,
 } from "@nextui-org/react";
-import { LogOut, X } from "lucide-react";
+import { LogOut, X, Check, AlertCircle, Loader } from "lucide-react";
 
 interface PerfilCompleto {
   id: string;
@@ -74,6 +75,33 @@ export default function PerfilPage() {
     banner_url: "" as string | null,
   });
 
+  const syncEditDataWithPerfil = useCallback((perfilData: PerfilCompleto) => {
+    setEditData({
+      username: perfilData.username || "",
+      bio: perfilData.bio || "",
+      ubicacion: perfilData.ubicacion || "",
+      sitio_web: perfilData.sitio_web || "",
+      color: perfilData.color,
+      avatar_url: perfilData.avatar_url,
+      banner_url: perfilData.banner_url || "",
+    });
+  }, []);
+
+  // Validación de username
+  const usernameCheck = useCheckUsername(editData.username, user?.id);
+
+  const normalizedCurrentUsername = useMemo(
+    () => (perfil?.username ?? "").trim(),
+    [perfil?.username]
+  );
+  const normalizedEditUsername = useMemo(
+    () => editData.username.trim(),
+    [editData.username]
+  );
+  const usernameChanged = normalizedEditUsername !== normalizedCurrentUsername;
+  const hasUsernameValue = normalizedEditUsername.length > 0;
+  const shouldShowAvailability = usernameChanged && hasUsernameValue;
+
   useEffect(() => {
     if (authLoading) return;
 
@@ -120,21 +148,20 @@ export default function PerfilPage() {
     setPerfil(perfilCompleto);
 
     // Configurar datos para edición
-    setEditData({
-      username: perfilCompleto.username,
-      bio: perfilCompleto.bio || "",
-      ubicacion: perfilCompleto.ubicacion || "",
-      sitio_web: perfilCompleto.sitio_web || "",
-      color: perfilCompleto.color,
-      avatar_url: perfilCompleto.avatar_url,
-      banner_url: perfilCompleto.banner_url || "",
-    });
+    syncEditDataWithPerfil(perfilCompleto);
 
     setLoading(false);
 
     // Cargar estadísticas
     cargarEstadisticas();
-  }, [authLoading, session, user, profile, router]);
+  }, [authLoading, session, user, profile, router, syncEditDataWithPerfil]);
+
+  useEffect(() => {
+    if (isOpen && perfil) {
+      syncEditDataWithPerfil(perfil);
+      setError(null);
+    }
+  }, [isOpen, perfil, syncEditDataWithPerfil]);
 
   const cargarEstadisticas = async () => {
     if (!user) return;
@@ -521,14 +548,60 @@ export default function PerfilPage() {
 
             <Divider className="my-4" />
 
-            <Input
-              label="Nombre de usuario"
-              value={editData.username}
-              onChange={(e) =>
-                setEditData((prev) => ({ ...prev, username: e.target.value }))
-              }
-              placeholder="Tu nombre de usuario"
-            />
+            <div className="space-y-2">
+              <div className="relative">
+                <Input
+                  label="Nombre de usuario"
+                  value={editData.username}
+                  onChange={(e) =>
+                    setEditData((prev) => ({ ...prev, username: e.target.value }))
+                  }
+                  placeholder="Tu nombre de usuario"
+                  isInvalid={shouldShowAvailability && usernameCheck.available === false}
+                  color={shouldShowAvailability
+                    ? usernameCheck.available === true
+                      ? "success"
+                      : usernameCheck.available === false
+                        ? "danger"
+                        : "default"
+                    : "default"}
+                  endContent={
+                    shouldShowAvailability && (
+                      <div className="flex items-center gap-2">
+                        {usernameCheck.loading && (
+                          <Loader className="w-4 h-4 text-gray-400 animate-spin" />
+                        )}
+                        {!usernameCheck.loading && usernameCheck.available === true && (
+                          <Check className="w-4 h-4 text-green-500" />
+                        )}
+                        {!usernameCheck.loading && usernameCheck.available === false && (
+                          <AlertCircle className="w-4 h-4 text-red-500" />
+                        )}
+                      </div>
+                    )
+                  }
+                />
+              </div>
+              {shouldShowAvailability && (
+                <div className="text-sm">
+                  {usernameCheck.loading && (
+                    <p className="text-gray-500 dark:text-gray-400">Verificando disponibilidad...</p>
+                  )}
+                  {!usernameCheck.loading && usernameCheck.available === true && (
+                    <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <Check className="w-4 h-4" />
+                      {usernameCheck.message || "Username disponible"}
+                    </p>
+                  )}
+                  {!usernameCheck.loading && usernameCheck.available === false && (
+                    <p className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                      <AlertCircle className="w-4 h-4" />
+                      {usernameCheck.error || "Username no disponible"}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
 
             <Textarea
               label="Biografía"
@@ -643,7 +716,12 @@ export default function PerfilPage() {
             >
               Cancelar
             </Button>
-            <Button color="primary" onPress={handleSave} isLoading={isSaving}>
+            <Button 
+              color="primary" 
+              onPress={handleSave} 
+              isLoading={isSaving}
+              isDisabled={isSaving || (usernameChanged && usernameCheck.available !== true)}
+            >
               Guardar Cambios
             </Button>
           </ModalFooter>

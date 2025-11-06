@@ -127,7 +127,7 @@ export async function getCategoriaParent(
 }
 
 /**
- * Obtiene hilos relacionados de la misma categoría
+ * Obtiene hilos relacionados de la misma categoría con datos completos para preview
  */
 export async function getHilosRelacionados(
   categoriaId: string,
@@ -138,7 +138,19 @@ export async function getHilosRelacionados(
 
   const { data, error } = await supabase
     .from("foro_hilos")
-    .select("id, slug, titulo")
+    .select(
+      `
+      id,
+      slug,
+      titulo,
+      vistas,
+      created_at,
+      contenido,
+      weapon_stats_id,
+      autor:perfiles!foro_hilos_autor_id_fkey ( id, username, avatar_url ),
+      weapon_stats_record:weapon_stats_records!weapon_stats_id ( id, weapon_name, stats, created_at, updated_at )
+    `
+    )
     .eq("categoria_id", categoriaId)
     .neq("id", hiloActualId)
     .is("deleted_at", null)
@@ -150,7 +162,36 @@ export async function getHilosRelacionados(
     return [];
   }
 
-  return (data as ForoHiloRelacionado[]) || [];
+  // Obtener conteos de votos y respuestas para cada hilo
+  const hilosConConteos = await Promise.all(
+    (data || []).map(async (hilo: any) => {
+      const [votosResult, respuestasResult] = await Promise.all([
+        supabase
+          .from("foro_votos")
+          .select("value")
+          .eq("hilo_id", hilo.id),
+        supabase
+          .from("foro_posts")
+          .select("*", { count: "exact", head: true })
+          .eq("hilo_id", hilo.id)
+          .eq("deleted", false),
+      ]);
+
+      const votos = (votosResult.data || []).reduce(
+        (sum: number, voto: any) => sum + (voto.value ?? 0),
+        0
+      );
+      const respuestas = respuestasResult.count || 0;
+
+      return {
+        ...hilo,
+        votos,
+        respuestas,
+      };
+    })
+  );
+
+  return (hilosConConteos as ForoHiloRelacionado[]) || [];
 }
 
 /**

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -420,6 +421,15 @@ function HiloCard(props: HiloCardProps) {
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
   const isAuthor = user?.id === autorId;
+  const router = useRouter();
+
+  const normalizedUsername = autorUsername?.trim();
+  const profileId = autorPublicId
+    ? autorPublicId
+    : normalizedUsername && normalizedUsername.toLowerCase() !== "anónimo"
+    ? normalizedUsername
+    : null;
+  const hasProfileLink = Boolean(profileId);
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -510,12 +520,18 @@ function HiloCard(props: HiloCardProps) {
   const fadedBgColor = getFadedBackground();
 
   const handleProfileClick = (e: React.MouseEvent) => {
+    if (!hasProfileLink || !profileId) return;
     e.preventDefault();
     e.stopPropagation();
-    // Usar public_id si está disponible, sino username como fallback
-    const profileId = autorPublicId || autorUsername;
-    if (profileId) {
-      window.location.href = `/perfil/${encodeURIComponent(profileId)}`;
+    router.push(`/perfil/${encodeURIComponent(profileId)}`);
+  };
+
+  const handleProfileKeyDown = (e: React.KeyboardEvent) => {
+    if (!hasProfileLink || !profileId) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      e.stopPropagation();
+      router.push(`/perfil/${encodeURIComponent(profileId)}`);
     }
   };
 
@@ -565,11 +581,23 @@ function HiloCard(props: HiloCardProps) {
                 <div className="flex items-center justify-between mb-3">
                   {/* Autor */}
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleProfileClick}
-                      className="flex items-center gap-2 group/author cursor-pointer hover:underline bg-transparent border-none p-0 text-inherit"
-                      title={`Ver perfil de ${autorUsername}`}
-                      type="button"
+                    <div
+                      onClick={hasProfileLink ? handleProfileClick : undefined}
+                      onKeyDown={hasProfileLink ? handleProfileKeyDown : undefined}
+                      role={hasProfileLink ? "link" : undefined}
+                      tabIndex={hasProfileLink ? 0 : -1}
+                      aria-disabled={!hasProfileLink}
+                      data-prevent-card-navigation="true"
+                      className={`flex items-center gap-2 group/author ${
+                        hasProfileLink
+                          ? "cursor-pointer hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          : "cursor-default"
+                      }`}
+                      title={
+                        hasProfileLink
+                          ? `Ver perfil de ${autorUsername}`
+                          : "Autor no disponible"
+                      }
                     >
                       <Avatar className="h-6 w-6 group-hover/author:ring-2 group-hover/author:ring-primary transition-all duration-200">
                         {autorAvatarUrl && (
@@ -587,7 +615,7 @@ function HiloCard(props: HiloCardProps) {
                         {autorUsername}
                         <ExternalLink className="h-3 w-3 opacity-0 group-hover/author:opacity-100 transition-opacity duration-200" />
                       </span>
-                    </button>
+                    </div>
                   </div>
 
                   {/* Categoría */}
