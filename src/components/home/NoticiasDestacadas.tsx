@@ -218,6 +218,16 @@ function NewsTicker() {
 
 // Componente de suscripción
 function SubscriptionSection() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (user) {
+    return null;
+  }
+
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
 

@@ -1,5 +1,65 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import type { SupabaseClient, Session } from '@supabase/supabase-js';
+
+type PerfilRow = {
+  rol?: string | null;
+  role?: string | null;
+};
+
+async function ensureAdminRole(
+  supabase: SupabaseClient,
+  session: Session
+): Promise<NextResponse | null> {
+  const { data: perfil, error } = await supabase
+    .from('perfiles')
+    .select('role')
+    .eq('id', session.user.id)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code !== '42703') {
+      console.error('[eventos] Error verificando rol:', error);
+      return NextResponse.json(
+        { error: 'Error al verificar permisos' },
+        { status: 500 }
+      );
+    }
+
+    const fallback = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', session.user.id)
+      .maybeSingle();
+
+    if (fallback.error) {
+      console.error('[eventos] Error verificando rol:', fallback.error);
+      return NextResponse.json(
+        { error: 'Error al verificar permisos' },
+        { status: 500 }
+      );
+    }
+
+    const fallbackRow = (fallback.data ?? {}) as PerfilRow;
+    const fallbackRole = (fallbackRow.rol ?? '').toLowerCase().trim();
+
+    if (fallbackRole !== 'admin') {
+      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    }
+
+    return null;
+  }
+
+  const perfilRow = (perfil ?? {}) as PerfilRow;
+  const rolPerfil = (perfilRow.role ?? '').toLowerCase().trim();
+
+  if (rolPerfil !== 'admin') {
+    return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+  }
+
+  return null;
+}
+
 export async function GET(request: Request) {
   try {
     const supabase = await createClient();
@@ -11,14 +71,9 @@ export async function GET(request: Request) {
     }
     
     // Verificar si es administrador
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', session.user.id)
-      .single();
-      
-    if (!perfil || perfil.rol !== 'admin') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    const adminCheck = await ensureAdminRole(supabase, session);
+    if (adminCheck) {
+      return adminCheck;
     }
     
     // Obtener eventos
@@ -50,14 +105,9 @@ export async function POST(request: Request) {
     }
     
     // Verificar si es administrador
-    const { data: perfil } = await supabase
-      .from('perfiles')
-      .select('rol')
-      .eq('id', session.user.id)
-      .single();
-      
-    if (!perfil || perfil.rol !== 'admin') {
-      return NextResponse.json({ error: 'Acceso denegado' }, { status: 403 });
+    const adminCheck = await ensureAdminRole(supabase, session);
+    if (adminCheck) {
+      return adminCheck;
     }
     
     // Obtener datos del evento
@@ -68,14 +118,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Faltan campos requeridos' }, { status: 400 });
     }
     
-    // Preparar datos para inserción
+    // Preparar datos para inserción con columnas existentes
+    const {
+      titulo,
+      descripcion,
+      fecha,
+      tipo,
+      juego_nombre,
+      imagen_url,
+      icono_url,
+      url,
+      estado,
+    } = eventoData;
+
     const nuevoEvento = {
-      ...eventoData,
-      creado_por: session.user.id,
-      creado_en: new Date().toISOString(),
-      publicado_en: eventoData.estado === 'publicado' ? new Date().toISOString() : null
+      titulo,
+      descripcion: descripcion ?? null,
+      fecha,
+      tipo,
+      juego_nombre: juego_nombre ?? null,
+      imagen_url: imagen_url ?? null,
+      icono_url: icono_url ?? null,
+      url: url ?? null,
+      estado: estado ?? 'borrador',
     };
-    
+
     // Insertar evento
     const { data, error } = await supabase
       .from('eventos')

@@ -155,15 +155,10 @@ export default function EventosAdmin() {
         setIsLoading(true);
         
         // Obtener eventos de Supabase
-        let query = supabase
+        const { data, error } = await supabase
           .from('eventos')
           .select('*')
           .order('fecha', { ascending: true });
-          
-        // No mostrar eventos eliminados
-        query = query.eq('eliminado', false);
-        
-        const { data, error } = await query;
         
         if (error) throw error;
         

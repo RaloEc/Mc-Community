@@ -69,6 +69,7 @@ export function CategorySelector({
             <div className="flex items-center group">
               <CollapsibleTrigger asChild>
                 <Button
+                  type="button"
                   variant="ghost"
                   size="sm"
                   className="p-0 h-6 w-6 mr-1 hover:bg-accent flex-shrink-0"
@@ -83,6 +84,7 @@ export function CategorySelector({
               </CollapsibleTrigger>
               
               <Button
+                type="button"
                 variant="ghost"
                 disabled={disabled}
                 className={cn(
@@ -127,6 +129,7 @@ export function CategorySelector({
           </Collapsible>
         ) : (
           <Button
+            type="button"
             variant="ghost"
             disabled={disabled}
             className={cn(
