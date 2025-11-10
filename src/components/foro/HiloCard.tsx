@@ -30,7 +30,7 @@ import { ImageGallery } from "@/components/ui/ImageGallery";
 import { HighlightedContent } from "@/components/ui/HighlightedContent";
 import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
 import { HiloPreview } from "./HiloPreview";
-import type { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 
 export type HiloCardProps = {
   id: string;

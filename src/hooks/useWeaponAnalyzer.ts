@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 
 // Tipo para el resultado del análisis (estructura guardada en BD)
 interface AnalysisResult {

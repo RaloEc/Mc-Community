@@ -38,10 +38,12 @@ import {
   ChevronDown,
   Eraser,
   Copy,
+  Film,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import ToolbarButton from "./toolbar-button";
+// import { VideoButton } from "./video-button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -601,6 +603,11 @@ export const Toolbar = React.memo(function Toolbar(props: ToolbarProps) {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        {/* Botón de video deshabilitado temporalmente */}
+        {/* <div className="toolbar-group">
+          <VideoButton editor={editor} />
+        </div> */}
 
         {/* Menú desplegable para herramientas adicionales */}
         <div className="toolbar-group" style={{ borderRight: 'none' }}>

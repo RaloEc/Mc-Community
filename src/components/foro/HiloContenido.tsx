@@ -9,7 +9,7 @@ import { useUserTheme } from "@/hooks/useUserTheme";
 import { toast } from "sonner";
 import { WeaponStatsCard } from "@/components/weapon/WeaponStatsCard";
 import { ChevronUp } from "lucide-react";
-import type { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 
 // Declarar el tipo para el objeto twttr de Twitter
 declare global {

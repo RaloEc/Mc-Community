@@ -1,20 +1,6 @@
 import { createClient, getServiceClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
-
-export interface WeaponStats {
-  damage?: number;
-  range?: number;
-  control?: number;
-  handling?: number;
-  stability?: number;
-  accuracy?: number;
-  armorPenetration?: number;
-  fireRate?: number;
-  capacity?: number;
-  muzzleVelocity?: number;
-  soundRange?: number;
-  nombreArma?: string | null;
-}
+import type { WeaponStats } from '@/types/weapon';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -132,7 +118,7 @@ export async function POST(request: NextRequest) {
     console.log('[analyze-weapon] Job creado', { jobId: job.id, userId: user.id });
 
     // Invoke Edge Function asynchronously (fire-and-forget)
-    const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/analyze-weapon-async`;
+    const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/weapon-analyzer`;
     const invokeKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_KEY;
 
     console.log('[analyze-weapon] Preparando invocación de Edge Function', {

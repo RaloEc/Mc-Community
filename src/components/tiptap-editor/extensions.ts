@@ -26,6 +26,7 @@ import { NodeSelection } from '@tiptap/pm/state'
 import { ClickToCopy } from './extensions/click-to-copy'
 import { ImageWithCaption } from './extensions/image-with-caption'
 import { TwitterEmbed } from './extensions/twitter-embed'
+import { Video } from './extensions/video'
 import { ReactNodeViewRenderer } from '@tiptap/react'
 import { CodeBlockComponent } from './extensions/code-block-component'
 
@@ -335,6 +336,11 @@ export const getDefaultExtensions = (mentionSuggestions: string[]) => [
   TwitterEmbed.configure({
     HTMLAttributes: {
       class: 'twitter-embed-container',
+    },
+  }),
+  Video.configure({
+    HTMLAttributes: {
+      class: 'video-container',
     },
   }),
 ]

@@ -11,7 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import ForosBloqueDesktop from './ForosBloqueDesktop';
 import HiloItem, { HiloDTO } from './HiloItem';
-import type { WeaponStats } from '@/app/api/analyze-weapon/route';
+import type { WeaponStats } from '@/types/weapon';
 
 // Tipos
 type ConteoItem = {

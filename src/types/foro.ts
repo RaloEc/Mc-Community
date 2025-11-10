@@ -9,7 +9,7 @@ export interface ForoAutor {
   color?: string;
 }
 
-import type { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 
 export interface ForoCategoria {
   id: string;

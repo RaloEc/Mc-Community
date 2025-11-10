@@ -6,7 +6,7 @@ import { MessageSquare, Eye } from 'lucide-react'
 import { Votacion } from '@/components/ui/Votacion'
 import { useState, useEffect } from 'react'
 import HiloCard from '@/components/foro/HiloCard'
-import type { WeaponStats } from '@/app/api/analyze-weapon/route'
+import type { WeaponStats } from '@/types/weapon'
 
 export type HiloDTO = {
   id: string

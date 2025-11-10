@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import HiloItem, { HiloDTO } from './HiloItem';
-import type { WeaponStats } from '@/app/api/analyze-weapon/route';
+import type { WeaponStats } from '@/types/weapon';
 
 // Tipos
 type Hilo = {

@@ -4,7 +4,7 @@ import React, { useState, useCallback, useEffect } from "react";
 import { ImageDropzone } from "@/components/ui/ImageDropzone";
 import { WeaponStatsCard } from "./WeaponStatsCard";
 import { useWeaponAnalyzer } from "@/hooks/useWeaponAnalyzer";
-import { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 import { cn } from "@/lib/utils";
 import {
   Loader2,
@@ -15,13 +15,6 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 interface WeaponStatsUploaderProps {
   onStatsExtracted?: (stats: WeaponStats, recordId?: string | null) => void;
@@ -308,59 +301,51 @@ export function WeaponStatsUploader({
             </span>
           </div>
 
-          {/* Carrusel para móviles */}
-          <div className="md:hidden mb-3">
-            <Carousel className="w-full max-w-sm mx-auto">
-              <CarouselContent>
-                {imagePreview && (
-                  <CarouselItem>
-                    <div className="flex items-center justify-center p-2">
-                      <div className="relative w-full aspect-[2/3] bg-black rounded-lg overflow-hidden flex items-center justify-center">
-                        <img
-                          src={imagePreview}
-                          alt="Imagen del arma"
-                          className="max-w-full max-h-full object-contain"
-                        />
-                      </div>
-                    </div>
-                  </CarouselItem>
-                )}
-                <CarouselItem>
-                  <div className="flex justify-center p-2">
-                    <WeaponStatsCard
-                      stats={stats}
-                      onEdit={handleStatEdit}
-                      isEditable={true}
-                      className="w-full max-w-[420px]"
-                    />
-                  </div>
-                </CarouselItem>
-              </CarouselContent>
-              {imagePreview && (
-                <>
-                  <CarouselPrevious className="-left-4" />
-                  <CarouselNext className="-right-4" />
-                </>
-              )}
-            </Carousel>
+          {/* Contenedor para móviles: Imagen original y estadísticas */}
+          <div className="md:hidden mb-3 flex flex-col gap-3 items-center">
+            {imagePreview && (
+              <div className="w-full max-w-sm">
+                <div className="relative w-full bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                  <img
+                    src={imagePreview}
+                    alt="Imagen original cargada"
+                    className="max-w-full max-h-[300px] object-contain"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
+                  Imagen original
+                </p>
+              </div>
+            )}
+            <div className="w-full max-w-sm">
+              <WeaponStatsCard
+                stats={stats}
+                onEdit={handleStatEdit}
+                isEditable={true}
+                className="w-full"
+              />
+            </div>
           </div>
 
           {/* Diseño lado a lado en escritorio */}
           <div className="hidden md:flex justify-center gap-4 mb-3 w-full mx-auto min-h-0 flex-1 overflow-x-auto px-4">
+            {/* Contenedor 1: Imagen original */}
             {imagePreview && (
-              // Contenedor 1: Imagen
               <div className="flex-shrink-0 w-[200px] lg:w-[240px]">
-                <div className="relative w-full aspect-[2/3] bg-black rounded-lg overflow-hidden flex items-center justify-center">
+                <div className="relative w-full bg-black rounded-lg overflow-hidden flex items-center justify-center">
                   <img
                     src={imagePreview}
-                    alt="Imagen del arma"
-                    className="w-full h-full object-cover"
+                    alt="Imagen original cargada"
+                    className="w-full h-full object-contain"
                   />
                 </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
+                  Imagen original
+                </p>
               </div>
             )}
 
-            {/* Contenedor 2: Stats */}
+            {/* Contenedor 2: Stats renderizadas */}
             <div className="flex-shrink-0 flex justify-center w-[200px] lg:w-[240px] min-h-0">
               <WeaponStatsCard
                 stats={stats}

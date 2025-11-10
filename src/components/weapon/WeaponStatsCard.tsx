@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 import { cn } from "@/lib/utils";
 import {
   Target,

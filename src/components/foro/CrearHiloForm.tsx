@@ -14,7 +14,7 @@ import {
   type Category,
 } from "@/components/foro/CategorySelector";
 import { WeaponStatsUploader } from "@/components/weapon/WeaponStatsUploader";
-import { WeaponStats } from "@/app/api/analyze-weapon/route";
+import type { WeaponStats } from "@/types/weapon";
 import {
   Dialog,
   DialogContent,

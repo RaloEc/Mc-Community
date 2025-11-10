@@ -39,7 +39,7 @@ const defaultAuthState: AuthState = {
   refreshProfile: async () => {}
 }
 
-const AuthContext = React.createContext<AuthState>(defaultAuthState)
+export const AuthContext = React.createContext<AuthState>(defaultAuthState)
 
 export function AuthProvider({ 
   children, 

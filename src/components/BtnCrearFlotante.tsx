@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { PlusIcon, X, FileText, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
-import { useAuth } from '@/context/AuthContext';
+import { AuthContext } from '@/context/AuthContext';
 
 type TipoContenido = 'noticias' | 'foro' | 'ambos';
 
@@ -14,7 +14,12 @@ interface BtnCrearFlotanteProps {
 
 export default function BtnCrearFlotante({ tipo = 'ambos' }: BtnCrearFlotanteProps) {
   const [menuAbierto, setMenuAbierto] = useState(false);
-  const { user, profile } = useAuth();
+  
+  // Usar useContext directamente para evitar problemas de hidratación
+  const authContext = useContext(AuthContext);
+  const user = authContext?.user || null;
+  const profile = authContext?.profile || null;
+  
   const colorPersonalizado = profile?.color || 'hsl(222.2, 47.4%, 11.2%)'; // Color por defecto
 
   const toggleMenu = () => {
