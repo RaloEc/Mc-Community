@@ -205,6 +205,12 @@ export default async function RootLayout({
         <ThemeScript />
         <ChunkErrorHandlerScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
+        {adsenseEnabled && adsenseClientId && (
+          <meta
+            name="google-adsense-account"
+            content={adsenseClientId}
+          />
+        )}
       </head>
       <body
         className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}
