@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { ForoCategoria } from "./useHeaderLogic";
+import { SearchDropdown } from "./SearchDropdown";
 
 interface HeaderMobileMenuProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface HeaderMobileMenuProps {
     username?: string;
     avatar_url?: string;
     role?: string;
+    color?: string;
   } | null;
   searchQuery: string;
   setSearchQuery: (value: string) => void;
@@ -63,6 +65,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   isLoggingOut = false,
 }) => {
   const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
+  const [showSearchDropdown, setShowSearchDropdown] = React.useState(false);
   
   // Bloquear scroll del body cuando el menú esté abierto
   React.useEffect(() => {
@@ -227,14 +230,23 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
             className={`menu-item p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black flex-shrink-0`}
           >
             <form onSubmit={handleSearch} className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
               <Input
                 type="search"
-                placeholder="Buscar noticias, hilos..."
+                placeholder="Buscar noticias, hilos, usuarios (@nombre)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 rounded-full
+                onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+                className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-black border-gray-200 dark:border-gray-800 rounded-full
                   transition-colors duration-200`}
+              />
+              
+              {/* Dropdown de búsqueda en tiempo real */}
+              <SearchDropdown
+                query={searchQuery}
+                isOpen={showSearchDropdown}
+                onClose={() => setShowSearchDropdown(false)}
+                profileColor={profile?.color}
               />
             </form>
           </div>

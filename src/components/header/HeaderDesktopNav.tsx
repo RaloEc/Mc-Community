@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { AdminDesktopMenu } from "./AdminDesktopMenu";
+import { SearchDropdown } from "./SearchDropdown";
 
 interface HeaderDesktopNavProps {
   isAdmin: boolean;
@@ -29,6 +30,8 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
   setSearchQuery,
   handleSearch,
 }) => {
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+
   return (
     <>
       {/* Navegación principal - Solo Desktop */}
@@ -103,12 +106,13 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
       {/* Barra de búsqueda centrada - solo desktop */}
       <div className="flex-1 max-w-md mx-4 hidden md:block">
         <form onSubmit={handleSearch} className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
           <Input
             type="search"
-            placeholder="Buscar noticias, hilos..."
+            placeholder="Buscar noticias, hilos, usuarios (@nombre)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
             style={
               {
                 "--focus-border-color": profile?.color || "#3b82f6",
@@ -117,10 +121,18 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
                   : "rgba(59, 130, 246, 0.25)",
               } as React.CSSProperties
             }
-            className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700 rounded-full
+            className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-black border-gray-200 dark:border-gray-800 rounded-full
               focus:border-[var(--focus-border-color)] focus-visible:ring-2 focus-visible:ring-[var(--focus-ring-color)]
               dark:focus:border-[var(--focus-border-color)] dark:focus-visible:ring-2 dark:focus-visible:ring-[var(--focus-ring-color)]
               transition-colors duration-200`}
+          />
+          
+          {/* Dropdown de búsqueda en tiempo real */}
+          <SearchDropdown
+            query={searchQuery}
+            isOpen={showSearchDropdown}
+            onClose={() => setShowSearchDropdown(false)}
+            profileColor={profile?.color}
           />
         </form>
       </div>
