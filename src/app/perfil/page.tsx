@@ -11,6 +11,8 @@ import { BannerUploader } from "@/components/perfil/BannerUploader";
 import ProfileStats from "@/components/perfil/profile-stats";
 import ActivityFeed from "@/components/perfil/activity-feed";
 import MembershipInfo from "@/components/perfil/membership-info";
+import { FriendRequestsList } from "@/components/social/FriendRequestsList";
+import { FriendsListCompact } from "@/components/social/FriendsListCompact";
 import {
   Card,
   CardBody,
@@ -401,6 +403,9 @@ export default function PerfilPage() {
               avatar_url: perfil.avatar_url,
               color: perfil.color,
               banner_url: perfil.banner_url || undefined,
+              followers_count: (profile as any)?.followers_count ?? 0,
+              following_count: (profile as any)?.following_count ?? 0,
+              friends_count: (profile as any)?.friends_count ?? 0,
             }}
             onEditClick={onOpen}
           />
@@ -419,11 +424,6 @@ export default function PerfilPage() {
           </div>
         )}
 
-        {/* Estadísticas */}
-        <div className="mb-8">
-          <ProfileStats estadisticas={estadisticas} />
-        </div>
-
         {/* Grid principal */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Columna izquierda - Feed de actividad */}
@@ -436,7 +436,16 @@ export default function PerfilPage() {
           </div>
 
           {/* Columna derecha - Información de membresía */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 space-y-6">
+            {/* Solicitudes de amistad */}
+            <FriendRequestsList userColor={perfil.color} />
+
+            {/* Lista de amigos */}
+            <FriendsListCompact userId={user?.id} userColor={perfil.color} limit={8} />
+
+            {/* Estadísticas */}
+            <ProfileStats estadisticas={estadisticas} />
+
             <MembershipInfo
               perfil={{
                 created_at: perfil.created_at,
@@ -447,7 +456,7 @@ export default function PerfilPage() {
             />
 
             {/* Botón de cerrar sesión */}
-            <Card className="bg-white dark:bg-black amoled:bg-black mt-6">
+            <Card className="bg-white dark:bg-black amoled:bg-black">
               <CardBody>
                 <Button
                   color="danger"

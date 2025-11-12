@@ -19,6 +19,10 @@ export type Perfil = {
   badges?: any[];
   notas_moderador?: string;
   ip_registro?: string;
+  // Contadores sociales
+  followers_count?: number;
+  following_count?: number;
+  friends_count?: number;
 };
 
 export type UsuarioCompleto = {
@@ -228,4 +232,9 @@ export interface Comentario {
     author: string;
     text: string;
   };
-}
+};
+
+// =================================================================
+// SOCIAL - Re-exportar tipos sociales
+// =================================================================
+export * from './social';

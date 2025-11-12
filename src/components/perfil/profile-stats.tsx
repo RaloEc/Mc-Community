@@ -18,33 +18,21 @@ export default function ProfileStats({ estadisticas }: ProfileStatsProps) {
       label: 'Posts',
       value: estadisticas.noticias,
       icon: FileText,
-      color: 'blue',
-      bgColor: 'bg-blue-50 dark:bg-blue-900/20 amoled:bg-blue-900/20',
-      textColor: 'text-blue-600 dark:text-blue-400 amoled:text-blue-400'
     },
     {
       label: 'Comentarios',
       value: estadisticas.comentarios,
       icon: MessageCircle,
-      color: 'green',
-      bgColor: 'bg-green-50 dark:bg-green-900/20 amoled:bg-green-900/20',
-      textColor: 'text-green-600 dark:text-green-400 amoled:text-green-400'
     },
     {
       label: 'Hilos',
       value: estadisticas.hilos || 0,
       icon: MessageSquare,
-      color: 'purple',
-      bgColor: 'bg-purple-50 dark:bg-purple-900/20 amoled:bg-purple-900/20',
-      textColor: 'text-purple-600 dark:text-purple-400 amoled:text-purple-400'
     },
     {
       label: 'Respuestas',
       value: estadisticas.respuestas || 0,
       icon: Reply,
-      color: 'orange',
-      bgColor: 'bg-orange-50 dark:bg-orange-900/20 amoled:bg-orange-900/20',
-      textColor: 'text-orange-600 dark:text-orange-400 amoled:text-orange-400'
     }
   ]
 
@@ -57,20 +45,19 @@ export default function ProfileStats({ estadisticas }: ProfileStatsProps) {
         </h2>
       </CardHeader>
       <CardBody>
-        {/* Grid 2x2 en móvil, 4x1 en desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           {stats.map((stat, index) => {
             const IconComponent = stat.icon
             return (
               <div
                 key={index}
-                className={`text-center p-4 rounded-lg transition-all duration-200 hover:scale-105 ${stat.bgColor}`}
+                className="text-center p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 amoled:hover:bg-gray-800 transition-colors"
               >
-                <IconComponent className={`w-8 h-8 mx-auto mb-2 ${stat.textColor}`} />
-                <p className={`text-2xl font-bold ${stat.textColor}`}>
+                <IconComponent className="w-5 h-5 mx-auto mb-2 text-gray-600 dark:text-gray-400 amoled:text-gray-400" />
+                <p className="text-lg font-semibold text-gray-900 dark:text-gray-100 amoled:text-gray-100">
                   {stat.value.toLocaleString()}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 amoled:text-gray-400 font-medium">
+                <p className="text-xs text-gray-600 dark:text-gray-400 amoled:text-gray-400 font-medium">
                   {stat.label}
                 </p>
               </div>

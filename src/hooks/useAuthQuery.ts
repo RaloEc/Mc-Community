@@ -12,6 +12,9 @@ interface Profile {
   avatar_url?: string | null
   banner_url?: string | null
   color?: string | null
+  followers_count?: number
+  following_count?: number
+  friends_count?: number
 }
 
 // Keys para las queries
@@ -103,11 +106,17 @@ export function useProfileQuery(userId: string | null | undefined) {
               avatar_url: data.avatar_url ?? null,
               banner_url: (data as any).banner_url ?? null,
               color: data.color ?? null,
+              followers_count: (data as any).followers_count ?? 0,
+              following_count: (data as any).following_count ?? 0,
+              friends_count: (data as any).friends_count ?? 0,
             }
             
             console.log('[useProfileQuery] Perfil obtenido exitosamente:', {
               username: profile.username,
               role: profile.role,
+              followers_count: profile.followers_count,
+              following_count: profile.following_count,
+              friends_count: profile.friends_count,
             })
             
             return profile

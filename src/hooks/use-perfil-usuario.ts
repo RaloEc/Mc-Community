@@ -1,3 +1,5 @@
+'use client'
+
 import { useQuery } from '@tanstack/react-query'
 
 export interface ProfileData {
@@ -10,6 +12,9 @@ export interface ProfileData {
   bio: string
   color: string
   role: string
+  followers_count: number
+  following_count: number
+  friends_count: number
   stats: {
     hilos: number
     posts: number

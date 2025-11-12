@@ -1,9 +1,13 @@
 'use client'
 
-import { Button, Chip } from '@nextui-org/react'
-import { Edit, Shield, User } from 'lucide-react'
-import UserAvatar from '@/components/UserAvatar'
+import type { CSSProperties } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Edit } from 'lucide-react'
 
 interface ProfileHeaderProps {
   perfil: {
@@ -12,105 +16,155 @@ interface ProfileHeaderProps {
     avatar_url: string
     color: string
     banner_url?: string
+    followers_count?: number
+    following_count?: number
+    friends_count?: number
   }
   onEditClick: () => void
 }
 
 export default function ProfileHeader({ perfil, onEditClick }: ProfileHeaderProps) {
-  const getRoleColor = (role: string) => {
+  const [bannerError, setBannerError] = useState(false)
+  const [avatarError, setAvatarError] = useState(false)
+
+  const getRoleBadge = (role: string) => {
     switch (role) {
-      case 'admin': return 'danger'
-      case 'moderator': return 'warning'
-      default: return 'primary'
+      case 'admin': 
+        return { variant: 'destructive' as const, label: 'Administrador' }
+      case 'moderator': 
+        return { variant: 'secondary' as const, label: 'Moderador' }
+      default: 
+        return { variant: 'default' as const, label: 'Usuario' }
     }
   }
 
-  const getRoleIcon = (role: string) => {
-    switch (role) {
-      case 'admin': return <Shield className="w-4 h-4" />
-      case 'moderator': return <Shield className="w-4 h-4" />
-      default: return <User className="w-4 h-4" />
-    }
-  }
+  const roleBadge = getRoleBadge(perfil.role)
 
-  const getRoleText = (role: string) => {
-    switch (role) {
-      case 'admin': return 'Administrador'
-      case 'moderator': return 'Moderador'
-      default: return 'Usuario'
-    }
-  }
+  const colorStyle = {
+    '--user-color': perfil.color || '#3b82f6',
+  } as CSSProperties
 
   return (
-    <div className="relative overflow-hidden bg-white dark:bg-black amoled:bg-black rounded-xl shadow-lg">
-      {/* Banner personalizado */}
-      <div className="w-full h-28 rounded-t-xl overflow-hidden relative">
-        {perfil.banner_url ? (
+    <Card className="overflow-hidden transition-shadow hover:shadow-lg dark:border-gray-800">
+      {/* Banner */}
+      <div 
+        className="relative h-32 sm:h-40 md:h-48 w-full bg-gradient-to-r dark:bg-gradient-to-r dark:from-gray-900 dark:to-gray-800"
+        style={{
+          backgroundImage: perfil.banner_url && !bannerError 
+            ? undefined 
+            : `linear-gradient(135deg, color-mix(in srgb, var(--user-color) 20%, transparent), color-mix(in srgb, var(--user-color) 10%, transparent))`,
+          ...colorStyle
+        }}
+      >
+        {perfil.banner_url && !bannerError ? (
           <Image
-            key={perfil.banner_url} // Forzar recarga cuando cambie la URL
-            src={`${perfil.banner_url}${perfil.banner_url.includes('?') ? '&' : '?'}t=${new Date().getTime()}`}
+            src={perfil.banner_url}
             alt={`Banner de ${perfil.username}`}
             fill
-            sizes="100vw"
-            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 1200px"
+            className="object-cover transition-opacity duration-300"
             priority
-            unoptimized={perfil.banner_url?.includes('supabase')} // Desactivar optimización para imágenes de Supabase
-            onError={(e) => {
-              // Si falla la carga, intentar forzar recarga
-              const target = e.target as HTMLImageElement;
-              target.src = `${perfil.banner_url}${perfil.banner_url?.includes('?') ? '&' : '?'}t=${new Date().getTime()}`;
-            }}
+            quality={75}
+            onError={() => setBannerError(true)}
+            placeholder="blur"
+            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mN8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
           />
-        ) : (
-          <div 
-            className="w-full h-full"
-            style={{
-              backgroundColor: `${perfil.color}33` // Color pastel con 20% de opacidad
-            }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        ) : null}
       </div>
-      
-      {/* Contenido del header */}
-      <div className="relative -mt-[70px] px-6 pb-6">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          {/* Avatar y info básica */}
-          <div className="flex flex-col items-center text-center">
-            <UserAvatar
-              username={perfil.username}
-              avatarUrl={perfil.avatar_url}
-              size="lg"
-              className="w-32 h-32 mb-4 ring-4 ring-white dark:ring-black amoled:ring-black shadow-xl border-4"
-              borderColor={perfil.color || '#3b82f6'}
-            />
-            <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-white amoled:text-white">
-              {perfil.username}
-            </h1>
-            <Chip
-              color={getRoleColor(perfil.role)}
-              variant="flat"
-              startContent={getRoleIcon(perfil.role)}
-              className="mb-4"
+
+      <CardContent className="px-4 sm:px-6 py-6">
+        {/* Layout principal: Avatar a la izquierda, contenido a la derecha */}
+        <div className="flex gap-4 sm:gap-6 md:gap-8">
+          {/* Avatar, nombre y rol */}
+          <div className="flex flex-col items-center gap-3 flex-shrink-0">
+            <Avatar 
+              className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 border-3 border-background dark:border-gray-950 shadow-md -mt-18 sm:-mt-20 md:-mt-24"
+              style={{
+                borderColor: `color-mix(in srgb, var(--user-color) 30%, white)`,
+                ...colorStyle
+              }}
             >
-              {getRoleText(perfil.role)}
-            </Chip>
+              {!avatarError ? (
+                <AvatarImage 
+                  src={perfil.avatar_url} 
+                  alt={perfil.username}
+                  onError={() => setAvatarError(true)}
+                />
+              ) : null}
+              <AvatarFallback 
+                className="text-xl sm:text-2xl md:text-3xl font-bold"
+                style={{
+                  backgroundColor: `color-mix(in srgb, var(--user-color) 15%, transparent)`,
+                  color: `var(--user-color)`,
+                  ...colorStyle
+                }}
+              >
+                {perfil.username.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex flex-col items-center gap-1">
+              <h1 className="text-lg sm:text-xl md:text-xl font-bold text-center">
+                {perfil.username}
+              </h1>
+              {perfil.role !== 'user' && (
+                <Badge 
+                  variant={roleBadge.variant} 
+                  className="text-xs inline-flex justify-center"
+                  style={{
+                    backgroundColor: roleBadge.variant === 'default' ? `color-mix(in srgb, var(--user-color) 20%, transparent)` : undefined,
+                    color: roleBadge.variant === 'default' ? `var(--user-color)` : undefined,
+                    ...colorStyle
+                  }}
+                >
+                  {roleBadge.label}
+                </Badge>
+              )}
+            </div>
           </div>
-          
-          {/* Botón de editar */}
-          <div className="flex justify-center md:justify-end">
-            <Button
-              color="primary"
-              variant="flat"
-              startContent={<Edit className="w-4 h-4" />}
-              onPress={onEditClick}
-              className="bg-white/90 dark:bg-black/90 amoled:bg-black/90 backdrop-blur-sm hover:bg-white dark:hover:bg-black amoled:hover:bg-black transition-all duration-200"
-            >
-              Editar Perfil
-            </Button>
+
+          {/* Separador */}
+          <div className="hidden md:block flex-1 min-w-[160px]" aria-hidden="true" />
+
+          {/* Contenido principal - Grid para desktop */}
+          <div className="flex-grow md:flex-none md:w-fit md:min-w-[240px]">
+            {/* Contadores y botón de editar */}
+            <div className="flex flex-col items-center md:items-end gap-3 mb-3">
+              {/* Contadores */}
+              <div className="flex gap-4 md:gap-6 text-xs sm:text-sm justify-center">
+                <div className="text-center">
+                  <div className="font-bold text-foreground text-sm sm:text-base">{perfil.followers_count ?? 0}</div>
+                  <div className="text-muted-foreground">seguidores</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-foreground text-sm sm:text-base">{perfil.following_count ?? 0}</div>
+                  <div className="text-muted-foreground">siguiendo</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-bold text-foreground text-sm sm:text-base">{perfil.friends_count ?? 0}</div>
+                  <div className="text-muted-foreground">amigos</div>
+                </div>
+              </div>
+
+              {/* Botón de editar */}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={onEditClick}
+                style={{
+                  borderColor: `color-mix(in srgb, var(--user-color) 30%, transparent)`,
+                  color: `var(--user-color)`,
+                  ...colorStyle
+                }}
+              >
+                <Edit className="w-4 h-4" />
+                <span className="hidden sm:inline">Editar</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
