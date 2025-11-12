@@ -111,8 +111,20 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
             type="search"
             placeholder="Buscar noticias, hilos, usuarios (@nombre)..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              // Abre el dropdown automáticamente cuando hay al menos 2 caracteres
+              if (e.target.value.length >= 2) {
+                setShowSearchDropdown(true);
+              }
+            }}
             onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+            onBlur={() => {
+              // Cierra el dropdown después de un pequeño delay para permitir clicks en el dropdown
+              setTimeout(() => {
+                setShowSearchDropdown(false);
+              }, 150);
+            }}
             style={
               {
                 "--focus-border-color": profile?.color || "#3b82f6",

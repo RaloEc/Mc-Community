@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { useAuth } from '@/context/AuthContext';
 
 type Categoria = {
   id: string;
@@ -26,7 +25,6 @@ type Categoria = {
 export default function ForoCategoriasWidget() {
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
-  const { profile } = useAuth();
   
   const toggleCategoria = (id: string) => {
     setCategorias(prev => 

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useUserTheme } from '@/hooks/useUserTheme';
 import IconMorphButton from './IconMorphButton';
-import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 
 // URL base de Supabase Storage
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,16 +60,14 @@ export default function EventosWidget({ className = '' }: EventosWidgetProps) {
   const [viewMode, setViewMode] = useState<'lista' | 'calendario'>('lista');
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
-  // Obtener la instancia de Supabase del contexto de autenticación
-  const { supabase } = useAuth();
-
   // Cargar datos desde Supabase
   useEffect(() => {
     const fetchEventos = async () => {
-      if (!supabase) return;
-      
       try {
         setLoading(true);
+        
+        // Crear cliente de Supabase independiente (no depende del contexto)
+        const supabase = createClient();
         
         // Obtener eventos publicados y ordenados por fecha
         const { data, error } = await supabase
@@ -96,7 +94,7 @@ export default function EventosWidget({ className = '' }: EventosWidgetProps) {
     };
 
     fetchEventos();
-  }, [supabase]); // Añadir supabase como dependencia
+  }, []); // Sin dependencias - se ejecuta una sola vez al montar
 
   // Ordenar eventos por fecha
   const eventosFuturos = eventos

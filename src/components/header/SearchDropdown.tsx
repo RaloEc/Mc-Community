@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 import { Newspaper, MessageCircle, Users } from 'lucide-react';
 
@@ -45,7 +46,7 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
   profileColor,
 }) => {
   const [results, setResults] = useState<Resultado[]>([]);
-  const [loading, setLoading] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
@@ -53,15 +54,23 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
       return;
     }
 
-    const timer = setTimeout(() => {
-      performSearch();
-    }, 300);
+    // Debounce mínimo de 100ms para evitar demasiadas requests
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-    return () => clearTimeout(timer);
+    debounceTimerRef.current = setTimeout(() => {
+      performSearch();
+    }, 100);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
   }, [query]);
 
   const performSearch = async () => {
-    setLoading(true);
     try {
       const isUserSearch = query.startsWith('@');
       const searchQuery = isUserSearch ? query.substring(1) : query;
@@ -107,8 +116,6 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
     } catch (error) {
       console.error('Error en búsqueda:', error);
       setResults([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -212,20 +219,52 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
   };
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
-      {loading ? (
-        <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-          <div className="inline-block animate-spin">⏳</div> Buscando...
-        </div>
-      ) : results.length > 0 ? (
-        <div className="p-2">
-          {results.map((resultado) => renderResultItem(resultado))}
-        </div>
+    <motion.div
+      className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.2, ease: 'easeOut' }}
+    >
+      {results.length > 0 ? (
+        <motion.div
+          key={`results-${results.length}`}
+          className="p-2 space-y-1"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.05,
+                delayChildren: 0.05,
+              },
+            },
+          }}
+        >
+          {results.map((resultado, index) => (
+            <motion.div
+              key={`${resultado.tipo}-${resultado.id}`}
+              variants={{
+                hidden: { opacity: 0, x: -10 },
+                visible: { opacity: 1, x: 0, transition: { duration: 0.15 } },
+              }}
+            >
+              {renderResultItem(resultado)}
+            </motion.div>
+          ))}
+        </motion.div>
       ) : (
-        <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
+        <motion.div
+          className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
+        >
           No se encontraron resultados
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };

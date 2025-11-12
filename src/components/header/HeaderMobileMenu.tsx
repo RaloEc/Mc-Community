@@ -137,7 +137,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
           }
         `}</style>
         <div
-          className="w-full rounded-lg shadow-2xl flex flex-col overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white"
+          className="w-full rounded-lg shadow-2xl flex flex-col overflow-visible bg-white dark:bg-black text-gray-900 dark:text-white"
           style={{
             maxHeight: "calc(100vh - 6rem)",
             boxShadow:
@@ -227,16 +227,28 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
 
           {/* Barra de búsqueda móvil */}
           <div
-            className={`menu-item p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black flex-shrink-0`}
+            className={`menu-item relative z-[70] p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black flex-shrink-0`}
           >
-            <form onSubmit={handleSearch} className="relative">
+            <form onSubmit={handleSearch} className="relative z-[70]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
               <Input
                 type="search"
                 placeholder="Buscar noticias, hilos, usuarios (@nombre)..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Abre el dropdown automáticamente cuando hay al menos 2 caracteres
+                  if (e.target.value.length >= 2) {
+                    setShowSearchDropdown(true);
+                  }
+                }}
                 onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+                onBlur={() => {
+                  // Cierra el dropdown después de un pequeño delay para permitir clicks en el dropdown
+                  setTimeout(() => {
+                    setShowSearchDropdown(false);
+                  }, 150);
+                }}
                 className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-black border-gray-200 dark:border-gray-800 rounded-full
                   transition-colors duration-200`}
               />
