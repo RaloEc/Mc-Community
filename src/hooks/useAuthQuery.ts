@@ -39,17 +39,8 @@ export function useSessionQuery() {
       console.log("[useSessionQuery] Obteniendo sesión...");
 
       try {
-        // Añadir timeout manual más generoso (10 segundos)
-        const timeoutPromise = new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Session query timeout")), 10000);
-        });
-
-        const sessionPromise = supabase.auth.getSession();
-
-        const result = await Promise.race([sessionPromise, timeoutPromise]);
-        const { data, error } = result as Awaited<
-          ReturnType<typeof supabase.auth.getSession>
-        >;
+        // Llamada directa sin timeout - dejar que Supabase maneje el timeout
+        const { data, error } = await supabase.auth.getSession();
 
         if (error) {
           console.error("[useSessionQuery] Error al obtener sesión:", error);
@@ -63,7 +54,7 @@ export function useSessionQuery() {
 
         return data.session ?? null;
       } catch (error) {
-        console.error("[useSessionQuery] Error o timeout:", error);
+        console.error("[useSessionQuery] Error al obtener sesión:", error);
 
         // CRÍTICO: Si falla, usar la sesión en caché
         const cachedSession = queryClient.getQueryData<Session | null>(
