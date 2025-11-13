@@ -55,6 +55,17 @@ export function AuthProvider({
   const supabase = React.useMemo(() => createClient(), [])
   const queryClient = useQueryClient()
   
+  // Inicializar React Query con la sesión del servidor
+  React.useEffect(() => {
+    if (initialSession) {
+      console.log('[AuthProvider] Inicializando con sesión del servidor:', {
+        userId: initialSession.user?.id,
+      })
+      // Establecer la sesión inicial en React Query
+      queryClient.setQueryData(['auth', 'session'], initialSession)
+    }
+  }, [initialSession, queryClient])
+  
   // Usar React Query para gestionar el estado de autenticación
   const { 
     session, 

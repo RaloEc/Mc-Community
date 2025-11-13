@@ -30,6 +30,7 @@ export const authKeys = {
  */
 export function useSessionQuery() {
   const supabase = createClient()
+  const queryClient = useQueryClient()
 
   return useQuery({
     queryKey: authKeys.session,
@@ -53,9 +54,11 @@ export function useSessionQuery() {
     staleTime: 10 * 1000, // 10 segundos (más agresivo para OAuth)
     gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: true, // Revalidar siempre al volver a la pestaña
-    refetchOnMount: true, // Siempre refetch al montar
+    refetchOnMount: false, // No refetch al montar si ya hay datos iniciales
     refetchOnReconnect: true, // Refetch al reconectar
     retry: 2, // 2 reintentos para auth
+    // Usar datos iniciales de React Query si existen
+    initialData: () => queryClient.getQueryData(authKeys.session),
   })
 }
 
