@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
 import { useUserTheme } from "@/hooks/useUserTheme";
+import { ChevronRight } from "lucide-react";
 import {
   Carousel,
   CarouselContent,
@@ -125,31 +126,41 @@ export default function HilosRelacionadosInline({
               <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
           ) : (
-            <Carousel
-              opts={{
-                align: "start",
-                loop: false,
-              }}
-              className="w-full"
-            >
-              <CarouselContent className="-ml-2 md:-ml-4">
-                {hilosRelacionados.map((hilo) => (
-                  <CarouselItem
-                    key={hilo.id}
-                    className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
-                  >
-                    <HiloCarouselCard hilo={hilo} />
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
+            <div>
+              <Carousel
+                opts={{
+                  align: "start",
+                  loop: false,
+                }}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-2 md:-ml-4">
+                  {hilosRelacionados.map((hilo) => (
+                    <CarouselItem
+                      key={hilo.id}
+                      className="pl-2 md:pl-4 basis-full sm:basis-1/2 lg:basis-1/3"
+                    >
+                      <HiloCarouselCard hilo={hilo} />
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
 
-              {hilosRelacionados.length > 3 && (
-                <>
-                  <CarouselPrevious className="hidden md:flex -left-12" />
-                  <CarouselNext className="hidden md:flex -right-12" />
-                </>
+                {hilosRelacionados.length > 3 && (
+                  <>
+                    <CarouselPrevious className="hidden md:flex -left-12" />
+                    <CarouselNext className="hidden md:flex -right-12" />
+                  </>
+                )}
+              </Carousel>
+
+              {/* Indicador de desplizamiento en móvil y tablet */}
+              {hilosRelacionados.length > 1 && (
+                <div className="flex lg:hidden items-center justify-center gap-2 mt-4 text-gray-500 dark:text-gray-400 amoled:text-gray-500 text-sm">
+                  <span>Desliza</span>
+                  <ChevronRight className="h-4 w-4 animate-bounce" />
+                </div>
               )}
-            </Carousel>
+            </div>
           )}
         </div>
       </section>

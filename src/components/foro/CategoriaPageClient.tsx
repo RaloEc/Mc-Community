@@ -100,7 +100,22 @@ export default function CategoriaPageClient({ categoria, searchParams, initialFi
       }
       const res = await fetch(`/api/foro/hilos?${queryString}`)
       const json = await res.json()
-      const items: HiloDTO[] = json.items || []
+      const items: HiloDTO[] = (json.hilos || json.items || []).map((hilo: any) => ({
+        ...hilo,
+        // Transformar 'perfiles' a 'autor' para compatibilidad con HiloItem
+        autor: hilo.perfiles || hilo.autor,
+        // Transformar 'foro_categorias' a 'subcategoria' para compatibilidad con HiloItem
+        subcategoria: hilo.foro_categorias ? {
+          id: hilo.id,
+          nombre: hilo.foro_categorias.nombre,
+          slug: hilo.foro_categorias.slug,
+          color: hilo.foro_categorias.color
+        } : undefined,
+        // Asegurar que respuestas_count tenga el valor correcto
+        respuestas_count: hilo.respuestas_conteo,
+        votos: hilo.votos_conteo,
+        vistas: hilo.vistas
+      }))
       
       // Eliminar duplicados antes de actualizar el estado
       const procesarHilosSinDuplicados = (nuevosHilos: HiloDTO[], hilosExistentes: HiloDTO[] = []) => {

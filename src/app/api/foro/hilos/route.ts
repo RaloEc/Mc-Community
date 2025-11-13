@@ -33,10 +33,11 @@ export async function GET(request: NextRequest) {
     // Usar el cliente de servicio para evitar problemas de RLS
     const supabase = getServiceClient();
     
-    // Si tenemos categoriaSlug, resolvemos el ID de la categoría
-    let categoriaId: string | null = null;
+    // Si tenemos categoriaSlug, resolvemos el ID de la categoría y sus subcategorías
+    let categoriasIds: string[] = [];
     if (categoriaSlug) {
       // Verificar si es un UUID válido
+      let categoriaId: string | null = null;
       if (categoriaSlug.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
         categoriaId = categoriaSlug;
       } else {
@@ -50,6 +51,25 @@ export async function GET(request: NextRequest) {
         if (categoria) {
           categoriaId = categoria.id;
         }
+      }
+      
+      if (categoriaId) {
+        // Obtener la categoría y todas sus subcategorías (recursivamente)
+        const { data: todasLasCategorias } = await supabase
+          .from('foro_categorias')
+          .select('id, parent_id');
+        
+        // Función para obtener todos los IDs de subcategorías recursivamente
+        const getSubcategoriesIds = (parentId: string, allCats: any[]): string[] => {
+          const ids = [parentId];
+          const subcats = allCats.filter(cat => cat.parent_id === parentId);
+          subcats.forEach(subcat => {
+            ids.push(...getSubcategoriesIds(subcat.id, allCats));
+          });
+          return ids;
+        };
+        
+        categoriasIds = getSubcategoriesIds(categoriaId, todasLasCategorias || []);
       }
     }
     
@@ -85,9 +105,9 @@ export async function GET(request: NextRequest) {
 
     let query = supabase.from('foro_hilos').select(baseSelect, { count: 'exact' }).is('deleted_at', null);
 
-    // Filtrar por categoría si se especificó
-    if (categoriaId) {
-      query = query.eq('categoria_id', categoriaId);
+    // Filtrar por categoría(s) si se especificó
+    if (categoriasIds.length > 0) {
+      query = query.in('categoria_id', categoriasIds);
     }
 
     // Aplicar búsqueda si se especificó

@@ -20,6 +20,8 @@ import {
   useSocialStatus
 } from '@/hooks/useSocialFeatures'
 import { useAuth } from '@/context/AuthContext'
+import { ConnectedAccounts } from './ConnectedAccounts'
+import { ConnectedAccountsModal } from './ConnectedAccountsModal'
 
 interface PerfilHeaderProps {
   profile: ProfileData
@@ -28,6 +30,7 @@ interface PerfilHeaderProps {
 export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
   const [bannerError, setBannerError] = useState(false)
   const [avatarError, setAvatarError] = useState(false)
+  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false)
   
   const { user } = useAuth()
   const isOwnProfile = user?.id === profile.id
@@ -345,12 +348,12 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
       </div>
 
       <CardContent className="px-4 sm:px-6 py-6">
-        {/* Layout principal: Avatar a la izquierda, contenido a la derecha */}
-        <div className="flex gap-4 sm:gap-6 md:gap-8">
-          {/* Avatar, nombre y rol */}
-          <div className="flex flex-col items-center gap-3 flex-shrink-0">
+        {/* Layout: Centrado en mobile, lado a lado en desktop */}
+        <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 md:items-start">
+          {/* Avatar, nombre y rol - Centrado en mobile */}
+          <div className="flex flex-col items-center gap-3 flex-shrink-0 w-full md:w-auto md:items-start">
             <Avatar 
-              className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 border-3 border-background dark:border-gray-950 shadow-md -mt-18 sm:-mt-20 md:-mt-24"
+              className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 border-3 border-background dark:border-gray-950 shadow-md -mt-20 sm:-mt-24 md:-mt-28"
               style={{
                 borderColor: `color-mix(in srgb, var(--user-color) 30%, white)` ,
                 ...colorStyle
@@ -364,7 +367,7 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
                 />
               ) : null}
               <AvatarFallback 
-                className="text-xl sm:text-2xl md:text-3xl font-bold"
+                className="text-lg sm:text-2xl md:text-3xl font-bold"
                 style={{
                   backgroundColor: `color-mix(in srgb, var(--user-color) 15%, transparent)` ,
                   color: `var(--user-color)` ,
@@ -376,7 +379,7 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
             </Avatar>
 
             <div className="flex flex-col items-center gap-1">
-              <h1 className="text-lg sm:text-xl md:text-xl font-bold text-center">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center">
                 {profile.username}
               </h1>
               {profile.role !== 'user' && (
@@ -398,7 +401,7 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
           {/* Separador */}
           <div className="hidden md:block flex-1 min-w-[160px]" aria-hidden="true" />
 
-          {/* Contenido principal - Grid para desktop */}
+          {/* Contenido principal - Centrado en mobile, derecha en desktop */}
           <div className="flex-grow md:flex-none md:w-fit md:min-w-[240px]">
             {/* Contadores y acciones */}
             <div className="flex flex-col items-center md:items-end gap-3 mb-3">
@@ -406,15 +409,15 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
               <div className="flex gap-4 md:gap-6 text-xs sm:text-sm justify-center">
                 <div className="text-center">
                   <div className="font-bold text-foreground text-sm sm:text-base">{socialStats.followers_count}</div>
-                  <div className="text-muted-foreground">seguidores</div>
+                  <div className="text-muted-foreground text-xs">seguidores</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-foreground text-sm sm:text-base">{socialStats.following_count}</div>
-                  <div className="text-muted-foreground">siguiendo</div>
+                  <div className="text-muted-foreground text-xs">siguiendo</div>
                 </div>
                 <div className="text-center">
                   <div className="font-bold text-foreground text-sm sm:text-base">{socialStats.friends_count}</div>
-                  <div className="text-muted-foreground">amigos</div>
+                  <div className="text-muted-foreground text-xs">amigos</div>
                 </div>
               </div>
 
@@ -424,17 +427,36 @@ export const PerfilHeader = ({ profile }: PerfilHeaderProps) => {
               </div>
             </div>
 
-            {/* Fila 2: Biografía */}
+            {/* Biografía */}
             {profile.bio && (
-              <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground mb-3 line-clamp-2">
+              <p className="text-xs sm:text-sm leading-relaxed text-muted-foreground text-center line-clamp-2">
                 {profile.bio}
               </p>
             )}
-
-            {/* Mobile ya queda cubierto por la estructura principal */}
           </div>
         </div>
+
+        {/* Cuentas Conectadas */}
+        <div className="mt-6 pt-6 border-t">
+          <ConnectedAccounts 
+            accounts={profile.connected_accounts || {}}
+            isOwnProfile={isOwnProfile}
+            userColor={profile.color}
+          />
+        </div>
       </CardContent>
+
+      {/* Modal de edición de cuentas */}
+      {isOwnProfile && (
+        <ConnectedAccountsModal
+          isOpen={isAccountsModalOpen}
+          onClose={() => setIsAccountsModalOpen(false)}
+          userId={profile.id}
+          onSave={() => {
+            queryClient.invalidateQueries({ queryKey: ['perfil', profile.public_id] })
+          }}
+        />
+      )}
     </Card>
   )
 }

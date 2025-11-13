@@ -89,7 +89,7 @@ export default async function HiloPage({ params }: PageProps) {
         <main className="w-full lg:flex-1 min-w-0">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Contenido principal */}
-            <div className="lg:col-span-9 mt-0">
+            <div className="lg:col-span-10 mt-0">
               {/* Breadcrumbs */}
               <nav className="text-sm mb-3 text-gray-600 dark:text-gray-300 amoled:text-gray-200">
                 <ol className="flex flex-wrap items-center gap-1">

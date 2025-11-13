@@ -1,23 +1,25 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { getServiceClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
     console.log('[API Categorías] Iniciando consulta de categorías...');
-    const supabase = await createClient()
+    const supabase = getServiceClient()
     
-    console.log('[API Categorías] Cliente Supabase creado');
+    console.log('[API Categorías] Cliente de servicio creado');
     
-    // Obtener todas las categorías activas
+    // Obtener todas las categorías de tipo 'noticia'
     const { data: categorias, error } = await supabase
-      .from('categorias_noticias')
+      .from('categorias')
       .select('*')
-      .eq('es_activa', true)
+      .eq('tipo', 'noticia')
       .order('orden', { ascending: true })
     
     console.log('[API Categorías] Categorías obtenidas:', categorias);
     console.log('[API Categorías] Total categorías:', categorias?.length);
     console.log('[API Categorías] Error completo:', JSON.stringify(error, null, 2));
+    console.log('[API Categorías] Categorías con parent_id null:', categorias?.filter((c: any) => c.parent_id === null).length);
+    console.log('[API Categorías] Categorías con parent_id no null:', categorias?.filter((c: any) => c.parent_id !== null).length);
     
     if (error) {
       console.error('[API Categorías] Error al obtener categorías:', error)
@@ -32,16 +34,21 @@ export async function GET() {
     
     // Función para construir el árbol jerárquico
     const construirArbol = (items: any[], parentId: string | null = null): any[] => {
-      return items
-        .filter(item => item.parent_id === parentId)
-        .map(item => ({
+      const filtered = items.filter(item => item.parent_id === parentId);
+      console.log(`[API Categorías] Buscando items con parent_id=${parentId}, encontrados: ${filtered.length}`);
+      
+      return filtered.map(item => {
+        const subcategorias = construirArbol(items, item.id);
+        console.log(`[API Categorías] Item ${item.nombre} (${item.id}) tiene ${subcategorias.length} subcategorías`);
+        return {
           ...item,
-          hijos: construirArbol(items, item.id)
-        }))
+          subcategorias: subcategorias
+        };
+      });
     }
     
-    // Construir árbol jerárquico
-    const arbolCategorias = construirArbol(categorias || [])
+    // Construir árbol jerárquico - solo categorías raíz (sin parent_id)
+    const arbolCategorias = construirArbol(categorias || [], null)
     
     console.log('[API Categorías] Árbol construido:', arbolCategorias);
     console.log('[API Categorías] Total nodos raíz:', arbolCategorias.length);

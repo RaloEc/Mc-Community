@@ -141,6 +141,7 @@ export async function GET(request: Request) {
             const { data: categoriasData, error: errorCategorias } = await serviceClient
               .from('categorias')
               .select('id, nombre, parent_id, slug, color, icono, orden')
+              .eq('tipo', 'noticia')
               .in('id', categoriaIds);
               
             if (!errorCategorias && categoriasData) {
@@ -281,7 +282,8 @@ export async function GET(request: Request) {
           // Obtener todas las categorías para construir el árbol jerárquico
           const { data: todasCategorias, error: errorTodasCategorias } = await serviceClient
             .from('categorias')
-            .select('id, parent_id');
+            .select('id, parent_id')
+            .eq('tipo', 'noticia');
             
           if (!errorTodasCategorias && todasCategorias) {
             // Construir mapa de categorías padre -> hijas
@@ -313,6 +315,7 @@ export async function GET(request: Request) {
               const { data: catPorNombre } = await serviceClient
                 .from('categorias')
                 .select('id')
+                .eq('tipo', 'noticia')
                 .or(`nombre.ilike.${categoria},slug.ilike.${categoria}`)
                 .limit(1);
                 

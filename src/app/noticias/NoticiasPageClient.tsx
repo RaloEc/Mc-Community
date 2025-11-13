@@ -1,36 +1,38 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { useInView } from 'react-intersection-observer';
-import { AnimatePresence } from 'framer-motion';
-import FiltrosBtnFlotante from '@/components/FiltrosBtnFlotante';
-import FiltrosModal from '@/components/FiltrosModal';
-import FiltrosDesktop from '@/components/FiltrosDesktop';
-import NoticiaCard from '@/components/noticias/NoticiaCard';
-import { useNoticias } from '@/components/noticias/hooks/useNoticias';
-import { useDebounce } from '@/hooks/use-debounce';
-import { useAuth } from '@/context/AuthContext';
-import BtnFlotanteUnificado from '@/components/BtnFlotanteUnificado';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { useInView } from "react-intersection-observer";
+import { AnimatePresence } from "framer-motion";
+import FiltrosBtnFlotante from "@/components/FiltrosBtnFlotante";
+import FiltrosModal from "@/components/FiltrosModal";
+import FiltrosDesktop from "@/components/FiltrosDesktop";
+import NoticiaCard from "@/components/noticias/NoticiaCard";
+import { useNoticias } from "@/components/noticias/hooks/useNoticias";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useAuth } from "@/context/AuthContext";
+import BtnFlotanteUnificado from "@/components/BtnFlotanteUnificado";
+import { Loader2 } from "lucide-react";
 
 export default function NoticiasPageClient() {
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [busqueda, setBusqueda] = useState('');
-  const [autor, setAutor] = useState('');
-  const [categoria, setCategoria] = useState('');
-  const [ordenFecha, setOrdenFecha] = useState<'asc' | 'desc'>('desc');
-  const [filtroRapido, setFiltroRapido] = useState<'recientes' | 'populares' | 'destacadas' | 'mas-comentadas'>('recientes');
+  const [busqueda, setBusqueda] = useState("");
+  const [autor, setAutor] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [ordenFecha, setOrdenFecha] = useState<"asc" | "desc">("desc");
+  const [filtroRapido, setFiltroRapido] = useState<
+    "recientes" | "populares" | "destacadas" | "mas-comentadas"
+  >("recientes");
 
   const busquedaDebounced = useDebounce(busqueda, 500);
 
-  const [busquedaTemp, setBusquedaTemp] = useState('');
-  const [autorTemp, setAutorTemp] = useState('');
-  const [categoriaTemp, setCategoriaTemp] = useState('');
-  const [ordenFechaTemp, setOrdenFechaTemp] = useState<'asc' | 'desc'>('desc');
+  const [busquedaTemp, setBusquedaTemp] = useState("");
+  const [autorTemp, setAutorTemp] = useState("");
+  const [categoriaTemp, setCategoriaTemp] = useState("");
+  const [ordenFechaTemp, setOrdenFechaTemp] = useState<"asc" | "desc">("desc");
 
   const {
     noticias,
@@ -47,8 +49,9 @@ export default function NoticiasPageClient() {
       autor,
       categoria,
       ordenFecha,
+      tipo: filtroRapido,
     },
-    12,
+    12
   );
 
   const categorias = useMemo(() => {
@@ -62,16 +65,34 @@ export default function NoticiasPageClient() {
 
   const filtrosActivosArray = useMemo(() => {
     const activos: { tipo: string; valor: string; etiqueta: string }[] = [];
-    if (busqueda) activos.push({ tipo: 'busqueda', valor: busqueda, etiqueta: `Búsqueda: ${busqueda}` });
-    if (autor) activos.push({ tipo: 'autor', valor: autor, etiqueta: `Autor: ${autor}` });
+    if (busqueda)
+      activos.push({
+        tipo: "busqueda",
+        valor: busqueda,
+        etiqueta: `Búsqueda: ${busqueda}`,
+      });
+    if (autor)
+      activos.push({
+        tipo: "autor",
+        valor: autor,
+        etiqueta: `Autor: ${autor}`,
+      });
     if (categoria) {
       const cat = categorias.find((c) => c.id === categoria);
       if (cat) {
-        activos.push({ tipo: 'categoria', valor: categoria, etiqueta: `Categoría: ${cat.nombre}` });
+        activos.push({
+          tipo: "categoria",
+          valor: categoria,
+          etiqueta: `Categoría: ${cat.nombre}`,
+        });
       }
     }
-    if (ordenFecha !== 'desc') {
-      activos.push({ tipo: 'ordenFecha', valor: ordenFecha, etiqueta: 'Orden: Más antiguas primero' });
+    if (ordenFecha !== "desc") {
+      activos.push({
+        tipo: "ordenFecha",
+        valor: ordenFecha,
+        etiqueta: "Orden: Más antiguas primero",
+      });
     }
     return activos;
   }, [busqueda, autor, categoria, ordenFecha, categorias]);
@@ -82,15 +103,15 @@ export default function NoticiasPageClient() {
   });
 
   useEffect(() => {
-    const urlBusqueda = searchParams.get('busqueda');
-    const urlAutor = searchParams.get('autor');
-    const urlCategoria = searchParams.get('categoria');
-    const urlOrden = searchParams.get('orden');
+    const urlBusqueda = searchParams.get("busqueda");
+    const urlAutor = searchParams.get("autor");
+    const urlCategoria = searchParams.get("categoria");
+    const urlOrden = searchParams.get("orden");
 
     if (urlBusqueda) setBusqueda(urlBusqueda);
     if (urlAutor) setAutor(urlAutor);
     if (urlCategoria) setCategoria(urlCategoria);
-    if (urlOrden === 'asc' || urlOrden === 'desc') setOrdenFecha(urlOrden);
+    if (urlOrden === "asc" || urlOrden === "desc") setOrdenFecha(urlOrden);
   }, [searchParams]);
 
   useEffect(() => {
@@ -107,38 +128,42 @@ export default function NoticiasPageClient() {
   }, [busqueda, autor, categoria, ordenFecha]);
 
   const eliminarFiltro = useCallback((tipo: string) => {
-    if (tipo === 'busqueda') {
-      setBusqueda('');
-      setBusquedaTemp('');
-    } else if (tipo === 'autor') {
-      setAutor('');
-      setAutorTemp('');
-    } else if (tipo === 'categoria') {
-      setCategoria('');
-      setCategoriaTemp('');
-    } else if (tipo === 'ordenFecha') {
-      setOrdenFecha('desc');
-      setOrdenFechaTemp('desc');
+    if (tipo === "busqueda") {
+      setBusqueda("");
+      setBusquedaTemp("");
+    } else if (tipo === "autor") {
+      setAutor("");
+      setAutorTemp("");
+    } else if (tipo === "categoria") {
+      setCategoria("");
+      setCategoriaTemp("");
+    } else if (tipo === "ordenFecha") {
+      setOrdenFecha("desc");
+      setOrdenFechaTemp("desc");
     }
   }, []);
 
   const limpiarFiltros = useCallback(() => {
-    setBusqueda('');
-    setAutor('');
-    setCategoria('');
-    setOrdenFecha('desc');
-    setBusquedaTemp('');
-    setAutorTemp('');
-    setCategoriaTemp('');
-    setOrdenFechaTemp('desc');
+    setBusqueda("");
+    setAutor("");
+    setCategoria("");
+    setOrdenFecha("desc");
+    setBusquedaTemp("");
+    setAutorTemp("");
+    setCategoriaTemp("");
+    setOrdenFechaTemp("desc");
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 py-6 max-w-7xl">
         <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Noticias</h1>
-          <p className="text-muted-foreground">Mantente al día con las últimas novedades de Minecraft</p>
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            Noticias
+          </h1>
+          <p className="text-muted-foreground">
+            Mantente al día con las últimas novedades
+          </p>
         </div>
 
         <FiltrosDesktop
@@ -165,9 +190,12 @@ export default function NoticiasPageClient() {
         ) : isError ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-center max-w-md">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Error al cargar noticias</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                Error al cargar noticias
+              </h2>
               <p className="text-muted-foreground mb-4">
-                No se pudieron cargar las noticias. Por favor, intenta de nuevo más tarde.
+                No se pudieron cargar las noticias. Por favor, intenta de nuevo
+                más tarde.
               </p>
               <button
                 onClick={() => window.location.reload()}
@@ -180,7 +208,9 @@ export default function NoticiasPageClient() {
         ) : noticias.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-center max-w-md">
-              <h2 className="text-2xl font-bold text-foreground mb-2">No se encontraron noticias</h2>
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                No se encontraron noticias
+              </h2>
               <p className="text-muted-foreground mb-4">
                 No hay noticias que coincidan con los filtros seleccionados.
               </p>
@@ -237,15 +267,11 @@ export default function NoticiasPageClient() {
         <BtnFlotanteUnificado
           tipo="noticias"
           usuarioAutenticado={!!user}
+          usuarioRol={profile?.role}
           filtroActivo={filtroRapido}
           categoriaActiva={categoria}
           onCambiarFiltro={(filtro) => {
             setFiltroRapido(filtro as any);
-            if (filtro === 'recientes') {
-              setOrdenFecha('desc');
-            } else if (filtro === 'populares') {
-              setOrdenFecha('desc');
-            }
           }}
           onCambiarCategoria={(categoriaId) => {
             setCategoria(categoriaId);
@@ -255,12 +281,14 @@ export default function NoticiasPageClient() {
             nombre: cat.nombre,
             color: cat.color || undefined,
             parent_id: (cat as any).parent_id ?? undefined,
-            subcategorias: ((cat as any).subcategorias || []).map((sub: any) => ({
-              id: String(sub.id),
-              nombre: sub.nombre,
-              color: sub.color || undefined,
-              parent_id: sub.parent_id ?? undefined,
-            })),
+            subcategorias: ((cat as any).subcategorias || []).map(
+              (sub: any) => ({
+                id: String(sub.id),
+                nombre: sub.nombre,
+                color: sub.color || undefined,
+                parent_id: sub.parent_id ?? undefined,
+              })
+            ),
           }))}
         />
 

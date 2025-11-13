@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function POST(request: Request) {
   try {
     // Obtener los datos del cuerpo de la solicitud
-    const { userId, username, color, avatar_url, bio, ubicacion, sitio_web, banner_url } = await request.json();
+    const { userId, username, color, avatar_url, bio, ubicacion, sitio_web, banner_url, connected_accounts } = await request.json();
     
     // Obtener el ID de usuario de la sesión si no se proporciona
     let userIdToUse = userId;
@@ -71,6 +71,16 @@ export async function POST(request: Request) {
     // Agregar sitio_web si está presente
     if (sitio_web !== undefined) {
       updateData.sitio_web = sitio_web;
+    }
+    
+    // Agregar connected_accounts si está presente
+    if (connected_accounts !== undefined) {
+      // Convertir a JSON string si es un objeto
+      if (typeof connected_accounts === 'object') {
+        updateData.connected_accounts = JSON.stringify(connected_accounts);
+      } else {
+        updateData.connected_accounts = connected_accounts;
+      }
     }
     
     // Primero verificar si el perfil existe

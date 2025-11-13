@@ -15,6 +15,7 @@ export interface ProfileData {
   followers_count: number
   following_count: number
   friends_count: number
+  connected_accounts?: Record<string, string>
   stats: {
     hilos: number
     posts: number

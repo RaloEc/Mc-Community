@@ -29,7 +29,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className="min-h-screen bg-white dark:bg-black">
       <main className="container mx-auto px-4 py-4">
         <motion.div
           className="space-y-12"
@@ -39,11 +39,11 @@ export default function Home() {
         >
           {/* Noticias destacadas con imágenes grandes */}
           <motion.div variants={fadeInUp}>
-            <NoticiasDestacadas className="mb-24" />
+            <NoticiasDestacadas className="mb-12 " />
           </motion.div>
 
           {/* Layout principal */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 ">
             {/* Columna principal - Contenido */}
             <div className="lg:col-span-2 space-y-8">
               {/* Banner publicitario intermedio */}

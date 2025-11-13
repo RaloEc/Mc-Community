@@ -5,14 +5,18 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCheckUsername } from "@/hooks/use-check-username";
+import { useIsMobile } from "@/hooks/use-mobile";
 import ImageUploader from "@/components/ImageUploader";
 import ProfileHeader from "@/components/perfil/profile-header";
 import { BannerUploader } from "@/components/perfil/BannerUploader";
 import ProfileStats from "@/components/perfil/profile-stats";
 import ActivityFeed from "@/components/perfil/activity-feed";
 import MembershipInfo from "@/components/perfil/membership-info";
+import MobileProfileLayout from "@/components/perfil/MobileProfileLayout";
 import { FriendRequestsList } from "@/components/social/FriendRequestsList";
 import { FriendsListCompact } from "@/components/social/FriendsListCompact";
+import { ConnectedAccountsModal } from "@/components/perfil/ConnectedAccountsModal";
+import { ConnectedAccountsForm } from "@/components/perfil/ConnectedAccountsForm";
 import {
   Card,
   CardBody,
@@ -41,6 +45,7 @@ interface PerfilCompleto {
   bio?: string;
   ubicacion?: string;
   sitio_web?: string;
+  connected_accounts?: Record<string, string>;
   activo?: boolean;
   ultimo_acceso?: string;
   created_at?: string;
@@ -52,6 +57,7 @@ export default function PerfilPage() {
   const { user, profile, signOut, loading: authLoading, session, refreshProfile, refreshAuth } = useAuth();
   const { toast } = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMobile = useIsMobile(1024); // Usar layout móvil en pantallas < 1024px
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setSaving] = useState(false);
@@ -70,22 +76,37 @@ export default function PerfilPage() {
   const [editData, setEditData] = useState({
     username: "",
     bio: "",
-    ubicacion: "",
-    sitio_web: "",
     color: "#64748B", // Gris azulado por defecto
     avatar_url: "",
     banner_url: "" as string | null,
+    connected_accounts: {} as Record<string, string>,
   });
+  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
 
   const syncEditDataWithPerfil = useCallback((perfilData: PerfilCompleto) => {
+    // Parsear connected_accounts si es string JSON
+    let connectedAccounts: Record<string, string> = {};
+    const rawConnectedAccounts = perfilData.connected_accounts;
+    if (rawConnectedAccounts) {
+      if (typeof rawConnectedAccounts === 'string') {
+        try {
+          connectedAccounts = JSON.parse(rawConnectedAccounts);
+        } catch (e) {
+          console.error('Error parsing connected_accounts:', e);
+          connectedAccounts = {};
+        }
+      } else if (typeof rawConnectedAccounts === 'object') {
+        connectedAccounts = rawConnectedAccounts;
+      }
+    }
+
     setEditData({
       username: perfilData.username || "",
       bio: perfilData.bio || "",
-      ubicacion: perfilData.ubicacion || "",
-      sitio_web: perfilData.sitio_web || "",
       color: perfilData.color,
       avatar_url: perfilData.avatar_url,
       banner_url: perfilData.banner_url || "",
+      connected_accounts: connectedAccounts,
     });
   }, []);
 
@@ -121,6 +142,22 @@ export default function PerfilPage() {
       ? (roleValue as "user" | "admin" | "moderator")
       : "user";
 
+    // Parsear connected_accounts si es string JSON
+    let connectedAccounts: Record<string, string> = {};
+    const rawConnectedAccounts = (profile as any)?.connected_accounts;
+    if (rawConnectedAccounts) {
+      if (typeof rawConnectedAccounts === 'string') {
+        try {
+          connectedAccounts = JSON.parse(rawConnectedAccounts);
+        } catch (e) {
+          console.error('[PerfilPage] Error parsing connected_accounts:', e);
+          connectedAccounts = {};
+        }
+      } else if (typeof rawConnectedAccounts === 'object') {
+        connectedAccounts = rawConnectedAccounts;
+      }
+    }
+
     const perfilCompleto: PerfilCompleto = {
       id: user.id,
       username:
@@ -140,6 +177,7 @@ export default function PerfilPage() {
       bio: (profile as any)?.bio || "",
       ubicacion: (profile as any)?.ubicacion || "",
       sitio_web: (profile as any)?.sitio_web || "",
+      connected_accounts: connectedAccounts,
       activo: (profile as any)?.activo ?? true,
       ultimo_acceso:
         (profile as any)?.ultimo_acceso || new Date().toISOString(),
@@ -259,11 +297,10 @@ export default function PerfilPage() {
       const datosActualizados = {
         username: editData.username,
         bio: editData.bio,
-        ubicacion: editData.ubicacion,
-        sitio_web: editData.sitio_web,
         color: editData.color,
         avatar_url: editData.avatar_url,
         banner_url: editData.banner_url,
+        connected_accounts: editData.connected_accounts,
       };
 
       // Cerrar el modal inmediatamente
@@ -391,6 +428,36 @@ export default function PerfilPage() {
     );
   }
 
+  // Layout móvil
+  if (isMobile) {
+    return (
+      <MobileProfileLayout
+        fetchActivities={fetchActividades}
+        estadisticas={estadisticas}
+        perfil={{
+          id: perfil.id,
+          username: perfil.username,
+          color: perfil.color,
+          role: perfil.role,
+          avatar_url: perfil.avatar_url,
+          banner_url: perfil.banner_url,
+          created_at: perfil.created_at,
+          ultimo_acceso: perfil.ultimo_acceso,
+          activo: perfil.activo,
+          followers_count: (profile as any)?.followers_count ?? 0,
+          following_count: (profile as any)?.following_count ?? 0,
+          friends_count: (profile as any)?.friends_count ?? 0,
+          connected_accounts: (profile as any)?.connected_accounts || {},
+        }}
+        userId={user?.id}
+        onSignOut={handleSignOut}
+        isSigningOut={isSigningOut}
+        onEditClick={onOpen}
+      />
+    );
+  }
+
+  // Layout desktop
   return (
     <div className="min-h-screen bg-white dark:bg-black amoled:bg-black">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -406,6 +473,7 @@ export default function PerfilPage() {
               followers_count: (profile as any)?.followers_count ?? 0,
               following_count: (profile as any)?.following_count ?? 0,
               friends_count: (profile as any)?.friends_count ?? 0,
+              connected_accounts: (profile as any)?.connected_accounts || {},
             }}
             onEditClick={onOpen}
           />
@@ -622,23 +690,20 @@ export default function PerfilPage() {
               maxRows={4}
             />
 
-            <Input
-              label="Ubicación"
-              value={editData.ubicacion}
-              onChange={(e) =>
-                setEditData((prev) => ({ ...prev, ubicacion: e.target.value }))
-              }
-              placeholder="Tu ubicación"
-            />
+            <Divider className="my-4" />
 
-            <Input
-              label="Sitio web"
-              value={editData.sitio_web}
-              onChange={(e) =>
-                setEditData((prev) => ({ ...prev, sitio_web: e.target.value }))
-              }
-              placeholder="https://tu-sitio.com"
-            />
+            {/* Sección de cuentas conectadas */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 amoled:text-gray-200">
+                Cuentas Conectadas
+              </h3>
+              <ConnectedAccountsForm
+                accounts={editData.connected_accounts || {}}
+                onChange={(accounts) =>
+                  setEditData((prev) => ({ ...prev, connected_accounts: accounts }))
+                }
+              />
+            </div>
 
             <div className="space-y-4">
               <div className="flex items-center gap-4 p-3 bg-white/50 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/80 dark:border-gray-700/70">
@@ -736,6 +801,51 @@ export default function PerfilPage() {
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Modal de gestión de cuentas conectadas */}
+      <ConnectedAccountsModal
+        isOpen={isAccountsModalOpen}
+        onClose={() => setIsAccountsModalOpen(false)}
+        userId={perfil?.id || ""}
+        onSave={async () => {
+          // Refrescar el perfil después de guardar cuentas
+          await refreshProfile();
+          // Recargar los datos del perfil desde el servidor
+          if (perfil?.id && user?.id) {
+            try {
+              const { createClient } = await import("@/lib/supabase/client");
+              const supabase = createClient();
+              const { data: updatedProfile } = await supabase
+                .from('perfiles')
+                .select('*')
+                .eq('id', perfil.id)
+                .single();
+              
+              if (updatedProfile) {
+                // Parsear connected_accounts si es string JSON
+                let connectedAccounts: Record<string, string> = {};
+                const rawConnectedAccounts = updatedProfile?.connected_accounts;
+                if (rawConnectedAccounts) {
+                  if (typeof rawConnectedAccounts === 'string') {
+                    try {
+                      connectedAccounts = JSON.parse(rawConnectedAccounts);
+                    } catch (e) {
+                      console.error('Error parsing connected_accounts:', e);
+                      connectedAccounts = {};
+                    }
+                  } else if (typeof rawConnectedAccounts === 'object') {
+                    connectedAccounts = rawConnectedAccounts;
+                  }
+                }
+                
+                setPerfil(prev => prev ? { ...prev, ...updatedProfile, connected_accounts: connectedAccounts } : prev);
+              }
+            } catch (error) {
+              console.error('Error refrescando perfil:', error);
+            }
+          }
+        }}
+      />
     </div>
   );
 }

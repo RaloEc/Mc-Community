@@ -38,6 +38,7 @@ interface Categoria {
 interface BtnFlotanteUnificadoProps {
   tipo: TipoContenido;
   usuarioAutenticado: boolean;
+  usuarioRol?: string;
   filtroActivo?: FiltroNoticias | FiltroForo;
   categoriaActiva?: string;
   onCambiarFiltro?: (filtro: FiltroNoticias | FiltroForo) => void;
@@ -48,6 +49,7 @@ interface BtnFlotanteUnificadoProps {
 export default function BtnFlotanteUnificado({ 
   tipo,
   usuarioAutenticado,
+  usuarioRol,
   filtroActivo = 'recientes',
   categoriaActiva,
   onCambiarFiltro,
@@ -61,15 +63,13 @@ export default function BtnFlotanteUnificado({
   const { profile } = useAuth();
   const colorPersonalizado = profile?.color || 'hsl(222.2, 47.4%, 11.2%)'; // Color por defecto
 
+  // Validar si el usuario puede crear contenido (solo admin o redactor)
+  const puedeCrear = usuarioAutenticado && (usuarioRol === 'admin' || usuarioRol === 'redactor');
+
   const toggleMenu = () => {
     const next = !menuAbierto;
     setMenuAbierto(next);
-    if (next) {
-      // Al abrir, si estamos en noticias mostramos categorías de inmediato
-      if (tipo === 'noticias') {
-        setSubmenuCategorias(true);
-      }
-    } else {
+    if (!next) {
       // Al cerrar, limpiar submenús y expansiones
       setSubmenuCategorias(false);
       setCategoriasAbiertas(new Set());
@@ -167,12 +167,12 @@ export default function BtnFlotanteUnificado({
               '--color-personalizado-20': `${colorPersonalizado}33`
             } as React.CSSProperties}
           >
-            {/* Sección de Creación */}
-            <div className="border-b border-gray-200 dark:border-black bg-gray-50 dark:bg-black">
-              <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Crear
-              </div>
-              {usuarioAutenticado ? (
+            {/* Sección de Creación - Solo mostrar si puede crear */}
+            {puedeCrear && (
+              <div className="border-b border-gray-200 dark:border-black bg-gray-50 dark:bg-black">
+                <div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Crear
+                </div>
                 <Link 
                   href={currentConfig.crearUrl}
                   className="flex items-center w-full px-4 py-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group"
@@ -184,24 +184,8 @@ export default function BtnFlotanteUnificado({
                   />
                   <span className="font-medium">{currentConfig.crearTexto}</span>
                 </Link>
-              ) : (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div 
-                        className="flex items-center w-full px-4 py-3 text-left text-gray-400 dark:text-gray-600 bg-gray-50 dark:bg-black cursor-not-allowed"
-                      >
-                        <PlusIcon size={18} className="mr-3" />
-                        <span>{currentConfig.crearTexto}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="text-xs">
-                      Inicia sesión para crear
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Sección de Filtros */}
             <div className="border-b border-gray-200 dark:border-black">

@@ -159,7 +159,7 @@ export const FeedActividad = ({ ultimosHilos, ultimosPosts, weaponStatsRecords, 
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-grow min-w-0">
                       <Link 
-                        href={`/foro/${hilo.slug || hilo.id}`}
+                        href={`/foro/hilos/${hilo.slug || hilo.id}`}
                         className="group"
                       >
                         <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-2 text-foreground">
@@ -256,7 +256,7 @@ export const FeedActividad = ({ ultimosHilos, ultimosPosts, weaponStatsRecords, 
                       </div>
                     )}
                     <Link 
-                      href={`/foro/${hilo.slug || hilo.id}`}
+                      href={`/foro/hilos/${hilo.slug || hilo.id}`}
                       className="ml-auto flex items-center gap-1 text-xs hover:underline"
                       style={{
                         color: `var(--user-color)`,
@@ -282,7 +282,7 @@ export const FeedActividad = ({ ultimosHilos, ultimosPosts, weaponStatsRecords, 
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-grow min-w-0">
                       <Link 
-                        href={`/foro/${post.hilo_id}`}
+                        href={`/foro/hilos/${post.hilo_id}`}
                         className="group"
                       >
                         <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-1 text-foreground">
@@ -311,7 +311,7 @@ export const FeedActividad = ({ ultimosHilos, ultimosPosts, weaponStatsRecords, 
                   {/* Link */}
                   <div className="pt-2 border-t dark:border-gray-700">
                     <Link 
-                      href={`/foro/${post.hilo_id}`}
+                      href={`/foro/hilos/${post.hilo_id}`}
                       className="flex items-center gap-1 text-xs hover:underline"
                       style={{
                         color: `var(--user-color)`,
@@ -330,9 +330,77 @@ export const FeedActividad = ({ ultimosHilos, ultimosPosts, weaponStatsRecords, 
           const record = item.data
           
           return (
-            <div key={item.id}>
-              <WeaponStatsCard stats={record.stats} />
-            </div>
+            <Card key={item.id} className="transition-shadow hover:shadow-lg dark:border-gray-800 overflow-hidden">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col gap-3">
+                  {/* Header */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-grow min-w-0">
+                      <Link 
+                        href={`/foro/hilos/${record.hilo.slug || record.hilo.id}`}
+                        className="group"
+                      >
+                        <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-2 text-foreground">
+                          {record.weapon_name ? `${record.weapon_name} - ${record.hilo.titulo}` : record.hilo.titulo}
+                        </h3>
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-2 mt-2">
+                        <span 
+                          className="inline-block text-xs px-2 py-1 rounded-full text-foreground"
+                          style={{
+                            backgroundColor: `color-mix(in srgb, var(--user-color) 15%, transparent)`,
+                            color: `var(--user-color)`,
+                            ...colorStyle
+                          }}
+                        >
+                          {record.hilo.categoria_titulo}
+                        </span>
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {formatearFecha(record.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <Crosshair 
+                      className="w-5 h-5 flex-shrink-0"
+                      style={{
+                        color: `var(--user-color)`,
+                        ...colorStyle
+                      }}
+                    />
+                  </div>
+
+                  {/* Weapon Stats Card */}
+                  {record.stats && (
+                    <div className="mt-2">
+                      <WeaponStatsCard 
+                        stats={record.stats}
+                        className="max-w-full"
+                      />
+                    </div>
+                  )}
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 pt-2 border-t dark:border-gray-700">
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Eye className="w-3 h-3" />
+                      <span>{record.hilo.vistas}</span>
+                    </div>
+                    <Link 
+                      href={`/foro/hilos/${record.hilo.slug || record.hilo.id}`}
+                      className="ml-auto flex items-center gap-1 text-xs hover:underline"
+                      style={{
+                        color: `var(--user-color)`,
+                        ...colorStyle
+                      }}
+                    >
+                      Ver más
+                      <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )
         }
       })}

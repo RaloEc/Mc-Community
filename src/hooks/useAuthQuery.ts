@@ -15,6 +15,7 @@ interface Profile {
   followers_count?: number
   following_count?: number
   friends_count?: number
+  connected_accounts?: Record<string, string> | string
 }
 
 // Keys para las queries
@@ -109,6 +110,7 @@ export function useProfileQuery(userId: string | null | undefined) {
               followers_count: (data as any).followers_count ?? 0,
               following_count: (data as any).following_count ?? 0,
               friends_count: (data as any).friends_count ?? 0,
+              connected_accounts: (data as any).connected_accounts ?? {},
             }
             
             console.log('[useProfileQuery] Perfil obtenido exitosamente:', {
@@ -117,6 +119,7 @@ export function useProfileQuery(userId: string | null | undefined) {
               followers_count: profile.followers_count,
               following_count: profile.following_count,
               friends_count: profile.friends_count,
+              connected_accounts: profile.connected_accounts,
             })
             
             return profile

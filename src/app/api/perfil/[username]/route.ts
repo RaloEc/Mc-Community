@@ -12,7 +12,7 @@ export async function GET(
     // 1. Obtener el perfil del usuario por public_id o username como fallback
     let { data: perfil, error: perfilError } = await supabase
       .from('perfiles')
-      .select('id, username, public_id, created_at, avatar_url, banner_url, bio, color, role, followers_count, following_count, friends_count')
+      .select('id, username, public_id, created_at, avatar_url, banner_url, bio, color, role, followers_count, following_count, friends_count, connected_accounts')
       .eq('public_id', publicId)
       .single()
 
@@ -21,7 +21,7 @@ export async function GET(
       console.log(`[Perfil API] public_id "${publicId}" no encontrado, intentando por username...`)
       const { data: perfilPorUsername, error: errorUsername } = await supabase
         .from('perfiles')
-        .select('id, username, public_id, created_at, avatar_url, banner_url, bio, color, role, followers_count, following_count, friends_count')
+        .select('id, username, public_id, created_at, avatar_url, banner_url, bio, color, role, followers_count, following_count, friends_count, connected_accounts')
         .eq('username', publicId)
         .single()
 

@@ -96,7 +96,7 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
         ]);
 
         const noticiasData = noticiasRes.ok ? await noticiasRes.json() : { data: [] };
-        const hilosData = hilosRes.ok ? await hilosRes.json() : { items: [] };
+        const hilosData = hilosRes.ok ? await hilosRes.json() : { hilos: [] };
 
         const noticias = (noticiasData.data || []).map((n: any) => ({
           id: n.id,
@@ -105,9 +105,10 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
           tipo: 'noticia' as const,
         }));
 
-        const hilos = (hilosData.items || []).map((h: any) => ({
+        const hilos = (hilosData.hilos || []).map((h: any) => ({
           id: h.id,
           titulo: h.titulo,
+          slug: h.slug,
           tipo: 'hilo' as const,
         }));
 
@@ -195,11 +196,11 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
         </Link>
       );
     } else {
-      const hilo = resultado as Hilo;
+      const hilo = resultado as Hilo & { slug?: string };
       return (
         <Link
           key={`${hilo.tipo}-${hilo.id}`}
-          href={`/foro/hilos/${hilo.id}`}
+          href={`/foro/hilos/${hilo.slug || hilo.id}`}
           onClick={onClose}
         >
           <div className="flex items-center gap-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg transition-colors cursor-pointer">

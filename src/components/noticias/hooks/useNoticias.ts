@@ -10,6 +10,7 @@ export type FiltroNoticias = {
   autor?: string;
   categoria?: string;
   ordenFecha?: 'asc' | 'desc';
+  tipo?: 'recientes' | 'populares' | 'destacadas' | 'mas-comentadas';
 };
 
 // Tipo para categorías
@@ -27,7 +28,7 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
   // Actualizar filtros cuando cambien los initialFiltros
   useEffect(() => {
     setFiltros(initialFiltros);
-  }, [initialFiltros.busqueda, initialFiltros.autor, initialFiltros.categoria, initialFiltros.ordenFecha]);
+  }, [initialFiltros.busqueda, initialFiltros.autor, initialFiltros.categoria, initialFiltros.ordenFecha, initialFiltros.tipo]);
 
   // Función para construir la URL de la API con los filtros
   const buildApiUrl = (pageParam: number = 1): string => {
@@ -38,6 +39,7 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
     if (filtros.busqueda) params.append('busqueda', filtros.busqueda);
     if (filtros.autor) params.append('autor', filtros.autor);
     if (filtros.categoria) params.append('categoria', filtros.categoria);
+    if (filtros.tipo) params.append('tipo', filtros.tipo);
     if (filtros.ordenFecha) params.append('ordenFecha', filtros.ordenFecha);
     
     // Añadir parámetros de paginación
@@ -71,67 +73,32 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
         return [] as Categoria[];
       }
 
-      // Construir jerarquía padre → subcategorías respetando orden/nombre
-      const planas = data.data as Array<{
-        id: string;
-        nombre: string;
-        color?: string | null;
-        icono?: string | null;
-        parent_id?: string | null;
-        orden?: number | null;
-        slug?: string | null;
-      }>;
-
-      // Mapa para acceso y clon con subcategorias
-      const map = new Map<string, Categoria & { subcategorias?: Categoria[] }>();
-      planas.forEach((c) => {
-        map.set(String(c.id), {
-          id: String(c.id),
-          nombre: c.nombre,
-          slug: (c.slug ?? String(c.id)) as string,
-          color: c.color ?? undefined,
-          icono: c.icono ?? undefined,
-          parent_id: c.parent_id ?? null,
-          // Inicializar contenedor de subcategorías
-          subcategorias: [],
-        } as unknown as Categoria & { subcategorias?: Categoria[] });
-      });
-
-      const raices: (Categoria & { subcategorias?: Categoria[] })[] = [];
-      planas.forEach((c) => {
-        const nodo = map.get(String(c.id));
-        if (!nodo) return;
-        if (!c.parent_id) {
-          raices.push(nodo);
-        } else {
-          const padre = map.get(String(c.parent_id));
-          if (padre) {
-            if (!padre.subcategorias) padre.subcategorias = [];
-            padre.subcategorias.push(nodo);
-          } else {
-            // Sin padre válido, tratar como raíz para no perderla
-            raices.push(nodo);
-          }
-        }
-      });
-
-      // Función de ordenación por 'orden' y luego por 'nombre'
-      const ordenar = (arr: (Categoria & { subcategorias?: Categoria[] })[]) => {
-        arr.sort((a, b) => {
-          const oa = (planaOrden(String(a.id), planas));
-          const ob = (planaOrden(String(b.id), planas));
-          if (oa !== ob) return oa - ob;
-          return a.nombre.localeCompare(b.nombre);
-        });
-        arr.forEach((n) => n.subcategorias && ordenar(n.subcategorias));
-      };
-
-      const planaOrden = (id: string, lista: typeof planas) => {
-        const item = lista.find((x) => String(x.id) === id);
-        return (item?.orden ?? 0);
-      };
-
-      ordenar(raices);
+      // El API ya devuelve la estructura jerárquica correcta
+      // Solo necesitamos asegurar que los tipos sean correctos
+      const raices = (data.data as any[]).map((cat) => ({
+        id: String(cat.id),
+        nombre: cat.nombre,
+        slug: cat.slug ?? String(cat.id),
+        color: cat.color ?? undefined,
+        icono: cat.icono ?? undefined,
+        parent_id: cat.parent_id ?? null,
+        subcategorias: (cat.subcategorias || []).map((sub: any) => ({
+          id: String(sub.id),
+          nombre: sub.nombre,
+          slug: sub.slug ?? String(sub.id),
+          color: sub.color ?? undefined,
+          icono: sub.icono ?? undefined,
+          parent_id: sub.parent_id ?? null,
+          subcategorias: (sub.subcategorias || []).map((subsub: any) => ({
+            id: String(subsub.id),
+            nombre: subsub.nombre,
+            slug: subsub.slug ?? String(subsub.id),
+            color: subsub.color ?? undefined,
+            icono: subsub.icono ?? undefined,
+            parent_id: subsub.parent_id ?? null,
+          })),
+        })),
+      }));
 
       console.log('[useNoticias] Categorías procesadas (raíces):', raices);
       console.log('[useNoticias] Total de categorías raíz:', raices.length);
@@ -149,7 +116,8 @@ export function useNoticias(initialFiltros: FiltroNoticias = {}, limit: number =
     filtros.busqueda,
     filtros.autor,
     filtros.categoria,
-    filtros.ordenFecha
+    filtros.ordenFecha,
+    filtros.tipo
   ]);
 
   // Consulta principal de noticias con paginación infinita

@@ -39,9 +39,6 @@ export default function CategoriaHeader({ categoria }: Props) {
             </p>
           )}
         </div>
-        {categoria.color && (
-          <span className="hidden md:inline-flex h-8 w-8 rounded-full border" style={{ backgroundColor: categoria.color }} />
-        )}
       </div>
       <div className="rounded-md border bg-card dark:bg-black p-3">
         <p className="text-sm">
