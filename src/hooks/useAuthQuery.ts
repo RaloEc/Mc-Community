@@ -36,27 +36,46 @@ export function useSessionQuery() {
     queryKey: authKeys.session,
     queryFn: async () => {
       console.log("[useSessionQuery] Obteniendo sesión...");
-      const { data, error } = await supabase.auth.getSession();
 
-      if (error) {
-        console.error("[useSessionQuery] Error al obtener sesión:", error);
-        throw error;
-      }
-
-      console.log("[useSessionQuery] Sesión obtenida:", {
-        hasSession: !!data.session,
-        userId: data.session?.user?.id,
+      // Timeout de 5 segundos para evitar queries colgadas
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Session query timeout")), 5000);
       });
 
-      return data.session ?? null;
+      const sessionPromise = supabase.auth.getSession();
+
+      try {
+        const { data, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise,
+        ]);
+
+        if (error) {
+          console.error("[useSessionQuery] Error al obtener sesión:", error);
+          throw error;
+        }
+
+        console.log("[useSessionQuery] Sesión obtenida:", {
+          hasSession: !!data.session,
+          userId: data.session?.user?.id,
+        });
+
+        return data.session ?? null;
+      } catch (error) {
+        console.error("[useSessionQuery] Error o timeout:", error);
+        // En caso de timeout, retornar null en lugar de fallar
+        return null;
+      }
     },
-    // Configuración optimizada para autenticación
-    staleTime: 0, // Siempre considerar stale para forzar refetch
+    // Configuración balanceada para autenticación
+    staleTime: 1000, // 1 segundo - evita refetch excesivos
     gcTime: 10 * 60 * 1000, // 10 minutos
-    refetchOnWindowFocus: true, // Revalidar siempre al volver a la pestaña
-    refetchOnMount: true, // Siempre refetch al montar
+    refetchOnWindowFocus: true, // Revalidar al volver a la pestaña
+    refetchOnMount: false, // No refetch si hay datos frescos
     refetchOnReconnect: true, // Refetch al reconectar
-    retry: 2, // 2 reintentos para auth
+    retry: 1, // Solo 1 reintento
+    retryDelay: 500, // 500ms entre reintentos
+    networkMode: "online", // Solo ejecutar si hay conexión
   });
 }
 
@@ -140,11 +159,12 @@ export function useProfileQuery(userId: string | null | undefined) {
       throw lastError || new Error("No se pudo obtener el perfil");
     },
     enabled: !!userId, // Solo ejecutar si hay userId
-    staleTime: 0, // Siempre considerar stale
+    staleTime: 1000, // 1 segundo - evita refetch excesivos
     gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: true, // Refetch al cambiar de pestaña
-    refetchOnMount: true, // Siempre refetch al montar
+    refetchOnMount: false, // No refetch si hay datos frescos
     retry: false, // Ya manejamos reintentos manualmente
+    networkMode: "online", // Solo ejecutar si hay conexión
   });
 }
 
