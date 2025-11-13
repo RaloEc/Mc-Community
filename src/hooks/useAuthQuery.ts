@@ -32,7 +32,7 @@ export function useSessionQuery() {
   const supabase = createClient()
   const queryClient = useQueryClient()
 
-  return useQuery({
+  return useQuery<Session | null>({
     queryKey: authKeys.session,
     queryFn: async () => {
       console.log('[useSessionQuery] Obteniendo sesión...')
@@ -48,7 +48,7 @@ export function useSessionQuery() {
         userId: data.session?.user?.id,
       })
       
-      return data.session
+      return data.session ?? null
     },
     // Configuración optimizada para autenticación con baja latencia
     staleTime: 10 * 1000, // 10 segundos (más agresivo para OAuth)
@@ -58,7 +58,8 @@ export function useSessionQuery() {
     refetchOnReconnect: true, // Refetch al reconectar
     retry: 2, // 2 reintentos para auth
     // Usar datos iniciales de React Query si existen
-    initialData: () => queryClient.getQueryData(authKeys.session),
+    initialData: () =>
+      queryClient.getQueryData<Session | null>(authKeys.session) ?? null,
   })
 }
 
