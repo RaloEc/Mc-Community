@@ -3,6 +3,8 @@
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
+import { logger } from "@/lib/logger";
+import { CACHE_CONFIG, RETRY_CONFIG } from "@/lib/auth/cache-config";
 import type { Session } from "@supabase/supabase-js";
 
 interface Profile {
@@ -36,47 +38,84 @@ export function useSessionQuery() {
   return useQuery<Session | null>({
     queryKey: authKeys.session,
     queryFn: async () => {
-      console.log("[useSessionQuery] Obteniendo sesión...");
+      logger.info("useSessionQuery", "Obteniendo sesión...");
 
       try {
         // Llamada directa sin timeout - dejar que Supabase maneje el timeout
         const { data, error } = await supabase.auth.getSession();
 
         if (error) {
-          console.error("[useSessionQuery] Error al obtener sesión:", error);
+          logger.error("useSessionQuery", "Error al obtener sesión", error);
           throw error;
         }
 
-        console.log("[useSessionQuery] Sesión obtenida:", {
+        // Validar si el token está expirado
+        if (data.session?.expires_at) {
+          const expiresAt = new Date(data.session.expires_at * 1000);
+          const now = new Date();
+
+          if (expiresAt < now) {
+            logger.warn(
+              "useSessionQuery",
+              "Token expirado, intentando refrescar"
+            );
+
+            // Intentar refrescar el token
+            const { data: refreshed, error: refreshError } =
+              await supabase.auth.refreshSession();
+
+            if (refreshError || !refreshed.session) {
+              logger.error(
+                "useSessionQuery",
+                "No se pudo refrescar el token",
+                refreshError
+              );
+              return null;
+            }
+
+            logger.success("useSessionQuery", "Token refrescado exitosamente");
+            return refreshed.session;
+          }
+        }
+
+        logger.success("useSessionQuery", "Sesión obtenida", {
           hasSession: !!data.session,
           userId: data.session?.user?.id,
         });
 
         return data.session ?? null;
       } catch (error) {
-        console.error("[useSessionQuery] Error al obtener sesión:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.error(
+          "useSessionQuery",
+          "Error al obtener sesión",
+          errorMessage
+        );
 
         // CRÍTICO: Si falla, usar la sesión en caché
         const cachedSession = queryClient.getQueryData<Session | null>(
           authKeys.session
         );
         if (cachedSession) {
-          console.log(
-            "[useSessionQuery] Usando sesión en caché debido a error"
+          logger.info(
+            "useSessionQuery",
+            "Usando sesión en caché debido a error"
           );
           return cachedSession;
         }
 
         // Si no hay caché, retornar null en lugar de throw
-        console.warn(
-          "[useSessionQuery] No hay sesión en caché, retornando null"
+        logger.warn(
+          "useSessionQuery",
+          "No hay sesión en caché, retornando null"
         );
         return null;
       }
     },
     // Configuración optimizada para evitar refetches innecesarios
-    staleTime: 10 * 60 * 1000, // 10 minutos - datos se consideran frescos
-    gcTime: 30 * 60 * 1000, // 30 minutos - mantener en caché
+    staleTime: CACHE_CONFIG.SESSION.staleTime,
+    gcTime: CACHE_CONFIG.SESSION.gcTime,
     refetchOnMount: false, // No refetch al montar si hay datos frescos
     refetchOnReconnect: false, // No refetch al reconectar
     refetchOnWindowFocus: false, // CRÍTICO: No refetch al cambiar pestañas
@@ -97,16 +136,17 @@ export function useProfileQuery(userId: string | null | undefined) {
     queryKey: userId ? authKeys.profile(userId) : ["auth", "profile", "null"],
     queryFn: async () => {
       if (!userId) {
-        console.log("[useProfileQuery] No hay userId, retornando null");
+        logger.info("useProfileQuery", "No hay userId, retornando null");
         return null;
       }
 
-      console.log("[useProfileQuery] Obteniendo perfil para userId:", userId);
+      logger.info("useProfileQuery", "Obteniendo perfil para userId:", userId);
 
       try {
-        // Intentar hasta 3 veces con backoff para casos de OAuth recién creado
-        let lastError = null;
-        for (let attempt = 0; attempt < 3; attempt++) {
+        // Intentar hasta MAX_RETRIES veces con backoff exponencial
+        let lastError: Error | null = null;
+
+        for (let attempt = 0; attempt < RETRY_CONFIG.MAX_RETRIES; attempt++) {
           try {
             const { data, error } = await supabase
               .from("perfiles")
@@ -115,20 +155,22 @@ export function useProfileQuery(userId: string | null | undefined) {
               .single();
 
             if (error) {
-              lastError = error;
-              console.log(
-                `[useProfileQuery] Intento ${attempt + 1}/3 falló:`,
-                error.message
+              lastError =
+                error instanceof Error ? error : new Error(String(error));
+              const delay = RETRY_CONFIG.getDelay(attempt);
+              logger.warn(
+                "useProfileQuery",
+                `Intento ${attempt + 1}/${RETRY_CONFIG.MAX_RETRIES} falló: ${
+                  lastError.message
+                }. Reintentando en ${delay}ms`
               );
 
               // Si no es el último intento, esperar antes de reintentar
-              if (attempt < 2) {
-                await new Promise((resolve) =>
-                  setTimeout(resolve, 300 * (attempt + 1))
-                );
+              if (attempt < RETRY_CONFIG.MAX_RETRIES - 1) {
+                await new Promise((resolve) => setTimeout(resolve, delay));
                 continue;
               }
-              throw error;
+              throw lastError;
             }
 
             if (data) {
@@ -146,46 +188,58 @@ export function useProfileQuery(userId: string | null | undefined) {
                 connected_accounts: (data as any).connected_accounts ?? {},
               };
 
-              console.log("[useProfileQuery] Perfil obtenido exitosamente:", {
-                username: profile.username,
-                role: profile.role,
-              });
+              logger.success(
+                "useProfileQuery",
+                "Perfil obtenido exitosamente",
+                {
+                  username: profile.username,
+                  role: profile.role,
+                }
+              );
 
               return profile;
             }
           } catch (err) {
-            lastError = err;
-            if (attempt === 2) {
-              throw err;
+            lastError = err instanceof Error ? err : new Error(String(err));
+            if (attempt === RETRY_CONFIG.MAX_RETRIES - 1) {
+              throw lastError;
             }
           }
         }
 
         throw lastError || new Error("No se pudo obtener el perfil");
       } catch (error) {
-        console.error("[useProfileQuery] Error definitivo:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.error(
+          "useProfileQuery",
+          "Error definitivo al obtener perfil",
+          errorMessage
+        );
 
         // CRÍTICO: Si falla, usar el perfil en caché
         const cachedProfile = queryClient.getQueryData<Profile | null>(
           authKeys.profile(userId)
         );
         if (cachedProfile) {
-          console.log(
-            "[useProfileQuery] Usando perfil en caché debido a error"
+          logger.info(
+            "useProfileQuery",
+            "Usando perfil en caché debido a error"
           );
           return cachedProfile;
         }
 
         // Si no hay caché, retornar null en lugar de throw
-        console.warn(
-          "[useProfileQuery] No hay perfil en caché, retornando null"
+        logger.warn(
+          "useProfileQuery",
+          "No hay perfil en caché, retornando null"
         );
         return null;
       }
     },
     enabled: !!userId, // Solo ejecutar si hay userId
-    staleTime: 10 * 60 * 1000, // 10 minutos - datos se consideran frescos
-    gcTime: 30 * 60 * 1000, // 30 minutos - mantener en caché
+    staleTime: CACHE_CONFIG.PROFILE.staleTime,
+    gcTime: CACHE_CONFIG.PROFILE.gcTime,
     refetchOnMount: false, // No refetch al montar si hay datos frescos
     refetchOnWindowFocus: false, // CRÍTICO: No refetch al cambiar pestañas
     retry: false, // Ya manejamos reintentos manualmente
@@ -207,7 +261,7 @@ export function useAuthData(initialSession?: Session | null) {
         authKeys.session
       );
       if (!currentData) {
-        console.log("[useAuthData] Estableciendo sesión inicial del servidor");
+        logger.info("useAuthData", "Estableciendo sesión inicial del servidor");
         queryClient.setQueryData(authKeys.session, initialSession);
       }
     }
@@ -228,7 +282,7 @@ export function useAuthData(initialSession?: Session | null) {
   // Estado de error combinado
   const error = sessionQuery.error || profileQuery.error;
 
-  console.log("[useAuthData] Estado actual:", {
+  logger.debug("useAuthData", "Estado actual", {
     sessionLoading: sessionQuery.isLoading,
     profileLoading: profileQuery.isLoading,
     isLoading,

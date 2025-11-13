@@ -1,14 +1,27 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { logger } from "@/lib/logger";
 
-// Rutas que requieren autenticación de administrador
-const ADMIN_ROUTES = ["/admin"];
+// Rutas que requieren autenticación de administrador (usando regex para mayor cobertura)
+const ADMIN_ROUTES = [
+  /^\/admin(?:\/|$)/, // /admin, /admin/, /admin/...
+  /^\/api\/admin(?:\/|$)/, // /api/admin, /api/admin/, /api/admin/...
+] as const;
+
+/**
+ * Verifica si una ruta es administrativa
+ * @param pathname Ruta a verificar
+ * @returns true si es una ruta administrativa
+ */
+function isAdminRoute(pathname: string): boolean {
+  return ADMIN_ROUTES.some((route) => route.test(pathname));
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  console.log("[Middleware] Procesando ruta:", pathname);
+  logger.info("Middleware", "Procesando ruta:", pathname);
 
   // Crear respuesta que será retornada
   let response = NextResponse.next({
@@ -45,7 +58,7 @@ export async function middleware(request: NextRequest) {
     error: sessionError,
   } = await supabase.auth.getSession();
 
-  console.log("[Middleware] Sesión refrescada:", {
+  logger.info("Middleware", "Sesión refrescada", {
     hasSession: !!session,
     userId: session?.user?.id,
     error: sessionError?.message,
@@ -55,17 +68,17 @@ export async function middleware(request: NextRequest) {
   if (session) {
     response.headers.set("X-Auth-Session", "true");
     response.headers.set("X-User-Id", session.user.id);
-    console.log("[Middleware] Sesión activa detectada");
+    logger.info("Middleware", "Sesión activa detectada");
   }
 
   // Verificar si la ruta es administrativa
-  const isAdminRoute = ADMIN_ROUTES.some((route) => pathname.startsWith(route));
+  const isAdmin = isAdminRoute(pathname);
 
-  if (isAdminRoute) {
+  if (isAdmin) {
     try {
       // Si no hay sesión, redirigir al login con parámetro de redirección
       if (!session) {
-        console.log("[Middleware] No hay sesión, redirigiendo a login");
+        logger.warn("Middleware", "No hay sesión, redirigiendo a login");
         const redirectUrl = new URL("/login", request.url);
         redirectUrl.searchParams.set("redirect", pathname);
         return NextResponse.redirect(redirectUrl);
@@ -78,7 +91,7 @@ export async function middleware(request: NextRequest) {
         .eq("id", session.user.id)
         .single();
 
-      console.log("[Middleware] Verificación de perfil:", {
+      logger.info("Middleware", "Verificación de perfil", {
         hasProfile: !!profile,
         role: profile?.role,
         error: error?.message,
@@ -86,13 +99,15 @@ export async function middleware(request: NextRequest) {
 
       // Si hay error o el usuario no es admin, redirigir a la página principal
       if (error || !profile || profile.role !== "admin") {
-        console.log("[Middleware] Usuario no es admin, redirigiendo a home");
+        logger.warn("Middleware", "Usuario no es admin, redirigiendo a home");
         return NextResponse.redirect(new URL("/", request.url));
       }
 
-      console.log("[Middleware] ✅ Usuario es admin, permitiendo acceso");
+      logger.success("Middleware", "Usuario es admin, permitiendo acceso");
     } catch (error) {
-      console.error("[Middleware] Error inesperado:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      logger.error("Middleware", "Error inesperado", errorMessage);
       // En caso de error en rutas admin, redirigir a home
       return NextResponse.redirect(new URL("/", request.url));
     }

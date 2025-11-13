@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { logger } from "@/lib/logger";
 import { useAuthData, authKeys } from "@/hooks/useAuthQuery";
 import type { Session, User } from "@supabase/supabase-js";
 
@@ -68,12 +69,15 @@ export function AuthProvider({
 
   // Suscribirse a cambios de autenticación de Supabase
   React.useEffect(() => {
-    console.log("[AuthProvider] Configurando listener de auth state change...");
+    logger.info(
+      "AuthProvider",
+      "Configurando listener de auth state change..."
+    );
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.log(`[AuthProvider] Auth state change: ${event}`, {
+      logger.info("AuthProvider", `Auth state change: ${event}`, {
         hasSession: !!newSession,
         userId: newSession?.user?.id,
       });
@@ -81,8 +85,9 @@ export function AuthProvider({
       // Manejar eventos de autenticación de forma optimizada
       if (event === "SIGNED_OUT") {
         // En logout, limpiar todo inmediatamente y forzar refetch
-        console.log(
-          "[AuthProvider] SIGNED_OUT: Limpiando caché de autenticación"
+        logger.info(
+          "AuthProvider",
+          "SIGNED_OUT: Limpiando caché de autenticación"
         );
         queryClient.setQueryData(authKeys.session, null);
         queryClient.removeQueries({
@@ -96,12 +101,13 @@ export function AuthProvider({
         });
         // CRÍTICO: Invalidar caché de Next.js
         router.refresh();
-        console.log(
-          "[AuthProvider] Estado de auth limpiado, refetched y router refreshed"
+        logger.success(
+          "AuthProvider",
+          "Estado de auth limpiado, refetched y router refreshed"
         );
       } else if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
         // Restauración de sesión o refresh de token: refetch inmediato
-        console.log(`[AuthProvider] ${event}: Sincronizando sesión y perfil`);
+        logger.info("AuthProvider", `${event}: Sincronizando sesión y perfil`);
 
         // 1. Refetch de la sesión
         await queryClient.refetchQueries({
@@ -111,8 +117,9 @@ export function AuthProvider({
 
         // 2. Si hay sesión, refetch del perfil para sincronizar datos
         if (newSession?.user?.id) {
-          console.log(
-            `[AuthProvider] Refetching perfil para usuario: ${newSession.user.id}`
+          logger.info(
+            "AuthProvider",
+            `Refetching perfil para usuario: ${newSession.user.id}`
           );
           await queryClient.refetchQueries({
             queryKey: authKeys.profile(newSession.user.id),
@@ -122,12 +129,13 @@ export function AuthProvider({
 
         // CRÍTICO: Invalidar caché de Next.js
         router.refresh();
-        console.log(
-          "[AuthProvider] Sesión y perfil sincronizados, router refreshed"
+        logger.success(
+          "AuthProvider",
+          "Sesión y perfil sincronizados, router refreshed"
         );
       } else if (event === "SIGNED_IN") {
         // Login nuevo: refetch inmediato y esperar a que termine
-        console.log("[AuthProvider] SIGNED_IN: Actualizando sesión y perfil");
+        logger.info("AuthProvider", "SIGNED_IN: Actualizando sesión y perfil");
 
         await queryClient.refetchQueries({
           queryKey: authKeys.session,
@@ -141,17 +149,18 @@ export function AuthProvider({
           });
         }
 
-        console.log("[AuthProvider] Login completado, datos actualizados");
+        logger.success("AuthProvider", "Login completado, datos actualizados");
 
         // CRÍTICO: Invalidar caché de Next.js DESPUÉS de que los datos estén listos
         // Pequeño delay para asegurar que React Query haya actualizado el estado
         await new Promise((resolve) => setTimeout(resolve, 50));
         router.refresh();
-        console.log("[AuthProvider] Router refreshed");
+        logger.info("AuthProvider", "Router refreshed");
       } else {
         // Para otros eventos (USER_UPDATED, PASSWORD_RECOVERY, etc.)
-        console.log(
-          `[AuthProvider] ${event}: Invalidando queries de autenticación`
+        logger.info(
+          "AuthProvider",
+          `${event}: Invalidando queries de autenticación`
         );
         await queryClient.invalidateQueries({ queryKey: authKeys.session });
 
@@ -167,45 +176,51 @@ export function AuthProvider({
     });
 
     return () => {
-      console.log("[AuthProvider] Limpiando listener de auth state change");
+      logger.info("AuthProvider", "Limpiando listener de auth state change");
       subscription.unsubscribe();
     };
   }, [supabase, queryClient, router]);
 
   // Funciones de utilidad
   const signOut = React.useCallback(async () => {
-    console.log("[AuthProvider] Cerrando sesión...");
+    logger.info("AuthProvider", "Cerrando sesión...");
 
     // 1. Limpiar TODA la caché de React Query inmediatamente
     queryClient.clear();
-    console.log("[AuthProvider] Caché de React Query limpiada completamente");
+    logger.info("AuthProvider", "Caché de React Query limpiada completamente");
 
     // 2. Redirigir inmediatamente a la página principal (UX optimista)
     router.push("/");
-    console.log("[AuthProvider] Redirigiendo a la página principal...");
+    logger.info("AuthProvider", "Redirigiendo a la página principal...");
 
     // 3. Ejecutar signOut de Supabase en segundo plano (no bloqueante)
     supabase.auth
       .signOut()
       .then(() => {
-        console.log("[AuthProvider] Sesión cerrada exitosamente en Supabase");
+        logger.success(
+          "AuthProvider",
+          "Sesión cerrada exitosamente en Supabase"
+        );
       })
       .catch((error) => {
-        console.error(
-          "[AuthProvider] Error al cerrar sesión en Supabase:",
-          error
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        logger.error(
+          "AuthProvider",
+          "Error al cerrar sesión en Supabase",
+          errorMessage
         );
         // Aunque falle, el usuario ya fue redirigido y la caché limpiada
       });
   }, [router, supabase, queryClient]);
 
   const refreshAuth = React.useCallback(async () => {
-    console.log("[AuthProvider] Refrescando autenticación...");
+    logger.info("AuthProvider", "Refrescando autenticación...");
     await invalidateAuth();
   }, [invalidateAuth]);
 
   const refreshProfile = React.useCallback(async () => {
-    console.log("[AuthProvider] Refrescando perfil...");
+    logger.info("AuthProvider", "Refrescando perfil...");
     await refreshProfileQuery();
   }, [refreshProfileQuery]);
 
