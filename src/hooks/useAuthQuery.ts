@@ -30,7 +30,6 @@ export const authKeys = {
  */
 export function useSessionQuery() {
   const supabase = createClient()
-  const queryClient = useQueryClient()
 
   return useQuery<Session | null>({
     queryKey: authKeys.session,
@@ -50,16 +49,13 @@ export function useSessionQuery() {
       
       return data.session ?? null
     },
-    // Configuración optimizada para autenticación con baja latencia
-    staleTime: 10 * 1000, // 10 segundos (más agresivo para OAuth)
+    // Configuración optimizada para autenticación
+    staleTime: 0, // Siempre considerar stale para forzar refetch
     gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: true, // Revalidar siempre al volver a la pestaña
-    refetchOnMount: false, // No refetch al montar si ya hay datos iniciales
+    refetchOnMount: true, // Siempre refetch al montar
     refetchOnReconnect: true, // Refetch al reconectar
     retry: 2, // 2 reintentos para auth
-    // Usar datos iniciales de React Query si existen
-    initialData: () =>
-      queryClient.getQueryData<Session | null>(authKeys.session) ?? null,
   })
 }
 
@@ -120,10 +116,8 @@ export function useProfileQuery(userId: string | null | undefined) {
             console.log('[useProfileQuery] Perfil obtenido exitosamente:', {
               username: profile.username,
               role: profile.role,
-              followers_count: profile.followers_count,
-              following_count: profile.following_count,
-              friends_count: profile.friends_count,
-              connected_accounts: profile.connected_accounts,
+              avatar_url: profile.avatar_url,
+              color: profile.color,
             })
             
             return profile
@@ -140,9 +134,10 @@ export function useProfileQuery(userId: string | null | undefined) {
       throw lastError || new Error('No se pudo obtener el perfil')
     },
     enabled: !!userId, // Solo ejecutar si hay userId
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 0, // Siempre considerar stale
     gcTime: 10 * 60 * 1000, // 10 minutos
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Refetch al cambiar de pestaña
+    refetchOnMount: true, // Siempre refetch al montar
     retry: false, // Ya manejamos reintentos manualmente
   })
 }

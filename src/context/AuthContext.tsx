@@ -55,17 +55,6 @@ export function AuthProvider({
   const supabase = React.useMemo(() => createClient(), [])
   const queryClient = useQueryClient()
   
-  // Inicializar React Query con la sesión del servidor
-  React.useEffect(() => {
-    if (initialSession) {
-      console.log('[AuthProvider] Inicializando con sesión del servidor:', {
-        userId: initialSession.user?.id,
-      })
-      // Establecer la sesión inicial en React Query
-      queryClient.setQueryData(['auth', 'session'], initialSession)
-    }
-  }, [initialSession, queryClient])
-  
   // Usar React Query para gestionar el estado de autenticación
   const { 
     session, 
@@ -88,14 +77,19 @@ export function AuthProvider({
       
       // Manejar eventos de autenticación de forma optimizada
       if (event === 'SIGNED_OUT') {
-        // En logout, limpiar todo inmediatamente
+        // En logout, limpiar todo inmediatamente y forzar refetch
         console.log('[AuthProvider] SIGNED_OUT: Limpiando caché de autenticación')
         queryClient.setQueryData(authKeys.session, null)
         queryClient.removeQueries({ 
-          queryKey: ['auth'],
+          queryKey: ['auth', 'profile'],
           exact: false 
         })
-        console.log('[AuthProvider] Estado de auth limpiado inmediatamente')
+        // Forzar refetch inmediato para actualizar UI
+        await queryClient.refetchQueries({ 
+          queryKey: authKeys.session,
+          type: 'active'
+        })
+        console.log('[AuthProvider] Estado de auth limpiado y refetched')
         
       } else if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
         // Restauración de sesión o refresh de token: refetch inmediato
