@@ -56,6 +56,7 @@ export function AuthProvider({
   const queryClient = useQueryClient();
 
   // Usar React Query para gestionar el estado de autenticación
+  // Pasar la sesión inicial del servidor para evitar flash de "sin sesión"
   const {
     session,
     user,
@@ -63,7 +64,7 @@ export function AuthProvider({
     isLoading,
     invalidateAuth,
     refreshProfile: refreshProfileQuery,
-  } = useAuthData();
+  } = useAuthData(initialSession);
 
   // Suscribirse a cambios de autenticación de Supabase
   React.useEffect(() => {
@@ -125,7 +126,7 @@ export function AuthProvider({
           "[AuthProvider] Sesión y perfil sincronizados, router refreshed"
         );
       } else if (event === "SIGNED_IN") {
-        // Login nuevo: refetch inmediato
+        // Login nuevo: refetch inmediato y esperar a que termine
         console.log("[AuthProvider] SIGNED_IN: Actualizando sesión y perfil");
 
         await queryClient.refetchQueries({
@@ -140,11 +141,13 @@ export function AuthProvider({
           });
         }
 
-        // CRÍTICO: Invalidar caché de Next.js
+        console.log("[AuthProvider] Login completado, datos actualizados");
+
+        // CRÍTICO: Invalidar caché de Next.js DESPUÉS de que los datos estén listos
+        // Pequeño delay para asegurar que React Query haya actualizado el estado
+        await new Promise((resolve) => setTimeout(resolve, 50));
         router.refresh();
-        console.log(
-          "[AuthProvider] Login completado, datos actualizados, router refreshed"
-        );
+        console.log("[AuthProvider] Router refreshed");
       } else {
         // Para otros eventos (USER_UPDATED, PASSWORD_RECOVERY, etc.)
         console.log(
