@@ -11,6 +11,10 @@ export async function GET(request: NextRequest) {
     if (code) {
       // Intercambiar el código por una sesión
       await supabase.auth.exchangeCodeForSession(code);
+      
+      // Pequeño delay para permitir que las cookies se sincronicen completamente
+      // Esto evita que el cliente vea una sesión vacía al cargar la página
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
     
     // Obtener la URL de redirección personalizada o usar la página principal

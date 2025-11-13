@@ -48,6 +48,13 @@ export async function middleware(request: NextRequest) {
     userId: session?.user?.id,
     error: sessionError?.message
   })
+  
+  // Si es la página principal después de un callback OAuth, asegurar que la sesión se propague
+  if (pathname === '/' && session) {
+    // Agregar header para indicar que hay sesión activa
+    response.headers.set('X-Auth-Session', 'true')
+    console.log('[Middleware] Sesión activa detectada en página principal')
+  }
 
   // Verificar si la ruta es administrativa
   const isAdminRoute = ADMIN_ROUTES.some(route => pathname.startsWith(route))
