@@ -6,13 +6,22 @@ import { NextRequest, NextResponse } from "next/server";
  * GET /api/perfil/check-google-avatars
  */
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export async function GET(request: NextRequest) {
   try {
+    // Crear cliente dentro del handler para evitar errores de build en Netlify
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error("[check-google-avatars] Variables de entorno faltantes");
+      return NextResponse.json(
+        { error: "Configuración del servidor incompleta" },
+        { status: 500 }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     console.log(
       "[check-google-avatars] Buscando usuarios con avatares de Google..."
     );
