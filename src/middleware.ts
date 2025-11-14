@@ -9,6 +9,11 @@ const ADMIN_ROUTES = [
   /^\/api\/admin(?:\/|$)/, // /api/admin, /api/admin/, /api/admin/...
 ] as const;
 
+// Rutas públicas que NO requieren autenticación (aunque estén bajo /api/admin)
+const PUBLIC_API_ROUTES = [
+  /^\/api\/admin\/news-ticker$/, // GET /api/admin/news-ticker es público
+] as const;
+
 /**
  * Verifica si una ruta es administrativa
  * @param pathname Ruta a verificar
@@ -18,10 +23,28 @@ function isAdminRoute(pathname: string): boolean {
   return ADMIN_ROUTES.some((route) => route.test(pathname));
 }
 
+/**
+ * Verifica si una ruta es pública (no requiere autenticación)
+ * @param pathname Ruta a verificar
+ * @returns true si es una ruta pública
+ */
+function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_API_ROUTES.some((route) => route.test(pathname));
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   logger.info("Middleware", "Procesando ruta:", pathname);
+
+  // ✅ Excluir rutas públicas del middleware de admin
+  if (isPublicRoute(pathname)) {
+    logger.info(
+      "Middleware",
+      "Ruta pública detectada, permitiendo acceso sin autenticación"
+    );
+    return NextResponse.next();
+  }
 
   // Crear respuesta que será retornada
   let response = NextResponse.next({
