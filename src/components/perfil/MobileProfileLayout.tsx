@@ -58,29 +58,49 @@ export default function MobileProfileLayout({
 
   // Manejo de drag del sidebar
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!sidebarOpen) return;
     setIsDragging(true);
     setDragStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !sidebarOpen) return;
+    if (!isDragging) return;
 
     const currentX = e.touches[0].clientX;
     const diff = currentX - dragStart;
+    const screenWidth = window.innerWidth;
 
-    // Solo permitir arrastrar hacia la derecha (cerrar)
-    if (diff > 0) {
-      setSidebarX(diff);
+    // Si el menú está cerrado, permitir deslizar desde el borde derecho para abrir
+    if (!sidebarOpen) {
+      // Solo activar si se empieza desde el borde derecho (últimos 30px)
+      if (dragStart > screenWidth - 30) {
+        // Permitir arrastrar hacia la izquierda (abrir)
+        if (diff < 0) {
+          const pullDistance = Math.abs(diff);
+          // Limitar la distancia máxima de arrastre
+          setSidebarX(Math.min(pullDistance, 320));
+        }
+      }
+    } else {
+      // Si el menú está abierto, permitir arrastrar hacia la derecha (cerrar)
+      if (diff > 0) {
+        setSidebarX(diff);
+      }
     }
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
 
-    // Si se arrastró más de 100px, cerrar
-    if (sidebarX > 100) {
-      setSidebarOpen(false);
+    if (!sidebarOpen) {
+      // Si se arrastró más de 100px desde el borde derecho, abrir el menú
+      if (sidebarX > 100) {
+        setSidebarOpen(true);
+      }
+    } else {
+      // Si se arrastró más de 100px hacia la derecha, cerrar el menú
+      if (sidebarX > 100) {
+        setSidebarOpen(false);
+      }
     }
 
     setSidebarX(0);
@@ -106,11 +126,16 @@ export default function MobileProfileLayout({
   }, [sidebarOpen]);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-white dark:bg-black amoled:bg-black">
+    <div
+      className="relative w-full h-screen overflow-hidden bg-white dark:bg-black amoled:bg-black"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       {/* Contenido principal - Feed de actividad */}
-      <div className="w-full h-full flex flex-col">
+      <div className="w-full h-full overflow-y-auto">
         {/* Header del perfil con banner */}
-        <div className="sticky top-0 z-20 bg-white dark:bg-black amoled:bg-black">
+        <div className="bg-white dark:bg-black amoled:bg-black">
           <ProfileHeader
             perfil={{
               username: perfil.username,
@@ -128,14 +153,14 @@ export default function MobileProfileLayout({
         </div>
 
         {/* Indicador de deslizar + Título */}
-        <div className="sticky top-[120px] z-20 flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800">
+        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
             Actividad
           </h2>
         </div>
 
         {/* Feed de actividad con scroll infinito */}
-        <div className="flex-1 overflow-y-auto px-4 py-4">
+        <div className="px-4 py-4">
           <UserActivityFeedContainer
             fetchActivities={fetchActivities}
             userColor={perfil.color}
@@ -148,13 +173,10 @@ export default function MobileProfileLayout({
       {/* Indicador visual fijo en la pantalla - Flecha para deslizar */}
       <div
         onClick={() => setSidebarOpen(true)}
-        className="fixed right-4 top-1/2 -translate-y-1/2 z-30 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 amoled:hover:bg-gray-900 transition-all cursor-pointer group backdrop-blur-sm bg-white/80 dark:bg-black/80 amoled:bg-black/80 shadow-lg hover:shadow-xl"
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center w-10 h-10 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-900 amoled:hover:bg-gray-900 transition-all cursor-pointer group backdrop-blur-sm bg-white/80 dark:bg-black/80 amoled:bg-black/80 shadow-lg hover:shadow-xl"
         aria-label="Deslizar para abrir panel"
         title="Desliza para abrir más opciones"
       >
-        <span className="text-xs font-medium text-gray-600 dark:text-gray-400 amoled:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 amoled:group-hover:text-gray-200 transition-colors">
-          Más
-        </span>
         <ChevronLeft className="w-5 h-5 text-gray-600 dark:text-gray-400 amoled:text-gray-400 group-hover:text-gray-800 dark:group-hover:text-gray-200 amoled:group-hover:text-gray-200 transition-colors animate-pulse" />
       </div>
 

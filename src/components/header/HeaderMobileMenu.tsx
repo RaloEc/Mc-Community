@@ -1,7 +1,6 @@
 import React from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUserInitials } from "@/lib/utils/avatar-utils";
@@ -11,12 +10,10 @@ import {
   User,
   LogOut,
   Plus,
-  Search,
   ChevronDown,
   Loader2,
 } from "lucide-react";
 import { ForoCategoria } from "./useHeaderLogic";
-import { SearchDropdown } from "./SearchDropdown";
 
 interface HeaderMobileMenuProps {
   isOpen: boolean;
@@ -27,9 +24,6 @@ interface HeaderMobileMenuProps {
     role?: string;
     color?: string;
   } | null;
-  searchQuery: string;
-  setSearchQuery: (value: string) => void;
-  handleSearch: (e: React.FormEvent) => void;
   closeAllMenus: () => void;
   handleLogout: () => void;
   openAuthModal: (mode: "login" | "register") => void;
@@ -39,7 +33,9 @@ interface HeaderMobileMenuProps {
   setForoMobileOpen: (value: boolean) => void;
   foroCategorias: ForoCategoria[];
   expandedCategories: Record<string, boolean>;
-  setExpandedCategories: (value: React.SetStateAction<Record<string, boolean>>) => void;
+  setExpandedCategories: (
+    value: React.SetStateAction<Record<string, boolean>>
+  ) => void;
   isAdmin: boolean;
   isLoggingOut?: boolean;
 }
@@ -48,9 +44,6 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   isOpen,
   authUser,
   profile,
-  searchQuery,
-  setSearchQuery,
-  handleSearch,
   closeAllMenus,
   handleLogout,
   openAuthModal,
@@ -65,22 +58,21 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
   isLoggingOut = false,
 }) => {
   const [adminMenuOpen, setAdminMenuOpen] = React.useState(false);
-  const [showSearchDropdown, setShowSearchDropdown] = React.useState(false);
-  
+
   // Bloquear scroll del body cuando el menú esté abierto
   React.useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
-    
+
     // Cleanup: restaurar el scroll cuando el componente se desmonte
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isOpen]);
-  
+
   if (!isOpen) return null;
 
   return (
@@ -182,9 +174,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                         authUser?.email?.split("@")[0] ||
                         "Usuario"}
                     </span>
-                    <span
-                      className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60"
-                    >
+                    <span className="shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60">
                       {profile?.role || "user"}
                     </span>
                   </div>
@@ -205,10 +195,14 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                     variant="outline"
                     className="w-full mx-0 py-2 h-auto transition-all duration-200 hover:shadow-md"
                     onClick={() => openAuthModal("login")}
-                    style={{
-                      '--tw-shadow': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
-                      '--tw-shadow-colored': '0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color)',
-                    } as React.CSSProperties}
+                    style={
+                      {
+                        "--tw-shadow":
+                          "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
+                        "--tw-shadow-colored":
+                          "0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color)",
+                      } as React.CSSProperties
+                    }
                   >
                     <User className="w-4 h-4 mr-2" />
                     Iniciar Sesión
@@ -223,44 +217,6 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                 </div>
               </div>
             )}
-          </div>
-
-          {/* Barra de búsqueda móvil */}
-          <div
-            className={`menu-item relative z-[70] p-4 border-b border-gray-200 dark:border-gray-800 dark:bg-black flex-shrink-0`}
-          >
-            <form onSubmit={handleSearch} className="relative z-[70]">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-              <Input
-                type="search"
-                placeholder="Buscar noticias, hilos, usuarios (@nombre)..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  // Abre el dropdown automáticamente cuando hay al menos 2 caracteres
-                  if (e.target.value.length >= 2) {
-                    setShowSearchDropdown(true);
-                  }
-                }}
-                onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
-                onBlur={() => {
-                  // Cierra el dropdown después de un pequeño delay para permitir clicks en el dropdown
-                  setTimeout(() => {
-                    setShowSearchDropdown(false);
-                  }, 150);
-                }}
-                className={`pl-10 pr-4 py-2 w-full bg-gray-50 dark:bg-black border-gray-200 dark:border-gray-800 rounded-full
-                  transition-colors duration-200`}
-              />
-              
-              {/* Dropdown de búsqueda en tiempo real */}
-              <SearchDropdown
-                query={searchQuery}
-                isOpen={showSearchDropdown}
-                onClose={() => setShowSearchDropdown(false)}
-                profileColor={profile?.color}
-              />
-            </form>
           </div>
 
           <ul
@@ -501,14 +457,14 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Tema</span>
-                <ModeToggle 
-                  variant="ghost" 
+                <ModeToggle
+                  variant="ghost"
                   size="default"
                   modes={["light", "dark"]}
                 />
               </div>
             </div>
-            
+
             {/* Botón de cerrar sesión al final */}
             {authUser && (
               <div className="p-4 border-t border-gray-200 dark:border-gray-800">
@@ -522,7 +478,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                   ) : (
                     <LogOut size={18} />
                   )}
-                  {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
+                  {isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}
                 </button>
               </div>
             )}
