@@ -54,8 +54,24 @@ export const GET = async () => {
 
     return NextResponse.json(formattedData);
   } catch (error) {
-    console.error("Error al obtener mensajes del ticker:", error);
-    return new NextResponse("Error interno del servidor", { status: 500 });
+    const errorMessage =
+      error instanceof Error ? error.message : "Error desconocido";
+    const errorDetails = error instanceof Error ? error.stack : String(error);
+
+    console.error("Error al obtener mensajes del ticker:", {
+      message: errorMessage,
+      details: errorDetails,
+    });
+
+    return NextResponse.json(
+      {
+        error: "Error interno del servidor",
+        message: errorMessage,
+        details:
+          process.env.NODE_ENV === "development" ? errorDetails : undefined,
+      },
+      { status: 500 }
+    );
   }
 };
 

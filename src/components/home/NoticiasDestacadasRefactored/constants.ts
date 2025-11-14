@@ -15,7 +15,7 @@ export const CATEGORIAS_PREDEFINIDAS = [
 export const MENSAJES_TICKER_DEFAULT = [
   {
     id: "default-1",
-    mensaje: "Bienvenido a la comunidad de Minecraft",
+    mensaje: "Bienvenido a la comunidad de BitArena",
     activo: true,
     orden: 1,
   },
@@ -37,7 +37,7 @@ export const MENSAJES_TICKER_DEFAULT = [
 export const MENSAJES_TICKER_ERROR = [
   {
     id: "error-1",
-    mensaje: "Bienvenido a la comunidad de Minecraft",
+    mensaje: "Bienvenido a la comunidad de BitArena",
     activo: true,
     orden: 1,
   },

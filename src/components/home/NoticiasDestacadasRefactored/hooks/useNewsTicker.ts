@@ -10,19 +10,30 @@ export function useNewsTicker() {
     const fetchTickerMessages = async () => {
       try {
         const response = await fetch("/api/admin/news-ticker");
-        if (response.ok) {
-          const data = await response.json();
-          // Filtrar solo mensajes activos y con contenido
-          const activeMessages = data
-            .filter((msg: any) => msg.activo && msg.mensaje?.trim())
-            .sort((a: any, b: any) => a.orden - b.orden);
 
-          if (activeMessages.length > 0) {
-            setMessages(activeMessages);
-          } else {
-            // Mensajes predeterminados en caso de que no haya ninguno configurado
-            setMessages(MENSAJES_TICKER_DEFAULT);
-          }
+        // ✅ Verificar status de respuesta
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(
+            `Error al cargar ticker: Status ${response.status}`,
+            errorText.substring(0, 200)
+          );
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        // ✅ Parsear JSON solo si la respuesta es válida
+        const data = await response.json();
+
+        // Filtrar solo mensajes activos y con contenido
+        const activeMessages = data
+          .filter((msg: any) => msg.activo && msg.mensaje?.trim())
+          .sort((a: any, b: any) => a.orden - b.orden);
+
+        if (activeMessages.length > 0) {
+          setMessages(activeMessages);
+        } else {
+          // Mensajes predeterminados en caso de que no haya ninguno configurado
+          setMessages(MENSAJES_TICKER_DEFAULT);
         }
       } catch (error) {
         console.error("Error al cargar el ticker de noticias:", error);
