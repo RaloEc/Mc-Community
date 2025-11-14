@@ -138,13 +138,42 @@ export async function middleware(request: NextRequest) {
       role: userRole,
     });
 
-    // Si no es admin, redirigir a la página principal
+    // Si no es admin en app_metadata, consultar la tabla perfiles como fallback
     if (userRole !== "admin") {
-      logger.warn("Middleware", "Usuario no es admin, redirigiendo a home");
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+      logger.info(
+        "Middleware",
+        "Role no encontrado en app_metadata, consultando tabla perfiles..."
+      );
 
-    logger.success("Middleware", "Usuario es admin, permitiendo acceso");
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("perfiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        if (profileError || !profile || profile.role !== "admin") {
+          logger.warn(
+            "Middleware",
+            "Usuario no es admin en perfiles, redirigiendo a home"
+          );
+          return NextResponse.redirect(new URL("/", request.url));
+        }
+
+        logger.success(
+          "Middleware",
+          "Usuario es admin (verificado en perfiles), permitiendo acceso"
+        );
+      } catch (error) {
+        logger.error("Middleware", "Error al consultar perfiles", error);
+        return NextResponse.redirect(new URL("/", request.url));
+      }
+    } else {
+      logger.success(
+        "Middleware",
+        "Usuario es admin (verificado en app_metadata), permitiendo acceso"
+      );
+    }
   }
 
   // Retornar la respuesta con las cookies actualizadas
