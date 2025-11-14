@@ -128,7 +128,27 @@ const ChunkErrorHandlerScript = () => {
         );
       }
       
+      function isExternalScriptError(error) {
+        if (!error) return false;
+        const errorString = error.toString();
+        const errorMessage = error.message || '';
+        // Ignorar errores de scripts externos (YouTube, Google, etc.)
+        return (
+          errorMessage.includes('Cannot read properties of undefined') ||
+          errorString.includes('getArgPos') ||
+          errorString.includes('youtube') ||
+          errorString.includes('google') ||
+          errorString.includes('Extension context invalidated')
+        );
+      }
+      
       function handleChunkLoadError(error) {
+        // Ignorar errores de scripts externos
+        if (isExternalScriptError(error)) {
+          console.debug('Error de script externo ignorado:', error.message);
+          return;
+        }
+        
         if (!isChunkLoadError(error) || isReloading) return;
         if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
           console.error('Máximo de intentos de recarga alcanzado');
