@@ -82,9 +82,10 @@ export function AuthProvider({
         userId: newSession?.user?.id,
       });
 
-      // Manejar eventos de autenticación de forma optimizada
+      // ✅ OPTIMIZADO: Sincronizar React Query SIN refetch innecesario
+      // Solo actualizar el caché con los datos nuevos
       if (event === "SIGNED_OUT") {
-        // En logout, limpiar todo inmediatamente y forzar refetch
+        // En logout, limpiar todo inmediatamente
         logger.info(
           "AuthProvider",
           "SIGNED_OUT: Limpiando caché de autenticación"
@@ -94,36 +95,27 @@ export function AuthProvider({
           queryKey: ["auth", "profile"],
           exact: false,
         });
-        // Forzar refetch inmediato para actualizar UI
-        await queryClient.refetchQueries({
-          queryKey: authKeys.session,
-          type: "active",
-        });
         // CRÍTICO: Invalidar caché de Next.js
         router.refresh();
         logger.success(
           "AuthProvider",
-          "Estado de auth limpiado, refetched y router refreshed"
+          "Estado de auth limpiado y router refreshed"
         );
       } else if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
-        // Restauración de sesión o refresh de token: refetch inmediato
+        // Restauración de sesión o refresh de token: sincronizar sin refetch
         logger.info("AuthProvider", `${event}: Sincronizando sesión y perfil`);
 
-        // 1. Refetch de la sesión
-        await queryClient.refetchQueries({
-          queryKey: authKeys.session,
-          type: "active",
-        });
+        // ✅ Actualizar React Query directamente (sin refetch)
+        queryClient.setQueryData(authKeys.session, newSession);
 
-        // 2. Si hay sesión, refetch del perfil para sincronizar datos
+        // Si hay sesión, invalidar perfil para que se recargue
         if (newSession?.user?.id) {
           logger.info(
             "AuthProvider",
-            `Refetching perfil para usuario: ${newSession.user.id}`
+            `Invalidando perfil para usuario: ${newSession.user.id}`
           );
-          await queryClient.refetchQueries({
+          queryClient.invalidateQueries({
             queryKey: authKeys.profile(newSession.user.id),
-            type: "active",
           });
         }
 
@@ -131,25 +123,23 @@ export function AuthProvider({
         router.refresh();
         logger.success(
           "AuthProvider",
-          "Sesión y perfil sincronizados, router refreshed"
+          "Sesión sincronizada, perfil invalidado, router refreshed"
         );
       } else if (event === "SIGNED_IN") {
-        // Login nuevo: refetch inmediato y esperar a que termine
+        // Login nuevo: sincronizar sesión y perfil
         logger.info("AuthProvider", "SIGNED_IN: Actualizando sesión y perfil");
 
-        await queryClient.refetchQueries({
-          queryKey: authKeys.session,
-          type: "active",
-        });
+        // ✅ Actualizar React Query directamente
+        queryClient.setQueryData(authKeys.session, newSession);
 
         if (newSession?.user?.id) {
-          await queryClient.refetchQueries({
+          // Invalidar perfil para que se recargue con datos nuevos
+          queryClient.invalidateQueries({
             queryKey: authKeys.profile(newSession.user.id),
-            type: "active",
           });
         }
 
-        logger.success("AuthProvider", "Login completado, datos actualizados");
+        logger.success("AuthProvider", "Login completado, datos sincronizados");
 
         // CRÍTICO: Invalidar caché de Next.js DESPUÉS de que los datos estén listos
         // Pequeño delay para asegurar que React Query haya actualizado el estado
@@ -160,12 +150,14 @@ export function AuthProvider({
         // Para otros eventos (USER_UPDATED, PASSWORD_RECOVERY, etc.)
         logger.info(
           "AuthProvider",
-          `${event}: Invalidando queries de autenticación`
+          `${event}: Sincronizando cambios de autenticación`
         );
-        await queryClient.invalidateQueries({ queryKey: authKeys.session });
+        // ✅ Actualizar sesión si cambió
+        queryClient.setQueryData(authKeys.session, newSession);
 
         if (newSession?.user?.id) {
-          await queryClient.invalidateQueries({
+          // Invalidar perfil para que se recargue
+          queryClient.invalidateQueries({
             queryKey: authKeys.profile(newSession.user.id),
           });
         }

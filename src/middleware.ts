@@ -50,19 +50,42 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // ⚠️ CRÍTICO: Refrescar la sesión SIEMPRE
-  // Esto asegura que las cookies estén actualizadas antes de que cargue la página
-  // y evita el "falso logout" al recargar
+  // ✅ OPTIMIZADO: Obtener sesión actual (sin refrescar innecesariamente)
   const {
     data: { session },
     error: sessionError,
   } = await supabase.auth.getSession();
 
-  logger.info("Middleware", "Sesión refrescada", {
+  logger.info("Middleware", "Sesión obtenida", {
     hasSession: !!session,
     userId: session?.user?.id,
+    expiresAt: session?.expires_at,
     error: sessionError?.message,
   });
+
+  // ✅ OPTIMIZADO: Refrescar SOLO si el token está próximo a expirar (< 30 segundos)
+  if (session?.expires_at) {
+    const now = Math.floor(Date.now() / 1000);
+    const expiresAt = session.expires_at;
+    const timeUntilExpiry = expiresAt - now;
+
+    // Si expira en menos de 30 segundos, refrescar
+    if (timeUntilExpiry < 30) {
+      logger.info("Middleware", "Token próximo a expirar, refrescando...");
+      const { data: refreshed, error: refreshError } =
+        await supabase.auth.refreshSession();
+
+      if (refreshError || !refreshed.session) {
+        logger.warn(
+          "Middleware",
+          "No se pudo refrescar el token",
+          refreshError
+        );
+      } else {
+        logger.success("Middleware", "Token refrescado exitosamente");
+      }
+    }
+  }
 
   // Si hay sesión, agregar header para indicar al cliente
   if (session) {
@@ -75,42 +98,30 @@ export async function middleware(request: NextRequest) {
   const isAdmin = isAdminRoute(pathname);
 
   if (isAdmin) {
-    try {
-      // Si no hay sesión, redirigir al login con parámetro de redirección
-      if (!session) {
-        logger.warn("Middleware", "No hay sesión, redirigiendo a login");
-        const redirectUrl = new URL("/login", request.url);
-        redirectUrl.searchParams.set("redirect", pathname);
-        return NextResponse.redirect(redirectUrl);
-      }
+    // Si no hay sesión, redirigir al login con parámetro de redirección
+    if (!session) {
+      logger.warn("Middleware", "No hay sesión, redirigiendo a login");
+      const redirectUrl = new URL("/login", request.url);
+      redirectUrl.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
 
-      // Si hay sesión, verificar si es admin consultando la tabla perfiles
-      const { data: profile, error } = await supabase
-        .from("perfiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+    // ✅ OPTIMIZADO: Verificar role usando app_metadata (SIN consultar BD)
+    // El role debe estar guardado en app_metadata durante el signup/update
+    const userRole = session.user?.app_metadata?.role as string | undefined;
 
-      logger.info("Middleware", "Verificación de perfil", {
-        hasProfile: !!profile,
-        role: profile?.role,
-        error: error?.message,
-      });
+    logger.info("Middleware", "Verificación de role (app_metadata)", {
+      userId: session.user.id,
+      role: userRole,
+    });
 
-      // Si hay error o el usuario no es admin, redirigir a la página principal
-      if (error || !profile || profile.role !== "admin") {
-        logger.warn("Middleware", "Usuario no es admin, redirigiendo a home");
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-
-      logger.success("Middleware", "Usuario es admin, permitiendo acceso");
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      logger.error("Middleware", "Error inesperado", errorMessage);
-      // En caso de error en rutas admin, redirigir a home
+    // Si no es admin, redirigir a la página principal
+    if (userRole !== "admin") {
+      logger.warn("Middleware", "Usuario no es admin, redirigiendo a home");
       return NextResponse.redirect(new URL("/", request.url));
     }
+
+    logger.success("Middleware", "Usuario es admin, permitiendo acceso");
   }
 
   // Retornar la respuesta con las cookies actualizadas

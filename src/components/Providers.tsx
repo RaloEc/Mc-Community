@@ -10,16 +10,14 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 export default function Providers({
   children,
   session,
-  userColor,
 }: {
   children: React.ReactNode;
   session?: any;
-  userColor?: string;
 }) {
   return (
     <ErrorBoundary>
       <ReactQueryProvider>
-        <ThemeProvider userColor={userColor}>
+        <ThemeProvider>
           <AuthProvider session={session}>
             {children}
             <Toaster />

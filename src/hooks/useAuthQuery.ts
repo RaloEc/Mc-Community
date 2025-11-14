@@ -29,7 +29,8 @@ export const authKeys = {
 
 /**
  * Hook para obtener la sesión actual usando React Query
- * CON MANEJO ROBUSTO DE ERRORES Y FALLBACK A CACHÉ
+ * ✅ OPTIMIZADO: Evita doble carga SSR + Client
+ * La sesión se establece inicialmente en AuthProvider con setQueryData
  */
 export function useSessionQuery() {
   const supabase = createClient();
@@ -113,7 +114,7 @@ export function useSessionQuery() {
         return null;
       }
     },
-    // Configuración optimizada para evitar refetches innecesarios
+    // ✅ OPTIMIZADO: Configuración para evitar doble carga
     staleTime: CACHE_CONFIG.SESSION.staleTime,
     gcTime: CACHE_CONFIG.SESSION.gcTime,
     refetchOnMount: false, // No refetch al montar si hay datos frescos

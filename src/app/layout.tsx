@@ -17,8 +17,7 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: "BitArena",
-  description:
-    "La plataforma definitiva para la comunidad de Minecraft",
+  description: "La plataforma definitiva para la comunidad de Minecraft",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -32,14 +31,12 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "BitArena",
     title: "BitArena",
-    description:
-      "La plataforma definitiva para la comunidad de Minecraft",
+    description: "La plataforma definitiva para la comunidad de Minecraft",
   },
   twitter: {
     card: "summary",
     title: "BitArena",
-    description:
-      "La plataforma definitiva para la comunidad de Minecraft",
+    description: "La plataforma definitiva para la comunidad de Minecraft",
   },
   icons: {
     icon: [
@@ -47,7 +44,11 @@ export const metadata: Metadata = {
       { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
     apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/icons/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
   },
 };
@@ -171,29 +172,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Usamos try/catch para manejar posibles errores en la obtención de la sesión
+  // ✅ OPTIMIZADO: Solo obtener sesión (sin perfil)
+  // El perfil se carga en el cliente con React Query
+  // Esto evita doble carga y mantiene SSR rápido
   let session = null;
-  let userColor = "#3b82f6"; // Color por defecto
 
   try {
     const supabase = await createClient();
     const { data } = await supabase.auth.getSession();
     session = data.session;
-
-    // Obtener el perfil del usuario para el color personalizado
-    if (session?.user?.id) {
-      const { data: profile } = await supabase
-        .from("perfiles")
-        .select("color")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profile?.color) {
-        userColor = profile.color;
-      }
-    }
   } catch (error) {
-    console.error("Error al obtener la sesión o el perfil:", error);
+    console.error("Error al obtener la sesión:", error);
   }
 
   const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || "";
@@ -206,16 +195,13 @@ export default async function RootLayout({
         <ChunkErrorHandlerScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
         {adsenseEnabled && adsenseClientId && (
-          <meta
-            name="google-adsense-account"
-            content={adsenseClientId}
-          />
+          <meta name="google-adsense-account" content={adsenseClientId} />
         )}
       </head>
       <body
         className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}
       >
-        <Providers session={session} userColor={userColor}>
+        <Providers session={session}>
           <Header />
           <main className="container mx-auto px-0">{children}</main>
           <PWAManager />
