@@ -3,6 +3,7 @@
 import React from "react";
 import type { WeaponStats } from "@/types/weapon";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 import {
   Target,
   Crosshair,
@@ -100,6 +101,11 @@ export function WeaponStatsCard({
   className,
   isEditable = false,
 }: WeaponStatsCardProps) {
+  const { profile } = useAuth();
+
+  // Obtener el color personalizado del usuario
+  const userColor = profile?.color || "#6366f1";
+
   // Normalizar stats: convertir nombres en español a inglés
   const normalizeStats = (rawStats: WeaponStats): WeaponStats => {
     const normalized: any = { ...rawStats };
@@ -217,8 +223,7 @@ export function WeaponStatsCard({
                   className="h-full rounded-full transition-all duration-300"
                   style={{
                     width: `${percentage}%`,
-                    backgroundColor: "var(--user-color, #6366f1)",
-                    opacity: 0.4,
+                    backgroundColor: userColor,
                   }}
                 />
               </div>

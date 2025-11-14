@@ -20,7 +20,7 @@ import BtnFlotanteUnificado from "@/components/BtnFlotanteUnificado";
 import HiloCard from "./HiloCard";
 import { useForoHilos, type Categoria } from "./hooks/useForoHilos";
 import { useRealtimeVotosHilos } from "@/hooks/useRealtimeVotosHilos";
-import { useInView } from 'react-intersection-observer';
+import { useInView } from "react-intersection-observer";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const InvitacionRegistro = () => (
@@ -155,10 +155,10 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
     hasNextPage,
     isFetchingNextPage,
   } = useForoHilos({ initialCategorias });
-  
+
   // Activar sincronización en tiempo real de votos de hilos
   useRealtimeVotosHilos();
-  
+
   // Observar cambios en el tamaño del contenedor
   useEffect(() => {
     if (containerRef.current) {
@@ -257,7 +257,6 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
         <div className="flex flex-col lg:flex-row gap-8">
           <main className="w-full lg:flex-1">
             <div className="bg-white dark:bg-black p-0 rounded-lg shadow-none border-0 transition-colors duration-300 outline-none ring-0 focus:outline-none focus:ring-0">
-
               <div
                 className={`space-y-4 transition-opacity duration-200 ${
                   isRefetching ? "opacity-70" : "opacity-100"
@@ -273,7 +272,7 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
                     Inicia sesión para ver tus hilos.
                   </div>
                 )}
-                <div className="w-full space-y-6" ref={containerRef}>
+                <div className="w-full space-y-0" ref={containerRef}>
                   {hilos.map((hilo, index) => (
                     <motion.div
                       key={`${hilo.id}-${index}`}
@@ -345,17 +344,17 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
             router.push(`/foro/categoria/${categoriaId}`);
           }
         }}
-        categorias={(categorias || []).map(cat => ({
+        categorias={(categorias || []).map((cat) => ({
           id: cat.slug || cat.id.toString(),
           nombre: cat.nombre,
           color: cat.color || undefined,
           parent_id: cat.parent_id,
-          subcategorias: (cat.subcategorias || []).map(sub => ({
+          subcategorias: (cat.subcategorias || []).map((sub) => ({
             id: sub.slug || sub.id.toString(),
             nombre: sub.nombre,
             color: sub.color || undefined,
-            parent_id: sub.parent_id
-          }))
+            parent_id: sub.parent_id,
+          })),
         }))}
       />
     </div>

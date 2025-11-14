@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getUserInitials } from "@/lib/utils/avatar-utils";
+import { getUserInitials, normalizeAvatarUrl } from "@/lib/utils/avatar-utils";
 import { User, LogOut, Loader2 } from "lucide-react";
 
 interface UserDesktopMenuProps {
@@ -40,26 +40,26 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
         onClick={onToggle}
       >
         <Avatar className="w-8 h-8">
-          <AvatarImage
-            src={
-              profile?.avatar_url ||
-              authUser?.user_metadata?.avatar_url ||
-              authUser?.user_metadata?.picture ||
-              undefined
-            }
-            alt={
-              profile?.username ||
-              authUser?.user_metadata?.full_name ||
-              authUser?.user_metadata?.name ||
-              "Usuario"
-            }
-            className="object-cover"
-          />
+          {normalizeAvatarUrl(profile?.avatar_url) ? (
+            <AvatarImage
+              src={
+                normalizeAvatarUrl(profile?.avatar_url) ||
+                authUser?.user_metadata?.avatar_url ||
+                authUser?.user_metadata?.picture ||
+                undefined
+              }
+              alt={
+                profile?.username ||
+                authUser?.user_metadata?.full_name ||
+                authUser?.user_metadata?.name ||
+                "Usuario"
+              }
+              className="object-cover"
+            />
+          ) : null}
           <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
             {getUserInitials(
-              profile?.username ||
-                authUser?.user_metadata?.full_name ||
-                "",
+              profile?.username || authUser?.user_metadata?.full_name || "",
               1,
               "U"
             )}
@@ -74,21 +74,23 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
           <div className="p-3">
             <div className="flex items-center px-3 py-3 border-b border-gray-200/50 dark:border-gray-800/50 mb-2">
               <Avatar className="w-10 h-10 mr-3">
-                <AvatarImage
-                  src={
-                    profile?.avatar_url ||
-                    authUser?.user_metadata?.avatar_url ||
-                    authUser?.user_metadata?.picture ||
-                    undefined
-                  }
-                  alt={
-                    profile?.username ||
-                    authUser?.user_metadata?.full_name ||
-                    authUser?.user_metadata?.name ||
-                    "Usuario"
-                  }
-                  className="object-cover"
-                />
+                {normalizeAvatarUrl(profile?.avatar_url) ? (
+                  <AvatarImage
+                    src={
+                      normalizeAvatarUrl(profile?.avatar_url) ||
+                      authUser?.user_metadata?.avatar_url ||
+                      authUser?.user_metadata?.picture ||
+                      undefined
+                    }
+                    alt={
+                      profile?.username ||
+                      authUser?.user_metadata?.full_name ||
+                      authUser?.user_metadata?.name ||
+                      "Usuario"
+                    }
+                    className="object-cover"
+                  />
+                ) : null}
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-semibold">
                   {getUserInitials(
                     profile?.username ||
@@ -138,7 +140,7 @@ export const UserDesktopMenu: React.FC<UserDesktopMenuProps> = ({
                 ) : (
                   <LogOut className="h-4 w-4" />
                 )}
-                {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
+                {isLoggingOut ? "Cerrando sesión..." : "Cerrar Sesión"}
               </button>
             </div>
           </div>

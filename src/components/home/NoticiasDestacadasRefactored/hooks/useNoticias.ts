@@ -15,32 +15,47 @@ export function useNoticias(activeTab: TabType) {
     return data.data || [];
   };
 
-  // Usar React Query para manejar el caché de noticias
-  const {
-    data: noticias = [],
-    isLoading: isLoadingNoticias,
-    isError: isErrorNoticias,
-  } = useQuery({
-    queryKey: ["noticias", activeTab],
-    queryFn: () => fetchNoticias(activeTab),
+  // Cargar TODAS las pestañas en paralelo desde el inicio
+  const { data: destacadas = [], isLoading: isLoadingDestacadas } = useQuery({
+    queryKey: ["noticias", "destacadas"],
+    queryFn: () => fetchNoticias("destacadas"),
     staleTime: CACHE_TIME,
   });
 
-  // Cargar noticias recientes en paralelo
-  const { data: ultimasNoticias = [], isLoading: isLoadingUltimas } = useQuery({
+  const { data: recientes = [], isLoading: isLoadingRecientes } = useQuery({
     queryKey: ["noticias", "recientes"],
     queryFn: () => fetchNoticias("recientes"),
     staleTime: CACHE_TIME,
   });
 
-  const loading = isLoadingNoticias || isLoadingUltimas;
+  const { data: populares = [], isLoading: isLoadingPopulares } = useQuery({
+    queryKey: ["noticias", "populares"],
+    queryFn: () => fetchNoticias("populares"),
+    staleTime: CACHE_TIME,
+  });
+
+  // Seleccionar noticias según la pestaña activa
+  const noticias =
+    activeTab === "destacadas"
+      ? destacadas
+      : activeTab === "recientes"
+      ? recientes
+      : populares;
+
+  // Loading solo de la pestaña activa (las otras ya están cargadas)
+  const loading =
+    activeTab === "destacadas"
+      ? isLoadingDestacadas
+      : activeTab === "recientes"
+      ? isLoadingRecientes
+      : isLoadingPopulares;
 
   return {
     noticias,
-    ultimasNoticias,
+    ultimasNoticias: recientes,
     loading,
-    isLoadingNoticias,
-    isLoadingUltimas,
-    isErrorNoticias,
+    isLoadingNoticias: loading,
+    isLoadingUltimas: isLoadingRecientes,
+    isErrorNoticias: false,
   };
 }

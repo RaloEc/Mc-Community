@@ -45,8 +45,22 @@ export default function AdminProtection({
       loadingTimeoutRef.current = undefined;
     }
 
-    // Si no hay usuario, redirigir al login (solo una vez)
-    if (!user && !hasRedirectedRef.current) {
+    // ✅ OPTIMIZADO: No esperar a que cargue el perfil si ya sabemos que es admin
+    // Si hay usuario y es admin (ya sea por perfil o app_metadata), permitir acceso
+    if (user && isAdmin) {
+      console.log("[AdminProtection] ✅ Usuario es admin, acceso permitido");
+      hasRedirectedRef.current = true; // Marcar como procesado
+      return;
+    }
+
+    // Si no está cargando y hay usuario pero no es admin, denegar acceso
+    if (!isLoading && user && !isAdmin) {
+      console.log("[AdminProtection] ❌ Usuario no es admin, acceso denegado");
+      return;
+    }
+
+    // Si no hay usuario y no está cargando, redirigir al login (solo una vez)
+    if (!user && !isLoading && !hasRedirectedRef.current) {
       const currentPath =
         typeof window !== "undefined" ? window.location.pathname : "";
       const redirectUrl = `${fallbackUrl}?redirect=${encodeURIComponent(
@@ -58,19 +72,6 @@ export default function AdminProtection({
       );
       hasRedirectedRef.current = true;
       router.push(redirectUrl);
-      return;
-    }
-
-    // ✅ OPTIMIZADO: No esperar a que cargue el perfil si ya sabemos que es admin
-    // Si hay usuario y es admin (ya sea por perfil o app_metadata), permitir acceso
-    if (user && isAdmin) {
-      console.log("[AdminProtection] ✅ Usuario es admin, acceso permitido");
-      return;
-    }
-
-    // Si no está cargando y no es admin, denegar acceso
-    if (!isLoading && user && !isAdmin) {
-      console.log("[AdminProtection] ❌ Usuario no es admin, acceso denegado");
       return;
     }
 

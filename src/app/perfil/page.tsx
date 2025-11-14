@@ -10,7 +10,8 @@ import ImageUploader from "@/components/ImageUploader";
 import ProfileHeader from "@/components/perfil/profile-header";
 import { BannerUploader } from "@/components/perfil/BannerUploader";
 import ProfileStats from "@/components/perfil/profile-stats";
-import ActivityFeed from "@/components/perfil/activity-feed";
+import UserActivityFeed from "@/components/perfil/UserActivityFeed";
+import UserActivityFeedContainer from "@/components/perfil/UserActivityFeedContainer";
 import MembershipInfo from "@/components/perfil/membership-info";
 import MobileProfileLayout from "@/components/perfil/MobileProfileLayout";
 import { FriendRequestsList } from "@/components/social/FriendRequestsList";
@@ -54,7 +55,15 @@ interface PerfilCompleto {
 
 export default function PerfilPage() {
   const router = useRouter();
-  const { user, profile, signOut, loading: authLoading, session, refreshProfile, refreshAuth } = useAuth();
+  const {
+    user,
+    profile,
+    signOut,
+    loading: authLoading,
+    session,
+    refreshProfile,
+    refreshAuth,
+  } = useAuth();
   const { toast } = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useIsMobile(1024); // Usar layout móvil en pantallas < 1024px
@@ -88,14 +97,14 @@ export default function PerfilPage() {
     let connectedAccounts: Record<string, string> = {};
     const rawConnectedAccounts = perfilData.connected_accounts;
     if (rawConnectedAccounts) {
-      if (typeof rawConnectedAccounts === 'string') {
+      if (typeof rawConnectedAccounts === "string") {
         try {
           connectedAccounts = JSON.parse(rawConnectedAccounts);
         } catch (e) {
-          console.error('Error parsing connected_accounts:', e);
+          console.error("Error parsing connected_accounts:", e);
           connectedAccounts = {};
         }
-      } else if (typeof rawConnectedAccounts === 'object') {
+      } else if (typeof rawConnectedAccounts === "object") {
         connectedAccounts = rawConnectedAccounts;
       }
     }
@@ -146,14 +155,14 @@ export default function PerfilPage() {
     let connectedAccounts: Record<string, string> = {};
     const rawConnectedAccounts = (profile as any)?.connected_accounts;
     if (rawConnectedAccounts) {
-      if (typeof rawConnectedAccounts === 'string') {
+      if (typeof rawConnectedAccounts === "string") {
         try {
           connectedAccounts = JSON.parse(rawConnectedAccounts);
         } catch (e) {
-          console.error('[PerfilPage] Error parsing connected_accounts:', e);
+          console.error("[PerfilPage] Error parsing connected_accounts:", e);
           connectedAccounts = {};
         }
-      } else if (typeof rawConnectedAccounts === 'object') {
+      } else if (typeof rawConnectedAccounts === "object") {
         connectedAccounts = rawConnectedAccounts;
       }
     }
@@ -366,41 +375,47 @@ export default function PerfilPage() {
 
   const handleSignOut = async () => {
     if (isSigningOut) return; // Evitar múltiples clics
-    
-    console.log('[Perfil] Iniciando proceso de cierre de sesión...');
+
+    console.log("[Perfil] Iniciando proceso de cierre de sesión...");
     setIsSigningOut(true);
-    
+
     try {
       // 1. Intentar con el signOut del contexto de autenticación
-      console.log('[Perfil] Intentando cierre de sesión con el contexto de autenticación...');
+      console.log(
+        "[Perfil] Intentando cierre de sesión con el contexto de autenticación..."
+      );
       await signOut();
-      console.log('[Perfil] Cierre de sesión exitoso con el contexto');
-      
+      console.log("[Perfil] Cierre de sesión exitoso con el contexto");
+
       // 2. Redirigir y forzar recarga para limpiar todo el estado
-      console.log('[Perfil] Redirigiendo a la página principal...');
-      window.location.href = '/';
+      console.log("[Perfil] Redirigiendo a la página principal...");
+      window.location.href = "/";
       return; // Salir de la función para evitar ejecutar el código restante
-      
     } catch (error) {
-      console.error('[Perfil] Error en cierre de sesión con contexto:', error);
-      
+      console.error("[Perfil] Error en cierre de sesión con contexto:", error);
+
       // 3. Si falla, intentar con una instancia directa de Supabase
       try {
-        console.log('[Perfil] Intentando cierre de sesión con instancia directa...');
+        console.log(
+          "[Perfil] Intentando cierre de sesión con instancia directa..."
+        );
         const { createClient } = await import("@/lib/supabase/client");
         const supabase = createClient();
         await supabase.auth.signOut();
-        console.log('[Perfil] Cierre de sesión exitoso con instancia directa');
+        console.log("[Perfil] Cierre de sesión exitoso con instancia directa");
       } catch (innerError) {
-        console.error('[Perfil] Error en cierre de sesión con instancia directa:', innerError);
+        console.error(
+          "[Perfil] Error en cierre de sesión con instancia directa:",
+          innerError
+        );
       } finally {
         // 4. En cualquier caso, forzar recarga para asegurar limpieza
-        console.log('[Perfil] Forzando recarga de la página...');
-        window.location.href = '/';
+        console.log("[Perfil] Forzando recarga de la página...");
+        window.location.href = "/";
       }
     } finally {
       // 5. Asegurarse de que el estado se limpie
-      console.log('[Perfil] Limpiando estado de carga...');
+      console.log("[Perfil] Limpiando estado de carga...");
       setIsSigningOut(false);
     }
   };
@@ -431,29 +446,313 @@ export default function PerfilPage() {
   // Layout móvil
   if (isMobile) {
     return (
-      <MobileProfileLayout
-        fetchActivities={fetchActividades}
-        estadisticas={estadisticas}
-        perfil={{
-          id: perfil.id,
-          username: perfil.username,
-          color: perfil.color,
-          role: perfil.role,
-          avatar_url: perfil.avatar_url,
-          banner_url: perfil.banner_url,
-          created_at: perfil.created_at,
-          ultimo_acceso: perfil.ultimo_acceso,
-          activo: perfil.activo,
-          followers_count: (profile as any)?.followers_count ?? 0,
-          following_count: (profile as any)?.following_count ?? 0,
-          friends_count: (profile as any)?.friends_count ?? 0,
-          connected_accounts: (profile as any)?.connected_accounts || {},
-        }}
-        userId={user?.id}
-        onSignOut={handleSignOut}
-        isSigningOut={isSigningOut}
-        onEditClick={onOpen}
-      />
+      <>
+        <MobileProfileLayout
+          fetchActivities={fetchActividades}
+          estadisticas={estadisticas}
+          perfil={{
+            id: perfil.id,
+            username: perfil.username,
+            color: perfil.color,
+            role: perfil.role,
+            avatar_url: perfil.avatar_url,
+            banner_url: perfil.banner_url,
+            created_at: perfil.created_at,
+            ultimo_acceso: perfil.ultimo_acceso,
+            activo: perfil.activo,
+            followers_count: (profile as any)?.followers_count ?? 0,
+            following_count: (profile as any)?.following_count ?? 0,
+            friends_count: (profile as any)?.friends_count ?? 0,
+            connected_accounts:
+              editData.connected_accounts ||
+              (profile as any)?.connected_accounts ||
+              {},
+          }}
+          userId={user?.id}
+          onSignOut={handleSignOut}
+          isSigningOut={isSigningOut}
+          onEditClick={onOpen}
+        />
+
+        {/* Modal de edición - Renderizado fuera del layout móvil para evitar z-index issues */}
+        <Modal
+          isOpen={isOpen}
+          onClose={onClose}
+          size="2xl"
+          scrollBehavior="inside"
+          className="max-h-[90vh] z-50"
+          backdrop="blur"
+          classNames={{
+            base: "bg-white dark:bg-black amoled:bg-black z-50",
+            header:
+              "border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800",
+            body: "bg-white dark:bg-black amoled:bg-black",
+            footer:
+              "bg-white dark:bg-black amoled:bg-black border-t border-gray-200 dark:border-gray-800 amoled:border-gray-800",
+            backdrop: "backdrop-blur-sm bg-black/10 z-40",
+          }}
+        >
+          <ModalContent>
+            <ModalHeader className="sticky top-0 z-10 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
+                Editar Perfil
+              </h2>
+              <Button
+                isIconOnly
+                size="sm"
+                variant="light"
+                onPress={onClose}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 amoled:text-gray-400 amoled:hover:text-gray-200"
+              >
+                <X size={20} />
+              </Button>
+            </ModalHeader>
+            <ModalBody className="overflow-y-auto max-h-[60vh] bg-white dark:bg-black amoled:bg-black">
+              {error && (
+                <div className="p-3 bg-red-100 dark:bg-red-900/20 amoled:bg-red-900/20 border border-red-300 dark:border-red-800 amoled:border-red-800 text-red-700 dark:text-red-300 amoled:text-red-300 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {/* Sección de imagen de perfil */}
+              <div className="mb-4">
+                <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200 amoled:text-gray-200">
+                  Imagen de perfil
+                </h3>
+                <ImageUploader
+                  currentImageUrl={editData.avatar_url}
+                  userId={perfil?.id || ""}
+                  onImageUploaded={(url) =>
+                    setEditData((prev) => ({ ...prev, avatar_url: url }))
+                  }
+                  className="mb-2"
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 amoled:text-gray-400 mt-1">
+                  Sube una imagen de perfil (máx. 2MB)
+                </p>
+              </div>
+
+              {/* Sección de banner de perfil */}
+              <div className="mb-4">
+                <h3 className="text-lg font-medium mb-2 text-gray-800 dark:text-gray-200 amoled:text-gray-200">
+                  Banner de perfil
+                </h3>
+                <BannerUploader
+                  variant="compact"
+                  userId={perfil.id}
+                  currentBanner={editData.banner_url || perfil.banner_url || ""}
+                  onUpload={(url) => {
+                    setEditData((prev) => ({ ...prev, banner_url: url }));
+                    setPerfil((prev) =>
+                      prev ? { ...prev, banner_url: url } : prev
+                    );
+                  }}
+                />
+                <p className="text-xs text-gray-500 dark:text-gray-400 amoled:text-gray-400 mt-1">
+                  Sube una imagen de banner (máx. 5MB). Relación recomendada 4:1
+                  (1920x480).
+                </p>
+              </div>
+
+              <Divider className="my-4" />
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    label="Nombre de usuario"
+                    value={editData.username}
+                    onChange={(e) =>
+                      setEditData((prev) => ({
+                        ...prev,
+                        username: e.target.value,
+                      }))
+                    }
+                    placeholder="Tu nombre de usuario"
+                    isInvalid={
+                      shouldShowAvailability &&
+                      usernameCheck.available === false
+                    }
+                    color={
+                      shouldShowAvailability
+                        ? usernameCheck.available === true
+                          ? "success"
+                          : usernameCheck.available === false
+                          ? "danger"
+                          : "default"
+                        : "default"
+                    }
+                    endContent={
+                      shouldShowAvailability && (
+                        <div className="flex items-center gap-2">
+                          {usernameCheck.loading && (
+                            <Loader className="w-4 h-4 text-gray-400 animate-spin" />
+                          )}
+                          {!usernameCheck.loading &&
+                            usernameCheck.available === true && (
+                              <Check className="w-4 h-4 text-green-500" />
+                            )}
+                          {!usernameCheck.loading &&
+                            usernameCheck.available === false && (
+                              <AlertCircle className="w-4 h-4 text-red-500" />
+                            )}
+                        </div>
+                      )
+                    }
+                  />
+                </div>
+                {shouldShowAvailability && (
+                  <div className="text-sm">
+                    {usernameCheck.loading && (
+                      <p className="text-gray-500 dark:text-gray-400">
+                        Verificando disponibilidad...
+                      </p>
+                    )}
+                    {!usernameCheck.loading &&
+                      usernameCheck.available === true && (
+                        <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          {usernameCheck.message || "Username disponible"}
+                        </p>
+                      )}
+                    {!usernameCheck.loading &&
+                      usernameCheck.available === false && (
+                        <p className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                          <AlertCircle className="w-4 h-4" />
+                          {usernameCheck.error || "Username no disponible"}
+                        </p>
+                      )}
+                  </div>
+                )}
+              </div>
+
+              <Textarea
+                label="Biografía"
+                value={editData.bio}
+                onChange={(e) =>
+                  setEditData((prev) => ({ ...prev, bio: e.target.value }))
+                }
+                placeholder="Cuéntanos sobre ti..."
+                maxRows={4}
+              />
+
+              <Divider className="my-4" />
+
+              {/* Sección de cuentas conectadas */}
+              <div className="space-y-3">
+                <h3 className="text-lg font-medium text-gray-800 dark:text-gray-200 amoled:text-gray-200">
+                  Cuentas Conectadas
+                </h3>
+                <ConnectedAccountsForm
+                  accounts={editData.connected_accounts || {}}
+                  onChange={(accounts) =>
+                    setEditData((prev) => ({
+                      ...prev,
+                      connected_accounts: accounts,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 p-3 bg-white/50 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl border border-gray-200/80 dark:border-gray-700/70">
+                  <div
+                    className="w-10 h-10 rounded-lg shadow-sm transition-all duration-200"
+                    style={{
+                      backgroundColor: editData.color,
+                      transform: "translateY(-1px)",
+                    }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">
+                      {getColorName(editData.color)}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                      {editData.color.toUpperCase()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Paleta de colores */}
+                <div className="p-2 bg-white/30 dark:bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-200/50 dark:border-gray-700/60">
+                  <div className="grid grid-cols-4 gap-2">
+                    {[
+                      "#4F46E5", // Azul
+                      "#10B981", // Verde
+                      "#EF4444", // Rojo
+                      "#F59E0B", // Amarillo
+                      "#8B5CF6", // Violeta
+                      "#06B6D4", // Turquesa
+                      "#F97316", // Naranja
+                      "#EC4899", // Rosa
+                    ].map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() =>
+                          setEditData((prev) => ({ ...prev, color }))
+                        }
+                        className={`relative w-full aspect-square rounded-lg transition-all duration-200 flex items-center justify-center
+                          ${
+                            editData.color === color
+                              ? "ring-2 ring-offset-1 ring-blue-500 dark:ring-offset-gray-800 scale-105 shadow-sm"
+                              : "hover:shadow-sm hover:scale-105"
+                          }
+                          after:absolute after:inset-0 after:rounded-lg after:transition-all after:duration-200
+                          ${
+                            editData.color === color
+                              ? "after:bg-white/10"
+                              : "hover:after:bg-black/5 dark:hover:after:bg-white/5"
+                          }
+                        `}
+                        style={{ backgroundColor: color }}
+                        title={getColorName(color)}
+                        aria-label={`Seleccionar color ${getColorName(color)}`}
+                      >
+                        {editData.color === color && (
+                          <svg
+                            className="w-4 h-4 text-white drop-shadow-md"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={3}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                color="danger"
+                variant="light"
+                onPress={onClose}
+                disabled={isSaving}
+              >
+                Cancelar
+              </Button>
+              <Button
+                color="primary"
+                onPress={handleSave}
+                isLoading={isSaving}
+                isDisabled={
+                  isSaving ||
+                  (usernameChanged && usernameCheck.available !== true)
+                }
+              >
+                Guardar Cambios
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      </>
     );
   }
 
@@ -496,10 +795,9 @@ export default function PerfilPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Columna izquierda - Feed de actividad */}
           <div className="lg:col-span-2">
-            <ActivityFeed
+            <UserActivityFeedContainer
               fetchActivities={fetchActividades}
-              initialPage={1}
-              itemsPerPage={5}
+              userColor={perfil.color}
             />
           </div>
 
@@ -509,7 +807,11 @@ export default function PerfilPage() {
             <FriendRequestsList userColor={perfil.color} />
 
             {/* Lista de amigos */}
-            <FriendsListCompact userId={user?.id} userColor={perfil.color} limit={8} />
+            <FriendsListCompact
+              userId={user?.id}
+              userColor={perfil.color}
+              limit={8}
+            />
 
             {/* Estadísticas */}
             <ProfileStats estadisticas={estadisticas} />
@@ -535,7 +837,7 @@ export default function PerfilPage() {
                   isDisabled={isSigningOut}
                   className="w-full"
                 >
-                  {isSigningOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
+                  {isSigningOut ? "Cerrando sesión..." : "Cerrar Sesión"}
                 </Button>
               </CardBody>
             </Card>
@@ -549,16 +851,16 @@ export default function PerfilPage() {
         onClose={onClose}
         size="2xl"
         scrollBehavior="inside"
-        className="max-h-[90vh]"
+        className="max-h-[90vh] z-50"
         backdrop="blur"
         classNames={{
-          base: "bg-white dark:bg-black amoled:bg-black",
+          base: "bg-white dark:bg-black amoled:bg-black z-50",
           header:
             "border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800",
           body: "bg-white dark:bg-black amoled:bg-black",
           footer:
             "bg-white dark:bg-black amoled:bg-black border-t border-gray-200 dark:border-gray-800 amoled:border-gray-800",
-          backdrop: "backdrop-blur-sm bg-black/10",
+          backdrop: "backdrop-blur-sm bg-black/10 z-40",
         }}
       >
         <ModalContent>
@@ -631,29 +933,38 @@ export default function PerfilPage() {
                   label="Nombre de usuario"
                   value={editData.username}
                   onChange={(e) =>
-                    setEditData((prev) => ({ ...prev, username: e.target.value }))
+                    setEditData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
                   }
                   placeholder="Tu nombre de usuario"
-                  isInvalid={shouldShowAvailability && usernameCheck.available === false}
-                  color={shouldShowAvailability
-                    ? usernameCheck.available === true
-                      ? "success"
-                      : usernameCheck.available === false
+                  isInvalid={
+                    shouldShowAvailability && usernameCheck.available === false
+                  }
+                  color={
+                    shouldShowAvailability
+                      ? usernameCheck.available === true
+                        ? "success"
+                        : usernameCheck.available === false
                         ? "danger"
                         : "default"
-                    : "default"}
+                      : "default"
+                  }
                   endContent={
                     shouldShowAvailability && (
                       <div className="flex items-center gap-2">
                         {usernameCheck.loading && (
                           <Loader className="w-4 h-4 text-gray-400 animate-spin" />
                         )}
-                        {!usernameCheck.loading && usernameCheck.available === true && (
-                          <Check className="w-4 h-4 text-green-500" />
-                        )}
-                        {!usernameCheck.loading && usernameCheck.available === false && (
-                          <AlertCircle className="w-4 h-4 text-red-500" />
-                        )}
+                        {!usernameCheck.loading &&
+                          usernameCheck.available === true && (
+                            <Check className="w-4 h-4 text-green-500" />
+                          )}
+                        {!usernameCheck.loading &&
+                          usernameCheck.available === false && (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
                       </div>
                     )
                   }
@@ -662,20 +973,24 @@ export default function PerfilPage() {
               {shouldShowAvailability && (
                 <div className="text-sm">
                   {usernameCheck.loading && (
-                    <p className="text-gray-500 dark:text-gray-400">Verificando disponibilidad...</p>
-                  )}
-                  {!usernameCheck.loading && usernameCheck.available === true && (
-                    <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <Check className="w-4 h-4" />
-                      {usernameCheck.message || "Username disponible"}
+                    <p className="text-gray-500 dark:text-gray-400">
+                      Verificando disponibilidad...
                     </p>
                   )}
-                  {!usernameCheck.loading && usernameCheck.available === false && (
-                    <p className="text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <AlertCircle className="w-4 h-4" />
-                      {usernameCheck.error || "Username no disponible"}
-                    </p>
-                  )}
+                  {!usernameCheck.loading &&
+                    usernameCheck.available === true && (
+                      <p className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                        <Check className="w-4 h-4" />
+                        {usernameCheck.message || "Username disponible"}
+                      </p>
+                    )}
+                  {!usernameCheck.loading &&
+                    usernameCheck.available === false && (
+                      <p className="text-red-600 dark:text-red-400 flex items-center gap-1">
+                        <AlertCircle className="w-4 h-4" />
+                        {usernameCheck.error || "Username no disponible"}
+                      </p>
+                    )}
                 </div>
               )}
             </div>
@@ -700,7 +1015,10 @@ export default function PerfilPage() {
               <ConnectedAccountsForm
                 accounts={editData.connected_accounts || {}}
                 onChange={(accounts) =>
-                  setEditData((prev) => ({ ...prev, connected_accounts: accounts }))
+                  setEditData((prev) => ({
+                    ...prev,
+                    connected_accounts: accounts,
+                  }))
                 }
               />
             </div>
@@ -790,11 +1108,14 @@ export default function PerfilPage() {
             >
               Cancelar
             </Button>
-            <Button 
-              color="primary" 
-              onPress={handleSave} 
+            <Button
+              color="primary"
+              onPress={handleSave}
               isLoading={isSaving}
-              isDisabled={isSaving || (usernameChanged && usernameCheck.available !== true)}
+              isDisabled={
+                isSaving ||
+                (usernameChanged && usernameCheck.available !== true)
+              }
             >
               Guardar Cambios
             </Button>
@@ -816,32 +1137,40 @@ export default function PerfilPage() {
               const { createClient } = await import("@/lib/supabase/client");
               const supabase = createClient();
               const { data: updatedProfile } = await supabase
-                .from('perfiles')
-                .select('*')
-                .eq('id', perfil.id)
+                .from("perfiles")
+                .select("*")
+                .eq("id", perfil.id)
                 .single();
-              
+
               if (updatedProfile) {
                 // Parsear connected_accounts si es string JSON
                 let connectedAccounts: Record<string, string> = {};
                 const rawConnectedAccounts = updatedProfile?.connected_accounts;
                 if (rawConnectedAccounts) {
-                  if (typeof rawConnectedAccounts === 'string') {
+                  if (typeof rawConnectedAccounts === "string") {
                     try {
                       connectedAccounts = JSON.parse(rawConnectedAccounts);
                     } catch (e) {
-                      console.error('Error parsing connected_accounts:', e);
+                      console.error("Error parsing connected_accounts:", e);
                       connectedAccounts = {};
                     }
-                  } else if (typeof rawConnectedAccounts === 'object') {
+                  } else if (typeof rawConnectedAccounts === "object") {
                     connectedAccounts = rawConnectedAccounts;
                   }
                 }
-                
-                setPerfil(prev => prev ? { ...prev, ...updatedProfile, connected_accounts: connectedAccounts } : prev);
+
+                setPerfil((prev) =>
+                  prev
+                    ? {
+                        ...prev,
+                        ...updatedProfile,
+                        connected_accounts: connectedAccounts,
+                      }
+                    : prev
+                );
               }
             } catch (error) {
-              console.error('Error refrescando perfil:', error);
+              console.error("Error refrescando perfil:", error);
             }
           }
         }}

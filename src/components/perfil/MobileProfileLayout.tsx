@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, X } from "lucide-react";
 import { Button } from "@nextui-org/react";
-import ActivityFeed from "./activity-feed";
+import UserActivityFeedContainer from "./UserActivityFeedContainer";
 import ProfileHeader from "./profile-header";
 import { FriendRequestsList } from "@/components/social/FriendRequestsList";
 import { FriendsListCompact } from "@/components/social/FriendsListCompact";
@@ -135,9 +135,10 @@ export default function MobileProfileLayout({
         </div>
 
         {/* Feed de actividad con scroll infinito */}
-        <div className="flex-1 overflow-y-auto">
-          <ActivityFeed
+        <div className="flex-1 overflow-y-auto px-4 py-4">
+          <UserActivityFeedContainer
             fetchActivities={fetchActivities}
+            userColor={perfil.color}
             initialPage={1}
             itemsPerPage={10}
           />
