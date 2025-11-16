@@ -1,21 +1,27 @@
-'use client'
+"use client";
 
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { X } from 'lucide-react'
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface FiltrosAvanzadosProps {
-  fechaDesde: string
-  fechaHasta: string
-  inactivoDias: string
-  emailVerificado: string
-  onFechaDesdeChange: (value: string) => void
-  onFechaHastaChange: (value: string) => void
-  onInactivoDiasChange: (value: string) => void
-  onEmailVerificadoChange: (value: string) => void
-  onLimpiar: () => void
+  fechaDesde: string;
+  fechaHasta: string;
+  inactivoDias: string;
+  emailVerificado: string;
+  onFechaDesdeChange: (value: string) => void;
+  onFechaHastaChange: (value: string) => void;
+  onInactivoDiasChange: (value: string) => void;
+  onEmailVerificadoChange: (value: string) => void;
+  onLimpiar: () => void;
 }
 
 export function FiltrosAvanzados({
@@ -27,7 +33,7 @@ export function FiltrosAvanzados({
   onFechaHastaChange,
   onInactivoDiasChange,
   onEmailVerificadoChange,
-  onLimpiar
+  onLimpiar,
 }: FiltrosAvanzadosProps) {
   return (
     <div className="space-y-4 pt-4 border-t">
@@ -35,13 +41,16 @@ export function FiltrosAvanzados({
         <h3 className="text-sm font-medium">Filtros Avanzados</h3>
         <Button variant="ghost" size="sm" onClick={onLimpiar}>
           <X className="w-4 h-4 mr-1" />
-          Limpiar filtros
+          Limpiar
         </Button>
       </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
+      {/* Desktop: 4 columnas */}
+      <div className="hidden md:grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div>
-          <Label htmlFor="fechaDesde" className="text-xs">Registrado desde</Label>
+          <Label htmlFor="fechaDesde" className="text-xs">
+            Registrado desde
+          </Label>
           <Input
             id="fechaDesde"
             type="date"
@@ -50,9 +59,11 @@ export function FiltrosAvanzados({
             className="h-9"
           />
         </div>
-        
+
         <div>
-          <Label htmlFor="fechaHasta" className="text-xs">Registrado hasta</Label>
+          <Label htmlFor="fechaHasta" className="text-xs">
+            Registrado hasta
+          </Label>
           <Input
             id="fechaHasta"
             type="date"
@@ -61,9 +72,11 @@ export function FiltrosAvanzados({
             className="h-9"
           />
         </div>
-        
+
         <div>
-          <Label htmlFor="inactivoDias" className="text-xs">Inactivo por (días)</Label>
+          <Label htmlFor="inactivoDias" className="text-xs">
+            Inactivo por (días)
+          </Label>
           <Input
             id="inactivoDias"
             type="number"
@@ -74,10 +87,15 @@ export function FiltrosAvanzados({
             min="0"
           />
         </div>
-        
+
         <div>
-          <Label htmlFor="emailVerificado" className="text-xs">Email Verificado</Label>
-          <Select value={emailVerificado} onValueChange={onEmailVerificadoChange}>
+          <Label htmlFor="emailVerificado" className="text-xs">
+            Email Verificado
+          </Label>
+          <Select
+            value={emailVerificado}
+            onValueChange={onEmailVerificadoChange}
+          >
             <SelectTrigger id="emailVerificado" className="h-9">
               <SelectValue placeholder="Todos" />
             </SelectTrigger>
@@ -89,6 +107,69 @@ export function FiltrosAvanzados({
           </Select>
         </div>
       </div>
+
+      {/* Mobile: 2 columnas */}
+      <div className="md:hidden grid grid-cols-2 gap-3">
+        <div>
+          <Label htmlFor="fechaDesde" className="text-xs">
+            Desde
+          </Label>
+          <Input
+            id="fechaDesde"
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => onFechaDesdeChange(e.target.value)}
+            className="h-9 text-xs"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="fechaHasta" className="text-xs">
+            Hasta
+          </Label>
+          <Input
+            id="fechaHasta"
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => onFechaHastaChange(e.target.value)}
+            className="h-9 text-xs"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="inactivoDias" className="text-xs">
+            Inactivo (días)
+          </Label>
+          <Input
+            id="inactivoDias"
+            type="number"
+            placeholder="30"
+            value={inactivoDias}
+            onChange={(e) => onInactivoDiasChange(e.target.value)}
+            className="h-9 text-xs"
+            min="0"
+          />
+        </div>
+
+        <div>
+          <Label htmlFor="emailVerificado" className="text-xs">
+            Email
+          </Label>
+          <Select
+            value={emailVerificado}
+            onValueChange={onEmailVerificadoChange}
+          >
+            <SelectTrigger id="emailVerificado" className="h-9 text-xs">
+              <SelectValue placeholder="Todos" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="true">Verificado</SelectItem>
+              <SelectItem value="false">No Verificado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

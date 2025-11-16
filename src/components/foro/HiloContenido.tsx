@@ -209,8 +209,11 @@ export default function HiloContenido({
 
     const processImages = async () => {
       try {
-        const images = currentContentRef.querySelectorAll<HTMLImageElement>("img");
-        console.log(`[HiloContenido] Encontradas ${images.length} imágenes para procesar`);
+        const images =
+          currentContentRef.querySelectorAll<HTMLImageElement>("img");
+        console.log(
+          `[HiloContenido] Encontradas ${images.length} imágenes para procesar`
+        );
 
         for (const img of Array.from(images)) {
           const src = img.getAttribute("src");
@@ -224,10 +227,16 @@ export default function HiloContenido({
 
           // Procesar imágenes blob
           if (src.startsWith("blob:")) {
-            console.log(`[HiloContenido] Procesando imagen blob: ${src.substring(0, 30)}...`);
+            console.log(
+              `[HiloContenido] Procesando imagen blob: ${src.substring(
+                0,
+                30
+              )}...`
+            );
             try {
               const response = await fetch(src);
-              if (!response.ok) throw new Error(`Error al obtener blob: ${response.status}`);
+              if (!response.ok)
+                throw new Error(`Error al obtener blob: ${response.status}`);
 
               const blob = await response.blob();
               if (!blob || blob.size === 0) throw new Error("Blob vacío");
@@ -238,7 +247,9 @@ export default function HiloContenido({
               const file = new File([blob], fileName, { type: blob.type });
 
               // Subir a Supabase
-              console.log(`[HiloContenido] Subiendo imagen a Supabase (${file.size} bytes)`);
+              console.log(
+                `[HiloContenido] Subiendo imagen a Supabase (${file.size} bytes)`
+              );
               const formData = new FormData();
               formData.append("file", file);
 
@@ -261,7 +272,10 @@ export default function HiloContenido({
               img.setAttribute("src", uploadData.url);
               img.setAttribute("data-processed", "true");
             } catch (error) {
-              console.error(`[HiloContenido] Error procesando imagen blob:`, error);
+              console.error(
+                `[HiloContenido] Error procesando imagen blob:`,
+                error
+              );
               // Dejar la imagen como está si falla
             }
           }
@@ -497,6 +511,47 @@ export default function HiloContenido({
               display: block;
               width: 100%;
               border-radius: 12px !important;
+            }
+
+            /* Estilos para imágenes con caption - respetar alineación */
+            figure[data-type="image-with-caption"] {
+              display: block;
+              width: fit-content;
+              margin-top: 1.5rem;
+              margin-bottom: 1.5rem;
+            }
+
+            figure[data-type="image-with-caption"][style*="text-align: left"] {
+              text-align: left;
+              margin-left: 0;
+              margin-right: auto;
+            }
+
+            figure[data-type="image-with-caption"][style*="text-align: center"] {
+              text-align: center;
+              margin-left: auto;
+              margin-right: auto;
+            }
+
+            figure[data-type="image-with-caption"][style*="text-align: right"] {
+              text-align: right;
+              margin-left: auto;
+              margin-right: 0;
+            }
+
+            figure[data-type="image-with-caption"] img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 8px;
+              display: inline-block;
+            }
+
+            figure[data-type="image-with-caption"] figcaption {
+              margin-top: 0.5rem;
+              font-size: 0.875rem;
+              color: #666;
+              text-align: center;
+              font-style: italic;
             }
           `,
         }}
