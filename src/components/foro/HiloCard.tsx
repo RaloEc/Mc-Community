@@ -4,6 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,6 +23,7 @@ import {
   Sword,
 } from "lucide-react";
 import { Votacion } from "@/components/ui/Votacion";
+import { ConfirmDeleteModal } from "@/components/ui/ConfirmDeleteModal";
 import React from "react";
 import { useUserTheme } from "@/hooks/useUserTheme";
 import { useAuth } from "@/context/AuthContext";
@@ -418,8 +420,16 @@ function HiloCard(props: HiloCardProps) {
     onDelete,
   } = props;
 
+  // Validación defensiva: si titulo es undefined, no renderizar
+  if (!titulo) {
+    console.warn("[HiloCard] Título undefined, no renderizando componente");
+    return null;
+  }
+
   const { user } = useAuth();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const isAuthor = user?.id === autorId;
   const router = useRouter();
 
@@ -431,30 +441,60 @@ function HiloCard(props: HiloCardProps) {
     : null;
   const hasProfileLink = Boolean(profileId);
 
-  const handleDelete = async (e: React.MouseEvent) => {
+  const handleDeleteClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    console.log(
+      "[HiloCard] Abriendo modal de confirmación para eliminar hilo:",
+      id
+    );
+    setShowDeleteModal(true);
+  };
 
-    if (!confirm("¿Estás seguro de que deseas eliminar este hilo?")) {
-      return;
-    }
-
+  const handleConfirmDelete = async () => {
+    console.log("[HiloCard] Confirmando eliminación de hilo:", id);
     setIsDeleting(true);
     try {
+      console.log(
+        "[HiloCard] Enviando petición DELETE a /api/foro/hilos/" + id
+      );
       const response = await fetch(`/api/foro/hilos/${id}`, {
         method: "DELETE",
       });
 
+      console.log(
+        "[HiloCard] Respuesta del servidor:",
+        response.status,
+        response.statusText
+      );
+
       if (!response.ok) {
-        throw new Error("Error al eliminar el hilo");
+        const errorData = await response.json().catch(() => ({}));
+        console.error("[HiloCard] Error en respuesta:", errorData);
+        throw new Error(errorData.error || "Error al eliminar el hilo");
       }
 
-      if (onDelete) {
-        onDelete(id);
-      }
+      const data = await response.json();
+      console.log("[HiloCard] Hilo eliminado exitosamente:", data);
+
+      setShowDeleteModal(false);
+
+      // Iniciar animación de salida
+      console.log("[HiloCard] Iniciando animación de salida");
+      setIsExiting(true);
+
+      // Esperar a que termine la animación antes de llamar al callback
+      setTimeout(() => {
+        if (onDelete) {
+          console.log("[HiloCard] Llamando callback onDelete");
+          onDelete(id);
+        }
+      }, 300); // Duración de la animación
     } catch (error) {
-      console.error("Error al eliminar hilo:", error);
-      alert("No se pudo eliminar el hilo");
+      console.error("[HiloCard] Error al eliminar hilo:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Error desconocido";
+      alert("No se pudo eliminar el hilo: " + errorMessage);
     } finally {
       setIsDeleting(false);
     }
@@ -556,7 +596,12 @@ function HiloCard(props: HiloCardProps) {
   };
 
   return (
-    <div className={`${className} block my-3`}>
+    <motion.div
+      className={`${className} block my-3`}
+      initial={{ opacity: 1, x: 0 }}
+      animate={isExiting ? { opacity: 0, x: -100 } : { opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
       <Card
         className="group flex flex-col overflow-hidden bg-white/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 rounded-xl"
         style={{
@@ -583,7 +628,9 @@ function HiloCard(props: HiloCardProps) {
                   <div className="flex items-center gap-2">
                     <div
                       onClick={hasProfileLink ? handleProfileClick : undefined}
-                      onKeyDown={hasProfileLink ? handleProfileKeyDown : undefined}
+                      onKeyDown={
+                        hasProfileLink ? handleProfileKeyDown : undefined
+                      }
                       role={hasProfileLink ? "link" : undefined}
                       tabIndex={hasProfileLink ? 0 : -1}
                       aria-disabled={!hasProfileLink}
@@ -751,7 +798,7 @@ function HiloCard(props: HiloCardProps) {
                   </span>
                   {isAuthor && (
                     <button
-                      onClick={handleDelete}
+                      onClick={handleDeleteClick}
                       disabled={isDeleting}
                       className="ml-2 p-1 text-red-500 hover:text-red-700 dark:hover:text-red-400 disabled:opacity-50 transition-colors"
                       title="Eliminar hilo"
@@ -766,7 +813,20 @@ function HiloCard(props: HiloCardProps) {
           </CardContent>
         </Link>
       </Card>
-    </div>
+
+      {/* Modal de confirmación de eliminación */}
+      <ConfirmDeleteModal
+        open={showDeleteModal}
+        onOpenChange={setShowDeleteModal}
+        title="Eliminar hilo"
+        description={`¿Estás seguro de que deseas eliminar el hilo "${titulo}"? Esta acción no se puede deshacer.`}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        isDangerous={true}
+      />
+    </motion.div>
   );
 }
 

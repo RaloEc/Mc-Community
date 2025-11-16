@@ -151,6 +151,7 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
     timeRange,
     setTimeRange,
     handleVote,
+    handleDeleteHilo,
     loadMoreHilos,
     hasNextPage,
     isFetchingNextPage,
@@ -302,6 +303,7 @@ export default function ForoCliente({ initialCategorias }: ForoClienteProps) {
                         showSinRespuestasAlert={false}
                         className="w-full"
                         weaponStats={hilo.weapon_stats_record?.stats ?? null}
+                        onDelete={handleDeleteHilo}
                       />
                     </motion.div>
                   ))}
