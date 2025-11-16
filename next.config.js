@@ -179,7 +179,9 @@ const nextConfig = {
       'qeeaptyhcqfaqdecsuqc.supabase.co',
       'qeeaptyhcqfaqdecsuqc.supabase.in',
       'supabase.co',
-      'supabase.in'
+      'supabase.in',
+      'media.tenor.com',
+      'tenor.com'
     ],
     remotePatterns: [
       {
@@ -197,6 +199,18 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: '*.supabase.in',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'media.tenor.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.tenor.com',
         port: '',
         pathname: '/**',
       }

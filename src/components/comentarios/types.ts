@@ -26,9 +26,9 @@ export interface Comment {
   };
   // Información sobre el comentario al que se responde
   repliedTo?: {
-    id: string;      // ID del comentario al que se responde
-    author: string;  // Nombre del autor del comentario original
-    text: string;    // Texto del comentario original
+    id: string; // ID del comentario al que se responde
+    author: string; // Nombre del autor del comentario original
+    text: string; // Texto del comentario original
     // Color opcional del autor del comentario original
     color?: string;
     // Indica si el comentario original fue editado o eliminado
@@ -40,4 +40,6 @@ export interface Comment {
   parentCommentId?: string; // ID del comentario padre (si es una respuesta anidada marcada como solución)
   // Sistema de votos
   votos_totales?: number; // Total de votos del comentario
+  // GIF de Tenor (opcional)
+  gif_url?: string | null; // URL del GIF asociado al comentario
 }
