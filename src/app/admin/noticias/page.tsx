@@ -54,6 +54,7 @@ import {
   ChevronUp,
   Table as TableIcon,
   BarChart3,
+  Flag,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
@@ -216,20 +217,28 @@ function AdminNoticiasContent() {
           title="Total Noticias"
           value={valoresFormateados?.total_noticias || "0"}
           loading={isLoading}
-          trend={estadisticas?.trends?.total_noticias ? {
-            value: Math.abs(estadisticas.trends.total_noticias),
-            isPositive: estadisticas.trends.total_noticias > 0,
-          } : undefined}
+          trend={
+            estadisticas?.trends?.total_noticias
+              ? {
+                  value: Math.abs(estadisticas.trends.total_noticias),
+                  isPositive: estadisticas.trends.total_noticias > 0,
+                }
+              : undefined
+          }
         />
         <EstadisticaCard
           icon={Eye}
           title="Total Vistas"
           value={valoresFormateados?.total_vistas || "0"}
           loading={isLoading}
-          trend={estadisticas?.trends?.total_vistas ? {
-            value: Math.abs(estadisticas.trends.total_vistas),
-            isPositive: estadisticas.trends.total_vistas > 0,
-          } : undefined}
+          trend={
+            estadisticas?.trends?.total_vistas
+              ? {
+                  value: Math.abs(estadisticas.trends.total_vistas),
+                  isPositive: estadisticas.trends.total_vistas > 0,
+                }
+              : undefined
+          }
         />
         <EstadisticaCard
           icon={Tag}
@@ -242,20 +251,28 @@ function AdminNoticiasContent() {
           title="Últimos 30 días"
           value={valoresFormateados?.noticias_recientes || "0"}
           loading={isLoading}
-          trend={estadisticas?.trends?.ultimos_30_dias ? {
-            value: Math.abs(estadisticas.trends.ultimos_30_dias),
-            isPositive: estadisticas.trends.ultimos_30_dias > 0,
-          } : undefined}
+          trend={
+            estadisticas?.trends?.ultimos_30_dias
+              ? {
+                  value: Math.abs(estadisticas.trends.ultimos_30_dias),
+                  isPositive: estadisticas.trends.ultimos_30_dias > 0,
+                }
+              : undefined
+          }
         />
         <EstadisticaCard
           icon={Calendar}
           title="Pendientes"
           value={valoresFormateados?.noticias_pendientes || "0"}
           loading={isLoading}
-          trend={estadisticas?.trends?.pendientes ? {
-            value: Math.abs(estadisticas.trends.pendientes),
-            isPositive: estadisticas.trends.pendientes > 0,
-          } : undefined}
+          trend={
+            estadisticas?.trends?.pendientes
+              ? {
+                  value: Math.abs(estadisticas.trends.pendientes),
+                  isPositive: estadisticas.trends.pendientes > 0,
+                }
+              : undefined
+          }
         />
       </div>
 
@@ -264,7 +281,7 @@ function AdminNoticiasContent() {
         {/* Sección de Accesos Rápidos */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Accesos Rápidos</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <NavCard
               href="/admin/noticias/listado"
               icon={ListFilter}
@@ -288,6 +305,12 @@ function AdminNoticiasContent() {
               icon={BarChart2}
               title="Estadísticas"
               description="Visualiza métricas detalladas"
+            />
+            <NavCard
+              href="/admin/noticias/reportes"
+              icon={Flag}
+              title="Reportes"
+              description="Gestiona reportes de contenido"
             />
           </div>
         </div>

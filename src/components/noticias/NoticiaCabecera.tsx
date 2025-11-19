@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowLeftIcon, Pencil } from 'lucide-react';
-import { ShareButton } from '@/components/shared/ShareButton';
+import React from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon, Pencil } from "lucide-react";
+import { ShareButton } from "@/components/shared/ShareButton";
+import BotonReportarNoticia from "@/components/noticias/BotonReportarNoticia";
 
 interface NoticiaCabeceraProps {
   titulo: string;
@@ -13,11 +14,11 @@ interface NoticiaCabeceraProps {
   noticiaId: string;
 }
 
-const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({ 
-  titulo, 
-  descripcion = '',
+const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({
+  titulo,
+  descripcion = "",
   esAdmin = false,
-  noticiaId
+  noticiaId,
 }) => {
   return (
     <>
@@ -45,10 +46,18 @@ const NoticiaCabecera: React.FC<NoticiaCabeceraProps> = ({
         <div className="flex justify-between items-center mb-4 gap-2 flex-wrap">
           <div className="flex gap-2">
             <ShareButton
-              url={`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/noticias/${noticiaId}`}
+              url={`${
+                process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
+              }/noticias/${noticiaId}`}
               title={titulo}
               description={descripcion}
               shareText="Compartir"
+              variant="outline"
+              size="sm"
+            />
+            <BotonReportarNoticia
+              tipo_contenido="noticia"
+              contenido_id={noticiaId}
               variant="outline"
               size="sm"
             />

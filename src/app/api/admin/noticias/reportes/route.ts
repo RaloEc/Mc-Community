@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
-    const { data, error } = await supabase.rpc("obtener_reportes_foro", {
+    const { data, error } = await supabase.rpc("obtener_reportes_noticias", {
       p_estado: estado,
       p_tipo_contenido: tipo_contenido,
       p_limit: limit,
@@ -39,13 +39,13 @@ export async function GET(request: Request) {
     });
 
     if (error) {
-      console.error("Error obteniendo reportes:", error);
+      console.error("Error obteniendo reportes de noticias:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ reportes: data });
   } catch (error) {
-    console.error("Error en GET /api/admin/foro/reportes:", error);
+    console.error("Error en GET /api/admin/noticias/reportes:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     console.log(
-      "[POST /api/admin/foro/reportes] Verificación de autenticación:",
+      "[POST /api/admin/noticias/reportes] Verificación de autenticación:",
       {
         hasUser: !!user,
         userId: user?.id,
@@ -74,7 +74,7 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       console.error(
-        "[POST /api/admin/foro/reportes] Error de autenticación:",
+        "[POST /api/admin/noticias/reportes] Error de autenticación:",
         authError
       );
       return NextResponse.json(
@@ -98,12 +98,11 @@ export async function POST(request: Request) {
     // Verificar que el contenido exista
     let tablaContenido = "";
     switch (tipo_contenido) {
-      case "hilo":
-        tablaContenido = "foro_hilos";
+      case "noticia":
+        tablaContenido = "noticias";
         break;
-      case "post":
       case "comentario":
-        tablaContenido = "foro_posts";
+        tablaContenido = "comentarios";
         break;
       default:
         return NextResponse.json(
@@ -112,31 +111,27 @@ export async function POST(request: Request) {
         );
     }
 
-    console.log("[POST /api/admin/foro/reportes] Validación de contenido:", {
-      tipo_contenido,
-      tablaContenido,
-      contenido_id,
-    });
-
     const { data: contenido, error: contenidoError } = await supabase
       .from(tablaContenido)
       .select("id")
       .eq("id", contenido_id)
       .single();
 
-    console.log("[POST /api/admin/foro/reportes] Resultado de búsqueda:", {
-      contenidoEncontrado: !!contenido,
-      contenidoError: contenidoError?.message,
-    });
+    console.log(
+      "[POST /api/admin/noticias/reportes] Validación de contenido:",
+      {
+        tipo_contenido,
+        tablaContenido,
+        contenido_id,
+        contenidoError: contenidoError?.message,
+        contenidoEncontrado: !!contenido,
+      }
+    );
 
     if (contenidoError || !contenido) {
       console.error(
-        "[POST /api/admin/foro/reportes] Contenido no encontrado:",
-        {
-          code: contenidoError?.code,
-          message: contenidoError?.message,
-          details: contenidoError?.details,
-        }
+        "[POST /api/admin/noticias/reportes] Contenido no encontrado:",
+        contenidoError
       );
       return NextResponse.json(
         { error: "El contenido no existe" },
@@ -145,14 +140,8 @@ export async function POST(request: Request) {
     }
 
     // Crear el reporte usando la función RPC
-    console.log("[POST /api/admin/foro/reportes] Creando reporte:", {
-      tipo_contenido,
-      contenido_id,
-      razon,
-    });
-
     const { data: reporteId, error: reporteError } = await supabase.rpc(
-      "crear_reporte_foro",
+      "crear_reporte_noticia",
       {
         p_tipo_contenido: tipo_contenido,
         p_contenido_id: contenido_id,
@@ -162,26 +151,16 @@ export async function POST(request: Request) {
     );
 
     if (reporteError) {
-      console.error(
-        "[POST /api/admin/foro/reportes] Error creando reporte:",
-        reporteError
-      );
+      console.error("Error creando reporte de noticia:", reporteError);
       return NextResponse.json(
         { error: "Error al crear el reporte" },
         { status: 500 }
       );
     }
 
-    console.log(
-      "[POST /api/admin/foro/reportes] Reporte creado exitosamente:",
-      {
-        reporte_id: reporteId,
-      }
-    );
-
     return NextResponse.json({ reporte_id: reporteId }, { status: 201 });
   } catch (error) {
-    console.error("Error en POST /api/admin/foro/reportes:", error);
+    console.error("Error en POST /api/admin/noticias/reportes:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }
@@ -204,30 +183,29 @@ export async function PATCH(request: Request) {
     }
 
     let rpcFunction = "";
-    let params: any = {
-      p_reporte_id: reporte_id,
-    };
-
     if (accion === "resolver") {
-      rpcFunction = "resolver_reporte_foro";
-      params.p_resolucion = resolucion;
+      rpcFunction = "resolver_reporte_noticia";
     } else if (accion === "desestimar") {
-      rpcFunction = "desestimar_reporte_foro";
-      params.p_razon = resolucion;
+      rpcFunction = "desestimar_reporte_noticia";
     } else {
       return NextResponse.json({ error: "Acción no válida" }, { status: 400 });
     }
 
-    const { data, error } = await supabase.rpc(rpcFunction, params);
+    const payload = {
+      p_reporte_id: reporte_id,
+      p_resolucion: resolucion,
+    };
+
+    const { data, error } = await supabase.rpc(rpcFunction, payload);
 
     if (error) {
-      console.error("Error actualizando reporte:", error);
+      console.error("Error actualizando reporte de noticia:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ success: data });
   } catch (error) {
-    console.error("Error en PATCH /api/admin/foro/reportes:", error);
+    console.error("Error en PATCH /api/admin/noticias/reportes:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 }

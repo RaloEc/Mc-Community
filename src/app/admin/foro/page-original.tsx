@@ -169,7 +169,9 @@ function DashboardContent() {
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Gestión de Categorías</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Gestión de Categorías
+                </h3>
                 <p className="text-muted-foreground">
                   Próximamente: Nueva interfaz de gestión de categorías
                 </p>

@@ -49,7 +49,8 @@ const HiloComentariosOptimizado: React.FC<HiloComentariosOptimizadoProps> = ({
     return {
       ...authUser,
       username: profile?.username ?? authUser.user_metadata?.username ?? null,
-      avatar_url: profile?.avatar_url ?? authUser.user_metadata?.avatar_url ?? null,
+      avatar_url:
+        profile?.avatar_url ?? authUser.user_metadata?.avatar_url ?? null,
       color: profile?.color ?? authUser.user_metadata?.color ?? null,
     };
   }, [authUser, profile]);
@@ -348,6 +349,7 @@ const HiloComentariosOptimizado: React.FC<HiloComentariosOptimizadoProps> = ({
                   onMarkSolution={
                     canMarkSolution ? handleMarkSolution : undefined
                   }
+                  tipoContexto="foro"
                 />
               );
             })

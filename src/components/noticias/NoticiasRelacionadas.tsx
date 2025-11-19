@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Card, CardContent } from '@/components/ui/card';
-import { Noticia } from '@/types';
+import React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Noticia } from "@/types";
 
 interface NoticiasRelacionadasProps {
   noticias: Noticia[];
   isLoading?: boolean;
 }
 
-const NoticiasRelacionadas: React.FC<NoticiasRelacionadasProps> = ({ 
-  noticias = [], 
-  isLoading = false 
+const NoticiasRelacionadas: React.FC<NoticiasRelacionadasProps> = ({
+  noticias = [],
+  isLoading = false,
 }) => {
   if (isLoading) {
     return (
@@ -43,16 +43,16 @@ const NoticiasRelacionadas: React.FC<NoticiasRelacionadasProps> = ({
       <h2 className="text-xl font-semibold mb-4">Noticias relacionadas</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {noticias.map((noticia) => (
-          <Link 
-            href={`/noticias/${noticia.id}`} 
+          <Link
+            href={`/noticias/${noticia.id}`}
             key={noticia.id}
             className="group"
           >
             <Card className="overflow-hidden h-full transition-all duration-200 hover:shadow-md">
               <div className="relative w-full aspect-video overflow-hidden">
-                {(noticia.imagen_url || noticia.imagen_portada) ? (
+                {noticia.imagen_url || noticia.imagen_portada ? (
                   <Image
-                    src={noticia.imagen_url || noticia.imagen_portada || ''}
+                    src={noticia.imagen_url || noticia.imagen_portada || ""}
                     alt={noticia.titulo}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -61,7 +61,9 @@ const NoticiasRelacionadas: React.FC<NoticiasRelacionadasProps> = ({
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-300 dark:bg-gray-700 flex items-center justify-center">
-                    <span className="text-gray-500 dark:text-gray-400">Sin imagen</span>
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Sin imagen
+                    </span>
                   </div>
                 )}
               </div>
@@ -70,11 +72,14 @@ const NoticiasRelacionadas: React.FC<NoticiasRelacionadasProps> = ({
                   {noticia.titulo}
                 </h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {new Date(noticia.fecha_publicacion).toLocaleDateString('es-ES', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
+                  {new Date(noticia.fecha_publicacion).toLocaleDateString(
+                    "es-ES",
+                    {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    }
+                  )}
                 </p>
               </CardContent>
             </Card>

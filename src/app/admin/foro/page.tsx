@@ -3,32 +3,50 @@
  * Dashboard completo con estadísticas en tiempo real y herramientas de moderación
  */
 
-'use client';
+"use client";
 
-import React, { Suspense, lazy } from 'react';
-import AdminProtection from '@/components/AdminProtection';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  LayoutDashboard, 
-  Shield, 
-  FolderOpen, 
+import React, { Suspense, lazy } from "react";
+import AdminProtection from "@/components/AdminProtection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  LayoutDashboard,
+  Shield,
+  FolderOpen,
   BarChart3,
   Settings,
-  Tag
-} from 'lucide-react';
+  Tag,
+} from "lucide-react";
 
 // Lazy loading de componentes para optimizar carga inicial
-const EstadisticasGenerales = lazy(() => import('@/components/admin/foro/EstadisticasGenerales'));
-const GraficoActividad = lazy(() => import('@/components/admin/foro/GraficoActividad'));
-const HilosPopulares = lazy(() => import('@/components/admin/foro/HilosPopulares'));
-const UsuariosActivos = lazy(() => import('@/components/admin/foro/UsuariosActivos'));
-const EstadisticasCategorias = lazy(() => import('@/components/admin/foro/EstadisticasCategorias'));
-const PanelModeracion = lazy(() => import('@/components/admin/foro/PanelModeracion'));
-const GestorCategorias = lazy(() => import('@/components/admin/foro/GestorCategoriasNuevo'));
-const BusquedaAvanzada = lazy(() => import('@/components/admin/foro/BusquedaAvanzada'));
-const NotificacionesRealTime = lazy(() => import('@/components/admin/foro/NotificacionesRealTime'));
+const EstadisticasGenerales = lazy(
+  () => import("@/components/admin/foro/EstadisticasGenerales")
+);
+const GraficoActividad = lazy(
+  () => import("@/components/admin/foro/GraficoActividad")
+);
+const HilosPopulares = lazy(
+  () => import("@/components/admin/foro/HilosPopulares")
+);
+const UsuariosActivos = lazy(
+  () => import("@/components/admin/foro/UsuariosActivos")
+);
+const EstadisticasCategorias = lazy(
+  () => import("@/components/admin/foro/EstadisticasCategorias")
+);
+const PanelModeracion = lazy(
+  () => import("@/components/admin/foro/PanelModeracion")
+);
+const GestorCategorias = lazy(
+  () => import("@/components/admin/foro/GestorCategoriasNuevo")
+);
+const BusquedaAvanzada = lazy(
+  () => import("@/components/admin/foro/BusquedaAvanzada")
+);
+const NotificacionesRealTime = lazy(
+  () => import("@/components/admin/foro/NotificacionesRealTime")
+);
 
 // Componente de carga
 function ComponenteSkeleton() {
@@ -43,10 +61,12 @@ function ComponenteSkeleton() {
 
 function DashboardContent() {
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="mx-auto w-full max-w-none px-4 sm:px-6 lg:px-10 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Panel de Administración del Foro</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Panel de Administración del Foro
+          </h1>
           <p className="text-muted-foreground mt-2">
             Gestiona y modera el contenido del foro de la comunidad
           </p>
@@ -57,24 +77,39 @@ function DashboardContent() {
       </div>
 
       <Tabs defaultValue="dashboard" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="dashboard" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5">
+          <TabsTrigger
+            value="dashboard"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Dashboard</span>
           </TabsTrigger>
-          <TabsTrigger value="moderacion" className="flex items-center gap-2">
+          <TabsTrigger
+            value="moderacion"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
             <Shield className="h-4 w-4" />
             <span className="hidden sm:inline">Moderación</span>
           </TabsTrigger>
-          <TabsTrigger value="categorias" className="flex items-center gap-2">
+          <TabsTrigger
+            value="categorias"
+            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
             <FolderOpen className="h-4 w-4" />
             <span className="hidden sm:inline">Categorías</span>
           </TabsTrigger>
-          <TabsTrigger value="estadisticas" className="flex items-center gap-2">
+          <TabsTrigger
+            value="estadisticas"
+            className="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
             <BarChart3 className="h-4 w-4" />
             <span className="hidden sm:inline">Estadísticas</span>
           </TabsTrigger>
-          <TabsTrigger value="configuracion" className="flex items-center gap-2">
+          <TabsTrigger
+            value="configuracion"
+            className="hidden sm:flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+          >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Configuración</span>
           </TabsTrigger>
@@ -110,7 +145,7 @@ function DashboardContent() {
           <Suspense fallback={<ComponenteSkeleton />}>
             <BusquedaAvanzada />
           </Suspense>
-          
+
           <Suspense fallback={<ComponenteSkeleton />}>
             <PanelModeracion />
           </Suspense>
@@ -149,7 +184,9 @@ function DashboardContent() {
             <CardContent className="pt-6">
               <div className="text-center py-12">
                 <Settings className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Configuración del Foro</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Configuración del Foro
+                </h3>
                 <p className="text-muted-foreground">
                   Próximamente: Configuración avanzada del foro
                 </p>

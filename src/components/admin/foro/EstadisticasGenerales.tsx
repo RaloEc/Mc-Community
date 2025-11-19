@@ -3,22 +3,22 @@
  * Muestra métricas clave en tarjetas visuales
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useEstadisticasGenerales } from './hooks/useEstadisticasForo';
-import { 
-  MessageSquare, 
-  Users, 
-  TrendingUp, 
-  Eye, 
-  FolderOpen, 
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEstadisticasGenerales } from "./hooks/useEstadisticasForo";
+import {
+  MessageSquare,
+  Users,
+  TrendingUp,
+  Eye,
+  FolderOpen,
   Tag,
   Calendar,
-  Activity
-} from 'lucide-react';
+  Activity,
+} from "lucide-react";
 
 interface MetricaCardProps {
   titulo: string;
@@ -31,34 +31,46 @@ interface MetricaCardProps {
   };
 }
 
-const MetricaCard = React.memo(({ titulo, valor, icono, descripcion, tendencia }: MetricaCardProps) => (
-  <Card className="hover:shadow-lg transition-shadow">
-    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-      <CardTitle className="text-sm font-medium text-muted-foreground">
-        {titulo}
-      </CardTitle>
-      <div className="text-muted-foreground">
-        {icono}
-      </div>
-    </CardHeader>
-    <CardContent>
-      <div className="text-2xl font-bold">
-        {typeof valor === 'number' ? valor.toLocaleString() : valor ?? '0'}
-      </div>
-      {descripcion && (
-        <p className="text-xs text-muted-foreground mt-1">{descripcion}</p>
-      )}
-      {tendencia && (
-        <div className={`flex items-center mt-2 text-xs ${tendencia.esPositiva ? 'text-green-600' : 'text-red-600'}`}>
-          <TrendingUp className={`h-3 w-3 mr-1 ${!tendencia.esPositiva && 'rotate-180'}`} />
-          <span>{tendencia.valor}% vs período anterior</span>
+const MetricaCard = React.memo(
+  ({ titulo, valor, icono, descripcion, tendencia }: MetricaCardProps) => (
+    <Card className="hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-3 sm:p-6">
+        <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground line-clamp-2">
+          {titulo}
+        </CardTitle>
+        <div className="text-muted-foreground flex-shrink-0 ml-2">{icono}</div>
+      </CardHeader>
+      <CardContent className="p-3 sm:p-6 pt-0 sm:pt-0">
+        <div className="text-xl sm:text-2xl font-bold">
+          {typeof valor === "number" ? valor.toLocaleString() : valor ?? "0"}
         </div>
-      )}
-    </CardContent>
-  </Card>
-));
+        {descripcion && (
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+            {descripcion}
+          </p>
+        )}
+        {tendencia && (
+          <div
+            className={`flex items-center mt-2 text-xs ${
+              tendencia.esPositiva ? "text-green-600" : "text-red-600"
+            }`}
+          >
+            <TrendingUp
+              className={`h-3 w-3 mr-1 flex-shrink-0 ${
+                !tendencia.esPositiva && "rotate-180"
+              }`}
+            />
+            <span className="truncate">
+              {tendencia.valor}% vs período anterior
+            </span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+);
 
-MetricaCard.displayName = 'MetricaCard';
+MetricaCard.displayName = "MetricaCard";
 
 export default function EstadisticasGenerales() {
   const { data: stats, isLoading, error } = useEstadisticasGenerales();
@@ -92,9 +104,9 @@ export default function EstadisticasGenerales() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Métricas principales */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-4">
         <MetricaCard
           titulo="Total de Hilos"
           valor={stats.total_hilos}
@@ -122,7 +134,7 @@ export default function EstadisticasGenerales() {
       </div>
 
       {/* Métricas adicionales */}
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         <MetricaCard
           titulo="Promedio de Comentarios por Hilo"
           valor={stats.promedio_comentarios_por_hilo || 0}

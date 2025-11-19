@@ -14,6 +14,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Votacion } from "@/components/ui/Votacion";
+import BotonReportarNoticia from "@/components/noticias/BotonReportarNoticia";
+import BotonReportar from "@/components/foro/BotonReportar";
 
 interface CommentCardProps {
   comment: Comment;
@@ -31,6 +33,8 @@ interface CommentCardProps {
   // Props específicas del foro
   canMarkSolution?: boolean;
   onMarkSolution?: (commentId: string) => void;
+  // Contexto para determinar qué endpoint de reportes usar
+  tipoContexto?: "noticia" | "foro";
 }
 
 const ChevronDownIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -137,6 +141,7 @@ export const CommentCard: React.FC<CommentCardProps> = ({
   currentUser,
   canMarkSolution = false,
   onMarkSolution,
+  tipoContexto = "noticia",
 }) => {
   const { user: authUser, profile: authProfile } = useAuth();
   const [isReplying, setIsReplying] = useState(false);
@@ -482,9 +487,9 @@ export const CommentCard: React.FC<CommentCardProps> = ({
             )}
           </div>
           {/* Botones de acción */}
-          <div className="flex items-center justify-between mt-1 px-2">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3 px-2">
             {/* Botón responder y votación a la izquierda */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3 sm:gap-2">
               <button
                 onClick={() => {
                   if (user) {
@@ -510,7 +515,7 @@ export const CommentCard: React.FC<CommentCardProps> = ({
                   }
                 }}
                 disabled={!user}
-                className={`text-sm font-medium transition-opacity ${
+                className={`text-xs sm:text-sm font-medium transition-opacity whitespace-nowrap ${
                   !user ? "opacity-50 cursor-not-allowed" : "hover:opacity-80"
                 }`}
                 style={{
@@ -527,8 +532,8 @@ export const CommentCard: React.FC<CommentCardProps> = ({
                 {isReplying ? "Cancelar" : "Responder"}
               </button>
 
-              {/* Divisor */}
-              <div className="h-5 w-px bg-gray-300 dark:bg-gray-600" />
+              {/* Divisor - solo visible en desktop */}
+              <div className="hidden sm:block h-5 w-px bg-gray-300 dark:bg-gray-600" />
 
               {/* Sistema de votación */}
               <Votacion
@@ -540,31 +545,50 @@ export const CommentCard: React.FC<CommentCardProps> = ({
               />
             </div>
 
-            {/* Botones editar y eliminar a la derecha */}
-            <div className="flex items-center gap-1">
+            {/* Botones editar, eliminar y reportar a la derecha */}
+            <div className="flex items-center gap-2 sm:gap-1">
               {isAuthor && onEdit && (
                 <button
                   onClick={() => {
                     setIsEditing(true);
                     setEditText(comment.text);
                   }}
-                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-0 text-xs sm:text-sm"
                   title="Editar"
                   aria-label="Editar comentario"
                 >
                   <EditIcon className="w-4 h-4" />
+                  <span className="sm:hidden">Editar</span>
                 </button>
               )}
 
               {isAuthor && onDelete && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+                  className="p-2 rounded-lg transition-colors focus:outline-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center gap-1.5 sm:gap-0 text-xs sm:text-sm"
                   title="Eliminar"
                   aria-label="Eliminar comentario"
                 >
                   <DeleteIcon className="w-4 h-4" />
+                  <span className="sm:hidden">Eliminar</span>
                 </button>
+              )}
+
+              {/* Botón reportar para todos */}
+              {tipoContexto === "foro" ? (
+                <BotonReportar
+                  tipo_contenido="comentario"
+                  contenido_id={comment.id}
+                  variant="ghost"
+                  size="icon"
+                />
+              ) : (
+                <BotonReportarNoticia
+                  tipo_contenido="comentario"
+                  contenido_id={comment.id}
+                  variant="ghost"
+                  size="icon"
+                />
               )}
             </div>
           </div>

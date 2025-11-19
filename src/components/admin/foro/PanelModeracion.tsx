@@ -3,30 +3,36 @@
  * Incluye gestión de hilos, comentarios y acciones por lotes
  */
 
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import React, { useState, useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,8 +42,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   useHilosModeracion,
   useComentariosModeracion,
@@ -48,8 +54,8 @@ import {
   useMoverHilo,
   useEliminarHilosLote,
   useMoverHilosLote,
-} from './hooks/useModeracionForo';
-import { useEstadisticasCategorias } from './hooks/useEstadisticasForo';
+} from "./hooks/useModeracionForo";
+import { useEstadisticasCategorias } from "./hooks/useEstadisticasForo";
 import {
   Shield,
   MoreVertical,
@@ -66,21 +72,31 @@ import {
   CheckSquare,
   Square,
   RefreshCw,
-} from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
-import Link from 'next/link';
-import { useInView } from 'react-intersection-observer';
+} from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+import Link from "next/link";
+import { useInView } from "react-intersection-observer";
+import TablaReportes from "./moderacion/TablaReportes";
 
 export default function PanelModeracion() {
-  const [tabActiva, setTabActiva] = useState<'hilos' | 'comentarios'>('hilos');
-  const [filtroCategoria, setFiltroCategoria] = useState<string>('all');
-  const [ordenCampo, setOrdenCampo] = useState<'created_at' | 'vistas' | 'votos_conteo'>('created_at');
-  const [ordenDireccion, setOrdenDireccion] = useState<'ASC' | 'DESC'>('DESC');
-  const [hilosSeleccionados, setHilosSeleccionados] = useState<Set<string>>(new Set());
-  const [dialogEliminar, setDialogEliminar] = useState<{ tipo: 'hilo' | 'comentario'; id: string } | null>(null);
+  const [tabActiva, setTabActiva] = useState<
+    "reportes" | "hilos" | "comentarios"
+  >("reportes");
+  const [filtroCategoria, setFiltroCategoria] = useState<string>("all");
+  const [ordenCampo, setOrdenCampo] = useState<
+    "created_at" | "vistas" | "votos_conteo"
+  >("created_at");
+  const [ordenDireccion, setOrdenDireccion] = useState<"ASC" | "DESC">("DESC");
+  const [hilosSeleccionados, setHilosSeleccionados] = useState<Set<string>>(
+    new Set()
+  );
+  const [dialogEliminar, setDialogEliminar] = useState<{
+    tipo: "hilo" | "comentario";
+    id: string;
+  } | null>(null);
   const [dialogMover, setDialogMover] = useState<boolean>(false);
-  const [categoriaDestino, setCategoriaDestino] = useState<string>('');
+  const [categoriaDestino, setCategoriaDestino] = useState<string>("");
 
   // Hooks
   const { data: categorias } = useEstadisticasCategorias();
@@ -92,7 +108,7 @@ export default function PanelModeracion() {
     isLoading: isLoadingHilos,
     error: errorHilos,
   } = useHilosModeracion({
-    categoria: filtroCategoria === 'all' ? undefined : filtroCategoria,
+    categoria: filtroCategoria === "all" ? undefined : filtroCategoria,
     ordenCampo,
     ordenDireccion,
   });
@@ -133,7 +149,10 @@ export default function PanelModeracion() {
 
   // Datos combinados
   const hilos = useMemo(() => hilosData?.pages.flat() || [], [hilosData]);
-  const comentarios = useMemo(() => comentariosData?.pages.flat() || [], [comentariosData]);
+  const comentarios = useMemo(
+    () => comentariosData?.pages.flat() || [],
+    [comentariosData]
+  );
 
   // Funciones de selección
   const toggleSeleccionHilo = (hiloId: string) => {
@@ -150,7 +169,7 @@ export default function PanelModeracion() {
     if (hilosSeleccionados.size === hilos.length) {
       setHilosSeleccionados(new Set());
     } else {
-      setHilosSeleccionados(new Set(hilos.map(h => h.id)));
+      setHilosSeleccionados(new Set(hilos.map((h) => h.id)));
     }
   };
 
@@ -158,7 +177,7 @@ export default function PanelModeracion() {
   const handleEliminar = async () => {
     if (!dialogEliminar) return;
 
-    if (dialogEliminar.tipo === 'hilo') {
+    if (dialogEliminar.tipo === "hilo") {
       await eliminarHilo.mutateAsync(dialogEliminar.id);
     } else {
       await eliminarComentario.mutateAsync(dialogEliminar.id);
@@ -180,7 +199,7 @@ export default function PanelModeracion() {
     });
     setHilosSeleccionados(new Set());
     setDialogMover(false);
-    setCategoriaDestino('');
+    setCategoriaDestino("");
   };
 
   return (
@@ -196,7 +215,7 @@ export default function PanelModeracion() {
               Gestiona hilos y comentarios del foro
             </CardDescription>
           </div>
-          {hilosSeleccionados.size > 0 && (
+          {tabActiva === "hilos" && hilosSeleccionados.size > 0 && (
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
                 {hilosSeleccionados.size} seleccionados
@@ -222,17 +241,31 @@ export default function PanelModeracion() {
         </div>
       </CardHeader>
       <CardContent>
-        <Tabs value={tabActiva} onValueChange={(v) => setTabActiva(v as 'hilos' | 'comentarios')}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs
+          value={tabActiva}
+          onValueChange={(v) =>
+            setTabActiva(v as "reportes" | "hilos" | "comentarios")
+          }
+        >
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="reportes">Reportes</TabsTrigger>
             <TabsTrigger value="hilos">Hilos</TabsTrigger>
             <TabsTrigger value="comentarios">Comentarios</TabsTrigger>
           </TabsList>
+
+          {/* Tab de Reportes */}
+          <TabsContent value="reportes" className="space-y-4">
+            <TablaReportes />
+          </TabsContent>
 
           {/* Tab de Hilos */}
           <TabsContent value="hilos" className="space-y-4">
             {/* Filtros */}
             <div className="flex gap-4 items-center">
-              <Select value={filtroCategoria} onValueChange={setFiltroCategoria}>
+              <Select
+                value={filtroCategoria}
+                onValueChange={setFiltroCategoria}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Todas las categorías" />
                 </SelectTrigger>
@@ -246,7 +279,10 @@ export default function PanelModeracion() {
                 </SelectContent>
               </Select>
 
-              <Select value={ordenCampo} onValueChange={(v) => setOrdenCampo(v as any)}>
+              <Select
+                value={ordenCampo}
+                onValueChange={(v) => setOrdenCampo(v as any)}
+              >
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -257,7 +293,10 @@ export default function PanelModeracion() {
                 </SelectContent>
               </Select>
 
-              <Select value={ordenDireccion} onValueChange={(v) => setOrdenDireccion(v as any)}>
+              <Select
+                value={ordenDireccion}
+                onValueChange={(v) => setOrdenDireccion(v as any)}
+              >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -293,7 +332,9 @@ export default function PanelModeracion() {
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
                   <p className="font-semibold">Error al cargar hilos:</p>
                   <p className="text-sm mt-1">{errorHilos.message}</p>
-                  <pre className="text-xs mt-2 overflow-auto">{JSON.stringify(errorHilos, null, 2)}</pre>
+                  <pre className="text-xs mt-2 overflow-auto">
+                    {JSON.stringify(errorHilos, null, 2)}
+                  </pre>
                 </div>
               )}
               {isLoadingHilos && hilos.length === 0 && (
@@ -310,7 +351,9 @@ export default function PanelModeracion() {
                 <div
                   key={hilo.id}
                   className={`flex items-start gap-4 p-4 rounded-lg border transition-colors ${
-                    hilosSeleccionados.has(hilo.id) ? 'bg-accent border-primary' : 'hover:bg-accent'
+                    hilosSeleccionados.has(hilo.id)
+                      ? "bg-accent border-primary"
+                      : "hover:bg-accent"
                   }`}
                 >
                   <Checkbox
@@ -319,15 +362,22 @@ export default function PanelModeracion() {
                   />
 
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={hilo.autor_avatar_url || undefined} alt={hilo.autor_username} />
-                    <AvatarFallback>{hilo.autor_username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage
+                      src={hilo.autor_avatar_url || undefined}
+                      alt={hilo.autor_username}
+                    />
+                    <AvatarFallback>
+                      {hilo.autor_username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <Link
-                          href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${hilo.slug}`}
+                          href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${
+                            hilo.slug
+                          }`}
                           className="font-medium hover:underline line-clamp-2"
                           target="_blank"
                         >
@@ -339,7 +389,9 @@ export default function PanelModeracion() {
                           <Badge
                             variant="outline"
                             className="text-xs"
-                            style={{ borderColor: hilo.categoria_color || undefined }}
+                            style={{
+                              borderColor: hilo.categoria_color || undefined,
+                            }}
                           >
                             {hilo.categoria_nombre}
                           </Badge>
@@ -379,20 +431,35 @@ export default function PanelModeracion() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${hilo.slug}`} target="_blank">
+                            <Link
+                              href={`/foro/${hilo.categoria_nombre.toLowerCase()}/${
+                                hilo.slug
+                              }`}
+                              target="_blank"
+                            >
                               <ExternalLink className="h-4 w-4 mr-2" />
                               Ver hilo
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
-                            onClick={() => toggleFijar.mutate({ hiloId: hilo.id, esFijado: !hilo.es_fijado })}
+                            onClick={() =>
+                              toggleFijar.mutate({
+                                hiloId: hilo.id,
+                                esFijado: !hilo.es_fijado,
+                              })
+                            }
                           >
                             <Pin className="h-4 w-4 mr-2" />
-                            {hilo.es_fijado ? 'Desfijar' : 'Fijar'}
+                            {hilo.es_fijado ? "Desfijar" : "Fijar"}
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => toggleCerrar.mutate({ hiloId: hilo.id, esCerrado: !hilo.es_cerrado })}
+                            onClick={() =>
+                              toggleCerrar.mutate({
+                                hiloId: hilo.id,
+                                esCerrado: !hilo.es_cerrado,
+                              })
+                            }
                           >
                             {hilo.es_cerrado ? (
                               <>
@@ -409,7 +476,9 @@ export default function PanelModeracion() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => setDialogEliminar({ tipo: 'hilo', id: hilo.id })}
+                            onClick={() =>
+                              setDialogEliminar({ tipo: "hilo", id: hilo.id })
+                            }
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Eliminar
@@ -465,7 +534,10 @@ export default function PanelModeracion() {
               {isFetchingNextHilos && (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-lg border">
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 p-4 rounded-lg border"
+                    >
                       <Skeleton className="h-10 w-10 rounded-full" />
                       <div className="flex-1">
                         <Skeleton className="h-4 w-full" />
@@ -485,7 +557,9 @@ export default function PanelModeracion() {
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
                   <p className="font-semibold">Error al cargar comentarios:</p>
                   <p className="text-sm mt-1">{errorComentarios.message}</p>
-                  <pre className="text-xs mt-2 overflow-auto">{JSON.stringify(errorComentarios, null, 2)}</pre>
+                  <pre className="text-xs mt-2 overflow-auto">
+                    {JSON.stringify(errorComentarios, null, 2)}
+                  </pre>
                 </div>
               )}
               {isLoadingComentarios && comentarios.length === 0 && (
@@ -493,31 +567,43 @@ export default function PanelModeracion() {
                   Cargando comentarios...
                 </div>
               )}
-              {!isLoadingComentarios && !errorComentarios && comentarios.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No hay comentarios para mostrar
-                </div>
-              )}
+              {!isLoadingComentarios &&
+                !errorComentarios &&
+                comentarios.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No hay comentarios para mostrar
+                  </div>
+                )}
               {comentarios.map((comentario) => (
                 <div
                   key={comentario.id}
                   className="flex items-start gap-4 p-4 rounded-lg border hover:bg-accent transition-colors"
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={comentario.autor_avatar_url || undefined} alt={comentario.autor_username} />
-                    <AvatarFallback>{comentario.autor_username.substring(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarImage
+                      src={comentario.autor_avatar_url || undefined}
+                      alt={comentario.autor_username}
+                    />
+                    <AvatarFallback>
+                      {comentario.autor_username.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{comentario.autor_username}</span>
+                          <span className="font-medium">
+                            {comentario.autor_username}
+                          </span>
                           <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(comentario.created_at), {
-                              addSuffix: true,
-                              locale: es,
-                            })}
+                            {formatDistanceToNow(
+                              new Date(comentario.created_at),
+                              {
+                                addSuffix: true,
+                                locale: es,
+                              }
+                            )}
                           </span>
                           {comentario.editado && (
                             <Badge variant="outline" className="text-xs">
@@ -532,7 +618,9 @@ export default function PanelModeracion() {
                         >
                           en: {comentario.hilo_titulo}
                         </Link>
-                        <p className="text-sm mt-2 line-clamp-3">{comentario.contenido}</p>
+                        <p className="text-sm mt-2 line-clamp-3">
+                          {comentario.contenido}
+                        </p>
                       </div>
 
                       <DropdownMenu>
@@ -554,7 +642,12 @@ export default function PanelModeracion() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => setDialogEliminar({ tipo: 'comentario', id: comentario.id })}
+                            onClick={() =>
+                              setDialogEliminar({
+                                tipo: "comentario",
+                                id: comentario.id,
+                              })
+                            }
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
                             Eliminar
@@ -572,7 +665,10 @@ export default function PanelModeracion() {
               {isFetchingNextComentarios && (
                 <div className="space-y-3">
                   {[...Array(3)].map((_, i) => (
-                    <div key={i} className="flex items-center gap-4 p-4 rounded-lg border">
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 p-4 rounded-lg border"
+                    >
                       <Skeleton className="h-10 w-10 rounded-full" />
                       <div className="flex-1">
                         <Skeleton className="h-4 w-full" />
@@ -588,18 +684,24 @@ export default function PanelModeracion() {
       </CardContent>
 
       {/* Dialog de confirmación de eliminación */}
-      <AlertDialog open={!!dialogEliminar} onOpenChange={() => setDialogEliminar(null)}>
+      <AlertDialog
+        open={!!dialogEliminar}
+        onOpenChange={() => setDialogEliminar(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará el {dialogEliminar?.tipo} de forma permanente.
-              Esta acción no se puede deshacer.
+              Esta acción eliminará el {dialogEliminar?.tipo} de forma
+              permanente. Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleEliminar} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={handleEliminar}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -612,11 +714,15 @@ export default function PanelModeracion() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mover hilos seleccionados</AlertDialogTitle>
             <AlertDialogDescription>
-              Selecciona la categoría de destino para {hilosSeleccionados.size} hilos.
+              Selecciona la categoría de destino para {hilosSeleccionados.size}{" "}
+              hilos.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
-            <Select value={categoriaDestino} onValueChange={setCategoriaDestino}>
+            <Select
+              value={categoriaDestino}
+              onValueChange={setCategoriaDestino}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona una categoría" />
               </SelectTrigger>
@@ -631,7 +737,10 @@ export default function PanelModeracion() {
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleMoverLote} disabled={!categoriaDestino}>
+            <AlertDialogAction
+              onClick={handleMoverLote}
+              disabled={!categoriaDestino}
+            >
               Mover
             </AlertDialogAction>
           </AlertDialogFooter>
