@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { NoticiaMetaInfo } from "@/components/noticias/NoticiaMetaInfo";
 import { getExcerpt } from "@/lib/utils";
@@ -32,13 +33,19 @@ export function NewsGrid({
               : `color-mix(in srgb, ${userColor || "#3b82f6"} 5%, white)`,
           }}
         >
-          <Link href={`/noticias/${noticia.id}`} className="flex flex-col h-full">
+          <Link
+            href={`/noticias/${noticia.id}`}
+            className="flex flex-col h-full"
+          >
             <div className="relative aspect-video rounded-lg overflow-hidden mb-3">
               {noticia.imagen_url ? (
-                <img
+                <Image
                   src={noticia.imagen_url}
                   alt={noticia.titulo}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  loading="lazy"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-900">

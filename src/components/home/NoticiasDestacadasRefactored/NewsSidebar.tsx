@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -68,16 +69,19 @@ export function NewsSidebar({
             >
               <div className="flex gap-3">
                 <div
-                  className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden"
+                  className="relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden"
                   style={{
                     backgroundColor: `hsl(var(--primary) / 0.1)`,
                   }}
                 >
                   {noticia.imagen_url ? (
-                    <img
+                    <Image
                       src={noticia.imagen_url}
                       alt={noticia.titulo}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-muted-foreground/50">

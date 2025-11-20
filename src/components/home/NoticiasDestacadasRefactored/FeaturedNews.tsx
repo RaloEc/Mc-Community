@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { NoticiaMetaInfo } from "@/components/noticias/NoticiaMetaInfo";
 import { getExcerpt } from "@/lib/utils";
@@ -34,10 +35,13 @@ export function FeaturedNews({
       <Link href={`/noticias/${noticia.id}`} className="block group">
         <div className="relative aspect-video rounded-xl overflow-hidden mb-4">
           {noticia.imagen_url ? (
-            <img
+            <Image
               src={noticia.imagen_url}
               alt={noticia.titulo}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-105"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              loading="lazy"
             />
           ) : (
             <div

@@ -1,15 +1,23 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Clock, Flame, TrendingUp, User, MessageSquare, Eye } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SwipeableTabs } from '@/components/ui/swipeable-tabs';
-import { useResponsive } from '@/hooks/useResponsive';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import {
+  Clock,
+  Flame,
+  TrendingUp,
+  User,
+  MessageSquare,
+  Eye,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SwipeableTabs } from "@/components/ui/swipeable-tabs";
+import { useResponsive } from "@/hooks/useResponsive";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Noticia {
   id: string;
@@ -33,7 +41,9 @@ interface SeccionNoticiasProps {
   className?: string;
 }
 
-export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps) {
+export default function SeccionNoticias({
+  className = "",
+}: SeccionNoticiasProps) {
   const [noticias, setNoticias] = useState<{
     masVistas: Noticia[];
     ultimas: Noticia[];
@@ -41,7 +51,7 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
   }>({
     masVistas: [],
     ultimas: [],
-    categoriaAleatoria: []
+    categoriaAleatoria: [],
   });
   const [loading, setLoading] = useState(true);
   const { isMobile, isLoaded } = useResponsive();
@@ -50,24 +60,24 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
     const fetchNoticias = async () => {
       try {
         const [masVistasRes, ultimasRes, categoriaRes] = await Promise.all([
-          fetch('/api/noticias?limit=6&tipo=mas-vistas'),
-          fetch('/api/noticias?limit=6&tipo=ultimas'),
-          fetch('/api/noticias?limit=6&tipo=categoria-aleatoria')
+          fetch("/api/noticias?limit=6&tipo=mas-vistas"),
+          fetch("/api/noticias?limit=6&tipo=ultimas"),
+          fetch("/api/noticias?limit=6&tipo=categoria-aleatoria"),
         ]);
 
         const [masVistasData, ultimasData, categoriaData] = await Promise.all([
           masVistasRes.ok ? masVistasRes.json() : { data: [] },
           ultimasRes.ok ? ultimasRes.json() : { data: [] },
-          categoriaRes.ok ? categoriaRes.json() : { data: [] }
+          categoriaRes.ok ? categoriaRes.json() : { data: [] },
         ]);
 
         setNoticias({
           masVistas: masVistasData.data || [],
           ultimas: ultimasData.data || [],
-          categoriaAleatoria: categoriaData.data || []
+          categoriaAleatoria: categoriaData.data || [],
         });
       } catch (error) {
-        console.error('Error al cargar noticias:', error);
+        console.error("Error al cargar noticias:", error);
       } finally {
         setLoading(false);
       }
@@ -77,9 +87,9 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
   }, []);
 
   const getExcerpt = (contenido: string, maxLength: number = 100) => {
-    const plainText = contenido.replace(/<[^>]*>/g, '');
-    return plainText.length > maxLength 
-      ? plainText.substring(0, maxLength) + '...' 
+    const plainText = contenido.replace(/<[^>]*>/g, "");
+    return plainText.length > maxLength
+      ? plainText.substring(0, maxLength) + "..."
       : plainText;
   };
 
@@ -88,12 +98,15 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
       <article className="bg-white dark:bg-gray-900 dark:data-[theme=amoled]:bg-black rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden hover:shadow-md dark:hover:shadow-gray-900/20 transition-all duration-200 hover:scale-[1.01] group">
         <div className="flex">
           {/* Imagen */}
-          <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 overflow-hidden">
+          <div className="relative w-24 h-24 flex-shrink-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950/20 dark:to-blue-900/20 overflow-hidden">
             {noticia.imagen_url ? (
-              <img
+              <Image
                 src={noticia.imagen_url}
                 alt={noticia.titulo}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="96px"
+                loading="lazy"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-gray-400 dark:text-gray-600">
@@ -108,19 +121,23 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
               <h3 className="font-semibold text-sm text-gray-900 dark:text-white line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                 {noticia.titulo}
               </h3>
-              {noticia.categorias && noticia.categorias.length > 0 && noticia.categorias[0]?.categoria && (
-                <Badge 
-                  variant="secondary" 
-                  className="ml-2 text-xs"
-                  style={{ 
-                    borderLeft: `2px solid ${noticia.categorias[0].categoria.color || '#3b82f6'}` 
-                  }}
-                >
-                  {noticia.categorias[0].categoria.nombre || 'General'}
-                </Badge>
-              )}
+              {noticia.categorias &&
+                noticia.categorias.length > 0 &&
+                noticia.categorias[0]?.categoria && (
+                  <Badge
+                    variant="secondary"
+                    className="ml-2 text-xs"
+                    style={{
+                      borderLeft: `2px solid ${
+                        noticia.categorias[0].categoria.color || "#3b82f6"
+                      }`,
+                    }}
+                  >
+                    {noticia.categorias[0].categoria.nombre || "General"}
+                  </Badge>
+                )}
             </div>
-            
+
             <p className="text-gray-600 dark:text-gray-400 text-xs mb-3 line-clamp-2">
               {getExcerpt(noticia.contenido)}
             </p>
@@ -131,7 +148,7 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
                 {noticia.autor_nombre && (
                   <div className="flex items-center gap-1">
                     <User className="h-3 w-3" />
-                    <span 
+                    <span
                       className="font-medium"
                       style={{ color: noticia.autor_color || undefined }}
                     >
@@ -142,14 +159,14 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span>
-                    {formatDistanceToNow(new Date(noticia.created_at), { 
-                      addSuffix: true, 
-                      locale: es 
+                    {formatDistanceToNow(new Date(noticia.created_at), {
+                      addSuffix: true,
+                      locale: es,
                     })}
                   </span>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-1">
                 <Eye className="h-3 w-3" />
                 <span>{noticia.vistas}</span>
@@ -169,7 +186,11 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
             Noticias
           </h2>
           <Link href="/noticias">
-            <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+            >
               Ver todas
             </Button>
           </Link>
@@ -178,7 +199,10 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
           <div className="h-10 bg-gray-200 dark:bg-gray-800 rounded" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-64 bg-gray-200 dark:bg-gray-800 rounded-lg" />
+              <div
+                key={i}
+                className="h-64 bg-gray-200 dark:bg-gray-800 rounded-lg"
+              />
             ))}
           </div>
         </div>
@@ -188,8 +212,8 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
 
   const tabsData = [
     {
-      id: 'mas-vistas',
-      label: 'Más Vistas',
+      id: "mas-vistas",
+      label: "Más Vistas",
       icon: <Flame className="h-4 w-4" />,
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -197,11 +221,11 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
             <NoticiaCard key={noticia.id} noticia={noticia} />
           ))}
         </div>
-      )
+      ),
     },
     {
-      id: 'ultimas',
-      label: 'Últimas',
+      id: "ultimas",
+      label: "Últimas",
       icon: <Clock className="h-4 w-4" />,
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -209,11 +233,11 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
             <NoticiaCard key={noticia.id} noticia={noticia} />
           ))}
         </div>
-      )
+      ),
     },
     {
-      id: 'categoria-aleatoria',
-      label: 'Destacadas',
+      id: "categoria-aleatoria",
+      label: "Destacadas",
       icon: <TrendingUp className="h-4 w-4" />,
       content: (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -221,8 +245,8 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
             <NoticiaCard key={noticia.id} noticia={noticia} />
           ))}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -232,7 +256,11 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
           Noticias
         </h2>
         <Link href="/noticias">
-          <Button variant="ghost" size="sm" className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+          >
             Ver todas
           </Button>
         </Link>
@@ -246,7 +274,9 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
           <div>
             <div className="flex items-center gap-2 mb-6">
               <Flame className="h-5 w-5 text-orange-500" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Más Vistas</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Más Vistas
+              </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.masVistas.map((noticia) => (
@@ -259,7 +289,9 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
           <div>
             <div className="flex items-center gap-2 mb-6">
               <Clock className="h-5 w-5 text-blue-500" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Últimas Noticias</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Últimas Noticias
+              </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.ultimas.map((noticia) => (
@@ -272,7 +304,9 @@ export default function SeccionNoticias({ className = '' }: SeccionNoticiasProps
           <div>
             <div className="flex items-center gap-2 mb-6">
               <TrendingUp className="h-5 w-5 text-green-500" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Destacadas</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Destacadas
+              </h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {noticias.categoriaAleatoria.map((noticia) => (
