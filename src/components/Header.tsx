@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { useHeaderLogic } from "./header/useHeaderLogic";
@@ -79,10 +80,12 @@ const Header: React.FC = () => {
                 href="/"
                 onClick={closeAllMenus}
               >
-                <img
+                <Image
                   src="/images/logo.png"
                   alt="KoreStats Logo"
-                  className="h-8 w-8"
+                  width={32}
+                  height={32}
+                  priority
                 />
                 <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
                   KoreStats

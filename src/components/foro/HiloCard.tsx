@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -336,18 +337,13 @@ const HtmlContentWithYoutube = React.memo(
           <div className="mb-3 w-full flex justify-center">
             <div className="w-full max-w-4xl">
               <div className="relative w-full h-[300px] rounded-lg overflow-hidden p-0">
-                <img
+                <Image
                   src={images[0]}
                   alt="Imagen"
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 896px"
                   loading="lazy"
-                  decoding="async"
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: "100%",
-                    margin: "0 0",
-                    display: "inline-block",
-                  }}
                 />
               </div>
             </div>
