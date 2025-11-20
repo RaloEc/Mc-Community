@@ -142,25 +142,8 @@ const NoticiaCard = React.forwardRef<HTMLDivElement, NoticiaCardProps>(
                   alt={noticia.titulo}
                   fill
                   priority={prioridad}
-                  loading={prioridad ? undefined : "lazy"}
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                    const parent = e.currentTarget.parentElement;
-                    if (parent) {
-                      parent.classList.add(
-                        "bg-gradient-to-br",
-                        "from-primary/20",
-                        "to-primary/40"
-                      );
-                      const fallback = document.createElement("div");
-                      fallback.className =
-                        "absolute inset-0 flex items-center justify-center text-primary-foreground text-lg font-medium";
-                      fallback.textContent = "KoreStats";
-                      parent.appendChild(fallback);
-                    }
-                  }}
                 />
               ) : (
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">

@@ -1,14 +1,21 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Clock, Eye, TrendingUp, Plus, MessageSquarePlus } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import Image from 'next/image';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowRight,
+  Clock,
+  Eye,
+  TrendingUp,
+  Plus,
+  MessageSquarePlus,
+} from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import Image from "next/image";
 
 interface Noticia {
   id: string;
@@ -30,33 +37,40 @@ interface Noticia {
 }
 
 interface NoticiasDestacadasSectionProps {
-  tipo: 'mas-vistas' | 'ultimas' | 'categoria-aleatoria';
+  tipo: "mas-vistas" | "ultimas" | "categoria-aleatoria";
   titulo: string;
   icono?: React.ReactNode;
   className?: string;
 }
 
-export default function NoticiasDestacadasSection({ 
-  tipo, 
-  titulo, 
-  icono, 
-  className = '' 
+export default function NoticiasDestacadasSection({
+  tipo,
+  titulo,
+  icono,
+  className = "",
 }: NoticiasDestacadasSectionProps) {
   const [noticias, setNoticias] = useState<Noticia[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState<string>('');
+  const [categoriaSeleccionada, setCategoriaSeleccionada] =
+    useState<string>("");
   const { user, profile } = useAuth();
 
   useEffect(() => {
     const loadNoticias = async () => {
       try {
         // Construir baseUrl (cliente)
-        const baseUrl = typeof window !== 'undefined'
-          ? window.location.origin
-          : (process.env.NEXT_PUBLIC_SITE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'));
+        const baseUrl =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : process.env.NEXT_PUBLIC_SITE_URL ||
+              (process.env.VERCEL_URL
+                ? `https://${process.env.VERCEL_URL}`
+                : "http://localhost:3000");
 
         // Llamar a la API pública que usa service client (evita RLS en cliente)
-        const resp = await fetch(`${baseUrl}/api/noticias`, { cache: 'no-store' });
+        const resp = await fetch(`${baseUrl}/api/noticias`, {
+          cache: "no-store",
+        });
         if (!resp.ok) throw new Error(`Error HTTP ${resp.status}`);
         const payload = await resp.json();
 
@@ -64,22 +78,39 @@ export default function NoticiasDestacadasSection({
 
         // Ordenar/filtrar en cliente según tipo
         let seleccion = [...items];
-        if (tipo === 'mas-vistas') {
-          seleccion.sort((a, b) => (Number(b.vistas || 0) - Number(a.vistas || 0)));
-        } else if (tipo === 'ultimas') {
-          seleccion.sort((a, b) => new Date(b.fecha_publicacion || 0).getTime() - new Date(a.fecha_publicacion || 0).getTime());
-        } else if (tipo === 'categoria-aleatoria') {
+        if (tipo === "mas-vistas") {
+          seleccion.sort(
+            (a, b) => Number(b.vistas || 0) - Number(a.vistas || 0)
+          );
+        } else if (tipo === "ultimas") {
+          seleccion.sort(
+            (a, b) =>
+              new Date(b.fecha_publicacion || 0).getTime() -
+              new Date(a.fecha_publicacion || 0).getTime()
+          );
+        } else if (tipo === "categoria-aleatoria") {
           // Tomar cualquier categoría presente en datos y filtrar por ella
-          const todasCategorias = items.flatMap(n => (n.categorias || []).map((c: any) => c)).filter(Boolean);
+          const todasCategorias = items
+            .flatMap((n) => (n.categorias || []).map((c: any) => c))
+            .filter(Boolean);
           if (todasCategorias.length > 0) {
-            const catRandom = todasCategorias[Math.floor(Math.random() * todasCategorias.length)];
+            const catRandom =
+              todasCategorias[
+                Math.floor(Math.random() * todasCategorias.length)
+              ];
             const catId = catRandom.id;
             const catNombre = catRandom.nombre;
-            setCategoriaSeleccionada(catNombre || '');
-            seleccion = items.filter(n => (n.categorias || []).some((c: any) => c.id === catId));
+            setCategoriaSeleccionada(catNombre || "");
+            seleccion = items.filter((n) =>
+              (n.categorias || []).some((c: any) => c.id === catId)
+            );
           }
           // ordenar por fecha desc como fallback
-          seleccion.sort((a, b) => new Date(b.fecha_publicacion || 0).getTime() - new Date(a.fecha_publicacion || 0).getTime());
+          seleccion.sort(
+            (a, b) =>
+              new Date(b.fecha_publicacion || 0).getTime() -
+              new Date(a.fecha_publicacion || 0).getTime()
+          );
         }
 
         // Limitar a 4 tarjetas
@@ -93,14 +124,19 @@ export default function NoticiasDestacadasSection({
           imagen_url: n.imagen_url,
           fecha_publicacion: n.fecha_publicacion,
           vistas: n.vistas,
-          autor: n.autor || { username: n.autor_nombre || 'Usuario', avatar_url: n.autor_avatar || undefined },
-          categorias: (n.categorias || []).map((cat: any) => ({ categoria: { nombre: cat.nombre, color: cat.color } }))
+          autor: n.autor || {
+            username: n.autor_nombre || "Usuario",
+            avatar_url: n.autor_avatar || undefined,
+          },
+          categorias: (n.categorias || []).map((cat: any) => ({
+            categoria: { nombre: cat.nombre, color: cat.color },
+          })),
         }));
 
         setNoticias(noticiasTransformadas);
         setLoading(false);
       } catch (error) {
-        console.error('Error al cargar noticias:', error);
+        console.error("Error al cargar noticias:", error);
         setLoading(false);
       }
     };
@@ -111,7 +147,7 @@ export default function NoticiasDestacadasSection({
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.6 }
+    transition: { duration: 0.6 },
   };
 
   if (loading) {
@@ -125,7 +161,7 @@ export default function NoticiasDestacadasSection({
             </h2>
           </div>
           <div className="flex items-center gap-2">
-            {profile?.role === 'admin' && (
+            {profile?.role === "admin" && (
               <Link href="/admin/noticias/crear">
                 <Button size="sm" variant="outline" className="text-xs">
                   <Plus className="h-3.5 w-3.5 mr-1" /> Crear Noticia
@@ -151,7 +187,7 @@ export default function NoticiasDestacadasSection({
   }
 
   return (
-    <motion.section 
+    <motion.section
       className={`space-y-6 ${className}`}
       initial="initial"
       animate="animate"
@@ -163,12 +199,15 @@ export default function NoticiasDestacadasSection({
           <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
             {titulo}
             {categoriaSeleccionada && (
-              <span className="text-blue-600 dark:text-blue-500"> - {categoriaSeleccionada}</span>
+              <span className="text-blue-600 dark:text-blue-500">
+                {" "}
+                - {categoriaSeleccionada}
+              </span>
             )}
           </h2>
         </div>
         <div className="flex items-center gap-2">
-          {profile?.role === 'admin' && (
+          {profile?.role === "admin" && (
             <Link href="/admin/noticias/crear">
               <Button size="sm" variant="outline" className="text-xs">
                 <Plus className="h-3.5 w-3.5 mr-1" /> Crear Noticia
@@ -181,7 +220,11 @@ export default function NoticiasDestacadasSection({
             </Button>
           </Link>
           <Link href="/noticias">
-            <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700 dark:text-blue-500">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-blue-600 hover:text-blue-700 dark:text-blue-500"
+            >
               Ver más <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </Link>
@@ -198,12 +241,14 @@ export default function NoticiasDestacadasSection({
               <Card className="h-full overflow-hidden bg-white/80 backdrop-blur-sm border-gray-200 dark:bg-black/80 dark:data-[theme=amoled]:bg-black dark:border-gray-800 hover:shadow-lg transition-all duration-300 rounded-xl">
                 <div className="flex h-28">
                   {noticia.imagen_url && (
-                    <div className="relative w-24 flex-shrink-0">
+                    <div className="relative w-24 flex-shrink-0 overflow-hidden rounded-l-xl">
                       <Image
                         src={noticia.imagen_url}
                         alt={noticia.titulo}
                         fill
-                        className="object-cover rounded-l-xl"
+                        className="object-cover"
+                        sizes="96px"
+                        loading="lazy"
                       />
                     </div>
                   )}
@@ -211,13 +256,13 @@ export default function NoticiasDestacadasSection({
                     <div>
                       <div className="flex flex-wrap gap-1 mb-2">
                         {noticia.categorias?.slice(0, 1).map((cat, i) => (
-                          <Badge 
-                            key={i} 
-                            variant="secondary" 
+                          <Badge
+                            key={i}
+                            variant="secondary"
                             className="text-xs px-2 py-0.5"
-                            style={{ 
-                              backgroundColor: cat.categoria.color + '20', 
-                              color: cat.categoria.color 
+                            style={{
+                              backgroundColor: cat.categoria.color + "20",
+                              color: cat.categoria.color,
                             }}
                           >
                             {cat.categoria.nombre}
@@ -231,12 +276,15 @@ export default function NoticiasDestacadasSection({
                     <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        {new Date(noticia.fecha_publicacion).toLocaleDateString('es-ES', {
-                          day: 'numeric',
-                          month: 'short'
-                        })}
+                        {new Date(noticia.fecha_publicacion).toLocaleDateString(
+                          "es-ES",
+                          {
+                            day: "numeric",
+                            month: "short",
+                          }
+                        )}
                       </span>
-                      {tipo === 'mas-vistas' && noticia.vistas && (
+                      {tipo === "mas-vistas" && noticia.vistas && (
                         <span className="flex items-center gap-1">
                           <Eye className="h-3 w-3" />
                           {noticia.vistas}

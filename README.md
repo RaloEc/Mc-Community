@@ -1,93 +1,83 @@
-# KoreStats - Estadísticas Avanzadas para Jugadores
+# KoreStats - Plataforma de Inteligencia para Gamers
 
-KoreStats es una plataforma web integral de estadísticas y análisis para jugadores de videojuegos, diseñada para ofrecer una experiencia rica en características con herramientas avanzadas de análisis de rendimiento.
+KoreStats es una plataforma integral de estadísticas, comunidad y recursos para jugadores de videojuegos. Proporciona tableros de rendimiento, foros temáticos, directorios de servidores y herramientas sociales para potenciar la colaboración entre jugadores, administradores y creadores de contenido.
 
 ## 🎯 Propósito
 
-Proporcionar un centro integral para jugadores con estadísticas en tiempo real, análisis detallados, recursos comunitarios, foros de discusión y herramientas para optimizar el rendimiento en videojuegos.
+- Centralizar la información clave (rendimiento, noticias, eventos) en un único panel.
+- Proveer herramientas sociales y colaborativas (foros, seguidores, amistades, PWA).
+- Simplificar la gestión de recursos (mods, texturas, servidores, guías) con filtros y curaduría.
 
 ## 🏗️ Estructura del Proyecto
 
 ```
 ├── src/
-│   ├── app/            # Rutas y páginas de la aplicación
-│   ├── components/     # Componentes reutilizables
-│   ├── context/        # Contextos de React
-│   ├── hooks/          # Custom hooks
-│   └── lib/            # Utilidades y configuraciones
-├── public/             # Archivos estáticos
-├── supabase/           # Migraciones y configuraciones de Supabase
-└── scripts/            # Scripts de utilidad
+│   ├── app/                # Rutas y páginas del App Router
+│   ├── components/         # UI compartida (navegación, cards, PWA, layouts)
+│   ├── context/            # Contextos globales (auth, tema, foro, analytics)
+│   ├── hooks/              # Hooks personalizados (modales, formularios, métricas)
+│   ├── lib/                # Integraciones externas y utilidades (Supabase, Modrinth)
+│   ├── services/           # Adaptadores y lógica para APIs de terceros
+│   ├── styles/             # CSS crítico, Tailwind y estilos globales
+│   └── types/              # Tipos compartidos para noticias, foros, usuarios, mods
+├── public/                 # Assets estáticos, manifest y recursos PWA
+├── supabase/               # Esquemas, migraciones y seeds para Supabase
+├── scripts/                # Scripts para sincronización y mantenimiento
+└── docs/                   # Documentación funcional, despliegue y guías internas
 ```
 
 ## 📦 Dependencias Principales
 
-### Frontend
-
-- Next.js 14
-- React 18
-- TypeScript
-- Tailwind CSS
-- shadcn/ui
-- Radix UI
-- Framer Motion
-
-### Manejo de Estado y Datos
-
-- React Query
-- Zod (validación)
-- React Hook Form
-
-### Backend
-
-- Supabase (PostgreSQL, Auth, Storage)
-- @supabase/auth-helpers
-
-### UI/UX
-
-- Tailwind CSS
-- Lucide React
-- React Icons
-- Sonner (notificaciones)
-
-### Utilidades
-
-- date-fns
-- clsx y tailwind-merge
-- uuid
+| Categoría                 | Librerías clave                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| **Framework y UI**        | Next.js 14, React 18, TypeScript, Tailwind CSS, shadcn/ui, Radix UI, Framer Motion |
+| **Estado y formularios**  | TanStack Query, React Hook Form, Zod                                               |
+| **Integración y backend** | Supabase (auth, DB, storage, realtime), @supabase/ssr, @ducanh2912/next-pwa        |
+| **Visuales y UX**         | Lucide React, React Icons, Sonner, Embla Carousel                                  |
+| **Utilidades**            | date-fns, clsx, tailwind-merge, uuid, react-intersection-observer                  |
 
 ## 🛠️ Archivos de Configuración
 
-- `package.json` - Dependencias y scripts del proyecto
-- `tailwind.config.js` - Configuración de Tailwind CSS
-- `tsconfig.json` - Configuración de TypeScript
-- `next.config.js` - Configuración de Next.js
-- `postcss.config.js` - Configuración de PostCSS
+- `package.json` – scripts, dependencias y engines soportados.
+- `next.config.js` – optimizaciones de build, PWA y políticas de imágenes.
+- `tailwind.config.js` – temas, breakpoints y tokens visuales.
+- `tsconfig.json` – rutas, strict mode y configuración de TypeScript.
+- `postcss.config.js` – pipeline de estilos (Tailwind, autoprefixer).
+- `supabase/config.toml` – sincronización de esquemas y políticas de acceso.
 
 ## 🚀 Inicio Rápido
 
-1. Clonar el repositorio
-2. Instalar dependencias:
+1. Clonar el repositorio.
+2. Copiar `.env.local.example` a `.env.local` y completar las variables requeridas (Supabase, APIs externas, Ads, etc.).
+3. Instalar dependencias:
    ```bash
    npm install
    ```
-3. Configurar variables de entorno (crear archivo `.env.local` basado en `.env.local.example`)
-4. Iniciar servidor de desarrollo:
+4. (Opcional) Ejecutar migraciones locales de Supabase:
+   ```bash
+   npx supabase db push
+   ```
+5. Iniciar el servidor de desarrollo:
    ```bash
    npm run dev
    ```
-5. Abrir [http://localhost:3000](http://localhost:3000) en tu navegador
+6. Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 
-## 📦 Construir para Producción
+## 📦 Construir y Desplegar
 
 ```bash
-# Construir la aplicación
+# Construir la aplicación para producción
 npm run build
 
-# Iniciar servidor de producción
+# Servir el build compilado
 npm run start
+
+# (Opcional) Lint y pruebas
+npm run lint && npm run test
 ```
+
+Listo para desplegar en Netlify o Vercel (build command `npm run build`, output `.next`).
 
 ## 📝 Licencia
 
-Este proyecto está bajo la licencia MIT.
+Este proyecto se distribuye bajo la licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
