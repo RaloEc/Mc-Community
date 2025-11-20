@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSync, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@/components/icons/FontAwesomeIcon";
+import { faSync, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 export default function PWAUpdatePrompt() {
   const [showUpdatePrompt, setShowUpdatePrompt] = useState(false);
-  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(null);
+  const [waitingWorker, setWaitingWorker] = useState<ServiceWorker | null>(
+    null
+  );
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
       return;
     }
 
@@ -21,7 +23,7 @@ export default function PWAUpdatePrompt() {
           registration.update();
         }
       } catch (error) {
-        console.error('Error al verificar actualizaciones:', error);
+        console.error("Error al verificar actualizaciones:", error);
       }
     };
 
@@ -30,12 +32,15 @@ export default function PWAUpdatePrompt() {
 
     // Escuchar cambios en el Service Worker
     navigator.serviceWorker.ready.then((registration) => {
-      registration.addEventListener('updatefound', () => {
+      registration.addEventListener("updatefound", () => {
         const newWorker = registration.installing;
-        
+
         if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
               // Hay una nueva versión disponible
               setWaitingWorker(newWorker);
               setShowUpdatePrompt(true);
@@ -46,7 +51,7 @@ export default function PWAUpdatePrompt() {
     });
 
     // Escuchar mensajes del Service Worker
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
       // El Service Worker ha sido actualizado, recargar la página
       window.location.reload();
     });
@@ -59,7 +64,7 @@ export default function PWAUpdatePrompt() {
   const handleUpdate = () => {
     if (waitingWorker) {
       // Enviar mensaje al Service Worker para que se active
-      waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+      waitingWorker.postMessage({ type: "SKIP_WAITING" });
       setShowUpdatePrompt(false);
     }
   };
@@ -82,15 +87,14 @@ export default function PWAUpdatePrompt() {
         >
           <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
         </button>
-        
+
         <div className="pr-6">
-          <h3 className="font-bold text-lg mb-2">
-            ¡Nueva versión disponible!
-          </h3>
+          <h3 className="font-bold text-lg mb-2">¡Nueva versión disponible!</h3>
           <p className="text-sm text-white/90 mb-4">
-            Hay una actualización disponible. Actualiza para obtener las últimas mejoras.
+            Hay una actualización disponible. Actualiza para obtener las últimas
+            mejoras.
           </p>
-          
+
           <div className="flex gap-2">
             <button
               onClick={handleUpdate}

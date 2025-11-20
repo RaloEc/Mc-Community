@@ -11,10 +11,10 @@ export function Footer() {
               Legal Jibber Jabber
             </p>
             <p>
-              BitArena no está afiliado a Riot Games, Inc. League of Legends,
+              KoreStats no está afiliado a Riot Games, Inc. League of Legends,
               Valorant, Teamfight Tactics, Legends of Runeterra y todos los
               activos relacionados son propiedad intelectual de Riot Games, Inc.
-              y están protegidos por derechos de autor. BitArena es un proyecto
+              y están protegidos por derechos de autor. KoreStats es un proyecto
               comunitario independiente que utiliza datos públicos de las APIs
               de Riot Games de conformidad con sus Términos de Servicio.
             </p>
@@ -27,7 +27,7 @@ export function Footer() {
           {/* Separador */}
           <div className="border-t border-slate-200 dark:border-slate-800 amoled:border-slate-800 pt-4">
             <p className="text-xs text-slate-500 dark:text-slate-400 amoled:text-slate-400 text-center">
-              © 2024 BitArena. Todos los derechos reservados.
+              © 2024 KoreStats. Todos los derechos reservados.
             </p>
           </div>
         </div>

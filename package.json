@@ -1,5 +1,5 @@
 {
-  "name": "minecraft-community",
+  "name": "korestats",
   "version": "0.1.0",
   "private": true,
   "engines": {
@@ -140,6 +140,7 @@
     "tiptap-extension-resize-image": "^1.2.1",
     "uuid": "^11.1.0",
     "vaul": "^1.1.2",
+    "web-vitals": "^4.2.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {

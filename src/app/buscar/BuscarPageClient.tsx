@@ -1,12 +1,19 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Link from 'next/link';
-import { Newspaper, MessageCircle, Users, Clock, Eye, User } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  Newspaper,
+  MessageCircle,
+  Users,
+  Clock,
+  Eye,
+  User,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 // Force rebuild - v6
 
@@ -14,7 +21,7 @@ interface ResultadoBusqueda {
   id: string;
   titulo?: string;
   contenido?: string;
-  tipo: 'noticia' | 'hilo' | 'usuario';
+  tipo: "noticia" | "hilo" | "usuario";
   created_at?: string;
   vistas?: number;
   autor_nombre?: string;
@@ -36,13 +43,15 @@ interface ResultadoBusqueda {
 
 function BuscarContent() {
   const searchParams = useSearchParams();
-  const queryParam = searchParams.get('q') || '';
+  const queryParam = searchParams.get("q") || "";
 
   const [noticias, setNoticias] = useState<ResultadoBusqueda[]>([]);
   const [hilos, setHilos] = useState<ResultadoBusqueda[]>([]);
   const [usuarios, setUsuarios] = useState<ResultadoBusqueda[]>([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'todos' | 'noticias' | 'hilos' | 'usuarios'>('todos');
+  const [activeTab, setActiveTab] = useState<
+    "todos" | "noticias" | "hilos" | "usuarios"
+  >("todos");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -62,16 +71,20 @@ function BuscarContent() {
 
     setLoading(true);
     try {
-      const isUserSearch = searchQuery.startsWith('@');
-      const queryToSearch = isUserSearch ? searchQuery.substring(1) : searchQuery;
+      const isUserSearch = searchQuery.startsWith("@");
+      const queryToSearch = isUserSearch
+        ? searchQuery.substring(1)
+        : searchQuery;
 
       if (isUserSearch) {
-        const res = await fetch(`/api/usuarios/buscar?q=${encodeURIComponent(queryToSearch)}`);
+        const res = await fetch(
+          `/api/usuarios/buscar?q=${encodeURIComponent(queryToSearch)}`
+        );
         const data = res.ok ? await res.json() : { usuarios: [] };
-        
+
         const usuariosData = (data.usuarios || []).map((item: any) => ({
           ...item,
-          tipo: 'usuario' as const,
+          tipo: "usuario" as const,
           id: item.id,
           titulo: item.username,
         }));
@@ -79,43 +92,66 @@ function BuscarContent() {
         setNoticias([]);
         setHilos([]);
         setUsuarios(usuariosData);
-        setActiveTab('usuarios');
+        setActiveTab("usuarios");
       } else {
         const [noticiasRes, hilosRes] = await Promise.all([
-          fetch(`/api/noticias?busqueda=${encodeURIComponent(queryToSearch)}&limit=20`),
-          fetch(`/api/foro/hilos?buscar=${encodeURIComponent(queryToSearch)}&limit=20`),
+          fetch(
+            `/api/noticias?busqueda=${encodeURIComponent(
+              queryToSearch
+            )}&limit=20`
+          ),
+          fetch(
+            `/api/foro/hilos?buscar=${encodeURIComponent(
+              queryToSearch
+            )}&limit=20`
+          ),
         ]);
 
-        const noticiasData = noticiasRes.ok ? await noticiasRes.json() : { data: [] };
+        const noticiasData = noticiasRes.ok
+          ? await noticiasRes.json()
+          : { data: [] };
         const hilosData = hilosRes.ok ? await hilosRes.json() : { items: [] };
 
-        setNoticias(noticiasData.data?.map((item: any) => ({ ...item, tipo: 'noticia' as const })) || []);
-        setHilos(hilosData.items?.map((item: any) => ({ ...item, tipo: 'hilo' as const })) || []);
+        setNoticias(
+          noticiasData.data?.map((item: any) => ({
+            ...item,
+            tipo: "noticia" as const,
+          })) || []
+        );
+        setHilos(
+          hilosData.items?.map((item: any) => ({
+            ...item,
+            tipo: "hilo" as const,
+          })) || []
+        );
         setUsuarios([]);
-        setActiveTab('todos');
+        setActiveTab("todos");
       }
     } catch (error) {
-      console.error('Error en búsqueda:', error);
+      console.error("Error en búsqueda:", error);
     } finally {
       setLoading(false);
     }
   };
 
   const getExcerpt = (contenido: string, maxLength: number = 150) => {
-    const plainText = contenido.replace(/<[^>]*>/g, '');
+    const plainText = contenido.replace(/<[^>]*>/g, "");
     return plainText.length > maxLength
       ? `${plainText.substring(0, maxLength)}...`
       : plainText;
   };
 
   const ResultadoCard = ({ resultado }: { resultado: ResultadoBusqueda }) => {
-    const href = resultado.tipo === 'noticia'
-      ? `/noticias/${resultado.id}`
-      : resultado.tipo === 'hilo'
-      ? `/foro/hilos/${resultado.id}`
-      : `/perfil/${encodeURIComponent(resultado.public_id || resultado.username || '')}`;
+    const href =
+      resultado.tipo === "noticia"
+        ? `/noticias/${resultado.id}`
+        : resultado.tipo === "hilo"
+        ? `/foro/hilos/${resultado.id}`
+        : `/perfil/${encodeURIComponent(
+            resultado.public_id || resultado.username || ""
+          )}`;
 
-    if (resultado.tipo === 'usuario') {
+    if (resultado.tipo === "usuario") {
       return (
         <Link href={href}>
           <article className="bg-white dark:bg-black border border-gray-200 dark:border-gray-800 rounded-xl p-5 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 hover:shadow-md dark:hover:shadow-black/30 group">
@@ -137,16 +173,20 @@ function BuscarContent() {
                 {/* Nombre y rol */}
                 <div className="flex items-start justify-between mb-2 gap-3">
                   <div className="flex-1 min-w-0">
-                    <h3 
+                    <h3
                       className="font-bold text-lg group-hover:opacity-80 transition-opacity truncate"
-                      style={{ color: resultado.color || '#3b82f6' }}
+                      style={{ color: resultado.color || "#3b82f6" }}
                     >
                       {resultado.username}
                     </h3>
                   </div>
-                  {resultado.rol && resultado.rol !== 'user' && (
+                  {resultado.rol && resultado.rol !== "user" && (
                     <Badge className="flex-shrink-0 bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30 border dark:bg-amber-500/10">
-                      {resultado.rol === 'admin' ? '👑 Admin' : resultado.rol === 'moderator' ? '🛡️ Mod' : resultado.rol}
+                      {resultado.rol === "admin"
+                        ? "👑 Admin"
+                        : resultado.rol === "moderator"
+                        ? "🛡️ Mod"
+                        : resultado.rol}
                     </Badge>
                   )}
                 </div>
@@ -161,11 +201,15 @@ function BuscarContent() {
                 {/* Estadísticas */}
                 <div className="flex items-center gap-4 text-xs">
                   <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <span className="font-semibold text-gray-900 dark:text-white">{resultado.followers_count || 0}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {resultado.followers_count || 0}
+                    </span>
                     <span>seguidores</span>
                   </div>
                   <div className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                    <span className="font-semibold text-gray-900 dark:text-white">{resultado.hilos_count || 0}</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {resultado.hilos_count || 0}
+                    </span>
                     <span>hilos</span>
                   </div>
                 </div>
@@ -189,16 +233,14 @@ function BuscarContent() {
                 />
               ) : (
                 <div className="text-2xl">
-                  {resultado.tipo === 'noticia' ? '📰' : '💬'}
+                  {resultado.tipo === "noticia" ? "📰" : "💬"}
                 </div>
               )}
             </div>
 
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between mb-2">
-                <h3 
-                  className="font-semibold text-lg line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-gray-900 dark:text-white"
-                >
+                <h3 className="font-semibold text-lg line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-gray-900 dark:text-white">
                   {resultado.titulo}
                 </h3>
                 <div className="flex items-center gap-2 ml-4 flex-shrink-0">
@@ -215,7 +257,7 @@ function BuscarContent() {
               </div>
 
               <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-3">
-                {getExcerpt(resultado.contenido || '')}
+                {getExcerpt(resultado.contenido || "")}
               </p>
 
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
@@ -271,7 +313,9 @@ function BuscarContent() {
                 Resultados de búsqueda
               </h1>
               <p className="text-gray-600 dark:text-gray-400">
-                {loading ? 'Buscando...' : `${totalResultados} resultados para "${queryParam}"`}
+                {loading
+                  ? "Buscando..."
+                  : `${totalResultados} resultados para "${queryParam}"`}
               </p>
             </div>
 
@@ -280,11 +324,11 @@ function BuscarContent() {
               <div className="border-b border-gray-200 dark:border-gray-800">
                 <div className="flex gap-8">
                   <button
-                    onClick={() => setActiveTab('todos')}
+                    onClick={() => setActiveTab("todos")}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 ${
-                      activeTab === 'todos'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      activeTab === "todos"
+                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -293,11 +337,11 @@ function BuscarContent() {
                     </div>
                   </button>
                   <button
-                    onClick={() => setActiveTab('noticias')}
+                    onClick={() => setActiveTab("noticias")}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 ${
-                      activeTab === 'noticias'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      activeTab === "noticias"
+                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -307,11 +351,11 @@ function BuscarContent() {
                     </div>
                   </button>
                   <button
-                    onClick={() => setActiveTab('hilos')}
+                    onClick={() => setActiveTab("hilos")}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 ${
-                      activeTab === 'hilos'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      activeTab === "hilos"
+                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -321,11 +365,11 @@ function BuscarContent() {
                     </div>
                   </button>
                   <button
-                    onClick={() => setActiveTab('usuarios')}
+                    onClick={() => setActiveTab("usuarios")}
                     className={`pb-3 px-1 font-medium text-sm transition-colors border-b-2 ${
-                      activeTab === 'usuarios'
-                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                      activeTab === "usuarios"
+                        ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                        : "border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -339,12 +383,15 @@ function BuscarContent() {
 
               {/* Tab Content */}
               <div className="space-y-4">
-                {activeTab === 'todos' && (
+                {activeTab === "todos" && (
                   <>
                     {loading ? (
                       <div className="space-y-4">
                         {[1, 2, 3].map((i) => (
-                          <div key={i} className="bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 p-6 animate-pulse">
+                          <div
+                            key={i}
+                            className="bg-white dark:bg-black rounded-xl border border-gray-200 dark:border-gray-800 p-6 animate-pulse"
+                          >
                             <div className="flex items-start gap-4">
                               <div className="w-16 h-16 bg-gray-200 dark:bg-gray-900 rounded-lg" />
                               <div className="flex-1 space-y-2">
@@ -358,7 +405,10 @@ function BuscarContent() {
                       </div>
                     ) : todosLosResultados.length > 0 ? (
                       todosLosResultados.map((resultado) => (
-                        <ResultadoCard key={`${resultado.tipo}-${resultado.id}`} resultado={resultado} />
+                        <ResultadoCard
+                          key={`${resultado.tipo}-${resultado.id}`}
+                          resultado={resultado}
+                        />
                       ))
                     ) : (
                       <div className="text-center py-12">
@@ -374,11 +424,14 @@ function BuscarContent() {
                   </>
                 )}
 
-                {activeTab === 'noticias' && (
+                {activeTab === "noticias" && (
                   <>
                     {noticias.length > 0 ? (
                       noticias.map((resultado) => (
-                        <ResultadoCard key={resultado.id} resultado={resultado} />
+                        <ResultadoCard
+                          key={resultado.id}
+                          resultado={resultado}
+                        />
                       ))
                     ) : (
                       <div className="text-center py-12">
@@ -391,11 +444,14 @@ function BuscarContent() {
                   </>
                 )}
 
-                {activeTab === 'hilos' && (
+                {activeTab === "hilos" && (
                   <>
                     {hilos.length > 0 ? (
                       hilos.map((resultado) => (
-                        <ResultadoCard key={resultado.id} resultado={resultado} />
+                        <ResultadoCard
+                          key={resultado.id}
+                          resultado={resultado}
+                        />
                       ))
                     ) : (
                       <div className="text-center py-12">
@@ -408,11 +464,14 @@ function BuscarContent() {
                   </>
                 )}
 
-                {activeTab === 'usuarios' && (
+                {activeTab === "usuarios" && (
                   <>
                     {usuarios.length > 0 ? (
                       usuarios.map((resultado) => (
-                        <ResultadoCard key={resultado.id} resultado={resultado} />
+                        <ResultadoCard
+                          key={resultado.id}
+                          resultado={resultado}
+                        />
                       ))
                     ) : (
                       <div className="text-center py-12">
@@ -433,13 +492,18 @@ function BuscarContent() {
           <div className="max-w-2xl mx-auto text-center py-12">
             <div className="text-6xl mb-4">🔍</div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Buscar en BitArena
+              Buscar en KoreStats
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Encuentra noticias, hilos del foro, usuarios y más contenido de la comunidad
+              Encuentra estadísticas, hilos del foro, usuarios y más contenido
+              de la comunidad
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-500 mt-4">
-              💡 Tip: Usa <span className="font-mono bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">@nombre</span> para buscar usuarios
+              💡 Tip: Usa{" "}
+              <span className="font-mono bg-gray-200 dark:bg-gray-800 px-2 py-1 rounded text-gray-700 dark:text-gray-300">
+                @nombre
+              </span>{" "}
+              para buscar usuarios
             </p>
           </div>
         )}

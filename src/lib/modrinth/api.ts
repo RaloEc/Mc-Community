@@ -3,8 +3,8 @@
  * Documentación: https://docs.modrinth.com/api-spec/
  */
 
-const MODRINTH_API_URL = 'https://api.modrinth.com/v2';
-const USER_AGENT = 'MC-Community/1.0.0 (contact@mc-community.es)';
+const MODRINTH_API_URL = "https://api.modrinth.com/v2";
+const USER_AGENT = "KoreStats/1.0.0 (contact@korestats.com)";
 
 /**
  * Opciones para la búsqueda de proyectos en Modrinth
@@ -12,7 +12,7 @@ const USER_AGENT = 'MC-Community/1.0.0 (contact@mc-community.es)';
 export interface SearchOptions {
   query?: string;
   facets?: string[];
-  index?: 'relevance' | 'downloads' | 'follows' | 'newest' | 'updated';
+  index?: "relevance" | "downloads" | "follows" | "newest" | "updated";
   offset?: number;
   limit?: number;
   gameVersions?: string[];
@@ -26,7 +26,7 @@ export interface SearchOptions {
  */
 async function fetchModrinth(endpoint: string, options: RequestInit = {}) {
   const headers = {
-    'User-Agent': USER_AGENT,
+    "User-Agent": USER_AGENT,
     ...options.headers,
   };
 
@@ -36,7 +36,9 @@ async function fetchModrinth(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    throw new Error(`Error en la API de Modrinth: ${response.status} ${response.statusText}`);
+    throw new Error(
+      `Error en la API de Modrinth: ${response.status} ${response.statusText}`
+    );
   }
 
   return response.json();
@@ -49,40 +51,40 @@ async function fetchModrinth(endpoint: string, options: RequestInit = {}) {
  */
 export async function searchProjects(options: SearchOptions = {}) {
   const params = new URLSearchParams();
-  
+
   if (options.query) {
-    params.append('query', options.query);
+    params.append("query", options.query);
   }
-  
+
   // Construir facets
   const facets: string[] = options.facets || [];
-  
+
   // Añadir filtro por versión de Minecraft si se especifica
   if (options.gameVersions && options.gameVersions.length > 0) {
-    options.gameVersions.forEach(version => {
+    options.gameVersions.forEach((version) => {
       facets.push(`["versions:${version}"]`);
     });
   }
-  
+
   // Siempre filtrar por tipo de proyecto = mod
-  if (!facets.some(facet => facet.includes('project_type'))) {
+  if (!facets.some((facet) => facet.includes("project_type"))) {
     facets.push('["project_type:mod"]');
   }
-  
+
   if (facets.length > 0) {
-    params.append('facets', JSON.stringify(facets));
+    params.append("facets", JSON.stringify(facets));
   }
-  
+
   if (options.index) {
-    params.append('index', options.index);
+    params.append("index", options.index);
   }
-  
+
   if (options.offset !== undefined) {
-    params.append('offset', options.offset.toString());
+    params.append("offset", options.offset.toString());
   }
-  
+
   if (options.limit !== undefined) {
-    params.append('limit', options.limit.toString());
+    params.append("limit", options.limit.toString());
   }
 
   return fetchModrinth(`/search?${params.toString()}`);
@@ -113,9 +115,9 @@ export async function getProjectVersions(idOrSlug: string) {
  */
 export async function getProjects(ids: string[]) {
   return fetchModrinth(`/projects`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(ids),
   });

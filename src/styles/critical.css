@@ -1,0 +1,160 @@
+/* 
+ * CSS CRÍTICO - Inyectado inline en <head>
+ * Contiene solo los estilos necesarios para el renderizado inicial
+ * Esto evita bloqueo de renderizado y mejora FCP/LCP
+ */
+
+/* Reset y estilos base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  position: relative;
+}
+
+/* Prevenir layout shift por scroll */
+html,
+body {
+  height: 100%;
+}
+
+/* Fuentes - Variables CSS */
+:root {
+  --font-nunito: var(--font-nunito, system-ui, -apple-system, sans-serif);
+  --font-inter: var(--font-inter, system-ui, -apple-system, sans-serif);
+
+  /* Colores base */
+  --blue: 217 91% 60%;
+  --green: 120 60% 50%;
+  --orange: 25 95% 53%;
+  --stone: 25 5% 45%;
+
+  /* Tema Claro */
+  --background: 0 0% 100%;
+  --foreground: 25 5% 25%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --border: 214 32% 91%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 95%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --border: 214 32% 20%;
+}
+
+/* Tipografía base */
+body {
+  font-family: var(--font-inter, system-ui, -apple-system, sans-serif);
+  font-size: 16px;
+  line-height: 1.5;
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--background));
+}
+
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-nunito, system-ui, -apple-system, sans-serif);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Links */
+a {
+  color: hsl(var(--primary));
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: hsl(var(--primary) / 0.8);
+}
+
+/* Imágenes responsivas */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Prevenir FOIT (Flash of Invisible Text) */
+@font-face {
+  font-family: "System Font";
+  src: local(".SFNSText-Regular"), local(".HelveticaNeueDeskInterface-Regular"),
+    local(".LucidaGrandeUI"), local("Segoe UI"), local("Helvetica Neue"),
+    local("sans-serif");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Animaciones de carga */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* Evitar layout shift en elementos dinámicos */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--border)) 25%,
+    hsl(var(--border) / 0.5) 50%,
+    hsl(var(--border)) 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Modo oscuro - Evitar FOUC */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 95%;
+  }
+}

@@ -1,10 +1,10 @@
-# BitArena - Plataforma de la Comunidad Minecraft
+# KoreStats - Estadísticas Avanzadas para Jugadores
 
-BitArena es una plataforma web integral para la comunidad de Minecraft, diseñada para ofrecer una experiencia rica en características para jugadores de todos los niveles, desde principiantes hasta jugadores técnicos y competitivos.
+KoreStats es una plataforma web integral de estadísticas y análisis para jugadores de videojuegos, diseñada para ofrecer una experiencia rica en características con herramientas avanzadas de análisis de rendimiento.
 
 ## 🎯 Propósito
 
-Proporcionar un centro integral para la comunidad de Minecraft con noticias actualizadas, recursos, foros de discusión y herramientas para jugadores y administradores de servidores.
+Proporcionar un centro integral para jugadores con estadísticas en tiempo real, análisis detallados, recursos comunitarios, foros de discusión y herramientas para optimizar el rendimiento en videojuegos.
 
 ## 🏗️ Estructura del Proyecto
 
@@ -23,6 +23,7 @@ Proporcionar un centro integral para la comunidad de Minecraft con noticias actu
 ## 📦 Dependencias Principales
 
 ### Frontend
+
 - Next.js 14
 - React 18
 - TypeScript
@@ -32,21 +33,25 @@ Proporcionar un centro integral para la comunidad de Minecraft con noticias actu
 - Framer Motion
 
 ### Manejo de Estado y Datos
+
 - React Query
 - Zod (validación)
 - React Hook Form
 
 ### Backend
+
 - Supabase (PostgreSQL, Auth, Storage)
 - @supabase/auth-helpers
 
 ### UI/UX
+
 - Tailwind CSS
 - Lucide React
 - React Icons
 - Sonner (notificaciones)
 
 ### Utilidades
+
 - date-fns
 - clsx y tailwind-merge
 - uuid

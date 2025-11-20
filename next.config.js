@@ -158,11 +158,19 @@ const nextConfig = {
   // Aumentar el timeout para la carga de chunks
   experimental: {
     // Mejoras para evitar errores de carga de chunks
-    optimizePackageImports: ['@supabase/auth-helpers-react', '@supabase/auth-helpers-nextjs'],
+    optimizePackageImports: [
+      '@supabase/auth-helpers-react',
+      '@supabase/auth-helpers-nextjs',
+      '@fortawesome/react-fontawesome',
+      'lucide-react',
+    ],
     // Mejorar la estabilidad del servidor de desarrollo
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
     // La opción serverActions ya está disponible por defecto en Next.js 14+
   },
+  // Optimizaciones de compilación para reducir tamaño de bundle
+  swcMinify: true,
+  compress: true,
   // Configuración para mejorar la estabilidad
   onDemandEntries: {
     // Periodo de tiempo en ms que una página permanecerá en el buffer
@@ -181,7 +189,9 @@ const nextConfig = {
       'supabase.co',
       'supabase.in',
       'media.tenor.com',
-      'tenor.com'
+      'tenor.com',
+      'korestats.com',
+      'www.korestats.com'
     ],
     remotePatterns: [
       {

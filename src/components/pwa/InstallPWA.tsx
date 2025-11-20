@@ -1,22 +1,23 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDownload, faTimes } from '@fortawesome/free-solid-svg-icons';
+import { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@/components/icons/FontAwesomeIcon";
+import { faDownload, faTimes } from "@fortawesome/free-solid-svg-icons";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 export default function InstallPWA() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     // Verificar si ya está instalada
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
       return;
     }
@@ -25,9 +26,9 @@ export default function InstallPWA() {
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      
+
       // Mostrar el prompt después de 30 segundos si el usuario no lo ha rechazado antes
-      const hasRejected = localStorage.getItem('pwa-install-rejected');
+      const hasRejected = localStorage.getItem("pwa-install-rejected");
       if (!hasRejected) {
         setTimeout(() => {
           setShowInstallPrompt(true);
@@ -40,15 +41,18 @@ export default function InstallPWA() {
       setIsInstalled(true);
       setShowInstallPrompt(false);
       setDeferredPrompt(null);
-      localStorage.removeItem('pwa-install-rejected');
+      localStorage.removeItem("pwa-install-rejected");
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -61,11 +65,11 @@ export default function InstallPWA() {
     // Esperar a que el usuario responda
     const { outcome } = await deferredPrompt.userChoice;
 
-    if (outcome === 'accepted') {
-      console.log('Usuario aceptó la instalación');
+    if (outcome === "accepted") {
+      console.log("Usuario aceptó la instalación");
     } else {
-      console.log('Usuario rechazó la instalación');
-      localStorage.setItem('pwa-install-rejected', 'true');
+      console.log("Usuario rechazó la instalación");
+      localStorage.setItem("pwa-install-rejected", "true");
     }
 
     // Limpiar el prompt
@@ -75,7 +79,7 @@ export default function InstallPWA() {
 
   const handleDismiss = () => {
     setShowInstallPrompt(false);
-    localStorage.setItem('pwa-install-rejected', 'true');
+    localStorage.setItem("pwa-install-rejected", "true");
   };
 
   // No mostrar nada si ya está instalada o no hay prompt
@@ -93,15 +97,14 @@ export default function InstallPWA() {
         >
           <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
         </button>
-        
+
         <div className="pr-6">
-          <h3 className="font-bold text-lg mb-2">
-            ¡Instala BitArena!
-          </h3>
+          <h3 className="font-bold text-lg mb-2">¡Instala KoreStats!</h3>
           <p className="text-sm text-white/90 mb-4">
-            Instala nuestra aplicación para acceder más rápido y usar funciones sin conexión.
+            Instala nuestra aplicación para acceder más rápido y usar funciones
+            sin conexión.
           </p>
-          
+
           <button
             onClick={handleInstallClick}
             className="w-full bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"

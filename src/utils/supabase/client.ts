@@ -1,7 +1,7 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 // Detectar si estamos en el navegador o en el servidor
-const isBrowser = typeof window !== 'undefined';
+const isBrowser = typeof window !== "undefined";
 
 // Obtener las variables de entorno
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -14,11 +14,11 @@ const createClient = () => {
       persistSession: isBrowser,
       autoRefreshToken: isBrowser,
       detectSessionInUrl: isBrowser,
-      storageKey: 'mc-community-auth',
+      storageKey: "korestats-auth",
     },
     global: {
       headers: {
-        'x-application-name': 'mc-community',
+        "x-application-name": "korestats",
       },
     },
   });

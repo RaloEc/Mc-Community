@@ -15,19 +15,19 @@ export const CATEGORIAS_PREDEFINIDAS = [
 export const MENSAJES_TICKER_DEFAULT = [
   {
     id: "default-1",
-    mensaje: "Bienvenido a la comunidad de BitArena",
+    mensaje: "Bienvenido a KoreStats - Estadísticas Avanzadas para Jugadores",
     activo: true,
     orden: 1,
   },
   {
     id: "default-2",
-    mensaje: "¡Únete a nuestros eventos semanales!",
+    mensaje: "¡Únete a nuestra comunidad de jugadores!",
     activo: true,
     orden: 2,
   },
   {
     id: "default-3",
-    mensaje: "Explora los últimos mods y texturas",
+    mensaje: "Analiza tu rendimiento con herramientas avanzadas",
     activo: true,
     orden: 3,
   },
@@ -37,19 +37,19 @@ export const MENSAJES_TICKER_DEFAULT = [
 export const MENSAJES_TICKER_ERROR = [
   {
     id: "error-1",
-    mensaje: "Bienvenido a la comunidad de BitArena",
+    mensaje: "Bienvenido a KoreStats - Estadísticas Avanzadas para Jugadores",
     activo: true,
     orden: 1,
   },
   {
     id: "error-2",
-    mensaje: "¡Únete a nuestros eventos semanales!",
+    mensaje: "¡Únete a nuestra comunidad de jugadores!",
     activo: true,
     orden: 2,
   },
   {
     id: "error-3",
-    mensaje: "Explora los últimos mods y texturas",
+    mensaje: "Analiza tu rendimiento con herramientas avanzadas",
     activo: true,
     orden: 3,
   },

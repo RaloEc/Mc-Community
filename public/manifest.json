@@ -1,7 +1,7 @@
 {
-  "name": "BitArena",
-  "short_name": "BitArena",
-  "description": "La plataforma definitiva para la comunidad de Minecraft",
+  "name": "KoreStats",
+  "short_name": "KoreStats",
+  "description": "Estadísticas avanzadas y análisis para jugadores de videojuegos",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0a0a",

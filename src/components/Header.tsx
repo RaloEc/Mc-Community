@@ -81,11 +81,11 @@ const Header: React.FC = () => {
               >
                 <img
                   src="/images/logo.png"
-                  alt="BitArena Logo"
+                  alt="KoreStats Logo"
                   className="h-8 w-8"
                 />
                 <span className="hidden xs:block font-bold text-lg bg-gradient-to-r from-blue-600 to-blue-800 dark:from-blue-400 dark:to-blue-600 bg-clip-text text-transparent">
-                  BitArena
+                  KoreStats
                 </span>
               </Link>
             </div>

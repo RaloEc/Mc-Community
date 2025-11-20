@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
-import { Nunito } from "next/font/google";
+import { Nunito, Inter } from "next/font/google";
+import "@/styles/critical.css"; // CSS crítico inyectado inline
 import "./globals.css";
 import "@/styles/code-highlight.css";
 import Header from "@/components/Header";
@@ -11,33 +12,50 @@ import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import PWAManager from "@/components/pwa/PWAManager";
 
+// Optimizar carga de fuentes con font-display: swap para evitar bloqueo de renderizado
+// Solo cargar los weights necesarios para reducir tamaño de descarga
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-nunito",
+  weight: ["400", "600", "700"],
+  display: "swap", // Mostrar fallback mientras se carga la fuente
+  preload: true,
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  preload: true,
 });
 
 export const metadata: Metadata = {
-  title: "BitArena",
-  description: "La plataforma definitiva para la comunidad de Minecraft",
+  title: "KoreStats",
+  description:
+    "Estadísticas avanzadas y análisis para jugadores de videojuegos",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "BitArena",
+    title: "KoreStats",
   },
   formatDetection: {
     telephone: false,
   },
   openGraph: {
     type: "website",
-    siteName: "BitArena",
-    title: "BitArena",
-    description: "La plataforma definitiva para la comunidad de Minecraft",
+    siteName: "KoreStats",
+    title: "KoreStats",
+    description:
+      "Estadísticas avanzadas y análisis para jugadores de videojuegos",
+    url: "https://korestats.com",
   },
   twitter: {
     card: "summary",
-    title: "BitArena",
-    description: "La plataforma definitiva para la comunidad de Minecraft",
+    title: "KoreStats",
+    description:
+      "Estadísticas avanzadas y análisis para jugadores de videojuegos",
   },
   icons: {
     icon: [
@@ -69,7 +87,7 @@ const ThemeScript = () => {
   const themeScript = `
     (function() {
       try {
-        const storageKey = 'mc-community-theme';
+        const storageKey = 'korestats-theme';
         const savedTheme = localStorage.getItem(storageKey);
         
         // Función para aplicar el tema
@@ -206,7 +224,8 @@ export default async function RootLayout({
     console.error("Error al obtener la sesión:", error);
   }
 
-  const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || "";
+  const adsenseClientId =
+    process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || "ca-pub-4016510451040715";
   const adsenseEnabled = process.env.NEXT_PUBLIC_ADSENSE_ENABLED === "true";
 
   return (
@@ -215,12 +234,12 @@ export default async function RootLayout({
         <ThemeScript />
         <ChunkErrorHandlerScript />
         {adsenseEnabled && <GoogleAdsenseScript clientId={adsenseClientId} />}
-        {adsenseEnabled && adsenseClientId && (
+        {adsenseClientId && (
           <meta name="google-adsense-account" content={adsenseClientId} />
         )}
       </head>
       <body
-        className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen flex flex-col`}
+        className={`${nunito.variable} ${inter.variable} font-sans bg-background text-foreground min-h-screen flex flex-col`}
       >
         <Providers session={session}>
           <Header />

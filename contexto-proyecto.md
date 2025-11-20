@@ -1,8 +1,9 @@
 # Contexto del Proyecto
 
-## Nombre: BitArena
+## Nombre: KoreStats
 
 ## Stack Tecnológico
+
 - **Frontend**: Next.js 14 con App Router
 - **Base de Datos y Autenticación**: Supabase (PostgreSQL)
 - **Estilos**: TailwindCSS con componentes de shadcn/ui
@@ -10,21 +11,26 @@
 - **Lenguaje**: TypeScript para tipado estático
 
 ## Objetivo
-BitArena es una plataforma web integral para la comunidad de Minecraft que incluye:
+
+KoreStats es una plataforma web integral de estadísticas y análisis para jugadores que incluye:
+
+- 📊 Estadísticas avanzadas y análisis de rendimiento
+- 🎮 Integración con múltiples juegos y plataformas
 - 📰 Sección de noticias y actualizaciones
-- 🎮 Directorio de servidores con estadísticas
-- 📚 Wiki comunitaria con guías y tutoriales
+- 📚 Recursos y guías comunitarias
 - 💬 Foro de discusión
-- 🛠️ Herramientas para administradores de servidores
+- 🛠️ Herramientas de análisis para jugadores
 
 ## Despliegue
+
 - **Plataforma**: Netlify
-- **Características**: 
+- **Características**:
   - Despliegue continuo desde rama principal
   - Preview Deploys para pull requests
   - Funciones serverless para endpoints API
 
 ## Estilo y Experiencia de Usuario
+
 - **Diseño**: Enfoque minimalista con jerarquía visual clara
 - **Temas**: Soporte para modo oscuro/claro con transiciones suaves
 - **Animaciones**: Uso de Framer Motion para interacciones fluidas
@@ -32,6 +38,7 @@ BitArena es una plataforma web integral para la comunidad de Minecraft que inclu
 - **Responsive**: Diseño adaptativo para móviles, tablets y escritorio
 
 ## Características Técnicas Destacadas
+
 - Renderizado híbrido (SSR/SSG/ISR)
 - Optimización de imágenes con Next.js Image
 - Autenticación segura con Supabase Auth
@@ -41,6 +48,7 @@ BitArena es una plataforma web integral para la comunidad de Minecraft que inclu
 - Componentes UI accesibles y personalizables
 
 ## Estructura de Directorios Principales
+
 - `/src/app` - Rutas y páginas de la aplicación
 - `/src/components` - Componentes reutilizables
 - `/src/context` - Contextos de React
