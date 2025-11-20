@@ -2,6 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
+import { YouTubeLazy } from "@/components/ui/YouTubeLazy";
 
 /**
  * Extrae el primer párrafo del HTML
@@ -116,19 +117,13 @@ export function HiloPreview({ html, className = "" }: HiloPreviewProps) {
         />
       )}
 
-      {/* Video de YouTube */}
+      {/* Video de YouTube - Lazy Load Facade */}
       {youtubeVideoId && (
-        <div
-          className="mb-3 relative w-full"
-          style={{ paddingBottom: "56.25%", height: 0 }}
-        >
-          <iframe
-            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
-            className="absolute top-0 left-0 w-full h-full rounded-lg"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            title="YouTube video"
-            style={{ border: "none" }}
+        <div className="mb-3">
+          <YouTubeLazy
+            videoId={youtubeVideoId}
+            title="Vista previa de video"
+            className="rounded-lg"
           />
         </div>
       )}

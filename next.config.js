@@ -242,77 +242,13 @@ const nextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer, dev }) => {
+  webpack: (config, { isServer }) => {
     if (!isServer) {
       // Configuración de fallbacks para compatibilidad
       config.resolve.fallback = {
         fs: false,
         path: false,
         crypto: false,
-      }
-      
-      // Aumentar el tiempo de espera para la carga de chunks
-      config.watchOptions = {
-        aggregateTimeout: 1000, // Aumentado para dar más tiempo
-        poll: 2000, // Comprobar cambios cada 2 segundos
-        ignored: /node_modules/, // Ignorar node_modules para mejor rendimiento
-      }
-      
-      // Configurar el timeout para la carga de chunks
-      config.output.chunkLoadTimeout = 120000; // 120 segundos (aumentado)
-      
-      // En desarrollo, usar nombres de chunk más estables
-      if (dev) {
-        config.output.filename = 'static/chunks/[name].js';
-        config.output.chunkFilename = 'static/chunks/[name].js';
-      }
-      
-      // Optimizar la división de código
-      config.optimization.splitChunks = {
-        chunks: 'all',
-        maxInitialRequests: 25,
-        minSize: 20000,
-        maxSize: dev ? 500000 : 200000, // Chunks más grandes en desarrollo
-        cacheGroups: {
-          default: {
-            minChunks: 2,
-            priority: -20,
-            reuseExistingChunk: true,
-          },
-          vendors: {
-            test: /[\\/]node_modules[\\/]/,
-            priority: -10,
-            reuseExistingChunk: true,
-          },
-          // Grupo especial para UI libraries (NextUI, Radix)
-          ui: {
-            test: /[\\/]node_modules[\\/](@nextui-org|@radix-ui)[\\/]/,
-            priority: 20,
-            reuseExistingChunk: true,
-            name: 'ui-libs',
-          },
-          // Grupo especial para React Query y Supabase
-          reactQuery: {
-            test: /[\\/]node_modules[\\/](@tanstack|@supabase)[\\/]/,
-            priority: 10,
-            reuseExistingChunk: true,
-            name: 'supabase-libs',
-          },
-          // Grupo para librerías de animación
-          animation: {
-            test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
-            priority: 15,
-            reuseExistingChunk: true,
-            name: 'animation-libs',
-          },
-          // Grupo para utilidades
-          utils: {
-            test: /[\\/]node_modules[\\/](date-fns|lodash)[\\/]/,
-            priority: 5,
-            reuseExistingChunk: true,
-            name: 'utils-libs',
-          },
-        },
       }
       
       // Mejorar el manejo de errores de carga de chunks
