@@ -158,11 +158,19 @@ const nextConfig = {
   // Aumentar el timeout para la carga de chunks
   experimental: {
     // Mejoras para evitar errores de carga de chunks
+    // Tree-shaking optimizado para librerías pesadas
     optimizePackageImports: [
       '@supabase/auth-helpers-react',
       '@supabase/auth-helpers-nextjs',
       '@fortawesome/react-fontawesome',
+      '@nextui-org/react',
+      '@radix-ui/react-icons',
       'lucide-react',
+      'framer-motion',
+      'date-fns',
+      'lodash',
+      'react-hot-toast',
+      'zustand',
     ],
     // Mejorar la estabilidad del servidor de desarrollo
     serverComponentsExternalPackages: ['@supabase/supabase-js'],
@@ -171,6 +179,8 @@ const nextConfig = {
   // Optimizaciones de compilación para reducir tamaño de bundle
   swcMinify: true,
   compress: true,
+  // Optimizar CSS y reducir render-blocking resources
+  productionBrowserSourceMaps: false,
   // Configuración para mejorar la estabilidad
   onDemandEntries: {
     // Periodo de tiempo en ms que una página permanecerá en el buffer
@@ -274,11 +284,33 @@ const nextConfig = {
             priority: -10,
             reuseExistingChunk: true,
           },
+          // Grupo especial para UI libraries (NextUI, Radix)
+          ui: {
+            test: /[\\/]node_modules[\\/](@nextui-org|@radix-ui)[\\/]/,
+            priority: 20,
+            reuseExistingChunk: true,
+            name: 'ui-libs',
+          },
           // Grupo especial para React Query y Supabase
           reactQuery: {
             test: /[\\/]node_modules[\\/](@tanstack|@supabase)[\\/]/,
             priority: 10,
             reuseExistingChunk: true,
+            name: 'supabase-libs',
+          },
+          // Grupo para librerías de animación
+          animation: {
+            test: /[\\/]node_modules[\\/](framer-motion)[\\/]/,
+            priority: 15,
+            reuseExistingChunk: true,
+            name: 'animation-libs',
+          },
+          // Grupo para utilidades
+          utils: {
+            test: /[\\/]node_modules[\\/](date-fns|lodash)[\\/]/,
+            priority: 5,
+            reuseExistingChunk: true,
+            name: 'utils-libs',
           },
         },
       }
