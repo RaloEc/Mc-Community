@@ -18,6 +18,12 @@ import { FriendRequestsList } from "@/components/social/FriendRequestsList";
 import { FriendsListCompact } from "@/components/social/FriendsListCompact";
 import { ConnectedAccountsModal } from "@/components/perfil/ConnectedAccountsModal";
 import { ConnectedAccountsForm } from "@/components/perfil/ConnectedAccountsForm";
+import { ProfileTabs } from "@/components/perfil/ProfileTabs";
+import { RiotAccountCard } from "@/components/riot/RiotAccountCard";
+import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
+import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
+import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
+import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
 import {
   Card,
   CardBody,
@@ -91,6 +97,10 @@ export default function PerfilPage() {
     connected_accounts: {} as Record<string, string>,
   });
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"posts" | "lol">("posts");
+  const [riotAccount, setRiotAccount] = useState<any>(null);
+  const [loadingRiotAccount, setLoadingRiotAccount] = useState(false);
+  const isOwnProfile = user?.id === perfil?.id;
 
   const syncEditDataWithPerfil = useCallback((perfilData: PerfilCompleto) => {
     // Parsear connected_accounts si es string JSON
@@ -211,6 +221,32 @@ export default function PerfilPage() {
       setError(null);
     }
   }, [isOpen, perfil, syncEditDataWithPerfil]);
+
+  // Cargar cuenta de Riot vinculada
+  useEffect(() => {
+    const loadRiotAccount = async () => {
+      if (!user) return;
+      setLoadingRiotAccount(true);
+      try {
+        const response = await fetch("/api/riot/account");
+        if (response.ok) {
+          const data = await response.json();
+          setRiotAccount(data.account);
+          console.log("[Perfil] Cuenta Riot cargada:", data.account);
+        } else {
+          console.log("[Perfil] No hay cuenta Riot vinculada (404 o similar)");
+          setRiotAccount(null);
+        }
+      } catch (error) {
+        console.error("[Perfil] Error loading Riot account:", error);
+        setRiotAccount(null);
+      } finally {
+        setLoadingRiotAccount(false);
+      }
+    };
+
+    loadRiotAccount();
+  }, [user]);
 
   const cargarEstadisticas = async () => {
     if (!user) return;
@@ -774,6 +810,8 @@ export default function PerfilPage() {
               friends_count: (profile as any)?.friends_count ?? 0,
               connected_accounts: (profile as any)?.connected_accounts || {},
             }}
+            riotTier={riotAccount?.tier}
+            riotRank={riotAccount?.rank}
             onEditClick={onOpen}
           />
         </div>
@@ -791,58 +829,98 @@ export default function PerfilPage() {
           </div>
         )}
 
-        {/* Grid principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Columna izquierda - Feed de actividad */}
-          <div className="lg:col-span-2">
-            <UserActivityFeedContainer
-              fetchActivities={fetchActividades}
-              userColor={perfil.color}
-            />
-          </div>
+        {/* Sistema de Pestañas */}
+        <ProfileTabs
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          hasRiotAccount={!!riotAccount}
+        />
 
-          {/* Columna derecha - Información de membresía */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Solicitudes de amistad */}
-            <FriendRequestsList userColor={perfil.color} />
-
-            {/* Lista de amigos */}
-            <FriendsListCompact
-              userId={user?.id}
-              userColor={perfil.color}
-              limit={8}
-            />
-
-            {/* Estadísticas */}
-            <ProfileStats estadisticas={estadisticas} />
-
-            <MembershipInfo
-              perfil={{
-                created_at: perfil.created_at,
-                ultimo_acceso: perfil.ultimo_acceso,
-                activo: perfil.activo,
-                role: perfil.role,
+        {/* CTA para vincular Riot cuando es su propio perfil */}
+        {!riotAccount && isOwnProfile && (
+          <div className="mt-6">
+            <RiotEmptyState
+              isOwnProfile
+              onLinkClick={() => {
+                window.location.href = "/api/riot/login";
               }}
             />
-
-            {/* Botón de cerrar sesión */}
-            <Card className="bg-white dark:bg-black amoled:bg-black">
-              <CardBody>
-                <Button
-                  color="danger"
-                  variant="light"
-                  startContent={<LogOut className="w-4 h-4" />}
-                  onPress={handleSignOut}
-                  isLoading={isSigningOut}
-                  isDisabled={isSigningOut}
-                  className="w-full"
-                >
-                  {isSigningOut ? "Cerrando sesión..." : "Cerrar Sesión"}
-                </Button>
-              </CardBody>
-            </Card>
           </div>
-        </div>
+        )}
+
+        {/* Contenido de Pestañas */}
+        {activeTab === "posts" ? (
+          // Pestaña Actividad
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
+            {/* Columna izquierda - Feed de actividad */}
+            <div className="lg:col-span-2">
+              <UserActivityFeedContainer
+                fetchActivities={fetchActividades}
+                userColor={perfil.color}
+              />
+            </div>
+
+            {/* Columna derecha - Información de membresía */}
+            <div className="lg:col-span-1 space-y-6">
+              {/* Solicitudes de amistad */}
+              <FriendRequestsList userColor={perfil.color} />
+
+              {/* Lista de amigos */}
+              <FriendsListCompact
+                userId={user?.id}
+                userColor={perfil.color}
+                limit={8}
+              />
+
+              {/* Estadísticas */}
+              <ProfileStats estadisticas={estadisticas} />
+
+              <MembershipInfo
+                perfil={{
+                  created_at: perfil.created_at,
+                  ultimo_acceso: perfil.ultimo_acceso,
+                  activo: perfil.activo,
+                  role: perfil.role,
+                }}
+              />
+
+              {/* Botón de cerrar sesión */}
+              <Card className="bg-white dark:bg-black amoled:bg-black">
+                <CardBody>
+                  <Button
+                    color="danger"
+                    variant="light"
+                    startContent={<LogOut className="w-4 h-4" />}
+                    onPress={handleSignOut}
+                    isLoading={isSigningOut}
+                    isDisabled={isSigningOut}
+                    className="w-full"
+                  >
+                    {isSigningOut ? "Cerrando sesión..." : "Cerrar Sesión"}
+                  </Button>
+                </CardBody>
+              </Card>
+            </div>
+          </div>
+        ) : (
+          // Pestaña League of Legends
+          <div className="mt-8 space-y-6">
+            {riotAccount ? (
+              <>
+                {/* Tarjeta de cuenta de Riot */}
+                <RiotAccountCard useVisualDesign={true} />
+
+                {/* Resumen de campeones */}
+                {riotAccount.puuid && (
+                  <ChampionStatsSummary puuid={riotAccount.puuid} limit={5} />
+                )}
+
+                {/* Historial de partidas */}
+                <MatchHistoryList />
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Modal de edición con scroll */}

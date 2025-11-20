@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { ConnectedAccounts } from "./ConnectedAccounts";
+import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 
 interface ProfileHeaderProps {
   perfil: {
@@ -22,11 +23,15 @@ interface ProfileHeaderProps {
     friends_count?: number;
     connected_accounts?: Record<string, string>;
   };
+  riotTier?: string | null;
+  riotRank?: string | null;
   onEditClick: () => void;
 }
 
 export default function ProfileHeader({
   perfil,
+  riotTier,
+  riotRank,
   onEditClick,
 }: ProfileHeaderProps) {
   const [bannerError, setBannerError] = useState(false);
@@ -110,9 +115,14 @@ export default function ProfileHeader({
             </Avatar>
 
             <div className="flex flex-col items-center gap-1">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center">
-                {perfil.username}
-              </h1>
+              <div className="flex items-center gap-3 justify-center">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center">
+                  {perfil.username}
+                </h1>
+                {riotTier && (
+                  <RiotTierBadge tier={riotTier} rank={riotRank} size="md" />
+                )}
+              </div>
               {perfil.role !== "user" && (
                 <Badge
                   variant={roleBadge.variant}

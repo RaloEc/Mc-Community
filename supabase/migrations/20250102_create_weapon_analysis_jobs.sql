@@ -21,23 +21,50 @@ CREATE INDEX IF NOT EXISTS idx_weapon_analysis_jobs_status ON public.weapon_anal
 ALTER TABLE public.weapon_analysis_jobs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can insert jobs only for themselves
-CREATE POLICY "Users can insert their own jobs"
-  ON public.weapon_analysis_jobs
-  FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'weapon_analysis_jobs' 
+    AND policyname = 'Users can insert their own jobs'
+  ) THEN
+    CREATE POLICY "Users can insert their own jobs"
+      ON public.weapon_analysis_jobs
+      FOR INSERT
+      WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Policy: Users can read only their own jobs
-CREATE POLICY "Users can read their own jobs"
-  ON public.weapon_analysis_jobs
-  FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'weapon_analysis_jobs' 
+    AND policyname = 'Users can read their own jobs'
+  ) THEN
+    CREATE POLICY "Users can read their own jobs"
+      ON public.weapon_analysis_jobs
+      FOR SELECT
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Policy: Users can update only their own jobs (for Edge Function via service role)
 -- Note: Service role bypasses RLS, so this is for future client-side updates if needed
-CREATE POLICY "Users can update their own jobs"
-  ON public.weapon_analysis_jobs
-  FOR UPDATE
-  USING (auth.uid() = user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies 
+    WHERE tablename = 'weapon_analysis_jobs' 
+    AND policyname = 'Users can update their own jobs'
+  ) THEN
+    CREATE POLICY "Users can update their own jobs"
+      ON public.weapon_analysis_jobs
+      FOR UPDATE
+      USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION public.update_weapon_analysis_jobs_updated_at()

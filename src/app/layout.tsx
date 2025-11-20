@@ -4,6 +4,7 @@ import { Nunito } from "next/font/google";
 import "./globals.css";
 import "@/styles/code-highlight.css";
 import Header from "@/components/Header";
+import { Footer } from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
@@ -219,11 +220,12 @@ export default async function RootLayout({
         )}
       </head>
       <body
-        className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen`}
+        className={`${nunito.variable} font-sans bg-background text-foreground min-h-screen flex flex-col`}
       >
         <Providers session={session}>
           <Header />
-          <main className="container mx-auto px-0">{children}</main>
+          <main className="container mx-auto px-0 flex-1">{children}</main>
+          <Footer />
           <PWAManager />
         </Providers>
       </body>

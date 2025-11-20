@@ -213,6 +213,12 @@ const nextConfig = {
         hostname: '*.tenor.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.communitydragon.org',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
