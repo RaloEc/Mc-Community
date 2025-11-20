@@ -9,7 +9,7 @@ import {
   endOfMonth,
   eachDayOfInterval,
   isSameDay,
-} from "date-fns";
+} from "date-fns"; 
 import { es } from "date-fns/locale";
 import { Calendar, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
