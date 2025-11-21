@@ -43,11 +43,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
     <div className="flex items-center gap-1 md:gap-3">
       {/* Botones de creación - Ocultar en pantallas menores a 1024px */}
       <div className="hidden lg:flex items-center gap-2">
-        <ModeToggle 
-          variant="ghost" 
-          size="default"
-          modes={["light", "dark"]}
-        />
+        <ModeToggle variant="ghost" size="default" modes={["light", "dark"]} />
         {isAdmin && (
           <Button
             variant="ghost"
@@ -56,6 +52,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
             className="text-sm"
             style={
               {
+                color: profile?.color || "#2563eb",
                 "--hover-bg": profile?.color
                   ? `${profile.color}1a`
                   : "rgba(37, 99, 235, 0.1)",
@@ -67,7 +64,10 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
               } as React.CSSProperties
             }
           >
-            <Link href="/admin/noticias/crear" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
+            <Link
+              href="/admin/noticias/crear"
+              className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded"
+            >
               <Plus className="h-4 w-4 mr-1" />
               Noticia
             </Link>
@@ -81,6 +81,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
             className="text-sm"
             style={
               {
+                color: profile?.color || "#2563eb",
                 "--hover-bg": profile?.color
                   ? `${profile.color}1a`
                   : "rgba(37, 99, 235, 0.1)",
@@ -92,7 +93,10 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
               } as React.CSSProperties
             }
           >
-            <Link href="/foro/crear-hilo" className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded">
+            <Link
+              href="/foro/crear-hilo"
+              className="hover:bg-[var(--hover-bg)] dark:hover:bg-[var(--dark-hover-bg)] hover:text-[var(--hover-text)] dark:hover:text-[var(--dark-hover-text)] px-2 py-1 rounded"
+            >
               <PenSquare className="h-4 w-4 mr-1" />
               Hilo
             </Link>
@@ -123,10 +127,7 @@ export const HeaderRightControls: React.FC<HeaderRightControlsProps> = ({
             >
               Iniciar Sesión
             </Button>
-            <Button
-              size="sm"
-              onClick={() => openAuthModal("register")}
-            >
+            <Button size="sm" onClick={() => openAuthModal("register")}>
               Registrarse
             </Button>
           </div>

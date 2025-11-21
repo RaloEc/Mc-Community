@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import type { Viewport } from "next";
 import { Nunito, Inter } from "next/font/google";
+import dynamic from "next/dynamic";
 import "@/styles/critical.css"; // CSS crítico inyectado inline
 import "./globals.css";
 import "@/styles/code-highlight.css";
 import Header from "@/components/Header";
-import { Footer } from "@/components/Footer";
 import Providers from "@/components/Providers";
 import { createClient } from "@/lib/supabase/server";
 import { GoogleAdsenseScript } from "@/components/ads/GoogleAdsense";
-import { ThemeProvider } from "@/components/theme/ThemeProvider";
-import PWAManager from "@/components/pwa/PWAManager";
+
+// Lazy load PWAManager
+const PWAManager = dynamic(() => import("@/components/pwa/PWAManager"), {
+  ssr: false,
+});
 
 // Optimizar carga de fuentes con font-display: swap para evitar bloqueo de renderizado
 // Solo cargar los weights necesarios para reducir tamaño de descarga
@@ -229,7 +232,11 @@ export default async function RootLayout({
   const adsenseEnabled = process.env.NEXT_PUBLIC_ADSENSE_ENABLED === "true";
 
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html
+      lang="es"
+      suppressHydrationWarning
+      className="h-screen w-screen overflow-hidden"
+    >
       <head>
         <ThemeScript />
         <ChunkErrorHandlerScript />
@@ -239,12 +246,17 @@ export default async function RootLayout({
         )}
       </head>
       <body
-        className={`${nunito.variable} ${inter.variable} font-sans bg-background text-foreground min-h-screen flex flex-col`}
+        className={`${nunito.variable} ${inter.variable} font-sans bg-background text-foreground h-screen w-screen overflow-hidden flex flex-col`}
       >
         <Providers session={session}>
+          {/* Header: estático, no hace scroll */}
           <Header />
-          <main className="container mx-auto px-0 flex-1">{children}</main>
-          <Footer />
+
+          {/* Main: único elemento que hace scroll */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden pt-14 sm:pt-16">
+            <div className="container mx-auto px-0">{children}</div>
+          </main>
+
           <PWAManager />
         </Providers>
       </body>

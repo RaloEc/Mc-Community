@@ -201,7 +201,8 @@ const nextConfig = {
       'media.tenor.com',
       'tenor.com',
       'korestats.com',
-      'www.korestats.com'
+      'www.korestats.com',
+      'i.ytimg.com'
     ],
     remotePatterns: [
       {
@@ -237,6 +238,12 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'raw.communitydragon.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
         port: '',
         pathname: '/**',
       }

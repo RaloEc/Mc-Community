@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { ForoCategoria } from "./useHeaderLogic";
+import { LegalModal } from "@/components/legal/LegalModal";
 
 interface HeaderMobileMenuProps {
   isOpen: boolean;
@@ -451,7 +452,7 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
             </li>
           </ul>
 
-          {/* Sección inferior con tema y cerrar sesión */}
+          {/* Sección inferior con tema, aviso legal y cerrar sesión */}
           <div className="mt-auto">
             {/* Botón de cambio de tema */}
             <div className="p-4 border-t border-gray-200 dark:border-gray-800">
@@ -463,6 +464,28 @@ export const HeaderMobileMenu: React.FC<HeaderMobileMenuProps> = ({
                   modes={["light", "dark"]}
                 />
               </div>
+            </div>
+
+            {/* Aviso legal */}
+            <div className="p-4 border-t border-gray-200 dark:border-gray-800 text-[11px] leading-relaxed text-gray-500 dark:text-gray-400 space-y-2">
+              <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
+                Aviso legal
+              </p>
+              <p>
+                KoreStats no está afiliado a Riot Games, Inc. League of Legends,
+                Valorant, Teamfight Tactics, Legends of Runeterra y todos los
+                activos relacionados son propiedad intelectual de Riot Games,
+                Inc.
+              </p>
+              <p>
+                KoreStats es un proyecto comunitario independiente que utiliza
+                datos públicos de las APIs de Riot Games conforme a sus Términos
+                de Servicio.
+              </p>
+              <p>
+                Riot Games es una marca registrada de Riot Games, Inc. © 2024
+                KoreStats.
+              </p>
             </div>
 
             {/* Botón de cerrar sesión al final */}

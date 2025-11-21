@@ -10,7 +10,6 @@ import { NewsHeader } from "./NewsHeader";
 import { FeaturedNews } from "./FeaturedNews";
 import { NewsGrid } from "./NewsGrid";
 import { NewsSidebar } from "./NewsSidebar";
-import { SubscriptionSection } from "./SubscriptionSection";
 import { NewsSkeleton } from "./NewsSkeleton";
 import { useNoticias } from "./hooks/useNoticias";
 import { useThemeDetection } from "./hooks/useThemeDetection";
@@ -156,9 +155,6 @@ function NoticiasDestacadasContent({
           </div>
         </div>
       </div>
-
-      {/* Sección de suscripción */}
-      <SubscriptionSection />
 
       {/* Estilos para el efecto de marquesina */}
       <style jsx global>{`

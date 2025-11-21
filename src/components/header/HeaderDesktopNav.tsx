@@ -43,6 +43,7 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
               className="px-4 py-2 rounded-lg transition-colors font-medium"
               style={
                 {
+                  color: profile?.color || "#2563eb",
                   "--tw-text-opacity": 1,
                   "--tw-bg-opacity": 0.05,
                   "--hover-bg": profile?.color
@@ -70,6 +71,7 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
               className="px-4 py-2 rounded-lg transition-colors font-medium"
               style={
                 {
+                  color: profile?.color || "#2563eb",
                   "--tw-text-opacity": 1,
                   "--tw-bg-opacity": 0.05,
                   "--hover-bg": profile?.color
@@ -118,7 +120,9 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
                 setShowSearchDropdown(true);
               }
             }}
-            onFocus={() => searchQuery.length >= 2 && setShowSearchDropdown(true)}
+            onFocus={() =>
+              searchQuery.length >= 2 && setShowSearchDropdown(true)
+            }
             onBlur={() => {
               // Cierra el dropdown después de un pequeño delay para permitir clicks en el dropdown
               setTimeout(() => {
@@ -138,7 +142,7 @@ export const HeaderDesktopNav: React.FC<HeaderDesktopNavProps> = ({
               dark:focus:border-[var(--focus-border-color)] dark:focus-visible:ring-2 dark:focus-visible:ring-[var(--focus-ring-color)]
               transition-colors duration-200`}
           />
-          
+
           {/* Dropdown de búsqueda en tiempo real */}
           <SearchDropdown
             query={searchQuery}

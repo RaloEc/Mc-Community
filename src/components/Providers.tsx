@@ -1,11 +1,18 @@
 "use client";
 
 import { ThemeProvider } from "@/lib/theme";
-import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import FABMobile from "@/components/ui/FABMobile";
 import { ReactQueryProvider } from "@/lib/react-query/provider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import dynamic from "next/dynamic";
+
+const Toaster = dynamic(
+  () => import("@/components/ui/sonner").then((mod) => mod.Toaster),
+  {
+    ssr: false,
+  }
+);
 
 export default function Providers({
   children,

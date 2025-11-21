@@ -1,0 +1,1240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reserva espacio para la barra de scroll para evitar saltos de layout */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Animaciones personalizadas para comentarios */
+@keyframes pulse-slow {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.8;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Animación de highlight para comentarios */
+@keyframes highlight {
+  0% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+
+.highlight {
+  animation: highlight 1.5s ease-in-out;
+}
+
+/* Animación de fade in para comentarios */
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.95);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateY(-5px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+:root {
+  /* Variables de color del tema por defecto */
+  --user-color: #3b82f6; /* Color azul por defecto */
+  --selection-bg: rgba(59, 130, 246, 0.2); /* 20% de opacidad por defecto */
+  --selection-text: #ffffff; /* Texto blanco en selección */
+  --caret-color: #3b82f6; /* Color del cursor por defecto */
+  --foreground: #000000;
+  --background: #ffffff;
+  --background-rgb: 255, 255, 255;
+  --muted-foreground: #6b7280;
+  --border: #e5e7eb;
+  --border-rgb: 229, 231, 235;
+}
+
+/* Aplicar estilos de selección globales */
+::selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text, inherit);
+}
+
+::-moz-selection {
+  background-color: var(--selection-bg);
+  color: var(--selection-text, inherit);
+}
+
+/* Aplicar color de cursor global */
+* {
+  caret-color: var(--caret-color);
+}
+
+/* Asegurar que los enlaces seleccionados sean legibles */
+a::selection {
+  color: var(--selection-text, #ffffff) !important;
+}
+
+a::-moz-selection {
+  color: var(--selection-text, #ffffff) !important;
+}
+
+/* App-Like Layout: No establecer overflow aquí */
+html,
+body {
+  width: 100%;
+  position: relative;
+}
+
+/* Prevenir scroll horizontal */
+.overflow-x-clip {
+  overflow-x: clip;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animación de resaltado para posts reportados */
+@keyframes highlight {
+  0%,
+  100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+  }
+}
+
+.animate-highlight {
+  animation: highlight 1s ease-in-out 3;
+}
+
+/* ============================================
+   TRANSICIONES DE TEMA
+   ============================================ */
+
+/* 
+ * Cambio de tema instantáneo sin animaciones
+ * next-themes maneja el cambio automáticamente
+ */
+
+.dropdown-animation {
+  animation: fadeIn 0.2s ease-out;
+  transform-origin: top center;
+}
+
+/* Estilos de Swapy eliminados */
+
+/* Definición de variables y estilos base */
+:root {
+  /* Colores base */
+  --blue: 217 91% 60%; /* Azul principal */
+  --green: 120 60% 50%; /* Verde hierba */
+  --orange: 25 95% 53%; /* Naranja lava */
+  --stone: 25 5% 45%; /* Gris piedra */
+
+  /* Tema Claro */
+  --background: 0 0% 100%;
+  --foreground: 25 5% 25%; /* Texto principal - Gris piedra oscuro */
+
+  --card: 0 0% 100%;
+  --card-foreground: 25 5% 25%;
+
+  --popover: 0 0% 100%;
+  --popover-foreground: 25 5% 25%;
+
+  --primary: 217 91% 60%; /* Azul principal */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 120 60% 50%; /* Verde hierba */
+  --secondary-foreground: 0 0% 100%;
+
+  --muted: 210 20% 98%;
+  --muted-foreground: 25 5% 45%; /* Gris piedra */
+
+  --accent: 217 91% 60%; /* Azul principal */
+  --accent-foreground: 0 0% 100%;
+
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 214 32% 91%;
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%; /* Azul principal */
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  /* Tema AMOLED - Negro puro (#000000) con acentos vibrantes */
+  --background: 0 0% 0%; /* Negro puro #000000 */
+  --foreground: 0 0% 100%; /* Blanco puro #ffffff */
+  --menu-bg-color: #000000;
+
+  --card: 0 0% 5%; /* Gris muy oscuro para tarjetas */
+  --card-foreground: 0 0% 100%; /* Texto blanco */
+
+  --popover: 0 0% 5%; /* Gris muy oscuro para popovers */
+  --popover-foreground: 0 0% 100%; /* Texto blanco */
+
+  --primary: 217 91% 65%; /* Azul brillante */
+  --primary-foreground: 0 0% 100%; /* Texto blanco */
+
+  --secondary: 120 70% 40%; /* Verde hierba más saturado */
+  --secondary-foreground: 0 0% 100%; /* Texto blanco */
+
+  --muted: 0 0% 8%; /* Gris oscuro para elementos atenuados */
+  --muted-foreground: 0 0% 70%; /* Gris claro para texto atenuado */
+
+  --accent: 217 91% 60%; /* Azul principal */
+  --accent-foreground: 0 0% 100%; /* Texto blanco */
+
+  --destructive: 0 84% 63%; /* Rojo para acciones destructivas */
+  --destructive-foreground: 0 0% 100%; /* Texto blanco */
+
+  --border: 0 0% 12%; /* Borde gris oscuro */
+  --input: 0 0% 12%; /* Input gris oscuro */
+  --ring: 217 91% 65%; /* Igual que primary */
+}
+
+/* La clase .amoled ha sido eliminada y sus estilos se han movido a .dark */
+* {
+  @apply border-border;
+}
+body {
+  @apply bg-background text-foreground;
+  font-feature-settings: "rlig" 1, "calt" 1;
+  /* El padding-top se movió al contenedor main */
+}
+
+/* App-Like Layout: main no necesita margin-top */
+/* El header es estático (flex-none) y main es flex-1 */
+
+/* Animaciones y efectos */
+
+/* Animación de respiración suave para el indicador */
+@keyframes suaveRespirar {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+/* Estilos para tarjetas de servidor */
+.servidor-card {
+  position: relative;
+  transition: all 0.1s ease;
+}
+
+/* Estado del servidor (online/offline) con borde superior */
+.servidor-card.online .border-t-status {
+  border-top-color: #10b981 !important; /* Verde para online */
+}
+
+.servidor-card.offline .border-t-status {
+  border-top-color: #ef4444 !important; /* Rojo para offline */
+}
+
+.servidor-card.offline {
+  opacity: 0.9;
+}
+
+/* Animación sutil para el borde en estado online */
+@keyframes borderPulse {
+  0% {
+    border-top-color: rgba(16, 185, 129, 0.7);
+  }
+  50% {
+    border-top-color: rgba(16, 185, 129, 1);
+  }
+  100% {
+    border-top-color: rgba(16, 185, 129, 0.7);
+  }
+}
+
+.servidor-card.online .border-t-status {
+  animation: borderPulse 2s ease-in-out infinite;
+}
+
+/* AMOLED: Estilos para tema AMOLED */
+.dark .servidor-header-title,
+.dark .servidor-header-description,
+.dark .servidor-header-badge,
+.dark .status-text,
+.dark .server-name,
+.dark .server-desc,
+.dark .label,
+.dark .value,
+.dark .ip {
+  color: #e0e0e0 !important;
+}
+
+.dark .servidor-card {
+  background-color: #000000;
+  border-color: #1e1e1e;
+}
+
+.dark .servidor-card.destacado {
+  border-left-color: var(--primary) !important;
+}
+
+.dark .icon-container {
+  background-color: rgba(33, 150, 243, 0.15);
+}
+
+.dark .ip-container,
+.dark .motd {
+  background-color: #121212;
+  border-color: #1e1e1e;
+}
+
+/* Estilos para blockquotes */
+.prose blockquote,
+.hilo-content blockquote,
+.hilo-preview blockquote,
+.foro-card blockquote {
+  background: none !important;
+  border-left: none !important;
+  padding-left: 1.5em !important;
+  margin: 0.75em 0 !important;
+  color: inherit !important;
+  font-style: normal !important;
+  position: relative;
+  padding: 0.25em 0 0.25em 1.5em;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.prose blockquote::before,
+.hilo-content blockquote::before,
+.hilo-preview blockquote::before,
+.foro-card blockquote::before {
+  content: ">" !important;
+  position: absolute;
+  left: 0;
+  top: 0.25em;
+  font-weight: bold;
+  color: var(--foreground);
+  opacity: 0.6;
+}
+
+.prose blockquote p,
+.hilo-content blockquote p,
+.hilo-preview blockquote p,
+.foro-card blockquote p {
+  margin: 0 !important;
+  display: inline;
+  color: inherit;
+}
+
+/* Asegurar que los blockquotes se vean bien en modo oscuro */
+.dark .prose blockquote,
+.dark .hilo-content blockquote,
+.dark .hilo-preview blockquote,
+.dark .foro-card blockquote {
+  color: #e5e7eb !important;
+}
+
+.dark .prose blockquote::before,
+.dark .hilo-content blockquote::before,
+.dark .hilo-preview blockquote::before,
+.dark .foro-card blockquote::before {
+  color: #e5e7eb;
+  opacity: 0.8;
+}
+
+/* Estilo para citas dentro de blockquotes */
+.prose blockquote blockquote,
+.hilo-content blockquote blockquote,
+.hilo-preview blockquote blockquote,
+.foro-card blockquote blockquote {
+  margin-left: 1em !important;
+  padding-left: 1em !important;
+  border-left: 2px solid var(--border) !important;
+}
+
+.dark .prose blockquote blockquote,
+.dark .hilo-content blockquote blockquote,
+.dark .hilo-preview blockquote blockquote,
+.dark .foro-card blockquote blockquote {
+  border-left-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Estilos específicos para presupuestos en tarjetas de foro */
+.foro-card .hilo-content,
+.foro-card .hilo-preview {
+  position: relative;
+}
+
+.foro-card blockquote {
+  margin: 0.5em 0 !important;
+  padding: 0.25em 0 0.25em 1.5em !important;
+  font-size: 0.85em !important;
+  line-height: 1.4 !important;
+  color: var(--muted-foreground) !important;
+}
+
+.dark .foro-card blockquote {
+  color: var(--muted-foreground) !important;
+}
+
+.foro-card blockquote::before {
+  content: ">" !important;
+  position: absolute;
+  left: 0.5em;
+  color: var(--muted-foreground);
+  opacity: 0.8;
+}
+
+/* Estilos para tarjetas con hover */
+.card-hover-effect {
+  transition: all 0.1s ease;
+}
+
+.card-hover-effect:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Estilos para tema AMOLED */
+.dark .amoled-black {
+  background-color: #000000;
+}
+
+.dark .amoled-gray {
+  background-color: #121212;
+}
+
+.dark .amoled-border {
+  border-color: rgba(33, 150, 243, 0.2);
+}
+
+/* Estilos para efectos de gradiente */
+.minecraft-gradient {
+  background: linear-gradient(to right, #2196f3, #4aedd9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Estilos para menús desplegables */
+
+/* Estilos para botones con efecto hover */
+.button-hover-effect {
+  transition: all 0.2s ease;
+}
+
+.button-hover-effect:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para secciones con fondo difuminado */
+.blur-backdrop {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* Estilos para iconos con animación */
+.icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  transition: all 0.1s ease;
+}
+
+.icon-container:hover {
+  transform: scale(1.1);
+  background-color: rgba(33, 150, 243, 0.1);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Transiciones solo para interacciones, NO para cambio de tema */
+button,
+a,
+input,
+textarea,
+select {
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+/* Animación de ping lento para el botón de cambio de tema */
+@keyframes ping-slow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+  75%,
+  100% {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 1s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ESTILOS DEL EDITOR TIPTAP */
+/* CONTENEDOR PRINCIPAL */
+.tiptap-container {
+  background: var(--background); /* Usar el color de fondo del tema */
+  border: 1px solid var(--border); /* Usar el color de borde del tema */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+/* Estilos específicos para el modo oscuro */
+.dark .tiptap-container {
+  background: #000000; /* Fondo AMOLED negro puro para modo oscuro */
+  border-color: #1e293b; /* Borde azul oscuro para modo oscuro */
+}
+
+/* BARRA DE HERRAMIENTAS SUPERIOR */
+.tiptap-toolbar {
+  display: flex;
+  flex-direction: row; /* Forzar disposición horizontal */
+  flex-wrap: nowrap; /* Evitar que los elementos se envuelvan */
+  align-items: center;
+  gap: 0.1rem;
+  background: var(--background); /* Usar el color de fondo del tema */
+  border-bottom: 1px solid var(--border); /* Usar el color de borde del tema */
+  padding: 0.25rem 0.5rem;
+  min-height: 40px;
+  z-index: 2;
+  box-shadow: 0 1px 0 rgba(30, 41, 59, 0.3); /* Sombra azul oscuro */
+  overflow-x: auto; /* Permitir desplazamiento horizontal si es necesario */
+}
+
+/* Estilos para los botones de la barra de herramientas */
+.tiptap-toolbar button {
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+/* Estilos para los botones al pasar el mouse */
+.tiptap-toolbar button:hover {
+  background: rgba(var(--user-color-rgb, 59, 130, 246), 0.1);
+  color: var(--user-color, #3b82f6);
+}
+
+/* Estilos para botones activos */
+.tiptap-toolbar button.is-active,
+.tiptap-toolbar button[aria-pressed="true"] {
+  background-color: transparent !important;
+  color: var(--user-color, #3b82f6) !important;
+  position: relative;
+  z-index: 1;
+  font-weight: 600;
+}
+
+/* Efecto de resaltado para el botón activo */
+.tiptap-toolbar button.is-active::after,
+.tiptap-toolbar button[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background-color: var(--user-color, #3b82f6);
+  border-radius: 2px;
+  opacity: 0.9;
+}
+
+/* Estilos para botones con foco o activación */
+.tiptap-toolbar button:active,
+.tiptap-toolbar button:focus {
+  background: rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+  color: var(--user-color, #3b82f6);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 59, 130, 246), 0.3);
+}
+
+/* Estilos para los selectores de color */
+.tiptap-toolbar input[type="color"] {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.tiptap-toolbar input[type="color"]:hover {
+  border-color: var(--user-color, #3b82f6);
+}
+
+.tiptap-toolbar input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.tiptap-toolbar input[type="color"]::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+/* Estilos específicos para el modo oscuro */
+.dark .tiptap-toolbar {
+  background: #000000; /* Fondo AMOLED negro puro para modo oscuro */
+  border-bottom-color: #1e293b; /* Borde azul oscuro para modo oscuro */
+}
+
+.dark .tiptap-toolbar button {
+  color: #e0e0e0; /* Color de texto más claro en modo oscuro */
+}
+
+.dark .tiptap-toolbar button:hover,
+.dark .tiptap-toolbar button.is-active,
+.dark .tiptap-toolbar button:active,
+.dark .tiptap-toolbar button:focus {
+  background: rgba(var(--user-color-rgb, 96, 165, 250), 0.2);
+  color: var(--user-color, #60a5fa);
+}
+
+/* ÁREA DE EDICIÓN */
+.tiptap {
+  background: var(--background); /* Usar el color de fondo del tema */
+  color: var(--foreground); /* Usar el color de texto del tema */
+  border: none;
+  border-radius: 0 0 12px 12px;
+  min-height: 300px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 1rem 1.2rem 1.5rem 1.2rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  outline: none;
+  transition: background-color 0.2s ease, color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+/* Estilos para encabezados en el editor */
+.tiptap h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 1.5rem 0 1rem;
+  color: var(--foreground);
+}
+
+.tiptap h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 1.25rem 0 0.75rem;
+  color: var(--foreground);
+}
+
+.tiptap h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin: 1rem 0 0.5rem;
+  color: var(--foreground);
+}
+
+/* Estilos para enlaces en el editor */
+.tiptap a {
+  color: var(--user-color, #3b82f6);
+  text-decoration: none;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+/* Subrayado sutil para enlaces */
+.tiptap a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background-color: currentColor;
+  opacity: 0.6;
+  transition: all 0.2s ease;
+}
+
+/* Efecto hover para enlaces */
+.tiptap a:hover {
+  color: var(--user-color, #3b82f6);
+  opacity: 0.9;
+}
+
+.tiptap a:hover::after {
+  opacity: 1;
+  height: 2px;
+}
+
+/* Estilos para listas */
+.tiptap ul,
+.tiptap ol {
+  padding: 0 1rem;
+  margin: 0.5rem 0;
+}
+
+.tiptap ul {
+  list-style-type: disc;
+}
+
+.tiptap ol {
+  list-style-type: decimal;
+}
+
+.tiptap li {
+  margin: 0.25rem 0;
+  position: relative;
+}
+
+.tiptap li > p {
+  margin: 0;
+  display: inline;
+}
+
+.tiptap li > ul,
+.tiptap li > ol {
+  margin: 0.25rem 0 0.25rem 1rem;
+}
+
+/* Estilos específicos para el modo oscuro */
+.dark .tiptap {
+  background: #000000; /* Fondo AMOLED negro puro para modo oscuro */
+  color: #ffffff; /* Texto blanco para modo oscuro */
+  border-color: #1e293b; /* Borde azul oscuro para modo oscuro */
+}
+
+/* Estilos para encabezados en modo oscuro */
+.dark .tiptap h1,
+.dark .tiptap h2,
+.dark .tiptap h3 {
+  color: #ffffff; /* Texto blanco para encabezados en modo oscuro */
+}
+
+/* Ajustes para enlaces en modo oscuro */
+.dark .tiptap a {
+  color: rgba(var(--user-color-rgb, 96, 165, 250), 0.9);
+}
+
+.dark .tiptap a:hover {
+  color: rgba(var(--user-color-rgb, 96, 165, 250), 1);
+}
+
+/* Asegurar que los placeholders sean visibles en ambos modos */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  height: 0;
+  opacity: 0.7;
+}
+
+.dark .tiptap p.is-editor-empty:first-child::before {
+  color: #94a3b8; /* Color más claro para mejor contraste en modo oscuro */
+}
+
+/* Personalización del scrollbar para navegadores WebKit (Chrome, Safari, nuevo Edge) */
+.tiptap::-webkit-scrollbar {
+  width: 8px; /* Ancho del scrollbar */
+}
+
+.tiptap::-webkit-scrollbar-track {
+  background: transparent; /* Fondo transparente */
+}
+
+.tiptap::-webkit-scrollbar-thumb {
+  background-color: rgba(59, 130, 246, 0.3); /* Color azul semi-transparente */
+  border-radius: 4px; /* Bordes redondeados */
+}
+
+.tiptap::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(
+    59,
+    130,
+    246,
+    0.5
+  ); /* Color más intenso al pasar el mouse */
+}
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--muted-foreground); /* Color de texto atenuado del tema */
+  pointer-events: none;
+  height: 0;
+  opacity: 0.7;
+}
+
+/* Ajustar el color del placeholder en modo oscuro */
+.dark .tiptap p.is-editor-empty:first-child::before {
+  color: #94a3b8; /* Gris azulado claro para mejor contraste en modo oscuro */
+}
+
+/* Contador de palabras */
+.character-count {
+  position: absolute;
+  right: 1.3rem;
+  bottom: 0.7rem;
+  font-size: 0.93rem;
+  color: #3b82f6; /* Azul primario */
+  background: transparent;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* Menú de burbuja */
+.bubble-menu {
+  background: rgba(59, 130, 246, 0.15); /* Azul con opacidad */
+  border-radius: 8px;
+  padding: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Toolkit para imágenes seleccionadas */
+.image-toolkit {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  z-index: 50;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.image-toolkit button {
+  background: rgba(59, 130, 246, 0.2);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.image-toolkit button:hover {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+/* Toolkit para videos de YouTube */
+.youtube-toolkit {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: 4px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  z-index: 10;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.youtube-toolkit button {
+  background: rgba(59, 130, 246, 0.2);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.youtube-toolkit button:hover {
+  background: rgba(59, 130, 246, 0.4);
+}
+
+/* Estilos responsivos para videos de YouTube */
+.prose iframe[src*="youtube.com"],
+.prose iframe[src*="youtu.be"],
+.editor-youtube,
+iframe.editor-youtube {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 16/9 !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Contenedor responsivo para videos */
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%; /* Relación de aspecto 16:9 */
+  height: 0;
+  overflow: hidden;
+  max-width: 100%;
+  margin: 1.5rem 0;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 6px;
+}
+
+/* Estilos para diálogos modales */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.dialog-content {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: auto;
+  min-width: 320px;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.4);
+  margin: auto;
+  animation: dialogFadeIn 0.2s ease-out;
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: rgba(var(--user-color-rgb, 59, 130, 246), 0.8);
+  border-bottom: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.15);
+  padding-bottom: 0.75rem;
+}
+
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dialog-field label {
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+.dialog-input,
+.dialog-select {
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.dialog-input:focus,
+.dialog-select:focus {
+  outline: none;
+  border-color: var(--user-color, #3b82f6);
+  box-shadow: 0 0 0 2px rgba(var(--user-color-rgb, 59, 130, 246), 0.2);
+}
+
+/* Efecto cuando el menú móvil está abierto */
+body.menu-open {
+  overflow: hidden;
+  position: relative;
+}
+
+/* Asegurar que el header esté por encima del menú */
+header {
+  /* No establecer position aquí para no sobrescribir clases Tailwind (e.g., fixed) */
+  z-index: 60;
+}
+
+/* Fondo con desenfoque sutil para el menú móvil */
+body.menu-open::after {
+  content: "";
+  position: fixed;
+  top: 64px; /* Altura del header */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 40; /* Menor que el header pero mayor que el contenido */
+  pointer-events: auto;
+}
+
+/* Asegurar que el header no se vea afectado por el overlay */
+body.menu-open header {
+  background-color: var(--background);
+  /* No forzar position aquí para respetar la posición fija del header */
+  z-index: 60;
+}
+
+/* Estilos para el menú desplegable en modo oscuro */
+.dark .fixed.inset-0.bg-black\/40.z-\[998\] {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] {
+  background-color: rgba(15, 23, 42, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3),
+    0 10px 10px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* Asegurar que los elementos del menú tengan buen contraste en modo oscuro */
+.dark .fixed.top-16.right-4.z-\[999\] .text-gray-700 {
+  color: #e5e7eb;
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] .hover\:bg-gray-100:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.dark .fixed.top-16.right-4.z-\[999\] .border-gray-200 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(var(--user-color-rgb, 59, 130, 246), 0.15);
+}
+
+.dialog-actions button:last-child {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.85);
+  border-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.5);
+}
+
+.dialog-actions button:first-child:hover {
+  border-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.5);
+  color: rgba(var(--user-color-rgb, 59, 130, 246), 0.8);
+}
+
+.dialog-help {
+  font-size: 0.875rem;
+  color: var(--muted-foreground);
+  margin: 0.5rem 0 0 0;
+}
+
+/* Estilos para inputs numéricos */
+.number-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.number-input {
+  width: 60px;
+  text-align: center;
+  padding: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+.number-control {
+  padding: 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Estilos para la previsualización de tabla */
+.table-preview {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+}
+
+.table-grid {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  aspect-ratio: 1.5 / 1;
+}
+
+.table-cell {
+  background-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.1);
+  border-radius: 2px;
+}
+
+/* Estilos para modo oscuro */
+.dark .dialog-content {
+  background-color: #000000;
+  border-color: rgba(var(--user-color-rgb, 59, 130, 246), 0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+}
+
+.dark .dialog-input,
+.dark .dialog-select {
+  background-color: #0f172a;
+  border-color: #1e293b;
+  color: #ffffff;
+}
+
+.dark .dialog-help {
+  color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .tiptap-container {
+    border-radius: 8px;
+  }
+  .tiptap {
+    border-radius: 0 0 8px 8px;
+    padding: 0.7rem 0.5rem 1.2rem 0.5rem;
+    min-height: 120px;
+  }
+  .tiptap-toolbar {
+    min-height: 38px;
+    padding: 0.15rem 0.3rem;
+  }
+  .character-count {
+    right: 0.7rem;
+    bottom: 0.4rem;
+    font-size: 0.84rem;
+  }
+
+  .dialog-content {
+    padding: 1rem;
+    width: 95%;
+    max-width: 450px;
+  }
+}
+
+/* Animación de gradiente para banner de perfil */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient 15s ease infinite;
+}
+
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+}
+
+/* --- Corrección para Dialogs (Radix) --- */
+
+/* App-Like Layout: No forzar overflow-y en html */
+/* El scroll se controla en layout.tsx con main { overflow-y-auto } */
+
+/* Evitar cambios en el padding-right */
+body[data-scroll-locked] {
+  padding-right: 0 !important;
+}
+
+/* Evitar movimiento vertical al abrir Dialogs (Radix) */
+body[data-scroll-locked] {
+  position: relative !important;
+  top: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}

@@ -9,12 +9,13 @@ import {
   endOfMonth,
   eachDayOfInterval,
   isSameDay,
-} from "date-fns"; 
+} from "date-fns";
 import { es } from "date-fns/locale";
 import { Calendar, Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CategoryBadge, getCategoryLabel } from "@/components/ui/CategoryBadge";
 import {
   Tooltip,
   TooltipContent,
@@ -216,20 +217,12 @@ export default function EventosWidget({ className = "" }: EventosWidgetProps) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center mb-1">
-                    <Badge
-                      className="text-xs mr-2"
-                      style={{
-                        backgroundColor: `${userColor}20`,
-                        color: userColor || "hsl(221.2 83.2% 53.3%)",
-                        borderColor: `${userColor}40`,
-                      }}
-                    >
-                      <span className="flex items-center">
-                        {tipoEventoIcon[evento.tipo]}
-                        {evento.tipo.charAt(0).toUpperCase() +
-                          evento.tipo.slice(1)}
-                      </span>
-                    </Badge>
+                    <CategoryBadge
+                      type={evento.tipo}
+                      label={getCategoryLabel(evento.tipo)}
+                      icon={tipoEventoIcon[evento.tipo]}
+                      className="mr-2"
+                    />
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {format(new Date(evento.fecha), "dd MMM", { locale: es })}
                     </span>
