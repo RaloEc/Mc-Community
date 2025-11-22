@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
+import React from "react";
 import { analyzeMatchTags, getTagsInfo } from "@/lib/riot/match-analyzer";
 
 interface Match {
@@ -98,7 +99,32 @@ function formatDuration(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
-const DDRAGON_VERSION = "14.23.1";
+const FALLBACK_VERSION = "14.23.1";
+
+export async function getLatestDDragonVersion(): Promise<string> {
+  try {
+    const response = await fetch(
+      "https://ddragon.leagueoflegends.com/api/versions.json",
+      {
+        next: { revalidate: 3600 },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Error al obtener versiones de DDragon: ${response.status}`
+      );
+    }
+
+    const versions: string[] = await response.json();
+    return Array.isArray(versions) && versions.length > 0
+      ? versions[0]
+      : FALLBACK_VERSION;
+  } catch (error) {
+    console.error("[getLatestDDragonVersion] Fallback activado", error);
+    return FALLBACK_VERSION;
+  }
+}
 
 const SUMMONER_SPELL_MAP: Record<number, string> = {
   1: "SummonerCleanse", // Cleanse
@@ -118,24 +144,33 @@ const SUMMONER_SPELL_MAP: Record<number, string> = {
 /**
  * Obtiene la URL del campeón desde DataDragon
  */
-function getChampionImageUrl(championName: string): string {
+function getChampionImageUrl(
+  championName: string,
+  version: string = FALLBACK_VERSION
+): string {
   // Fallback para Fiddlesticks que a veces viene diferente
   if (championName === "FiddleSticks") championName = "Fiddlesticks";
-  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/champion/${championName}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/champion/${championName}.png`;
 }
 
 /**
  * Obtiene la URL del objeto desde DataDragon
  */
-function getItemImageUrl(itemId: number): string {
+function getItemImageUrl(
+  itemId: number,
+  version: string = FALLBACK_VERSION
+): string {
   if (itemId === 0) return "";
-  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/item/${itemId}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${itemId}.png`;
 }
 
 /**
  * Obtiene la URL del hechizo desde DataDragon
  */
-function getSummonerSpellUrl(summonerId: number): string {
+function getSummonerSpellUrl(
+  summonerId: number,
+  version: string = FALLBACK_VERSION
+): string {
   if (summonerId === 0) return "";
   const spellName = SUMMONER_SPELL_MAP[summonerId];
   if (!spellName) {
@@ -144,13 +179,13 @@ function getSummonerSpellUrl(summonerId: number): string {
     );
     return "";
   }
-  return `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VERSION}/img/spell/${spellName}.png`;
+  return `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${spellName}.png`;
 }
 
 /**
  * Componente para mostrar una tarjeta de partida
  */
-function MatchCard({ match }: { match: Match }) {
+function MatchCard({ match, version }: { match: Match; version: string }) {
   const isVictory = match.win;
   const items = [
     match.item0,
@@ -178,7 +213,7 @@ function MatchCard({ match }: { match: Match }) {
   return (
     <div
       className={`
-        hidden md:flex items-center gap-4 p-4 rounded-lg border-l-4 transition-all hover:shadow-md
+        hidden md:grid grid-cols-[100px,1.3fr,210px,1fr,120px] items-center gap-4 p-4 rounded-lg border-l-4 transition-all hover:shadow-md
         ${
           isVictory
             ? "border-l-green-500 bg-green-500/5"
@@ -187,10 +222,10 @@ function MatchCard({ match }: { match: Match }) {
       `}
     >
       {/* Izquierda: Campeón y Hechizos */}
-      <div className="flex-shrink-0 relative">
+      <div className="flex flex-col items-center">
         <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-slate-600">
           <Image
-            src={getChampionImageUrl(match.champion_name)}
+            src={getChampionImageUrl(match.champion_name, version)}
             alt={match.champion_name}
             fill
             sizes="64px"
@@ -198,12 +233,12 @@ function MatchCard({ match }: { match: Match }) {
           />
         </div>
         {/* Hechizos debajo del campeón */}
-        <div className="flex gap-0.5 mt-1">
+        <div className="flex gap-0.5 mt-1 justify-center w-16">
           {match.summoner1_id && (
             <div className="relative w-5 h-5 rounded border border-slate-600 overflow-hidden bg-slate-800">
-              {getSummonerSpellUrl(match.summoner1_id) && (
+              {getSummonerSpellUrl(match.summoner1_id, version) && (
                 <Image
-                  src={getSummonerSpellUrl(match.summoner1_id)}
+                  src={getSummonerSpellUrl(match.summoner1_id, version)}
                   alt="Summoner 1"
                   fill
                   sizes="20px"
@@ -215,9 +250,9 @@ function MatchCard({ match }: { match: Match }) {
           )}
           {match.summoner2_id && (
             <div className="relative w-5 h-5 rounded border border-slate-600 overflow-hidden bg-slate-800">
-              {getSummonerSpellUrl(match.summoner2_id) && (
+              {getSummonerSpellUrl(match.summoner2_id, version) && (
                 <Image
-                  src={getSummonerSpellUrl(match.summoner2_id)}
+                  src={getSummonerSpellUrl(match.summoner2_id, version)}
                   alt="Summoner 2"
                   fill
                   sizes="20px"
@@ -231,15 +266,18 @@ function MatchCard({ match }: { match: Match }) {
       </div>
 
       {/* Centro-Izquierda: KDA, Resultado y Badges */}
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2 min-w-0">
         <div className="flex items-center gap-2">
-          <Badge
-            variant={isVictory ? "default" : "destructive"}
-            className="text-xs"
+          {/* <span
+            className={`text-xs font-semibold uppercase ${
+              isVictory ? "text-green-400" : "text-red-400"
+            }`}
           >
-            {isVictory ? "VICTORIA" : "DERROTA"}
-          </Badge>
-          <span className="text-xs text-slate-400">{match.champion_name}</span>
+            {isVictory ? "Victoria" : "Derrota"}
+          </span> */}
+          <span className="text-sm font-semibold text-white">
+            {match.champion_name}
+          </span>
         </div>
         <div className="text-sm font-bold">
           <span className="text-green-400">{match.kills}</span>
@@ -268,7 +306,7 @@ function MatchCard({ match }: { match: Match }) {
       </div>
 
       {/* Centro: Objetos */}
-      <div className="flex gap-1">
+      <div className="flex gap-1 flex-wrap min-w-[200px]">
         {items.map((itemId, idx) => (
           <div
             key={idx}
@@ -276,7 +314,7 @@ function MatchCard({ match }: { match: Match }) {
           >
             {itemId !== 0 && (
               <Image
-                src={getItemImageUrl(itemId)}
+                src={getItemImageUrl(itemId, version)}
                 alt={`Item ${itemId}`}
                 fill
                 sizes="32px"
@@ -288,7 +326,7 @@ function MatchCard({ match }: { match: Match }) {
       </div>
 
       {/* Centro-Derecha: Estadísticas */}
-      <div className="flex-1 grid grid-cols-3 gap-4 text-xs">
+      <div className="grid grid-cols-3 gap-4 text-xs text-right">
         <div>
           <p className="text-slate-400">Daño</p>
           <p className="font-semibold">
@@ -308,7 +346,7 @@ function MatchCard({ match }: { match: Match }) {
       </div>
 
       {/* Derecha: Tipo de Juego y Tiempo */}
-      <div className="flex-shrink-0 text-right">
+      <div className="text-right">
         <p className="text-xs font-semibold text-slate-300">
           {getQueueName(match.matches.queue_id)}
         </p>
@@ -326,7 +364,13 @@ function MatchCard({ match }: { match: Match }) {
 /**
  * Componente para mostrar una tarjeta de partida en móvil
  */
-function MobileMatchCard({ match }: { match: Match }) {
+function MobileMatchCard({
+  match,
+  version,
+}: {
+  match: Match;
+  version: string;
+}) {
   const isVictory = match.win;
   const items = [
     match.item0,
@@ -369,7 +413,7 @@ function MobileMatchCard({ match }: { match: Match }) {
           {/* Campeón */}
           <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
             <Image
-              src={getChampionImageUrl(match.champion_name)}
+              src={getChampionImageUrl(match.champion_name, version)}
               alt={match.champion_name}
               fill
               sizes="56px"
@@ -447,12 +491,12 @@ function MobileMatchCard({ match }: { match: Match }) {
 
       {/* Hechizos */}
       {(match.summoner1_id || match.summoner2_id) && (
-        <div className="mb-3 flex gap-1">
+        <div className="mb-3 flex gap-1 justify-center w-14">
           {match.summoner1_id && (
             <div className="relative w-6 h-6 rounded border border-slate-600 overflow-hidden bg-slate-800">
-              {getSummonerSpellUrl(match.summoner1_id) && (
+              {getSummonerSpellUrl(match.summoner1_id, version) && (
                 <Image
-                  src={getSummonerSpellUrl(match.summoner1_id)}
+                  src={getSummonerSpellUrl(match.summoner1_id, version)}
                   alt="Summoner 1"
                   fill
                   sizes="24px"
@@ -463,9 +507,9 @@ function MobileMatchCard({ match }: { match: Match }) {
           )}
           {match.summoner2_id && (
             <div className="relative w-6 h-6 rounded border border-slate-600 overflow-hidden bg-slate-800">
-              {getSummonerSpellUrl(match.summoner2_id) && (
+              {getSummonerSpellUrl(match.summoner2_id, version) && (
                 <Image
-                  src={getSummonerSpellUrl(match.summoner2_id)}
+                  src={getSummonerSpellUrl(match.summoner2_id, version)}
                   alt="Summoner 2"
                   fill
                   sizes="24px"
@@ -487,7 +531,7 @@ function MobileMatchCard({ match }: { match: Match }) {
             >
               {itemId !== 0 && (
                 <Image
-                  src={getItemImageUrl(itemId)}
+                  src={getItemImageUrl(itemId, version)}
                   alt={`Item ${itemId}`}
                   fill
                   sizes="24px"
@@ -531,6 +575,7 @@ export function MatchHistoryList({
 }: MatchHistoryListProps = {}) {
   const queryClient = useQueryClient();
   const [localUserId, setLocalUserId] = useState<string | null>(null);
+  const [ddragonVersion, setDdragonVersion] = useState(FALLBACK_VERSION);
 
   // Obtener user_id del contexto o localStorage si no se pasa por props
   React.useEffect(() => {
@@ -539,6 +584,27 @@ export function MatchHistoryList({
       setLocalUserId(id);
     }
   }, [propUserId]);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    getLatestDDragonVersion()
+      .then((version) => {
+        if (isMounted) {
+          setDdragonVersion(version);
+        }
+      })
+      .catch((error) => {
+        console.error(
+          "[MatchHistoryList] No se pudo obtener versión DDragon",
+          error
+        );
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const userId = propUserId || localUserId;
 
@@ -667,8 +733,8 @@ export function MatchHistoryList({
         ) : (
           matches.map((match: Match) => (
             <div key={match.id}>
-              <MatchCard match={match} />
-              <MobileMatchCard match={match} />
+              <MatchCard match={match} version={ddragonVersion} />
+              <MobileMatchCard match={match} version={ddragonVersion} />
             </div>
           ))
         )}
@@ -676,6 +742,3 @@ export function MatchHistoryList({
     </div>
   );
 }
-
-// Importar React para useEffect
-import React from "react";
