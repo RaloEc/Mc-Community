@@ -82,11 +82,11 @@ export default async function HiloPage({ params }: PageProps) {
     ]);
 
   return (
-    <div className="container mx-auto px-0 lg:px-0 px-4">
+    <div className="container mx-auto lg:px-0 px-4 mt-4">
       <div className="flex flex-col lg:flex-row gap-8">
         <ForoSidebar categorias={categorias} />
 
-        <main className="w-full lg:flex-1 min-w-0">
+        <main className="w-full lg:flex-1">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Contenido principal */}
             <div className="lg:col-span-10 mt-0">

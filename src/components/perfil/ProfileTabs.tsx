@@ -16,34 +16,38 @@ export function ProfileTabs({
   hasRiotAccount,
 }: ProfileTabsProps) {
   return (
-    <div className="flex gap-6 border-b border-slate-700 px-4 py-3 bg-slate-900/50 backdrop-blur-sm">
+    <div className="flex gap-4 md:gap-6 border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800 px-2 md:px-4">
       {/* Pestaña Actividad */}
       <button
         onClick={() => onTabChange("posts")}
-        className={`flex items-center gap-2 pb-3 px-2 font-medium transition-all ${
+        className={`flex items-center gap-2 pb-3 px-2 text-sm md:text-base font-medium transition-all relative ${
           activeTab === "posts"
-            ? "text-white border-b-2 border-blue-500"
-            : "text-slate-400 hover:text-slate-300 border-b-2 border-transparent"
+            ? "text-blue-600 dark:text-blue-400"
+            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
         }`}
       >
         <Newspaper size={18} />
         <span>Actividad</span>
+        {activeTab === "posts" && (
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+        )}
       </button>
 
-      {/* Pestaña League of Legends (solo si tiene cuenta vinculada) */}
-      {hasRiotAccount && (
-        <button
-          onClick={() => onTabChange("lol")}
-          className={`flex items-center gap-2 pb-3 px-2 font-medium transition-all ${
-            activeTab === "lol"
-              ? "text-white border-b-2 border-blue-500"
-              : "text-slate-400 hover:text-slate-300 border-b-2 border-transparent"
-          }`}
-        >
-          <Trophy size={18} />
-          <span>League of Legends</span>
-        </button>
-      )}
+      {/* Pestaña League of Legends */}
+      <button
+        onClick={() => onTabChange("lol")}
+        className={`flex items-center gap-2 pb-3 px-2 text-sm md:text-base font-medium transition-all relative ${
+          activeTab === "lol"
+            ? "text-blue-600 dark:text-blue-400"
+            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        }`}
+      >
+        <Trophy size={18} />
+        <span>League of Legends</span>
+        {activeTab === "lol" && (
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+        )}
+      </button>
     </div>
   );
 }

@@ -25,6 +25,7 @@ interface ProfileHeaderProps {
   };
   riotTier?: string | null;
   riotRank?: string | null;
+  riotAccount?: any;
   onEditClick: () => void;
 }
 
@@ -32,6 +33,7 @@ export default function ProfileHeader({
   perfil,
   riotTier,
   riotRank,
+  riotAccount,
   onEditClick,
 }: ProfileHeaderProps) {
   const [bannerError, setBannerError] = useState(false);
@@ -204,6 +206,7 @@ export default function ProfileHeader({
             accounts={perfil.connected_accounts || {}}
             isOwnProfile={true}
             userColor={perfil.color}
+            riotAccount={riotAccount}
           />
         </div>
       </CardContent>

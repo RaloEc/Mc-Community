@@ -65,8 +65,8 @@ export function RiotAccountCardVisual({
 
   if (isLoading) {
     return (
-      <div className="w-full bg-gradient-to-r from-slate-900 to-slate-800 rounded-lg p-8 flex items-center justify-center min-h-[200px]">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+      <div className="w-full bg-white dark:bg-[#0f111a] amoled:bg-black rounded-xl p-8 flex items-center justify-center min-h-[200px] border border-gray-200 dark:border-gray-800">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500 dark:text-blue-400" />
       </div>
     );
   }
@@ -74,24 +74,13 @@ export function RiotAccountCardVisual({
   const regionName = REGION_NAMES[account.region] || account.region;
 
   return (
-    <div className="w-full space-y-4">
-      {/* Banner Principal */}
-      <div className="relative overflow-hidden rounded-lg bg-black dark:bg-black amoled:bg-black border border-slate-800 dark:border-slate-800 amoled:border-slate-800 shadow-lg">
-        {/* Fondo decorativo */}
-        <div className="absolute inset-0 opacity-5">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `linear-gradient(135deg, ${tierColor} 0%, transparent 100%)`,
-            }}
-          />
-        </div>
-
-        {/* Contenido */}
-        <div className="relative p-6 flex items-center gap-6">
-          {/* Sección Izquierda: Ícono del Invocador */}
-          <div className="flex-shrink-0 flex flex-col items-center">
-            <div className="relative w-28 h-28 rounded-full border-4 border-blue-500 overflow-hidden bg-gradient-to-br from-slate-900 to-slate-800 shadow-lg">
+    <div className="w-full">
+      {/* Main Card */}
+      <div className="relative overflow-hidden rounded-xl bg-white dark:bg-[#0f111a] amoled:bg-black border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
+        <div className="p-6 flex flex-col md:flex-row items-center gap-6 md:gap-8">
+          {/* Left: Profile Icon */}
+          <div className="relative flex-shrink-0">
+            <div className="w-24 h-24 rounded-full border-4 border-white dark:border-[#1a1d26] shadow-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
               {account.profile_icon_id ? (
                 <Image
                   src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${account.profile_icon_id}.jpg`}
@@ -103,7 +92,7 @@ export function RiotAccountCardVisual({
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold">
+                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
                   {account.game_name
                     ? account.game_name.charAt(0).toUpperCase()
                     : "?"}
@@ -111,147 +100,133 @@ export function RiotAccountCardVisual({
               )}
             </div>
             {account.summoner_level && (
-              <div className="mt-3 text-center">
-                <p className="text-xs text-slate-400 uppercase tracking-wide">
-                  Nivel
-                </p>
-                <p className="text-lg font-bold text-white">
-                  {account.summoner_level}
-                </p>
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold px-3 py-0.5 rounded-full border-2 border-white dark:border-[#1a1d26] shadow-sm whitespace-nowrap">
+                Lvl {account.summoner_level}
               </div>
             )}
           </div>
 
-          {/* Sección Centro: Información del Jugador */}
-          <div className="flex-1 min-w-0">
-            <div className="mb-2">
-              <h3 className="text-2xl font-bold text-white truncate">
-                {account.game_name || "Desconocido"}
-                <span className="text-slate-400 ml-1">
-                  #{account.tag_line || "N/A"}
+          {/* Middle: Info */}
+          <div className="flex-1 text-center md:text-left space-y-3 min-w-0 w-full">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
+                {account.game_name}
+                <span className="text-gray-400 font-normal ml-1">
+                  #{account.tag_line}
                 </span>
               </h3>
-            </div>
-
-            <div className="flex items-center gap-2 text-sm">
-              <Badge
-                variant="outline"
-                className="text-xs bg-slate-900 border-slate-700 text-slate-300"
-              >
-                {regionName}
-              </Badge>
-            </div>
-
-            {/* Barra de Winrate */}
-            <div className="mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-slate-300">
-                  Winrate: {winrate}%
+              <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
+                <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                  {regionName}
                 </span>
-                <span className="text-xs text-slate-400">
+                {/* Mobile Rank Badge */}
+                <span
+                  className="md:hidden text-xs font-bold px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800"
+                  style={{ color: tierColor }}
+                >
+                  {tierDisplayName} {account.rank}
+                </span>
+              </div>
+            </div>
+
+            {/* Minimalist Winrate Bar */}
+            <div className="max-w-md mx-auto md:mx-0">
+              <div className="flex justify-between text-xs mb-1.5 text-gray-500 dark:text-gray-400 font-medium">
+                <span
+                  className={winrate >= 50 ? "text-green-500" : "text-gray-500"}
+                >
+                  Winrate {winrate}%
+                </span>
+                <span>
                   {account.wins}W - {account.losses}L
                 </span>
               </div>
-              <div className="w-full bg-slate-700 rounded-full h-2 overflow-hidden">
+              <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full ${winrateColor} transition-all duration-300`}
+                  className={`h-full ${winrateColor} rounded-full`}
                   style={{ width: `${winrate}%` }}
                 />
               </div>
             </div>
           </div>
 
-          {/* Sección Derecha: Rango */}
-          <div className="flex-shrink-0 flex flex-col items-center gap-3">
-            {/* Emblema del Rango - Mucho más grande */}
-            <div className="relative w-40 h-56">
+          {/* Right: Rank (Desktop) */}
+          <div className="hidden md:flex items-center gap-4 pr-4">
+            <div className="text-right z-10">
+              <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
+                {tierDisplayName}
+              </p>
+              <p
+                className="text-4xl font-bold leading-none tracking-tight"
+                style={{ color: tierColor }}
+              >
+                {account.rank}
+              </p>
+              <p className="text-sm font-medium text-gray-400 mt-1">
+                {account.league_points} LP
+              </p>
+            </div>
+            <div className="relative w-40 h-40 drop-shadow-2xl filter -my-6">
               <Image
                 src={emblemUrl}
                 alt={`${tierDisplayName} Emblema`}
                 fill
-                className="object-contain drop-shadow-lg"
+                className="object-contain scale-110"
                 priority
               />
-            </div>
-
-            {/* Información del Rango */}
-            <div className="text-center">
-              <div className="flex items-center gap-1 justify-center">
-                <span className="text-lg font-bold text-white">
-                  {tierDisplayName}
-                </span>
-                {account.rank && (
-                  <span
-                    className="text-lg font-bold"
-                    style={{ color: tierColor }}
-                  >
-                    {account.rank}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm font-semibold text-amber-400">
-                {account.league_points} LP
-              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Error de Sincronización */}
-      {syncError && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
-          {syncError}
-        </div>
-      )}
-
-      {/* Botones de Acción */}
-      <div className="flex gap-3">
-        <Button
-          onClick={onSync}
-          disabled={isSyncing || cooldownSeconds > 0}
-          variant="outline"
-          className="flex-1"
-        >
-          {isSyncing ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Sincronizando...
-            </>
-          ) : cooldownSeconds > 0 ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 opacity-50" />
-              Espera {cooldownSeconds}s
-            </>
+      {/* Footer Actions */}
+      <div className="mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 px-1">
+        <div className="text-xs text-gray-400">
+          {syncError ? (
+            <span className="text-red-500 flex items-center gap-1">
+              <Loader2 className="w-3 h-3" /> {syncError}
+            </span>
           ) : (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Actualizar
-            </>
+            <span>
+              Actualizado:{" "}
+              {account.last_updated
+                ? new Date(account.last_updated).toLocaleDateString("es-ES", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : "Nunca"}
+            </span>
           )}
-        </Button>
+        </div>
 
-        <Button
-          onClick={onUnlink}
-          variant="outline"
-          className="flex-1 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-        >
-          <Unlink className="mr-2 h-4 w-4" />
-          Desvincular
-        </Button>
-      </div>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={onSync}
+            disabled={isSyncing || cooldownSeconds > 0}
+            className="text-xs font-medium text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSyncing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <RefreshCw className="w-3 h-3" />
+            )}
+            {isSyncing
+              ? "Sincronizando..."
+              : cooldownSeconds > 0
+              ? `Espera ${cooldownSeconds}s`
+              : "Actualizar Datos"}
+          </button>
 
-      {/* Información de Última Actualización */}
-      <div className="text-xs text-slate-400 text-center">
-        Última actualización:{" "}
-        {account.last_updated
-          ? new Date(account.last_updated).toLocaleDateString("es-ES", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "Nunca"}
+          <button
+            onClick={onUnlink}
+            className="text-xs font-medium text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors flex items-center gap-1.5"
+          >
+            <Unlink className="w-3 h-3" />
+            Desvincular
+          </button>
+        </div>
       </div>
     </div>
   );

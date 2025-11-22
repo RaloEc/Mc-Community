@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@/components/icons/FontAwesomeIcon";
 import { faDownload, faTimes } from "@fortawesome/free-solid-svg-icons";
+import { Button } from "@/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -89,29 +90,30 @@ export default function InstallPWA() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm animate-in slide-in-from-bottom-5">
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-2xl p-4 border border-blue-400">
+      <div className="bg-white dark:bg-black text-foreground rounded-xl shadow-2xl p-5 border-2 border-primary/60 backdrop-blur-sm">
         <button
           onClick={handleDismiss}
-          className="absolute top-2 right-2 text-white/80 hover:text-white transition-colors"
+          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Cerrar"
         >
           <FontAwesomeIcon icon={faTimes} className="w-4 h-4" />
         </button>
 
         <div className="pr-6">
-          <h3 className="font-bold text-lg mb-2">¡Instala KoreStats!</h3>
-          <p className="text-sm text-white/90 mb-4">
-            Instala nuestra aplicación para acceder más rápido y usar funciones
-            sin conexión.
+          <h3 className="font-bold text-lg mb-2">¡Lleva KoreStats contigo!</h3>
+          <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+            Accede instantáneamente desde tu pantalla de inicio, disfruta de
+            carga ultra-rápida y consulta tus estadísticas incluso sin conexión.
           </p>
 
-          <button
+          <Button
             onClick={handleInstallClick}
-            className="w-full bg-white text-blue-600 font-semibold py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center gap-2"
+            className="w-full gap-2"
+            size="lg"
           >
             <FontAwesomeIcon icon={faDownload} className="w-4 h-4" />
-            Instalar Aplicación
-          </button>
+            Instalar Ahora
+          </Button>
         </div>
       </div>
     </div>

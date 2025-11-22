@@ -38,29 +38,29 @@ export function getRoutingRegion(platformRegion: string): string {
 }
 
 /**
- * Interfaz para la respuesta de Match-V5
+ * Interfaz para la respuesta de Match-V5 (Riot API usa camelCase)
  */
 interface MatchData {
   metadata: {
-    data_version: string;
-    match_id: string;
+    dataVersion: string;
+    matchId: string;
     participants: string[];
   };
   info: {
-    game_creation: number;
-    game_duration: number;
-    game_mode: string;
-    game_version: string;
-    queue_id: number;
+    gameCreation: number;
+    gameDuration: number;
+    gameMode: string;
+    gameVersion: string;
+    queueId: number;
     participants: ParticipantData[];
   };
 }
 
 interface ParticipantData {
   puuid: string;
-  summoner_name: string;
-  champion_id: number;
-  champion_name: string;
+  summonerName: string;
+  championId: number;
+  championName: string;
   win: boolean;
   kills: number;
   deaths: number;
@@ -85,12 +85,6 @@ interface ParticipantData {
 
 /**
  * Obtiene la lista de IDs de partidas recientes desde Riot API
- *
- * @param puuid - PUUID del jugador
- * @param routingRegion - Región de ruteo (americas, europe, asia)
- * @param apiKey - API Key de Riot
- * @param count - Número de partidas a obtener (default: 20)
- * @returns Array de match IDs
  */
 async function getMatchIds(
   puuid: string,
@@ -104,6 +98,7 @@ async function getMatchIds(
     );
 
     const url = `https://${routingRegion}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}`;
+    console.log(`[getMatchIds] URL: ${url}`);
 
     const response = await fetch(url, {
       headers: {
@@ -112,7 +107,9 @@ async function getMatchIds(
     });
 
     if (!response.ok) {
+      const errorBody = await response.text();
       console.error(`[getMatchIds] Error de Riot: ${response.status}`);
+      console.error(`[getMatchIds] Response body:`, errorBody);
       return [];
     }
 
@@ -129,11 +126,6 @@ async function getMatchIds(
 
 /**
  * Obtiene los detalles completos de una partida desde Riot API
- *
- * @param matchId - ID de la partida
- * @param routingRegion - Región de ruteo
- * @param apiKey - API Key de Riot
- * @returns Datos de la partida o null si hay error
  */
 async function getMatchDetails(
   matchId: string,
@@ -166,9 +158,6 @@ async function getMatchDetails(
 
 /**
  * Verifica si una partida ya existe en la base de datos
- *
- * @param matchId - ID de la partida
- * @returns true si existe, false si no
  */
 async function matchExists(matchId: string): Promise<boolean> {
   try {
@@ -194,23 +183,30 @@ async function matchExists(matchId: string): Promise<boolean> {
 
 /**
  * Guarda una partida y sus participantes en la base de datos
- *
- * @param matchData - Datos de la partida desde Riot API
- * @returns true si se guardó exitosamente
  */
 async function saveMatch(matchData: MatchData): Promise<boolean> {
   try {
     const supabase = getServiceClient();
-    const matchId = matchData.metadata.match_id;
+    // Riot API devuelve camelCase: matchId
+    const matchId = matchData?.metadata?.matchId;
+
+    if (!matchId) {
+      console.error(
+        "[saveMatch] Error: matchId no encontrado en matchData. Estructura recibida:",
+        JSON.stringify(matchData, null, 2)
+      );
+      return false;
+    }
 
     // Guardar información general de la partida
+    // Mapeamos de camelCase (API) a snake_case (DB)
     const { error: matchError } = await supabase.from("matches").insert({
       match_id: matchId,
-      data_version: matchData.metadata.data_version,
-      game_creation: matchData.info.game_creation,
-      game_duration: matchData.info.game_duration,
-      game_mode: matchData.info.game_mode,
-      queue_id: matchData.info.queue_id,
+      data_version: matchData.metadata.dataVersion,
+      game_creation: matchData.info.gameCreation,
+      game_duration: matchData.info.gameDuration,
+      game_mode: matchData.info.gameMode,
+      queue_id: matchData.info.queueId,
       full_json: matchData,
     });
 
@@ -223,9 +219,9 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
     const participants = matchData.info.participants.map((p) => ({
       match_id: matchId,
       puuid: p.puuid,
-      summoner_name: p.summoner_name,
-      champion_id: p.champion_id,
-      champion_name: p.champion_name,
+      summoner_name: p.summonerName,
+      champion_id: p.championId,
+      champion_name: p.championName,
       win: p.win,
       kills: p.kills,
       deaths: p.deaths,
@@ -242,10 +238,10 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
       item4: p.item4,
       item5: p.item5,
       item6: p.item6,
-      perk_primary_style: p.perkPrimaryStyle,
-      perk_sub_style: p.perkSubStyle,
       summoner1_id: p.summoner1Id,
       summoner2_id: p.summoner2Id,
+      perk_primary_style: p.perkPrimaryStyle,
+      perk_sub_style: p.perkSubStyle,
       lane: p.lane,
       role: p.role,
     }));

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChevronLeft, X } from "lucide-react";
-import { Button } from "@nextui-org/react";
+import { Button, Card, CardBody } from "@nextui-org/react";
 import UserActivityFeedContainer from "./UserActivityFeedContainer";
 import ProfileHeader from "./profile-header";
 import { FriendRequestsList } from "@/components/social/FriendRequestsList";
@@ -10,6 +10,12 @@ import { FriendsListCompact } from "@/components/social/FriendsListCompact";
 import ProfileStats from "./profile-stats";
 import MembershipInfo from "./membership-info";
 import { LogOut } from "lucide-react";
+import { ProfileTabs } from "./ProfileTabs";
+import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
+import { RiotAccountCardVisual } from "@/components/riot/RiotAccountCardVisual";
+import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
+import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
+import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
 
 interface MobileProfileLayoutProps {
   fetchActivities: (page: number, limit: number) => Promise<any[]>;
@@ -38,6 +44,7 @@ interface MobileProfileLayoutProps {
   onSignOut: () => void;
   isSigningOut: boolean;
   onEditClick?: () => void;
+  riotAccount?: any;
 }
 
 export default function MobileProfileLayout({
@@ -48,13 +55,17 @@ export default function MobileProfileLayout({
   onSignOut,
   isSigningOut,
   onEditClick,
+  riotAccount,
 }: MobileProfileLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarX, setSidebarX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
+  const [activeTab, setActiveTab] = useState<"posts" | "lol">("posts");
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  const isOwnProfile = userId === perfil.id;
 
   // Manejo de drag del sidebar
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -149,25 +160,79 @@ export default function MobileProfileLayout({
               connected_accounts: perfil.connected_accounts || {},
             }}
             onEditClick={onEditClick}
+            riotTier={riotAccount?.tier}
+            riotRank={riotAccount?.rank}
+            riotAccount={riotAccount}
           />
         </div>
 
-        {/* Indicador de deslizar + Título */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
-            Actividad
-          </h2>
-        </div>
-
-        {/* Feed de actividad con scroll infinito */}
-        <div className="px-4 py-4">
-          <UserActivityFeedContainer
-            fetchActivities={fetchActivities}
-            userColor={perfil.color}
-            initialPage={1}
-            itemsPerPage={10}
+        {/* Sistema de Pestañas */}
+        <div className="px-4 mt-2">
+          <ProfileTabs
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            hasRiotAccount={!!riotAccount}
           />
         </div>
+
+        {/* Contenido según pestaña */}
+        {activeTab === "posts" ? (
+          <>
+            {/* Indicador de deslizar + Título */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800 mt-2">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
+                Actividad
+              </h2>
+            </div>
+
+            {/* Feed de actividad con scroll infinito */}
+            <div className="px-4 py-4 pb-20">
+              <UserActivityFeedContainer
+                fetchActivities={fetchActivities}
+                userColor={perfil.color}
+                initialPage={1}
+                itemsPerPage={10}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="px-4 py-4 pb-20 space-y-6">
+            {!riotAccount && isOwnProfile ? (
+              <RiotEmptyState
+                isOwnProfile
+                onLinkClick={() => {
+                  window.location.href = "/api/riot/login";
+                }}
+              />
+            ) : riotAccount ? (
+              <>
+                <RiotAccountCardVisual account={riotAccount} />
+
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Estadísticas de campeones */}
+                  <ChampionStatsSummary puuid={riotAccount.puuid} />
+
+                  {/* Historial de partidas */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                      Historial de Partidas
+                    </h3>
+                    <MatchHistoryList
+                      userId={perfil.id}
+                      puuid={riotAccount.puuid}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-gray-500">
+                  Este usuario no ha vinculado su cuenta de Riot Games.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Indicador visual fijo en la pantalla - Flecha para deslizar */}

@@ -205,6 +205,7 @@ export async function GET(request: NextRequest) {
           league_points: statsData.leaguePoints,
           wins: statsData.wins,
           losses: statsData.losses,
+          updated_at: new Date().toISOString(),
           last_updated: new Date().toISOString(),
         },
         {
@@ -334,7 +335,7 @@ async function getPlayerInfo(accessToken: string): Promise<{
   try {
     console.log("[getPlayerInfo] Obteniendo información del jugador...");
 
-    // Hacer solicitud GET a la API de Riot
+    // Hacer solicitud GET a la API de Riot para obtener información de la cuenta
     const response = await fetch(
       "https://americas.api.riotgames.com/riot/account/v1/accounts/me",
       {
@@ -356,21 +357,25 @@ async function getPlayerInfo(accessToken: string): Promise<{
       };
     }
 
-    console.log("[getPlayerInfo] ✅ Información obtenida:", {
-      puuid: data.puuid,
+    console.log("[getPlayerInfo] ✅ Información de cuenta obtenida:", {
       gameName: data.game_name,
       tagLine: data.tag_line,
     });
 
+    // Usar gameName y tagLine para obtener el PUUID correcto del jugador
+    // Este PUUID es el que funciona con la API Match-V5
+    const puuid = data.puuid;
+    const gameName = data.game_name;
+    const tagLine = data.tag_line;
+
     // Determinar región basada en el PUUID o usar un valor por defecto
-    // En producción, podrías hacer otra llamada a la API para obtener la región exacta
-    const region = determineRegion(data.puuid);
+    const region = determineRegion(puuid);
 
     return {
       success: true,
-      puuid: data.puuid,
-      gameName: data.game_name,
-      tagLine: data.tag_line,
+      puuid,
+      gameName,
+      tagLine,
       region,
     };
   } catch (error: any) {

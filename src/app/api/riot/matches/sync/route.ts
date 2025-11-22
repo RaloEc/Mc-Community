@@ -1,0 +1,144 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getServiceClient } from "@/lib/supabase/server";
+import {
+  syncMatchHistory,
+  getMatchHistory,
+  getPlayerStats,
+} from "@/lib/riot/matches";
+
+/**
+ * Valida que un PUUID tenga un formato válido
+ * Los PUUIDs de Riot son strings de 78 caracteres con formato específico
+ */
+function isValidPuuid(puuid: string): boolean {
+  if (!puuid || typeof puuid !== "string") return false;
+  // Los PUUIDs tienen un patrón específico: caracteres alfanuméricos y guiones
+  // Aproximadamente 78 caracteres
+  return /^[a-zA-Z0-9_-]{78,}$/.test(puuid);
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = getServiceClient();
+
+    // Obtener user_id del header
+    const userId = request.headers.get("x-user-id");
+    console.log("[POST /api/riot/matches/sync] userId:", userId);
+    if (!userId) {
+      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+    }
+
+    // Obtener cuenta de Riot vinculada
+    const { data: riotAccount, error: accountError } = await supabase
+      .from("linked_accounts_riot")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+
+    console.log(
+      "[POST /api/riot/matches/sync] riotAccount:",
+      riotAccount,
+      "error:",
+      accountError
+    );
+    if (accountError || !riotAccount) {
+      return NextResponse.json(
+        {
+          error: "No hay cuenta de Riot vinculada",
+          details: accountError?.message,
+        },
+        { status: 404 }
+      );
+    }
+
+    if (!riotAccount.puuid) {
+      return NextResponse.json(
+        { error: "Cuenta de Riot incompleta: falta PUUID" },
+        { status: 400 }
+      );
+    }
+
+    // Validar que el PUUID tenga un formato válido
+    // Los PUUIDs de Riot tienen un formato específico
+    if (!isValidPuuid(riotAccount.puuid)) {
+      console.error(
+        "[POST /api/riot/matches/sync] PUUID inválido:",
+        riotAccount.puuid
+      );
+      return NextResponse.json(
+        {
+          error: "PUUID inválido o corrupto",
+          details:
+            "Por favor, desvincula tu cuenta de Riot y vuelve a autenticarte",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Obtener API Key de Riot
+    const apiKey = process.env.RIOT_API_KEY;
+    if (!apiKey) {
+      console.error(
+        "[POST /api/riot/matches/sync] RIOT_API_KEY no configurada"
+      );
+      return NextResponse.json(
+        { error: "Configuración de servidor incompleta" },
+        { status: 500 }
+      );
+    }
+
+    // Sincronizar partidas
+    console.log("[POST /api/riot/matches/sync] Iniciando sincronización...");
+    const result = await syncMatchHistory(
+      riotAccount.puuid,
+      riotAccount.active_shard || "la1",
+      apiKey,
+      20 // Sincronizar últimas 20 partidas
+    );
+
+    console.log(
+      "[POST /api/riot/matches/sync] Resultado sincronización:",
+      result
+    );
+    if (!result.success) {
+      return NextResponse.json(
+        { error: result.error || "Error al sincronizar" },
+        { status: 500 }
+      );
+    }
+
+    // Obtener historial actualizado
+    console.log(
+      "[POST /api/riot/matches/sync] Obteniendo historial actualizado..."
+    );
+    const matches = await getMatchHistory(riotAccount.puuid, 10);
+    const stats = await getPlayerStats(riotAccount.puuid, 20);
+    console.log(
+      "[POST /api/riot/matches/sync] Historial obtenido, matches:",
+      matches?.length,
+      "stats:",
+      stats
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: `${result.newMatches} partidas nuevas sincronizadas`,
+      newMatches: result.newMatches,
+      totalMatches: result.totalMatches,
+      matches,
+      stats,
+    });
+  } catch (error: any) {
+    console.error(
+      "[POST /api/riot/matches/sync] Error:",
+      error.message || error
+    );
+    return NextResponse.json(
+      {
+        error: "Error al sincronizar partidas",
+        details: error.message || String(error),
+      },
+      { status: 500 }
+    );
+  }
+}

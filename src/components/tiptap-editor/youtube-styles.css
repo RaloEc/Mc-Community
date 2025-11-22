@@ -5,19 +5,44 @@
   justify-content: center;
   margin: 1rem auto;
   max-width: 100%;
-  width: 640px; /* Ancho predeterminado para el video */
+  width: 100%; /* Ancho completo en móviles */
 }
 
 /* Estilos para el iframe de YouTube */
 .editor-youtube {
   display: block;
   width: 100%;
-  height: 360px; /* Altura fija para mantener la relación de aspecto */
+  aspect-ratio: 16 / 9; /* Mantener relación de aspecto 16:9 */
+  max-width: 640px; /* Ancho máximo en pantallas grandes */
   border: 0;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: box-shadow 0.2s ease-in-out;
   margin: 0 auto; /* Centrar el iframe dentro del contenedor */
+}
+
+/* Wrapper del embed de YouTube - responsive */
+.youtube-embed-wrapper {
+  width: 100% !important;
+  max-width: 640px;
+  margin: 1rem auto !important;
+}
+
+/* Inner container del embed - responsive */
+.youtube-embed-inner {
+  position: relative;
+  width: 100% !important;
+  aspect-ratio: 16 / 9 !important;
+  height: auto !important;
+}
+
+/* Iframe del embed - responsive */
+.youtube-embed-inner iframe {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 /* Efecto hover para indicar que es redimensionable */
@@ -69,4 +94,16 @@
   width: 100%;
   height: 1px;
   left: 0;
+}
+
+/* Media query para móviles */
+@media (max-width: 768px) {
+  .youtube-embed-wrapper {
+    max-width: 100% !important;
+    padding: 0 0.5rem;
+  }
+
+  .youtube-embed-inner {
+    border-radius: 8px;
+  }
 }

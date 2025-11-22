@@ -1,88 +1,97 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Button, Input, Select, SelectItem } from '@nextui-org/react'
-import { X, Plus } from 'lucide-react'
-import { 
-  AccountPlatform, 
-  ConnectedAccountsData, 
+import { useState } from "react";
+import { Button, Input, Select, SelectItem } from "@nextui-org/react";
+import { X, Plus, Link as LinkIcon } from "lucide-react";
+import {
+  AccountPlatform,
+  ConnectedAccountsData,
   PLATFORM_LABELS,
-  PLATFORM_PLACEHOLDERS 
-} from '@/hooks/useConnectedAccounts'
+  PLATFORM_PLACEHOLDERS,
+} from "@/hooks/useConnectedAccounts";
+import { ConnectAccountModal } from "./ConnectAccountModal";
 
 interface ConnectedAccountsFormProps {
-  accounts: ConnectedAccountsData
-  onChange: (accounts: ConnectedAccountsData) => void
+  accounts: ConnectedAccountsData;
+  onChange: (accounts: ConnectedAccountsData) => void;
 }
 
 const PLATFORMS: AccountPlatform[] = [
-  'twitch',
-  'discord',
-  'league_of_legends',
-  'valorant',
-  'kick',
-  'delta_force'
-]
+  "twitch",
+  "discord",
+  "league_of_legends",
+  "valorant",
+  "kick",
+  "delta_force",
+];
 
 export const ConnectedAccountsForm = ({
   accounts,
-  onChange
+  onChange,
 }: ConnectedAccountsFormProps) => {
-  const [expandedPlatforms, setExpandedPlatforms] = useState<Set<AccountPlatform>>(new Set())
-  const [selectedPlatform, setSelectedPlatform] = useState<AccountPlatform | null>(null)
-  const [inputValue, setInputValue] = useState('')
+  const [expandedPlatforms, setExpandedPlatforms] = useState<
+    Set<AccountPlatform>
+  >(new Set());
+  const [selectedPlatform, setSelectedPlatform] =
+    useState<AccountPlatform | null>(null);
+  const [inputValue, setInputValue] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleAddClick = () => {
     if (selectedPlatform) {
-      setExpandedPlatforms(prev => new Set(prev).add(selectedPlatform))
-      setInputValue(accounts[selectedPlatform] || '')
+      setExpandedPlatforms((prev) => new Set(prev).add(selectedPlatform));
+      setInputValue(accounts[selectedPlatform] || "");
     }
-  }
+  };
 
   const handleSaveAccount = (platform: AccountPlatform) => {
     if (inputValue.trim()) {
       onChange({
         ...accounts,
-        [platform]: inputValue.trim()
-      })
-      setExpandedPlatforms(prev => {
-        const next = new Set(prev)
-        next.delete(platform)
-        return next
-      })
-      setInputValue('')
-      setSelectedPlatform(null)
+        [platform]: inputValue.trim(),
+      });
+      setExpandedPlatforms((prev) => {
+        const next = new Set(prev);
+        next.delete(platform);
+        return next;
+      });
+      setInputValue("");
+      setSelectedPlatform(null);
     }
-  }
+  };
 
   const handleRemoveAccount = (platform: AccountPlatform) => {
-    const updated = { ...accounts }
-    delete updated[platform]
-    onChange(updated)
-    setExpandedPlatforms(prev => {
-      const next = new Set(prev)
-      next.delete(platform)
-      return next
-    })
-  }
+    const updated = { ...accounts };
+    delete updated[platform];
+    onChange(updated);
+    setExpandedPlatforms((prev) => {
+      const next = new Set(prev);
+      next.delete(platform);
+      return next;
+    });
+  };
 
   const handleCancel = () => {
-    setExpandedPlatforms(new Set())
-    setInputValue('')
-    setSelectedPlatform(null)
-  }
+    setExpandedPlatforms(new Set());
+    setInputValue("");
+    setSelectedPlatform(null);
+  };
 
-  const connectedPlatforms = Object.keys(accounts) as AccountPlatform[]
-  const availablePlatforms = PLATFORMS.filter(p => !connectedPlatforms.includes(p))
+  const connectedPlatforms = Object.keys(accounts) as AccountPlatform[];
+  const availablePlatforms = PLATFORMS.filter(
+    (p) => !connectedPlatforms.includes(p)
+  );
 
   return (
     <div className="space-y-4">
       {/* Cuentas conectadas */}
       {connectedPlatforms.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Cuentas conectadas:</p>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Cuentas conectadas:
+          </p>
           <div className="space-y-2">
-            {connectedPlatforms.map(platform => (
+            {connectedPlatforms.map((platform) => (
               <div
                 key={platform}
                 className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50"
@@ -129,12 +138,14 @@ export const ConnectedAccountsForm = ({
                 label="Plataforma"
                 selectedKeys={selectedPlatform ? [selectedPlatform] : []}
                 onChange={(e) => {
-                  setSelectedPlatform(e.target.value as AccountPlatform)
-                  setInputValue(accounts[e.target.value as AccountPlatform] || '')
+                  setSelectedPlatform(e.target.value as AccountPlatform);
+                  setInputValue(
+                    accounts[e.target.value as AccountPlatform] || ""
+                  );
                 }}
                 size="sm"
               >
-                {availablePlatforms.map(platform => (
+                {availablePlatforms.map((platform) => (
                   <SelectItem key={platform} value={platform}>
                     {PLATFORM_LABELS[platform]}
                   </SelectItem>
@@ -143,7 +154,11 @@ export const ConnectedAccountsForm = ({
 
               <Input
                 label="Usuario"
-                placeholder={selectedPlatform ? PLATFORM_PLACEHOLDERS[selectedPlatform] : 'Ingresa tu usuario'}
+                placeholder={
+                  selectedPlatform
+                    ? PLATFORM_PLACEHOLDERS[selectedPlatform]
+                    : "Ingresa tu usuario"
+                }
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 size="sm"
@@ -178,6 +193,26 @@ export const ConnectedAccountsForm = ({
           Todas las plataformas están conectadas
         </p>
       )}
+
+      {/* Botón para conectar cuentas OAuth */}
+      <div className="pt-2">
+        <Button
+          fullWidth
+          variant="bordered"
+          color="primary"
+          startContent={<LinkIcon className="w-4 h-4" />}
+          onPress={() => setIsModalOpen(true)}
+          className="border-dashed"
+        >
+          Conectar League of Legends
+        </Button>
+      </div>
+
+      {/* Modal de conexión de cuentas */}
+      <ConnectAccountModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
-  )
-}
+  );
+};

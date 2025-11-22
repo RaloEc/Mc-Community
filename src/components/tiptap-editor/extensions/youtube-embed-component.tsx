@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { NodeViewWrapper, ReactNodeViewProps } from "@tiptap/react";
 import { Move } from "lucide-react";
 
@@ -36,8 +42,9 @@ const YoutubeEmbedComponent: React.FC<YoutubeEmbedComponentProps> = ({
 
   useEffect(() => {
     const normalizedWidth = Number(width) || 640;
-    const normalizedHeight = Number(height) || Math.round(normalizedWidth * aspectRatio);
-    setDimensions(prev => {
+    const normalizedHeight =
+      Number(height) || Math.round(normalizedWidth * aspectRatio);
+    setDimensions((prev) => {
       if (prev.width === normalizedWidth && prev.height === normalizedHeight) {
         return prev;
       }
@@ -99,31 +106,44 @@ const YoutubeEmbedComponent: React.FC<YoutubeEmbedComponentProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [aspectRatio, dimensions.height, dimensions.width, isResizing, updateAttributes]);
+  }, [
+    aspectRatio,
+    dimensions.height,
+    dimensions.width,
+    isResizing,
+    updateAttributes,
+  ]);
 
   return (
     <NodeViewWrapper
       ref={wrapperRef}
-      className={`youtube-embed-wrapper relative ${selected ? "selected group" : ""}`}
+      className={`youtube-embed-wrapper relative ${
+        selected ? "selected group" : ""
+      }`}
       style={{
-        width: `${dimensions.width}px`,
+        maxWidth: `${dimensions.width}px`,
+        width: "100%",
+        margin: "0 auto",
       }}
     >
       <div
         className="youtube-embed-inner relative overflow-hidden rounded-lg bg-black"
         style={{
           width: "100%",
-          height: `${dimensions.height}px`,
+          aspectRatio: "16 / 9",
         }}
       >
         <iframe
           src={src}
-          width="100%"
-          height={dimensions.height}
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           title="YouTube video player"
           className="rounded-lg"
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+          }}
         />
 
         <div

@@ -508,6 +508,7 @@ export default function PerfilPage() {
           onSignOut={handleSignOut}
           isSigningOut={isSigningOut}
           onEditClick={onOpen}
+          riotAccount={riotAccount}
         />
 
         {/* Modal de edición - Renderizado fuera del layout móvil para evitar z-index issues */}
@@ -812,6 +813,7 @@ export default function PerfilPage() {
             }}
             riotTier={riotAccount?.tier}
             riotRank={riotAccount?.rank}
+            riotAccount={riotAccount}
             onEditClick={onOpen}
           />
         </div>
@@ -916,7 +918,7 @@ export default function PerfilPage() {
                 )}
 
                 {/* Historial de partidas */}
-                <MatchHistoryList />
+                <MatchHistoryList userId={user?.id} />
               </>
             ) : null}
           </div>

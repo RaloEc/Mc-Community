@@ -9,6 +9,7 @@ export type RiotTier =
   | "SILVER"
   | "GOLD"
   | "PLATINUM"
+  | "EMERALD"
   | "DIAMOND"
   | "MASTER"
   | "GRANDMASTER"
@@ -26,11 +27,12 @@ export function getRankEmblemUrl(tier: RiotTier | string): string {
 
   if (normalizedTier === "UNRANKED") {
     // Placeholder gris para UNRANKED
-    return "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-unranked.png";
+    return "https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/images/unranked.png";
   }
 
   const tierLower = normalizedTier.toLowerCase();
-  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-static-assets/global/default/images/ranked-emblem/emblem-${tierLower}.png`;
+  // Nueva fuente de imágenes con menos padding
+  return `https://raw.communitydragon.org/latest/plugins/rcp-fe-lol-shared-components/global/default/images/${tierLower}.png`;
 }
 
 /**
@@ -48,6 +50,7 @@ export function getTierColor(tier: RiotTier | string): string {
     SILVER: "#c0c0c0",
     GOLD: "#ffd700",
     PLATINUM: "#e5e4e2",
+    EMERALD: "#00cf80",
     DIAMOND: "#b9f2ff",
     MASTER: "#9d4edd",
     GRANDMASTER: "#ff0000",
@@ -99,10 +102,11 @@ export function getWinrateColor(winrate: number): string {
  * Mapeo de tier a número para ordenamiento
  */
 export const TIER_RANK_MAP: Record<RiotTier, number> = {
-  CHALLENGER: 9,
-  GRANDMASTER: 8,
-  MASTER: 7,
-  DIAMOND: 6,
+  CHALLENGER: 10,
+  GRANDMASTER: 9,
+  MASTER: 8,
+  DIAMOND: 7,
+  EMERALD: 6,
   PLATINUM: 5,
   GOLD: 4,
   SILVER: 3,

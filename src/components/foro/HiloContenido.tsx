@@ -471,6 +471,72 @@ export default function HiloContenido({
     };
   }, []);
 
+  // Procesar iframes de YouTube para hacerlos responsive
+  useEffect(() => {
+    const currentContentRef = contentRef.current;
+    if (!html || !currentContentRef || typeof document === "undefined") return;
+
+    const timeoutId = setTimeout(() => {
+      // Encontrar todos los iframes de YouTube
+      const youtubeIframes =
+        currentContentRef.querySelectorAll<HTMLIFrameElement>(
+          'iframe[src*="youtube.com"], iframe[src*="youtube-nocookie.com"]'
+        );
+
+      console.log(
+        `[HiloContenido] Encontrados ${youtubeIframes.length} iframes de YouTube`
+      );
+
+      youtubeIframes.forEach((iframe, index) => {
+        // Eliminar atributos width y height para permitir CSS responsive
+        if (iframe.hasAttribute("width")) {
+          console.log(
+            `[HiloContenido] Removiendo width="${iframe.getAttribute(
+              "width"
+            )}" del iframe ${index}`
+          );
+          iframe.removeAttribute("width");
+        }
+        if (iframe.hasAttribute("height")) {
+          console.log(
+            `[HiloContenido] Removiendo height="${iframe.getAttribute(
+              "height"
+            )}" del iframe ${index}`
+          );
+          iframe.removeAttribute("height");
+        }
+
+        // Asegurar que el iframe tenga los estilos correctos
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.border = "none";
+        iframe.style.position = "absolute";
+        iframe.style.top = "0";
+        iframe.style.left = "0";
+
+        // Asegurar que el contenedor padre tenga los estilos correctos
+        const wrapper = iframe.closest(
+          ".youtube-embed-wrapper, [data-youtube-video]"
+        );
+        if (wrapper instanceof HTMLElement) {
+          wrapper.style.width = "100%";
+          wrapper.style.maxWidth = "640px";
+          wrapper.style.margin = "1rem auto";
+        }
+
+        const innerContainer = iframe.parentElement;
+        if (innerContainer) {
+          innerContainer.style.position = "relative";
+          innerContainer.style.width = "100%";
+          innerContainer.style.aspectRatio = "16 / 9";
+          innerContainer.style.height = "auto";
+        }
+      });
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [html]);
+
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
