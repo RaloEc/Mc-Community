@@ -23,6 +23,16 @@ export interface LinkedAccountRiot {
   league_points: number | null;
   wins: number | null;
   losses: number | null;
+  solo_tier?: string | null;
+  solo_rank?: string | null;
+  solo_league_points?: number | null;
+  solo_wins?: number | null;
+  solo_losses?: number | null;
+  flex_tier?: string | null;
+  flex_rank?: string | null;
+  flex_league_points?: number | null;
+  flex_wins?: number | null;
+  flex_losses?: number | null;
   created_at: string;
   updated_at: string;
   last_updated: string | null;

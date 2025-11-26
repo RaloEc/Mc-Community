@@ -189,25 +189,28 @@ const nextConfig = {
     pagesBufferLength: 10, // Aumentado para mejor rendimiento
   },
   images: {
-    domains: [
-      'localhost', 
-      'placehold.co', 
-      'www.gamespot.com', 
-      'www.gameskinny.com', 
-      'qeeaptyhcqfaqdecsuqc.supabase.co',
-      'qeeaptyhcqfaqdecsuqc.supabase.in',
-      'supabase.co',
-      'supabase.in',
-      'media.tenor.com',
-      'tenor.com',
-      'korestats.com',
-      'www.korestats.com',
-      'i.ytimg.com'
-    ],
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'placehold.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.gamespot.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.gameskinny.com',
         port: '',
         pathname: '/**',
       },
@@ -237,7 +240,25 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'korestats.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.korestats.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'raw.communitydragon.org',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.communitydragon.org',
         port: '',
         pathname: '/**',
       },

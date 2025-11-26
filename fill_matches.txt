@@ -1,0 +1,26 @@
+src\components\riot\analysis\BuildTimeline.tsx:96:                                fill
+src\components\riot\analysis\DamageChart.tsx:72:                  fill={COLORS[index % COLORS.length]}
+src\components\riot\analysis\LaneDuel.tsx:160:                fill
+src\components\riot\analysis\LaneDuel.tsx:185:                fill
+src\components\riot\analysis\MatchAnalysis.tsx:116:                        fill
+src\components\riot\analysis\MatchAnalysis.tsx:151:                        fill
+src\components\riot\analysis\MatchGraphs.tsx:130:                fill="url(#splitColor)"
+src\components\riot\analysis\MatchGraphs.tsx:181:                fill="url(#splitColorXp)"
+src\components\riot\ChampionStatsSummary.tsx:94:                  fill
+src\components\riot\match-card\MatchCard.tsx:137:                  fill
+src\components\riot\match-card\MatchCard.tsx:151:                          fill
+src\components\riot\match-card\MatchCard.tsx:164:                          fill
+src\components\riot\match-card\MatchCard.tsx:179:                        fill
+src\components\riot\match-card\MatchCard.tsx:190:                        fill
+src\components\riot\match-card\MatchCard.tsx:237:                    fill
+src\components\riot\match-card\MobileMatchCard.tsx:61:              fill
+src\components\riot\match-card\MobileMatchCard.tsx:142:                  fill
+src\components\riot\match-card\MobileMatchCard.tsx:155:                  fill
+src\components\riot\match-card\MobileMatchCard.tsx:177:                  fill
+src\components\riot\match-card\TeamPlayerList.tsx:40:                fill
+src\components\riot\MatchDeathMap.tsx:141:                          fill
+src\components\riot\MatchDeathMap.tsx:167:          fill
+src\components\riot\MatchWardMap.tsx:209:                          fill
+src\components\riot\MatchWardMap.tsx:235:          fill
+src\components\riot\RiotAccountCardVisual.tsx:88:                  fill
+src\components\riot\RiotAccountCardVisual.tsx:174:                fill

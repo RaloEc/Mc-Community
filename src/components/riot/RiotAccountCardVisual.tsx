@@ -1,5 +1,7 @@
 "use client";
 
+import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { LinkedAccountRiot } from "@/types/riot";
 import {
   getRankEmblemUrl,
@@ -8,9 +10,9 @@ import {
   calculateWinrate,
   getWinrateColor,
 } from "@/lib/riot/rank-emblems";
-import { Badge } from "@/components/ui/badge";
+import { getChampionNameById } from "@/lib/riot/helpers";
+import { ChampionCenteredSplash } from "./ChampionCenteredSplash";
 import { Loader2, RefreshCw, Unlink } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 // Diccionario de regiones
@@ -57,11 +59,134 @@ export function RiotAccountCardVisual({
   onUnlink,
   cooldownSeconds = 0,
 }: RiotAccountCardVisualProps) {
-  const winrate = calculateWinrate(account.wins || 0, account.losses || 0);
+  const [userId, setUserId] = useState<string | null>(account.user_id ?? null);
+  const [topChampionName, setTopChampionName] = useState<string | null>(null);
+
+  const soloTier = account.solo_tier ?? account.tier ?? "UNRANKED";
+  const soloRank = account.solo_rank ?? account.rank ?? "—";
+  const soloLp = account.solo_league_points ?? account.league_points ?? 0;
+  const soloWins = account.solo_wins ?? account.wins ?? 0;
+  const soloLosses = account.solo_losses ?? account.losses ?? 0;
+
+  const flexTier = account.flex_tier ?? "UNRANKED";
+  const flexRank = account.flex_rank ?? "—";
+  const flexLp = account.flex_league_points ?? 0;
+  const flexWins = account.flex_wins ?? 0;
+  const flexLosses = account.flex_losses ?? 0;
+
+  const winrate = calculateWinrate(soloWins, soloLosses);
   const winrateColor = getWinrateColor(winrate);
-  const tierColor = getTierColor(account.tier);
-  const tierDisplayName = getTierDisplayName(account.tier);
-  const emblemUrl = getRankEmblemUrl(account.tier);
+  const tierColor = getTierColor(soloTier);
+  const tierDisplayName = getTierDisplayName(soloTier);
+  const emblemUrl = getRankEmblemUrl(soloTier);
+
+  const queueStats = [
+    {
+      id: "solo",
+      label: "Ranked Solo/Duo",
+      tier: soloTier,
+      rank: soloRank,
+      lp: soloLp,
+      wins: soloWins,
+      losses: soloLosses,
+    },
+    {
+      id: "flex",
+      label: "Ranked Flex",
+      tier: flexTier,
+      rank: flexRank,
+      lp: flexLp,
+      wins: flexWins,
+      losses: flexLosses,
+    },
+  ].map((queue) => ({
+    ...queue,
+    tierName: getTierDisplayName(queue.tier),
+    tierColor: getTierColor(queue.tier),
+    emblemUrl: getRankEmblemUrl(queue.tier),
+    winrate: calculateWinrate(queue.wins, queue.losses),
+    hasData:
+      queue.tier !== "UNRANKED" ||
+      queue.lp > 0 ||
+      queue.wins + queue.losses > 0,
+  }));
+
+  const hasSplash = Boolean(topChampionName);
+
+  // Obtener userId desde la cuenta o como fallback desde localStorage
+  useEffect(() => {
+    if (account.user_id) {
+      setUserId(account.user_id);
+      return;
+    }
+
+    const storedId = localStorage.getItem("user_id");
+    if (storedId) {
+      setUserId(storedId);
+    }
+  }, [account.user_id]);
+
+  // Obtener maestría de campeones
+  const { data: masteryData } = useQuery({
+    queryKey: ["champion-mastery", account.puuid],
+    queryFn: async () => {
+      if (!userId || !account.puuid) {
+        console.log("[RiotAccountCardVisual] No userId or puuid");
+        return null;
+      }
+
+      const response = await fetch("/api/riot/champion-mastery", {
+        headers: {
+          "x-user-id": userId,
+          "x-puuid": account.puuid,
+        },
+      });
+
+      if (!response.ok) {
+        console.error(
+          "[RiotAccountCardVisual] Error fetching mastery:",
+          response.status
+        );
+        return null;
+      }
+
+      const data = await response.json();
+      return data.masteries;
+    },
+    enabled: !!userId && !!account.puuid,
+    retry: 1,
+    staleTime: 1000 * 60 * 10, // 10 minutos
+  });
+
+  const topChampionId = masteryData?.[0]?.championId ?? null;
+
+  // Obtener nombre del campeón más usado cuando cambie el ID detectado
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTopChampionName() {
+      if (!topChampionId) {
+        if (isMounted) {
+          setTopChampionName(null);
+        }
+        return;
+      }
+
+      const championName = await getChampionNameById(topChampionId);
+
+      if (!isMounted) return;
+
+      setTopChampionName((prev) =>
+        championName && prev === championName ? prev : championName
+      );
+    }
+
+    loadTopChampionName();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [topChampionId]);
 
   if (isLoading) {
     return (
@@ -76,104 +201,178 @@ export function RiotAccountCardVisual({
   return (
     <div className="w-full">
       {/* Main Card */}
-      <div className="relative overflow-hidden rounded-xl bg-white dark:bg-[#0f111a] amoled:bg-black border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md">
-        <div className="p-6 flex flex-col md:flex-row items-center gap-6 md:gap-8">
-          {/* Left: Profile Icon */}
-          <div className="relative flex-shrink-0">
-            <div className="w-24 h-24 rounded-full border-4 border-white dark:border-[#1a1d26] shadow-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
-              {account.profile_icon_id ? (
-                <Image
-                  src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${account.profile_icon_id}.jpg`}
-                  alt="Ícono del invocador"
-                  fill
-                  className="object-cover"
-                  onError={(e) => {
-                    e.currentTarget.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
-                  {account.game_name
-                    ? account.game_name.charAt(0).toUpperCase()
-                    : "?"}
+      <div
+        className={`relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm transition-all hover:shadow-md ${
+          hasSplash
+            ? "bg-gray-900"
+            : "bg-white dark:bg-[#0f111a] amoled:bg-black"
+        }`}
+      >
+        {/* Fondo: splash del campeón */}
+        {hasSplash && (
+          <div className="absolute inset-0">
+            <ChampionCenteredSplash
+              championName={topChampionName}
+              skinId={0}
+              className="w-full h-full"
+              focalOffsetY="10%"
+              desktopFocalOffsetY="35%"
+            />
+            <div className="absolute inset-0 bg-black/55 backdrop-blur-sm" />
+          </div>
+        )}
+
+        <div className="relative z-10 p-4 md:p-5 flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full md:items-center">
+            <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6 flex-1 min-h-[180px]">
+              {/* Left: Profile Icon */}
+              <div className="relative flex-shrink-0">
+                <div className="relative w-20 h-20 md:w-22 md:h-22 rounded-full border-[3px] border-white/90 dark:border-[#1a1d26] shadow-lg overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  {account.profile_icon_id ? (
+                    <Image
+                      src={`https://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/default/v1/profile-icons/${account.profile_icon_id}.jpg`}
+                      alt="Ícono del invocador"
+                      fill
+                      sizes="96px"
+                      className="object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+                      {account.game_name
+                        ? account.game_name.charAt(0).toUpperCase()
+                        : "?"}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-            {account.summoner_level && (
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold px-3 py-0.5 rounded-full border-2 border-white dark:border-[#1a1d26] shadow-sm whitespace-nowrap">
-                Lvl {account.summoner_level}
+                {account.summoner_level && (
+                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-xs font-bold px-3 py-0.5 rounded-full border-2 border-white dark:border-[#1a1d26] shadow-sm whitespace-nowrap">
+                    Lvl {account.summoner_level}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Middle: Info */}
-          <div className="flex-1 text-center md:text-left space-y-3 min-w-0 w-full">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white truncate">
-                {account.game_name}
-                <span className="text-gray-400 font-normal ml-1">
-                  #{account.tag_line}
-                </span>
-              </h3>
-              <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
-                <span className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                  {regionName}
-                </span>
-                {/* Mobile Rank Badge */}
-                <span
-                  className="md:hidden text-xs font-bold px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-800"
-                  style={{ color: tierColor }}
-                >
-                  {tierDisplayName} {account.rank}
-                </span>
+              {/* Middle: Info */}
+              <div className="flex-1 text-center md:text-left space-y-3 min-w-0 w-full flex flex-col justify-center">
+                <div>
+                  <h3
+                    className={`text-2xl font-bold truncate ${
+                      topChampionName
+                        ? "text-white drop-shadow-lg"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    {account.game_name}
+                    <span className="text-gray-400 font-normal ml-1">
+                      #{account.tag_line}
+                    </span>
+                  </h3>
+                  <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
+                    <span
+                      className={`text-sm font-medium ${
+                        topChampionName
+                          ? "text-gray-200 drop-shadow"
+                          : "text-gray-500 dark:text-gray-400"
+                      }`}
+                    >
+                      {regionName}
+                    </span>
+                    {/* Mobile Rank Badge */}
+                    <span
+                      className={`md:hidden text-xs font-bold px-2 py-0.5 rounded ${
+                        topChampionName
+                          ? "bg-black/50 backdrop-blur-sm"
+                          : "bg-gray-100 dark:bg-gray-800"
+                      }`}
+                      style={{ color: topChampionName ? "white" : tierColor }}
+                    >
+                      {tierDisplayName} {soloRank}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Minimalist Winrate Bar */}
+                <div className="max-w-xs mx-auto md:mx-0">
+                  <div
+                    className={`flex justify-between text-[11px] mb-1 font-medium ${
+                      topChampionName
+                        ? "text-gray-200"
+                        : "text-gray-500 dark:text-gray-400"
+                    }`}
+                  >
+                    <span
+                      className={
+                        topChampionName
+                          ? winrate >= 50
+                            ? "text-green-300 drop-shadow"
+                            : "text-gray-200"
+                          : winrate >= 50
+                          ? "text-green-500"
+                          : "text-gray-500"
+                      }
+                    >
+                      Winrate {winrate}%
+                    </span>
+                    <span>
+                      {soloWins}W - {soloLosses}L
+                    </span>
+                  </div>
+                  <div
+                    className={`h-0.5 rounded-full overflow-hidden ${
+                      topChampionName
+                        ? "bg-white/20 backdrop-blur-sm"
+                        : "bg-gray-100 dark:bg-gray-800"
+                    }`}
+                  >
+                    <div
+                      className={`h-full ${winrateColor} rounded-full`}
+                      style={{ width: `${winrate}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Minimalist Winrate Bar */}
-            <div className="max-w-md mx-auto md:mx-0">
-              <div className="flex justify-between text-xs mb-1.5 text-gray-500 dark:text-gray-400 font-medium">
-                <span
-                  className={winrate >= 50 ? "text-green-500" : "text-gray-500"}
-                >
-                  Winrate {winrate}%
-                </span>
-                <span>
-                  {account.wins}W - {account.losses}L
-                </span>
+            {/* Right: Queue Rankings (Desktop) */}
+            <div className="w-full md:max-w-xs">
+              <div className="grid grid-cols-2 gap-1.5 w-full">
+                {queueStats.map((queue) => (
+                  <div
+                    key={queue.id}
+                    className="relative overflow-hidden rounded-xl bg-white/10 border border-white/15 px-2.5 py-2 flex flex-col items-center text-center gap-1.5 text-white backdrop-blur-lg"
+                  >
+                    <div className="text-[10px] uppercase tracking-wide text-white/60">
+                      {queue.label}
+                    </div>
+                    <div className="relative w-24 h-24 opacity-100">
+                      <Image
+                        src={queue.emblemUrl}
+                        alt={`${queue.label} emblem`}
+                        fill
+                        sizes="96px"
+                        className="object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.35)]"
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold">
+                        {queue.tierName} {queue.rank}
+                      </p>
+                      <p className="text-[10px] text-white/70">{queue.lp} LP</p>
+                    </div>
+                    <div className="text-[10px] text-white/70">
+                      {queue.hasData ? (
+                        <span>
+                          {queue.wins}V - {queue.losses}D
+                        </span>
+                      ) : (
+                        <span className="text-white/40">Sin datos</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div
-                  className={`h-full ${winrateColor} rounded-full`}
-                  style={{ width: `${winrate}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Rank (Desktop) */}
-          <div className="hidden md:flex items-center gap-4 pr-4">
-            <div className="text-right z-10">
-              <p className="text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wider font-semibold">
-                {tierDisplayName}
-              </p>
-              <p
-                className="text-4xl font-bold leading-none tracking-tight"
-                style={{ color: tierColor }}
-              >
-                {account.rank}
-              </p>
-              <p className="text-sm font-medium text-gray-400 mt-1">
-                {account.league_points} LP
-              </p>
-            </div>
-            <div className="relative w-40 h-40 drop-shadow-2xl filter -my-6">
-              <Image
-                src={emblemUrl}
-                alt={`${tierDisplayName} Emblema`}
-                fill
-                className="object-contain scale-110"
-                priority
-              />
             </div>
           </div>
         </div>

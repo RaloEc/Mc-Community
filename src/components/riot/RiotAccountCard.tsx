@@ -43,17 +43,28 @@ export function RiotAccountCard({
     queryFn: async () => {
       if (!user?.id) throw new Error("No user");
 
+      console.log("[RiotAccountCard] Fetching Riot account for user", user.id);
       const response = await fetch("/api/riot/account");
 
       if (response.status === 404) {
+        console.log(
+          "[RiotAccountCard] No Riot account linked for user",
+          user.id
+        );
         return null; // No hay cuenta vinculada
       }
 
       if (!response.ok) {
+        console.error(
+          "[RiotAccountCard] Failed fetching Riot account",
+          response.status,
+          await response.text()
+        );
         throw new Error("Failed to fetch riot account");
       }
 
       const data = await response.json();
+      console.log("[RiotAccountCard] Riot account payload", data);
       return data.account as LinkedAccountRiot;
     },
     enabled: !!user?.id,
@@ -63,16 +74,20 @@ export function RiotAccountCard({
   // Mutación para sincronizar estadísticas
   const syncMutation = useMutation({
     mutationFn: async () => {
+      console.log("[RiotAccountCard] Manual sync requested");
       const response = await fetch("/api/riot/sync", {
         method: "POST",
       });
 
       if (!response.ok) {
         const error = await response.json();
+        console.error("[RiotAccountCard] Sync error response", error);
         throw new Error(error.error || "Error al sincronizar");
       }
 
-      return response.json();
+      const json = await response.json();
+      console.log("[RiotAccountCard] Sync success payload", json);
+      return json;
     },
     onSuccess: () => {
       setSyncError(null);
@@ -80,9 +95,11 @@ export function RiotAccountCard({
       setCooldownSeconds(60);
       // Invalidar y recargar datos
       queryClient.invalidateQueries({ queryKey: ["riot-account", user?.id] });
+      console.log("[RiotAccountCard] Sync success, cache invalidated");
     },
     onError: (error: any) => {
       setSyncError(error.message);
+      console.error("[RiotAccountCard] Sync mutation failed", error);
     },
   });
 

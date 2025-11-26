@@ -1,15 +1,15 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr';
-import { cookies } from 'next/headers';
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 /**
  * Crea un cliente de Supabase para Server Components, Server Actions y Route Handlers
  * IMPORTANTE: Esta función es asíncrona porque cookies() ahora es async en Next.js 15+
  */
 export async function createClient() {
+  const { cookies } = await import("next/headers");
   const cookieStore = await cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  
+
   return createServerClient(supabaseUrl, supabaseKey, {
     cookies: {
       getAll() {
@@ -30,14 +30,19 @@ export async function createClient() {
 }
 
 export const getServiceClient = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || '';
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseServiceKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY ||
+    "";
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Las variables de entorno NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SERVICE_KEY deben estar configuradas');
+    throw new Error(
+      "Las variables de entorno NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY o SUPABASE_SERVICE_KEY deben estar configuradas"
+    );
   }
 
-  const { createClient } = require('@supabase/supabase-js');
+  const { createClient } = require("@supabase/supabase-js");
   return createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,

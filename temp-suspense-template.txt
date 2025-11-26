@@ -1,0 +1,127 @@
+"use client";
+
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { useCheckUsername } from "@/hooks/use-check-username";
+import { useIsMobile } from "@/hooks/use-mobile";
+import ImageUploader from "@/components/ImageUploader";
+import ProfileHeader from "@/components/perfil/profile-header";
+import { BannerUploader } from "@/components/perfil/BannerUploader";
+import ProfileStats from "@/components/perfil/profile-stats";
+import UserActivityFeed from "@/components/perfil/UserActivityFeed";
+import UserActivityFeedContainer from "@/components/perfil/UserActivityFeedContainer";
+import MembershipInfo from "@/components/perfil/membership-info";
+import MobileProfileLayout from "@/components/perfil/MobileProfileLayout";
+import { FriendRequestsList } from "@/components/social/FriendRequestsList";
+import { FriendsListCompact } from "@/components/social/FriendsListCompact";
+import { ConnectedAccountsModal } from "@/components/perfil/ConnectedAccountsModal";
+import { ConnectedAccountsForm } from "@/components/perfil/ConnectedAccountsForm";
+import { ProfileTabs } from "@/components/perfil/ProfileTabs";
+import { RiotAccountCard } from "@/components/riot/RiotAccountCard";
+import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
+import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
+import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
+import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
+import {
+  Card,
+  CardBody,
+  Button,
+  Input,
+  Textarea,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Spinner,
+  Divider,
+} from "@nextui-org/react";
+import { LogOut, X, Check, AlertCircle, Loader } from "lucide-react";
+
+interface PerfilCompleto {
+  id: string;
+  username: string;
+  role: "user" | "admin" | "moderator";
+  email?: string;
+  avatar_url: string;
+  banner_url?: string | null;
+  color: string;
+  bio?: string;
+  ubicacion?: string;
+  sitio_web?: string;
+  connected_accounts?: Record<string, string>;
+  activo?: boolean;
+  ultimo_acceso?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Componente interno que usa useSearchParams
+function PerfilPageContent() {
+  const router = useRouter();
+  const {
+    user,
+    profile,
+    signOut,
+    loading: authLoading,
+    session,
+    refreshProfile,
+    refreshAuth,
+  } = useAuth();
+  const { toast } = useToast();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMobile = useIsMobile(1024);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setSaving] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [perfil, setPerfil] = useState<PerfilCompleto | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [estadisticas, setEstadisticas] = useState({
+    noticias: 0,
+    comentarios: 0,
+    hilos: 0,
+    respuestas: 0,
+  });
+
+  const [editData, setEditData] = useState({
+    username: "",
+    bio: "",
+    color: "#64748B",
+    avatar_url: "",
+    banner_url: "" as string | null,
+    connected_accounts: {} as Record<string, string>,
+  });
+  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+  const [riotAccount, setRiotAccount] = useState<any>(null);
+  const [loadingRiotAccount, setLoadingRiotAccount] = useState(false);
+  const isOwnProfile = user?.id === perfil?.id;
+  const searchParams = useSearchParams();
+
+  // Lee el tab activo desde la URL, fallback a "posts"
+  const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
+
+  // ... (resto del código sin cambios)
+  
+  // Solo exporta el componente PerfilPageContent aquí, no toda la lógica
+  return null; // Placeholder
+}
+
+// Componente wrapper con Suspense
+export default function PerfilPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <Spinner size="lg" />
+        </div>
+      }
+    >
+      <PerfilPageContent />
+    </Suspense>
+  );
+}

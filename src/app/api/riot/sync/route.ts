@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { syncRiotStats, getRoutingRegionFromShard } from "@/lib/riot/sync";
 
+const UNRANKED_RANK = {
+  tier: "UNRANKED",
+  rank: null,
+  leaguePoints: 0,
+  wins: 0,
+  losses: 0,
+};
+
 /**
  * POST /api/riot/sync
  *
@@ -54,6 +62,11 @@ export async function POST(request: NextRequest) {
     }
 
     const { puuid, region } = riotAccount;
+    console.log("[POST /api/riot/sync] Cuenta Riot encontrada", {
+      puuid,
+      region,
+      lastUpdated: riotAccount.last_updated,
+    });
 
     // Sincronizar estadísticas
     console.log(
@@ -61,11 +74,15 @@ export async function POST(request: NextRequest) {
       puuid
     );
 
-    const routingRegion = region === "americas" ? "americas" : "europe";
+    const platformId = (region || "na1").toLowerCase();
+    console.log(
+      "[POST /api/riot/sync] Usando platformId (región almacenada)",
+      platformId
+    );
     const syncResult = await syncRiotStats(
       puuid,
       process.env.RIOT_API_KEY || "",
-      routingRegion
+      platformId
     );
 
     if (!syncResult.success) {
@@ -82,7 +99,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const statsData = syncResult.data!;
+    const statsData = syncResult.data || {
+      activeShard: platformId,
+      summonerId: riotAccount.summoner_id,
+      summonerLevel: riotAccount.summoner_level ?? 0,
+      profileIconId: riotAccount.profile_icon_id ?? 0,
+      soloRank: { ...UNRANKED_RANK },
+      flexRank: { ...UNRANKED_RANK },
+    };
+
+    const soloRank = statsData.soloRank || { ...UNRANKED_RANK };
+    const flexRank = statsData.flexRank || { ...UNRANKED_RANK };
+
+    console.log("[POST /api/riot/sync] Datos recibidos de Riot", {
+      solo: soloRank,
+      flex: flexRank,
+      level: statsData.summonerLevel,
+    });
 
     // Actualizar base de datos
     console.log("[POST /api/riot/sync] Actualizando base de datos...");
@@ -94,11 +127,16 @@ export async function POST(request: NextRequest) {
         summoner_id: statsData.summonerId,
         profile_icon_id: statsData.profileIconId,
         summoner_level: statsData.summonerLevel,
-        tier: statsData.tier,
-        rank: statsData.rank,
-        league_points: statsData.leaguePoints,
-        wins: statsData.wins,
-        losses: statsData.losses,
+        solo_tier: soloRank.tier,
+        solo_rank: soloRank.rank,
+        solo_league_points: soloRank.leaguePoints,
+        solo_wins: soloRank.wins,
+        solo_losses: soloRank.losses,
+        flex_tier: flexRank.tier,
+        flex_rank: flexRank.rank,
+        flex_league_points: flexRank.leaguePoints,
+        flex_wins: flexRank.wins,
+        flex_losses: flexRank.losses,
         last_updated: new Date().toISOString(),
       })
       .eq("user_id", userId);

@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit } from "lucide-react";
 import { ConnectedAccounts } from "./ConnectedAccounts";
-import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 
 interface ProfileHeaderProps {
   perfil: {
@@ -89,7 +88,7 @@ export default function ProfileHeader({
         {/* Layout: Centrado en mobile, lado a lado en desktop */}
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6 md:gap-8 md:items-start">
           {/* Avatar, nombre y rol - Centrado en mobile */}
-          <div className="flex flex-col items-center gap-3 flex-shrink-0 w-full md:w-auto md:items-start">
+          <div className="flex flex-col items-center gap-3 flex-shrink-0 w-full md:w-auto">
             <Avatar
               className="w-28 h-28 sm:w-32 sm:h-32 md:w-40 md:h-40 border-3 border-background dark:border-gray-950 shadow-md -mt-20 sm:-mt-24 md:-mt-28"
               style={{
@@ -121,9 +120,6 @@ export default function ProfileHeader({
                 <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center">
                   {perfil.username}
                 </h1>
-                {riotTier && (
-                  <RiotTierBadge tier={riotTier} rank={riotRank} size="md" />
-                )}
               </div>
               {perfil.role !== "user" && (
                 <Badge

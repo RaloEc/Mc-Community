@@ -5,7 +5,15 @@
  * incluyendo: shard activo, nivel, ícono, rango, puntos de liga, etc.
  */
 
-import { RiotRegion, PLATFORM_TO_ROUTING_REGION } from "@/types/riot";
+// Utilidades relacionadas con Riot
+
+export interface QueueRankSnapshot {
+  tier: string;
+  rank: string | null;
+  leaguePoints: number;
+  wins: number;
+  losses: number;
+}
 
 export interface RiotSyncResult {
   success: boolean;
@@ -14,51 +22,58 @@ export interface RiotSyncResult {
     summonerId: string;
     summonerLevel: number;
     profileIconId: number;
-    tier: string;
-    rank: string | null;
-    leaguePoints: number;
-    wins: number;
-    losses: number;
+    soloRank: QueueRankSnapshot;
+    flexRank: QueueRankSnapshot;
   };
   error?: string;
 }
+
+const UNRANKED_SNAPSHOT: QueueRankSnapshot = {
+  tier: "UNRANKED",
+  rank: null,
+  leaguePoints: 0,
+  wins: 0,
+  losses: 0,
+};
 
 /**
  * Sincroniza las estadísticas del jugador desde la API de Riot
  *
  * Proceso:
- * 1. Detecta el shard activo (región exacta)
+ * 1. Usa la región almacenada (platformId) como fuente de verdad
  * 2. Obtiene datos del invocador (nivel, ícono)
  * 3. Obtiene información de rango (tier, rank, LP, W/L)
  * 4. Retorna toda la información
  *
  * @param puuid - PUUID del jugador
- * @param accessToken - Access token de Riot RSO
- * @param routingRegion - Región de enrutamiento (americas, europe, asia, sea)
+ * @param accessToken - Access token de Riot API
+ * @param platformId - ID de plataforma/región (ej: 'la1', 'euw1', 'kr') - fuente de verdad desde BD
  * @returns Resultado con datos sincronizados o error
  */
 export async function syncRiotStats(
   puuid: string,
   accessToken: string,
-  routingRegion: string = "americas"
+  platformId: string = "na1"
 ): Promise<RiotSyncResult> {
   try {
     console.log("[syncRiotStats] Iniciando sincronización de estadísticas...");
-    console.log("[syncRiotStats] PUUID:", puuid, "Región:", routingRegion);
+    console.log("[syncRiotStats] PUUID:", puuid, "PlatformId:", platformId);
 
-    // PASO 1: Detectar shard activo
-    console.log("[syncRiotStats] PASO 1: Detectando shard activo...");
-    const activeShard = await detectActiveShard(puuid, routingRegion);
-
-    if (!activeShard) {
-      throw new Error("No se pudo detectar el shard activo");
+    if (!platformId) {
+      throw new Error("PlatformId (región) no proporcionado");
     }
 
-    console.log("[syncRiotStats] ✅ Shard detectado:", activeShard);
+    const authHeaders = buildRiotAuthHeaders(accessToken);
+
+    // PASO 1: Usar la región almacenada como fuente de verdad
+    console.log(
+      "[syncRiotStats] PASO 1: Usando platformId almacenado como fuente de verdad..."
+    );
+    console.log("[syncRiotStats] ✅ PlatformId confirmado:", platformId);
 
     // PASO 2: Obtener datos del invocador
     console.log("[syncRiotStats] PASO 2: Obteniendo datos del invocador...");
-    const summonerData = await getSummonerData(puuid, activeShard);
+    const summonerData = await getSummonerData(puuid, platformId, authHeaders);
 
     if (!summonerData) {
       throw new Error("No se pudo obtener datos del invocador");
@@ -72,27 +87,23 @@ export async function syncRiotStats(
 
     // PASO 3: Obtener información de rango
     console.log("[syncRiotStats] PASO 3: Obteniendo información de rango...");
-    const rankData = await getRankData(summonerData.id, activeShard);
+    const rankData = await getRankData(puuid, platformId, authHeaders);
 
     console.log("[syncRiotStats] ✅ Información de rango obtenida:", {
-      tier: rankData.tier,
-      rank: rankData.rank,
-      lp: rankData.leaguePoints,
+      solo: rankData.solo,
+      flex: rankData.flex,
     });
 
     // PASO 4: Compilar resultado
     const result: RiotSyncResult = {
       success: true,
       data: {
-        activeShard,
+        activeShard: platformId,
         summonerId: summonerData.id,
         summonerLevel: summonerData.summonerLevel,
         profileIconId: summonerData.profileIconId,
-        tier: rankData.tier,
-        rank: rankData.rank,
-        leaguePoints: rankData.leaguePoints,
-        wins: rankData.wins,
-        losses: rankData.losses,
+        soloRank: rankData.solo,
+        flexRank: rankData.flex,
       },
     };
 
@@ -108,47 +119,6 @@ export async function syncRiotStats(
 }
 
 /**
- * Detecta el shard activo (región exacta) del jugador
- *
- * Consulta: https://{routingRegion}.api.riotgames.com/riot/account/v1/active-shards/by-game/lol/by-puuid/{puuid}
- *
- * @param puuid - PUUID del jugador
- * @param routingRegion - Región de enrutamiento
- * @returns Shard activo (ej: 'la1', 'euw1', 'kr')
- */
-async function detectActiveShard(
-  puuid: string,
-  routingRegion: string
-): Promise<string | null> {
-  try {
-    const url = `https://${routingRegion}.api.riotgames.com/riot/account/v1/active-shards/by-game/lol/by-puuid/${puuid}`;
-
-    console.log("[detectActiveShard] Consultando:", url);
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.RIOT_API_KEY}`,
-      },
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      console.error("[detectActiveShard] Error de Riot:", error);
-      throw new Error(error.status?.message || "Failed to detect active shard");
-    }
-
-    const data = await response.json();
-    console.log("[detectActiveShard] Respuesta:", data);
-
-    return data.activeShard || null;
-  } catch (error: any) {
-    console.error("[detectActiveShard] Error:", error);
-    throw error;
-  }
-}
-
-/**
  * Obtiene datos del invocador (nivel, ícono, ID)
  *
  * Consulta: https://{activeShard}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{puuid}
@@ -159,7 +129,8 @@ async function detectActiveShard(
  */
 async function getSummonerData(
   puuid: string,
-  activeShard: string
+  activeShard: string,
+  headers: Record<string, string>
 ): Promise<{
   id: string;
   summonerLevel: number;
@@ -172,9 +143,7 @@ async function getSummonerData(
 
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.RIOT_API_KEY}`,
-      },
+      headers,
     });
 
     if (!response.ok) {
@@ -184,7 +153,11 @@ async function getSummonerData(
     }
 
     const data = await response.json();
-    console.log("[getSummonerData] Respuesta:", {
+    console.log(
+      "[getSummonerData] Respuesta completa:",
+      JSON.stringify(data, null, 2)
+    );
+    console.log("[getSummonerData] Respuesta parseada:", {
       id: data.id,
       level: data.summonerLevel,
       icon: data.profileIconId,
@@ -204,35 +177,42 @@ async function getSummonerData(
 /**
  * Obtiene información de rango del jugador
  *
- * Consulta: https://{activeShard}.api.riotgames.com/lol/league/v4/entries/by-summoner/{summonerId}
+ * Consulta: https://{platformId}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}
  *
  * Filtra por queueType === 'RANKED_SOLO_5x5'
  * Si no hay datos de rango, retorna UNRANKED
  *
- * @param summonerId - ID encriptado del invocador
- * @param activeShard - Shard activo
+ * @param puuid - PUUID del jugador
+ * @param platformId - Shard/plataforma (ej: la1)
  * @returns Información de rango
  */
 async function getRankData(
-  summonerId: string,
-  activeShard: string
+  puuid: string,
+  platformId: string,
+  headers: Record<string, string>
 ): Promise<{
-  tier: string;
-  rank: string | null;
-  leaguePoints: number;
-  wins: number;
-  losses: number;
+  solo: QueueRankSnapshot;
+  flex: QueueRankSnapshot;
 }> {
+  const mapEntry = (entry: any | undefined): QueueRankSnapshot =>
+    entry
+      ? {
+          tier: entry.tier,
+          rank: entry.rank,
+          leaguePoints: entry.leaguePoints,
+          wins: entry.wins,
+          losses: entry.losses,
+        }
+      : { ...UNRANKED_SNAPSHOT };
+
   try {
-    const url = `https://${activeShard}.api.riotgames.com/lol/league/v4/entries/by-summoner/${summonerId}`;
+    const url = `https://${platformId}.api.riotgames.com/lol/league/v4/entries/by-puuid/${puuid}`;
 
     console.log("[getRankData] Consultando:", url);
 
     const response = await fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.RIOT_API_KEY}`,
-      },
+      headers,
     });
 
     // Si el usuario no tiene datos de rango (404), retorna UNRANKED
@@ -241,11 +221,8 @@ async function getRankData(
         "[getRankData] Usuario sin datos de rango (404) - Retornando UNRANKED"
       );
       return {
-        tier: "UNRANKED",
-        rank: null,
-        leaguePoints: 0,
-        wins: 0,
-        losses: 0,
+        solo: { ...UNRANKED_SNAPSHOT },
+        flex: { ...UNRANKED_SNAPSHOT },
       };
     }
 
@@ -262,34 +239,39 @@ async function getRankData(
     const soloRankData = data.find(
       (entry: any) => entry.queueType === "RANKED_SOLO_5x5"
     );
+    const flexRankData = data.find(
+      (entry: any) => entry.queueType === "RANKED_FLEX_SR"
+    );
 
-    if (!soloRankData) {
+    if (!soloRankData && !flexRankData) {
       console.log(
-        "[getRankData] No hay datos de RANKED_SOLO_5x5 - Retornando UNRANKED"
+        "[getRankData] No hay datos de rango competitivo - Retornando UNRANKED"
       );
-      return {
-        tier: "UNRANKED",
-        rank: null,
-        leaguePoints: 0,
-        wins: 0,
-        losses: 0,
-      };
     }
 
-    console.log("[getRankData] Datos de RANKED_SOLO_5x5:", {
-      tier: soloRankData.tier,
-      rank: soloRankData.rank,
-      lp: soloRankData.leaguePoints,
-      wins: soloRankData.wins,
-      losses: soloRankData.losses,
-    });
+    if (soloRankData) {
+      console.log("[getRankData] Datos de RANKED_SOLO_5x5:", {
+        tier: soloRankData.tier,
+        rank: soloRankData.rank,
+        lp: soloRankData.leaguePoints,
+        wins: soloRankData.wins,
+        losses: soloRankData.losses,
+      });
+    }
+
+    if (flexRankData) {
+      console.log("[getRankData] Datos de RANKED_FLEX_SR:", {
+        tier: flexRankData.tier,
+        rank: flexRankData.rank,
+        lp: flexRankData.leaguePoints,
+        wins: flexRankData.wins,
+        losses: flexRankData.losses,
+      });
+    }
 
     return {
-      tier: soloRankData.tier,
-      rank: soloRankData.rank,
-      leaguePoints: soloRankData.leaguePoints,
-      wins: soloRankData.wins,
-      losses: soloRankData.losses,
+      solo: mapEntry(soloRankData),
+      flex: mapEntry(flexRankData),
     };
   } catch (error: any) {
     console.error("[getRankData] Error:", error);
@@ -299,11 +281,8 @@ async function getRankData(
       "[getRankData] Error al obtener datos de rango - Retornando UNRANKED"
     );
     return {
-      tier: "UNRANKED",
-      rank: null,
-      leaguePoints: 0,
-      wins: 0,
-      losses: 0,
+      solo: { ...UNRANKED_SNAPSHOT },
+      flex: { ...UNRANKED_SNAPSHOT },
     };
   }
 }
@@ -333,4 +312,21 @@ export function getRoutingRegionFromShard(activeShard: string): string {
   };
 
   return regionMap[activeShard] || "americas";
+}
+
+function buildRiotAuthHeaders(token: string): Record<string, string> {
+  if (!token) {
+    throw new Error("RIOT_API_KEY o token de Riot no configurado");
+  }
+
+  const headers: Record<string, string> = {
+    "X-Riot-Token": token,
+  };
+
+  // Tokens RSO suelen ser JWT (tres segmentos). Si detectamos ese formato, añadimos Authorization
+  if (token.split(".").length === 3) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
 }

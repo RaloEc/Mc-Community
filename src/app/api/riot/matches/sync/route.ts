@@ -111,11 +111,11 @@ export async function POST(request: NextRequest) {
     console.log(
       "[POST /api/riot/matches/sync] Obteniendo historial actualizado..."
     );
-    const matches = await getMatchHistory(riotAccount.puuid, 10);
+    const matchHistory = await getMatchHistory(riotAccount.puuid, 10);
     const stats = await getPlayerStats(riotAccount.puuid, 20);
     console.log(
       "[POST /api/riot/matches/sync] Historial obtenido, matches:",
-      matches?.length,
+      matchHistory?.matches?.length,
       "stats:",
       stats
     );
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       message: `${result.newMatches} partidas nuevas sincronizadas`,
       newMatches: result.newMatches,
       totalMatches: result.totalMatches,
-      matches,
+      matches: matchHistory,
       stats,
     });
   } catch (error: any) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, X } from "lucide-react";
 import { Button, Card, CardBody } from "@nextui-org/react";
 import UserActivityFeedContainer from "./UserActivityFeedContainer";
@@ -61,9 +62,12 @@ export default function MobileProfileLayout({
   const [sidebarX, setSidebarX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState(0);
-  const [activeTab, setActiveTab] = useState<"posts" | "lol">("posts");
+  const searchParams = useSearchParams();
   const sidebarRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+
+  // Lee el tab activo desde la URL, fallback a "posts"
+  const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
 
   const isOwnProfile = userId === perfil.id;
 
@@ -168,11 +172,7 @@ export default function MobileProfileLayout({
 
         {/* Sistema de Pestañas */}
         <div className="px-4 mt-2">
-          <ProfileTabs
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            hasRiotAccount={!!riotAccount}
-          />
+          <ProfileTabs hasRiotAccount={!!riotAccount} />
         </div>
 
         {/* Contenido según pestaña */}
@@ -185,7 +185,7 @@ export default function MobileProfileLayout({
               </h2>
             </div>
 
-            {/* Feed de actividad con scroll infinito */}
+            {/* Feed de actividad con scroll infinit */}
             <div className="px-4 py-4 pb-20">
               <UserActivityFeedContainer
                 fetchActivities={fetchActivities}
@@ -214,9 +214,9 @@ export default function MobileProfileLayout({
 
                   {/* Historial de partidas */}
                   <div>
-                    <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                      Historial de Partidas
-                    </h3>
+                    {/* <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+                      Historial de Partidassddasaas
+                    </h3> */}
                     <MatchHistoryList
                       userId={perfil.id}
                       puuid={riotAccount.puuid}

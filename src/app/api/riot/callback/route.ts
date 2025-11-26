@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { syncRiotStats, getRoutingRegionFromShard } from "@/lib/riot/sync";
 
+const UNRANKED_RANK = {
+  tier: "UNRANKED",
+  rank: null,
+  leaguePoints: 0,
+  wins: 0,
+  losses: 0,
+};
+
 /**
  * GET /api/riot/callback
  *
@@ -164,16 +172,16 @@ export async function GET(request: NextRequest) {
       summonerId: null,
       summonerLevel: 1,
       profileIconId: 0,
-      tier: "UNRANKED",
-      rank: null,
-      leaguePoints: 0,
-      wins: 0,
-      losses: 0,
+      soloRank: { ...UNRANKED_RANK },
+      flexRank: { ...UNRANKED_RANK },
     };
 
+    const soloRank = statsData.soloRank || { ...UNRANKED_RANK };
+    const flexRank = statsData.flexRank || { ...UNRANKED_RANK };
+
     console.log("[Riot OAuth Callback] ✅ Estadísticas sincronizadas:", {
-      tier: statsData.tier,
-      rank: statsData.rank,
+      solo: soloRank,
+      flex: flexRank,
       level: statsData.summonerLevel,
     });
 
@@ -200,11 +208,16 @@ export async function GET(request: NextRequest) {
           summoner_level: statsData.summonerLevel,
           active_shard: statsData.activeShard,
           summoner_id: statsData.summonerId,
-          tier: statsData.tier,
-          rank: statsData.rank,
-          league_points: statsData.leaguePoints,
-          wins: statsData.wins,
-          losses: statsData.losses,
+          solo_tier: soloRank.tier,
+          solo_rank: soloRank.rank,
+          solo_league_points: soloRank.leaguePoints,
+          solo_wins: soloRank.wins,
+          solo_losses: soloRank.losses,
+          flex_tier: flexRank.tier,
+          flex_rank: flexRank.rank,
+          flex_league_points: flexRank.leaguePoints,
+          flex_wins: flexRank.wins,
+          flex_losses: flexRank.losses,
           updated_at: new Date().toISOString(),
           last_updated: new Date().toISOString(),
         },

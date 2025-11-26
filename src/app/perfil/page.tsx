@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCheckUsername } from "@/hooks/use-check-username";
@@ -59,7 +59,7 @@ interface PerfilCompleto {
   updated_at?: string;
 }
 
-export default function PerfilPage() {
+function PerfilPageContent() {
   const router = useRouter();
   const {
     user,
@@ -97,10 +97,13 @@ export default function PerfilPage() {
     connected_accounts: {} as Record<string, string>,
   });
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"posts" | "lol">("posts");
   const [riotAccount, setRiotAccount] = useState<any>(null);
   const [loadingRiotAccount, setLoadingRiotAccount] = useState(false);
   const isOwnProfile = user?.id === perfil?.id;
+  const searchParams = useSearchParams();
+
+  // Lee el tab activo desde la URL, fallback a "posts"
+  const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
 
   const syncEditDataWithPerfil = useCallback((perfilData: PerfilCompleto) => {
     // Parsear connected_accounts si es string JSON
@@ -832,11 +835,7 @@ export default function PerfilPage() {
         )}
 
         {/* Sistema de Pestañas */}
-        <ProfileTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          hasRiotAccount={!!riotAccount}
-        />
+        <ProfileTabs hasRiotAccount={!!riotAccount} />
 
         {/* CTA para vincular Riot cuando es su propio perfil */}
         {!riotAccount && isOwnProfile && (
@@ -1256,5 +1255,19 @@ export default function PerfilPage() {
         }}
       />
     </div>
+  );
+}
+
+export default function PerfilPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="p-6 text-center text-slate-400">
+          <Spinner label="Cargando perfil…" />
+        </div>
+      }
+    >
+      <PerfilPageContent />
+    </Suspense>
   );
 }

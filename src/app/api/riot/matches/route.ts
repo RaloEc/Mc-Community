@@ -12,6 +12,16 @@ import {
   getPlayerStats,
 } from "@/lib/riot/matches";
 
+const DEFAULT_MATCH_LIMIT = 40;
+const MAX_MATCH_LIMIT = 100;
+const QUEUE_FILTERS: Record<string, number[]> = {
+  normals: [400, 430],
+  soloq: [420],
+  flex: [440],
+  aram: [450],
+  urf: [900],
+};
+
 /**
  * GET /api/riot/matches
  * Obtiene el historial de partidas del usuario autenticado
@@ -41,20 +51,37 @@ export async function GET(request: NextRequest) {
     }
 
     // Obtener parámetro de límite
-    const limit = parseInt(
-      request.nextUrl.searchParams.get("limit") || "10",
-      10
-    );
+    const limitParam = request.nextUrl.searchParams.get("limit");
+    const parsedLimit = limitParam ? Number(limitParam) : DEFAULT_MATCH_LIMIT;
+    const limit = Number.isFinite(parsedLimit)
+      ? Math.min(Math.max(parsedLimit, 1), MAX_MATCH_LIMIT)
+      : DEFAULT_MATCH_LIMIT;
+
+    const cursorParam = request.nextUrl.searchParams.get("cursor");
+    const parsedCursor = cursorParam ? Number(cursorParam) : null;
+    const cursor = Number.isFinite(parsedCursor) ? parsedCursor : null;
+
+    const queueParam = request.nextUrl.searchParams.get("queue")?.toLowerCase();
+    const queueIds = queueParam ? QUEUE_FILTERS[queueParam] : undefined;
 
     // Obtener historial de partidas
-    const matches = await getMatchHistory(riotAccount.puuid, limit);
+    const matchHistory = await getMatchHistory(riotAccount.puuid, {
+      limit,
+      cursor,
+      queueIds,
+    });
 
     // Obtener estadísticas agregadas
-    const stats = await getPlayerStats(riotAccount.puuid, 20);
+    const stats = await getPlayerStats(riotAccount.puuid, {
+      limit,
+      queueIds,
+    });
 
     return NextResponse.json({
       success: true,
-      matches,
+      matches: matchHistory.matches,
+      hasMore: matchHistory.hasMore,
+      nextCursor: matchHistory.nextCursor,
       stats,
     });
   } catch (error: any) {
@@ -122,15 +149,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener historial actualizado
-    const matches = await getMatchHistory(riotAccount.puuid, 10);
-    const stats = await getPlayerStats(riotAccount.puuid, 20);
+    const matchHistory = await getMatchHistory(riotAccount.puuid, {
+      limit: DEFAULT_MATCH_LIMIT,
+    });
+    const stats = await getPlayerStats(riotAccount.puuid, DEFAULT_MATCH_LIMIT);
 
     return NextResponse.json({
       success: true,
       message: `${result.newMatches} partidas nuevas sincronizadas`,
       newMatches: result.newMatches,
       totalMatches: result.totalMatches,
-      matches,
+      matches: matchHistory.matches,
+      hasMore: matchHistory.hasMore,
+      nextCursor: matchHistory.nextCursor,
       stats,
     });
   } catch (error: any) {
