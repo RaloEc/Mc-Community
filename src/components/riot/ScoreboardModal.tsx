@@ -2,16 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, X } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScoreboardTable } from "@/components/riot/ScoreboardTable";
+import { ScoreboardModalTable } from "@/components/riot/ScoreboardModalTable";
 import { createClient } from "@/lib/supabase/client";
 
 interface ScoreboardModalProps {
@@ -102,63 +96,49 @@ export function ScoreboardModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-[1400px] md:min-w-[1100px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800">
-        <DialogHeader className="sticky top-0 z-10 bg-white text-slate-900 pb-4 border-b border-slate-200 dark:bg-black dark:text-white dark:border-slate-800">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">Scoreboard</DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleClose}
-              className="h-6 w-6 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          <DialogDescription className="sr-only">
-            Scoreboard de la partida con estadísticas de los jugadores
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        showCloseButton={false}
+        className="w-full max-w-[95vw] md:max-w-[1100px] xl:max-w-[1400px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800 max-h-[90vh] p-0 flex flex-col"
+      >
+        <div className="flex flex-1 flex-col">
+          <div className="flex-1 px-2 py-0 sm:px-6 overflow-hidden">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              </div>
+            )}
 
-        {/* Contenido */}
-        <div className="px-6 pb-0">
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
-            </div>
-          )}
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
+                {error}
+              </div>
+            )}
 
-          {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">
-              {error}
-            </div>
-          )}
-
-          {!loading && !error && matchData && (
-            <>
-              <ScoreboardTable
+            {!loading && !error && matchData && (
+              <ScoreboardModalTable
                 participants={participants}
                 currentUserPuuid={currentUserPuuid}
                 gameVersion={gameVersion}
               />
+            )}
+          </div>
 
-              {/* Botones de acción */}
-              <div className="flex gap-3 justify-end mt-8 pt-0">
-                <Button
-                  variant="outline"
-                  onClick={handleClose}
-                  className="border-slate-700 hover:bg-slate-800"
-                >
-                  Cerrar
-                </Button>
-                <Button
-                  onClick={handleViewAnalysis}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Ver análisis
-                </Button>
-              </div>
-            </>
+          {!loading && !error && matchData && (
+            <div className="flex flex-row gap-2 items-center justify-end border-t border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                className="border-slate-700 hover:bg-slate-800 px-3 py-2 text-sm"
+              >
+                Cerrar
+              </Button>
+              <Button
+                onClick={handleViewAnalysis}
+                className="bg-blue-600 hover:bg-blue-700 px-3 py-2 text-sm"
+              >
+                Ver análisis
+              </Button>
+            </div>
           )}
         </div>
       </DialogContent>

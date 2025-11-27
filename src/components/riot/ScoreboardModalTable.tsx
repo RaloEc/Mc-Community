@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import {
   getChampionImg,
@@ -9,19 +9,30 @@ import {
   getRuneStyleImg,
 } from "@/lib/riot/helpers";
 import { formatRankBadge, getTierColor } from "@/lib/riot/league";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface ScoreboardTableProps {
+interface ScoreboardModalTableProps {
   participants: any[];
   currentUserPuuid?: string;
   gameVersion?: string;
 }
 
-export function ScoreboardTable({
+export function ScoreboardModalTable({
   participants,
   currentUserPuuid,
   gameVersion,
-}: ScoreboardTableProps) {
-  // Función para ordenar jugadores por línea
+}: ScoreboardModalTableProps) {
+  const mobileCarouselRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollMobileCarousel = (direction: "prev" | "next") => {
+    const container = mobileCarouselRef.current;
+    if (!container) return;
+
+    const offset =
+      direction === "next" ? container.clientWidth : -container.clientWidth;
+    container.scrollBy({ left: offset, behavior: "smooth" });
+  };
+
   const laneOrder: Record<string, number> = {
     TOP: 0,
     JUNGLE: 1,
@@ -38,10 +49,9 @@ export function ScoreboardTable({
     });
   };
 
-  const team1 = sortByLane(participants.filter((p: any) => p.win)); // Winners (Blue)
-  const team2 = sortByLane(participants.filter((p: any) => !p.win)); // Losers (Red)
+  const team1 = sortByLane(participants.filter((p: any) => p.win));
+  const team2 = sortByLane(participants.filter((p: any) => !p.win));
 
-  // Calculate team stats
   const team1Kills = team1.reduce((acc: number, p: any) => acc + p.kills, 0);
   const team2Kills = team2.reduce((acc: number, p: any) => acc + p.kills, 0);
   const team1Gold = team1.reduce(
@@ -53,7 +63,6 @@ export function ScoreboardTable({
     0
   );
 
-  // Get max damage for scaling bars
   const maxDamage = Math.max(
     ...participants.map((p: any) => p.total_damage_dealt)
   );
@@ -82,7 +91,6 @@ export function ScoreboardTable({
 
     const damagePercent = (player.total_damage_dealt / maxDamage) * 100;
 
-    // Mapeo de divisiones (usando lane/teamPosition como proxy)
     const divisionMap: Record<string, string> = {
       TOP: "Top",
       JUNGLE: "Jg",
@@ -98,15 +106,13 @@ export function ScoreboardTable({
       (player.neutral_minions_killed ?? player.neutralMinionsKilled ?? 0);
     const visionScore = player.vision_score ?? player.visionScore ?? 0;
 
-    // Obtener rango real si está disponible
     const tier = player.tier ?? null;
     const rank = player.rank ?? null;
     const rankBadge = formatRankBadge(tier, rank);
     const rankColor = getTierColor(tier);
 
-    // Debug info para runas
     if (process.env.NODE_ENV === "development") {
-      console.debug("[Scoreboard] Player runes", {
+      console.debug("[ScoreboardModal] Player runes", {
         name: displayName,
         lane: player.lane,
         teamPosition: player.teamPosition,
@@ -127,8 +133,7 @@ export function ScoreboardTable({
             : "hover:bg-slate-800/30"
         }`}
       >
-        {/* Champion Avatar + KDA Badge + Spells */}
-        <div className="flex items-start gap-2 flex-shrink-0">
+        <div className="flex items-start gap-1.5 flex-shrink-0">
           <div className="relative flex flex-col items-center gap-1">
             <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-700 group-hover:border-slate-500 transition-colors shadow-inner">
               <Image
@@ -139,7 +144,6 @@ export function ScoreboardTable({
                 className="object-cover"
               />
             </div>
-            {/* Summoner Spells */}
             <div className="flex gap-1">
               {player.summoner1_id &&
                 getSpellImg(player.summoner1_id, gameVersion) && (
@@ -168,8 +172,7 @@ export function ScoreboardTable({
             </div>
           </div>
 
-          {/* Runas a la derecha del avatar */}
-          <div className="flex flex-col gap-0.5 mt-0.5">
+          <div className="flex flex-col gap-0.5 mt-0">
             {(() => {
               const primarySrc = getRuneStyleImg(
                 player.perk_primary_style || null
@@ -178,61 +181,23 @@ export function ScoreboardTable({
                 player.perk_sub_style || null
               );
 
-              if (process.env.NODE_ENV === "development") {
-                console.debug("[Scoreboard] Rendering runes", {
-                  name: displayName,
-                  primaryStyle: player.perk_primary_style,
-                  primarySrc,
-                  secondaryStyle: player.perk_sub_style,
-                  secondarySrc,
-                  shouldRenderPrimary: !!primarySrc,
-                  shouldRenderSecondary: !!secondarySrc,
-                });
-              }
-
               return (
                 <>
                   {primarySrc && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
                       <img
                         src={primarySrc}
                         alt="Primary Rune"
                         className="w-full h-full object-cover"
-                        onLoad={() =>
-                          console.debug(
-                            "[Scoreboard] Primary rune loaded:",
-                            primarySrc
-                          )
-                        }
-                        onError={(e) =>
-                          console.error(
-                            "[Scoreboard] Primary rune failed:",
-                            primarySrc,
-                            e
-                          )
-                        }
                       />
                     </div>
                   )}
                   {secondarySrc && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
                       <img
                         src={secondarySrc}
                         alt="Secondary Rune"
                         className="w-full h-full object-cover"
-                        onLoad={() =>
-                          console.debug(
-                            "[Scoreboard] Secondary rune loaded:",
-                            secondarySrc
-                          )
-                        }
-                        onError={(e) =>
-                          console.error(
-                            "[Scoreboard] Secondary rune failed:",
-                            secondarySrc,
-                            e
-                          )
-                        }
                       />
                     </div>
                   )}
@@ -242,7 +207,6 @@ export function ScoreboardTable({
           </div>
         </div>
 
-        {/* Player Info */}
         <div className="flex-1 min-w-0">
           <div className="flex flex-col gap-0.5">
             <span
@@ -273,7 +237,6 @@ export function ScoreboardTable({
           </div>
         </div>
 
-        {/* KDA Stats */}
         <div className="flex flex-col items-end gap-0.5 min-w-fit">
           <div className={`font-bold text-xs ${kdaColor}`}>
             {player.kills}/{player.deaths}/{player.assists}
@@ -283,7 +246,6 @@ export function ScoreboardTable({
           </div>
         </div>
 
-        {/* Items Grid + Trinket */}
         <div className="flex items-center gap-2">
           <div className="grid grid-cols-3 gap-0.5">
             {[
@@ -323,8 +285,7 @@ export function ScoreboardTable({
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-x-2 gap-y-1 min-w-[10px]">
+        <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:gap-x-2 sm:gap-y-1 min-w-[10px]">
           <div className="flex flex-col items-center gap-0.5">
             <div className="text-[11px] font-semibold text-white">
               {totalLaneCS.toFixed(0)}
@@ -337,13 +298,13 @@ export function ScoreboardTable({
             </div>
             <div className="text-[10px] text-slate-500">VIS</div>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="hidden sm:flex flex-col items-center gap-0.5">
             <div className="text-[11px] font-semibold text-white">
               {(player.total_damage_dealt / 1000).toFixed(1)}k
             </div>
             <div className="text-[10px] text-slate-500">DMG</div>
           </div>
-          <div className="flex flex-col items-center gap-0.5">
+          <div className="hidden sm:flex flex-col items-center gap-0.5">
             <div className="text-[11px] font-semibold text-yellow-400">
               {(player.gold_earned / 1000).toFixed(1)}k
             </div>
@@ -356,11 +317,8 @@ export function ScoreboardTable({
 
   return (
     <div className="space-y-4">
-      {/* Desktop: Horizontal Layout */}
       <div className="hidden lg:grid lg:grid-cols-2 gap-4">
-        {/* Team 1 (Winners) - Left */}
         <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          {/* Header */}
           <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-5 bg-blue-500 rounded-full" />
@@ -382,7 +340,6 @@ export function ScoreboardTable({
             </div>
           </div>
 
-          {/* Players */}
           <div>
             {team1.map((p: any) => (
               <PlayerRow
@@ -395,9 +352,7 @@ export function ScoreboardTable({
           </div>
         </div>
 
-        {/* Team 2 (Losers) - Right */}
         <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          {/* Header */}
           <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-5 bg-red-500 rounded-full" />
@@ -419,7 +374,6 @@ export function ScoreboardTable({
             </div>
           </div>
 
-          {/* Players */}
           <div>
             {team2.map((p: any) => (
               <PlayerRow
@@ -433,75 +387,101 @@ export function ScoreboardTable({
         </div>
       </div>
 
-      {/* Mobile: Vertical Layout */}
-      <div className="lg:hidden space-y-6">
-        {/* Team 1 (Winners) */}
-        <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-6 bg-blue-500 rounded-full" />
-              <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
-                Victoria
-              </h3>
-            </div>
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Kills:</span>
-                <span className="font-bold text-white">{team1Kills}</span>
+      <div className="lg:hidden">
+        {/* <div className="flex items-center justify-between mb-3 px-1 text-[11px] uppercase tracking-wide text-slate-400">
+          <span>Desliza para ver ambos equipos</span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => scrollMobileCarousel("prev")}
+              className="rounded-full border border-slate-700 bg-slate-900/80 p-2 text-slate-200 hover:bg-slate-800 transition-colors"
+              aria-label="Equipo anterior"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollMobileCarousel("next")}
+              className="rounded-full border border-slate-700 bg-slate-900/80 p-2 text-slate-200 hover:bg-slate-800 transition-colors"
+              aria-label="Siguiente equipo"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div> */}
+
+        <div
+          ref={mobileCarouselRef}
+          className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <div className="min-w-full snap-center">
+            <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30 shadow-lg">
+              <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-6 bg-blue-500 rounded-full" />
+                  <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+                    Victoria
+                  </h3>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400">Kills:</span>
+                    <span className="font-bold text-white">{team1Kills}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400">Oro:</span>
+                    <span className="font-bold text-yellow-500">
+                      {(team1Gold / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Oro:</span>
-                <span className="font-bold text-yellow-500">
-                  {(team1Gold / 1000).toFixed(1)}k
-                </span>
+              <div>
+                {team1.map((p) => (
+                  <PlayerRow
+                    key={p.puuid}
+                    player={p}
+                    isCurrentUser={p.puuid === currentUserPuuid}
+                    isWinner={true}
+                  />
+                ))}
               </div>
             </div>
           </div>
 
-          <div>
-            {team1.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={true}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Team 2 (Losers) */}
-        <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-6 bg-red-500 rounded-full" />
-              <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
-                Derrota
-              </h3>
-            </div>
-            <div className="flex items-center gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Kills:</span>
-                <span className="font-bold text-white">{team2Kills}</span>
+          <div className="min-w-full snap-center">
+            <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30 shadow-lg">
+              <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-6 bg-red-500 rounded-full" />
+                  <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
+                    Derrota
+                  </h3>
+                </div>
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400">Kills:</span>
+                    <span className="font-bold text-white">{team2Kills}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-400">Oro:</span>
+                    <span className="font-bold text-yellow-500">
+                      {(team2Gold / 1000).toFixed(1)}k
+                    </span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-slate-400">Oro:</span>
-                <span className="font-bold text-yellow-500">
-                  {(team2Gold / 1000).toFixed(1)}k
-                </span>
+              <div>
+                {team2.map((p) => (
+                  <PlayerRow
+                    key={p.puuid}
+                    player={p}
+                    isCurrentUser={p.puuid === currentUserPuuid}
+                    isWinner={false}
+                  />
+                ))}
               </div>
             </div>
-          </div>
-
-          <div>
-            {team2.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={false}
-              />
-            ))}
           </div>
         </div>
       </div>

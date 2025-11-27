@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
+import * as React from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils";
 
-const Dialog = ({ open, onOpenChange, ...props }: DialogPrimitive.DialogProps) => {
+const Dialog = ({
+  open,
+  onOpenChange,
+  ...props
+}: DialogPrimitive.DialogProps) => {
   // Dejamos que Radix maneje el estado de apertura/cierre
   return (
-    <DialogPrimitive.Root 
-      open={open} 
-      onOpenChange={onOpenChange} 
-      {...props} 
-    />
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />
   );
 };
 
@@ -33,35 +33,44 @@ const DialogOverlay = React.forwardRef<
     )}
     style={{
       // Usar viewport units para asegurar que cubra toda la pantalla
-      width: '100vw',
-      height: '100vh',
+      width: "100vw",
+      height: "100vh",
       // Usar fixed para evitar que afecte el scroll
-      position: 'fixed',
+      position: "fixed",
       // Asegurar que esté por encima de todo
       zIndex: 50,
       // Asegurar que no haya desbordamiento
-      overflow: 'hidden'
+      overflow: "hidden",
     }}
     {...props}
   />
-))
-DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+type ExtendedDialogContentProps = React.ComponentPropsWithoutRef<
+  typeof DialogPrimitive.Content
+> & {
+  forceMount?: boolean;
+  open?: boolean;
+  showCloseButton?: boolean;
+};
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { forceMount?: boolean; open?: boolean }
->(({ className, children, open, ...props }, ref) => {
+  ExtendedDialogContentProps
+>(({ className, children, open, showCloseButton = true, ...props }, ref) => {
   // Efecto para manejar el scroll del body cuando el diálogo está abierto
   React.useEffect(() => {
     if (open) {
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-      document.body.style.overflow = "hidden"
-      document.body.style.paddingRight = `${scrollbarWidth}px` 
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
     } else {
-      document.body.style.overflow = ""
-      document.body.style.paddingRight = ""
+      document.body.style.overflow = "";
+      document.body.style.paddingRight = "";
     }
-  }, [open])
+  }, [open]);
 
   return (
     <DialogPortal>
@@ -75,7 +84,8 @@ const DialogContent = React.forwardRef<
         // Prevenir el cierre automático al hacer clic en el contenido
         onPointerDownOutside={(e) => {
           // Solo permitir el cierre si el clic fue en el overlay, no en el contenido
-          const isOverlay = (e.target as HTMLElement).closest('[role="dialog"]') === null;
+          const isOverlay =
+            (e.target as HTMLElement).closest('[role="dialog"]') === null;
           if (!isOverlay) {
             e.preventDefault();
           }
@@ -84,22 +94,24 @@ const DialogContent = React.forwardRef<
         onEscapeKeyDown={(e) => {
           // Permitir cerrar con Escape solo si no estamos en un formulario
           const target = e.target as HTMLElement;
-          if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") {
             e.preventDefault();
           }
         }}
         {...props}
       >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
+        {children}
+        {showCloseButton && (
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
+        )}
       </DialogPrimitive.Content>
     </DialogPortal>
   );
-})
-DialogContent.displayName = DialogPrimitive.Content.displayName
+});
+DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const DialogHeader = ({
   className,
@@ -112,8 +124,8 @@ const DialogHeader = ({
     )}
     {...props}
   />
-)
-DialogHeader.displayName = "DialogHeader"
+);
+DialogHeader.displayName = "DialogHeader";
 
 const DialogFooter = ({
   className,
@@ -126,8 +138,8 @@ const DialogFooter = ({
     )}
     {...props}
   />
-)
-DialogFooter.displayName = "DialogFooter"
+);
+DialogFooter.displayName = "DialogFooter";
 
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
@@ -141,8 +153,8 @@ const DialogTitle = React.forwardRef<
     )}
     {...props}
   />
-))
-DialogTitle.displayName = DialogPrimitive.Title.displayName
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
@@ -153,8 +165,8 @@ const DialogDescription = React.forwardRef<
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
-))
-DialogDescription.displayName = DialogPrimitive.Description.displayName
+));
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   Dialog,
@@ -167,4 +179,4 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-}
+};
