@@ -317,7 +317,7 @@ export function ScoreboardModalTable({
 
   return (
     <div className="space-y-4">
-      <div className="hidden lg:grid lg:grid-cols-2 gap-4">
+      <div className="hidden lg:grid lg:grid-cols-2 gap-4 my-4">
         <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
           <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export function ScoreboardModalTable({
           ref={mobileCarouselRef}
           className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div className="min-w-full snap-center">
+          <div className="min-w-full snap-center ">
             <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30 shadow-lg">
               <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3">

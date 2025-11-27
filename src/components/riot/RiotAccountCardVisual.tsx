@@ -126,7 +126,7 @@ export function RiotAccountCardVisual({
     }
   }, [account.user_id]);
 
-  // Obtener maestría de campeones
+  // Obtener maestría de campeones con caché agresivo
   const { data: masteryData } = useQuery({
     queryKey: ["champion-mastery", account.puuid],
     queryFn: async () => {
@@ -155,7 +155,8 @@ export function RiotAccountCardVisual({
     },
     enabled: !!userId && !!account.puuid,
     retry: 1,
-    staleTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 30, // 30 minutos - caché más agresivo
+    gcTime: 1000 * 60 * 60, // 1 hora en memoria
   });
 
   const topChampionId = masteryData?.[0]?.championId ?? null;

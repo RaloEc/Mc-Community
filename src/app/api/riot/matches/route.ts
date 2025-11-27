@@ -12,6 +12,73 @@ import {
   getPlayerStats,
 } from "@/lib/riot/matches";
 
+/**
+ * Obtiene estadísticas desde caché o calcula si no existen
+ */
+async function getPlayerStatsOptimized(
+  supabase: any,
+  puuid: string,
+  options: any
+) {
+  // Intentar obtener del caché primero
+  const { data: cachedStats } = await supabase
+    .from("player_stats_cache")
+    .select("*")
+    .eq("puuid", puuid)
+    .single();
+
+  if (cachedStats) {
+    console.log("[GET /api/riot/matches] Stats desde caché:", {
+      totalGames: cachedStats.total_games,
+      winrate: cachedStats.winrate,
+    });
+    return {
+      totalGames: cachedStats.total_games,
+      wins: cachedStats.wins,
+      losses: cachedStats.losses,
+      winrate: cachedStats.winrate,
+      avgKda: cachedStats.avg_kda,
+      avgDamage: cachedStats.avg_damage,
+      avgGold: cachedStats.avg_gold,
+    };
+  }
+
+  // Si no hay caché, calcular y guardar
+  console.log("[GET /api/riot/matches] Stats calculadas (sin caché)");
+  const stats = await getPlayerStats(puuid, options);
+
+  // Guardar en caché sin esperar (fire and forget)
+  (async () => {
+    try {
+      const { data: riotAccount } = await supabase
+        .from("linked_accounts_riot")
+        .select("user_id")
+        .eq("puuid", puuid)
+        .single();
+
+      if (riotAccount) {
+        await supabase.from("player_stats_cache").upsert({
+          user_id: riotAccount.user_id,
+          puuid,
+          total_games: stats.totalGames,
+          wins: stats.wins,
+          losses: stats.losses,
+          winrate: stats.winrate,
+          avg_kda: stats.avgKda,
+          avg_damage: stats.avgDamage,
+          avg_gold: stats.avgGold,
+          updated_at: new Date().toISOString(),
+        });
+        console.log("[GET /api/riot/matches] Stats cacheadas");
+      }
+    } catch (err) {
+      console.error("[GET /api/riot/matches] Error cacheando stats:", err);
+    }
+  })();
+
+  return stats;
+}
+
 const DEFAULT_MATCH_LIMIT = 40;
 const MAX_MATCH_LIMIT = 100;
 const QUEUE_FILTERS: Record<string, number[]> = {
@@ -64,18 +131,18 @@ export async function GET(request: NextRequest) {
     const queueParam = request.nextUrl.searchParams.get("queue")?.toLowerCase();
     const queueIds = queueParam ? QUEUE_FILTERS[queueParam] : undefined;
 
-    // Obtener historial de partidas
-    const matchHistory = await getMatchHistory(riotAccount.puuid, {
-      limit,
-      cursor,
-      queueIds,
-    });
-
-    // Obtener estadísticas agregadas
-    const stats = await getPlayerStats(riotAccount.puuid, {
-      limit,
-      queueIds,
-    });
+    // Obtener historial de partidas y estadísticas EN PARALELO (no secuencial)
+    const [matchHistory, stats] = await Promise.all([
+      getMatchHistory(riotAccount.puuid, {
+        limit,
+        cursor,
+        queueIds,
+      }),
+      getPlayerStatsOptimized(supabase, riotAccount.puuid, {
+        limit,
+        queueIds,
+      }),
+    ]);
 
     return NextResponse.json({
       success: true,

@@ -71,7 +71,42 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Construir URL del endpoint de Riot
+    // Primero intentar obtener del caché
+    const { data: cachedMasteries, error: cacheError } = await supabase
+      .from("champion_mastery_cache")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .eq("puuid", puuid)
+      .gt("expires_at", new Date().toISOString())
+      .order("rank_position", { ascending: true })
+      .limit(3);
+
+    if (!cacheError && cachedMasteries && cachedMasteries.length > 0) {
+      console.log(
+        "[GET /api/riot/champion-mastery] ✅ Datos obtenidos del caché:",
+        cachedMasteries.length,
+        "campeones"
+      );
+
+      // Convertir formato de caché al formato de Riot API
+      const formattedMasteries = cachedMasteries.map((cache) => ({
+        championId: cache.champion_id,
+        championLevel: cache.mastery_level,
+        championPoints: cache.mastery_points,
+        lastPlayTime: cache.last_play_time,
+      }));
+
+      return NextResponse.json(
+        {
+          success: true,
+          masteries: formattedMasteries,
+          source: "cache",
+        },
+        { status: 200 }
+      );
+    }
+
+    // Si no hay caché válido, obtener de Riot API
     const riotApiUrl = `https://${region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/${puuid}/top?count=3`;
 
     console.log(
@@ -100,14 +135,47 @@ export async function GET(request: NextRequest) {
 
     const masteryData = await response.json();
     console.log(
-      "[GET /api/riot/champion-mastery] ✅ Datos obtenidos:",
-      masteryData
+      "[GET /api/riot/champion-mastery] ✅ Datos obtenidos de Riot API:",
+      masteryData.length,
+      "campeones"
     );
+
+    // Cachear los datos en BD (sin esperar)
+    const cacheInserts = masteryData.map((mastery: any, index: number) => ({
+      user_id: session.user.id,
+      puuid,
+      champion_id: mastery.championId,
+      mastery_level: mastery.championLevel,
+      mastery_points: mastery.championPoints,
+      last_play_time: mastery.lastPlayTime,
+      rank_position: index + 1,
+      expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutos
+    }));
+
+    // Insertar en caché sin bloquear la respuesta (fire and forget)
+    (async () => {
+      try {
+        await supabase
+          .from("champion_mastery_cache")
+          .upsert(cacheInserts, { onConflict: "user_id,puuid,champion_id" });
+        console.log(
+          "[GET /api/riot/champion-mastery] ✅ Caché actualizado:",
+          cacheInserts.length,
+          "registros"
+        );
+      } catch (err) {
+        console.error(
+          "[GET /api/riot/champion-mastery] Error cacheando datos:",
+          err
+        );
+      }
+    })();
 
     return NextResponse.json(
       {
         success: true,
         masteries: masteryData,
+        source: "riot-api",
       },
       { status: 200 }
     );

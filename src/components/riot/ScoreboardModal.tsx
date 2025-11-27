@@ -3,9 +3,19 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScoreboardModalTable } from "@/components/riot/ScoreboardModalTable";
+import {
+  getQueueName,
+  formatDuration,
+  getRelativeTime,
+} from "@/components/riot/match-card/helpers";
 import { createClient } from "@/lib/supabase/client";
 
 interface ScoreboardModalProps {
@@ -94,14 +104,67 @@ export function ScoreboardModal({
   const gameVersion =
     match?.full_json?.info?.gameVersion || match?.game_version;
 
+  const queueId =
+    match?.queue_id ||
+    match?.full_json?.queueId ||
+    match?.matches?.queue_id ||
+    match?.matches?.queueId ||
+    match?.queueId ||
+    match?.matches?.queue_id;
+
+  const durationSeconds =
+    match?.game_duration ||
+    match?.matches?.game_duration ||
+    match?.full_json?.info?.gameDuration ||
+    0;
+
+  const createdAtRaw =
+    match?.created_at || match?.full_json?.info?.gameCreation || null;
+  const createdAtIso = createdAtRaw
+    ? typeof createdAtRaw === "number"
+      ? new Date(createdAtRaw).toISOString()
+      : createdAtRaw
+    : null;
+
+  const headerQueueLabel = queueId ? getQueueName(queueId) : "";
+  const headerTitle = match?.game_mode || headerQueueLabel || "Partida";
+  const headerDuration = formatDuration(durationSeconds);
+  const headerRelativeTime = createdAtIso
+    ? getRelativeTime(createdAtIso)
+    : undefined;
+  const headerMatchId = match?.match_id || match?.matches?.match_id || matchId;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-[95vw] md:max-w-[1100px] xl:max-w-[1400px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800 max-h-[90vh] p-0 flex flex-col"
+        className="w-full max-w-[98vw] lg:w-[1100px] xl:max-w-[1500px] 2xl:max-w-[1680px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800 max-h-[90vh] p-0 flex flex-col"
       >
+        <div className="sr-only">
+          <DialogTitle>Scoreboard de la partida</DialogTitle>
+          <DialogDescription>
+            Estadísticas detalladas de ambos equipos.
+          </DialogDescription>
+        </div>
         <div className="flex flex-1 flex-col">
-          <div className="flex-1 px-2 py-0 sm:px-6 overflow-hidden">
+          <div className="flex flex-col gap-4 px-2 py-0 sm:px-6 overflow-hidden">
+            {!loading && !error && match && (
+              <div className="flex flex-col gap-2 border-b border-slate-200 dark:border-slate-800 py-4">
+                <h2 className="text-xl font-semibold text-slate-900 dark:text-white flex flex-wrap items-center gap-2">
+                  {headerTitle}
+                  <span className="text-slate-500 text-sm font-normal">
+                    • {headerDuration}
+                  </span>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm flex flex-wrap items-center gap-2">
+                  {headerRelativeTime}
+                  <span className="text-slate-700 dark:text-slate-600">|</span>
+                  <span className="text-slate-600 dark:text-slate-300">
+                    ID: {headerMatchId}
+                  </span>
+                </p>
+              </div>
+            )}
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-slate-400" />

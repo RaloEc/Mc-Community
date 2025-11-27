@@ -15,6 +15,7 @@ import { Loader2, Unlink, AlertCircle, RefreshCw } from "lucide-react";
 import { LinkedAccountRiot } from "@/types/riot";
 import { useState, useEffect } from "react";
 import { RiotAccountCardVisual } from "./RiotAccountCardVisual";
+import { RiotAccountCardSkeleton } from "./RiotAccountCardSkeleton";
 
 interface RiotAccountCardProps {
   onUnlink?: () => void;
@@ -68,7 +69,8 @@ export function RiotAccountCard({
       return data.account as LinkedAccountRiot;
     },
     enabled: !!user?.id,
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 30 * 60 * 1000, // 30 minutos - caché más agresivo
+    gcTime: 60 * 60 * 1000, // 1 hora - mantener en memoria más tiempo
   });
 
   // Mutación para sincronizar estadísticas
@@ -115,7 +117,9 @@ export function RiotAccountCard({
   }, [cooldownSeconds]);
 
   if (isLoading) {
-    return (
+    return useVisualDesign ? (
+      <RiotAccountCardSkeleton />
+    ) : (
       <Card>
         <CardHeader>
           <CardTitle>Cuenta de Riot Games</CardTitle>

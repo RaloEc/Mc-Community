@@ -62,7 +62,8 @@ const QUEUE_FILTERS = [
   { label: "URF", value: "urf" },
 ];
 
-const MATCHES_PER_PAGE = 40;
+const INITIAL_LOAD = 5; // Primeras 5 partidas para lazy load
+const MATCHES_PER_PAGE = 40; // Después, 40 por página
 const DEFAULT_STATS: PlayerStats = {
   totalGames: 0,
   wins: 0,
@@ -137,7 +138,7 @@ export function MatchHistoryList({
     {}
   );
 
-  // Query para obtener historial de partidas
+  // Query para obtener historial de partidas con lazy load
   const {
     data: matchPages,
     isLoading,
@@ -152,7 +153,11 @@ export function MatchHistoryList({
       if (!userId) throw new Error("No user");
 
       const params = new URLSearchParams();
-      params.set("limit", MATCHES_PER_PAGE.toString());
+
+      // Lazy load: primeras 5 partidas, después 40
+      const isFirstPage = pageParam === null;
+      const limit = isFirstPage ? INITIAL_LOAD : MATCHES_PER_PAGE;
+      params.set("limit", limit.toString());
 
       if (queueFilter && queueFilter !== "all") {
         params.set("queue", queueFilter);
@@ -182,6 +187,21 @@ export function MatchHistoryList({
     initialPageParam: null,
   });
 
+  // Lazy load: cargar más partidas automáticamente después de 2 segundos
+  useEffect(() => {
+    if (!isLoading && matchPages?.pages.length === 1 && hasNextPage) {
+      const timer = setTimeout(() => {
+        console.log(
+          "[MatchHistoryList] Lazy loading: cargando más partidas en background..."
+        );
+        fetchNextPage();
+      }, 2000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, matchPages?.pages.length, hasNextPage, fetchNextPage]);
+
+  // Infinite scroll: cargar más partidas al hacer scroll
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) {
