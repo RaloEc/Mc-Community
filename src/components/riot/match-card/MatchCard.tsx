@@ -1,7 +1,12 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Eye } from "lucide-react";
 import { analyzeMatchTags, getTagsInfo } from "@/lib/riot/match-analyzer";
 import { TeamPlayerList } from "./TeamPlayerList";
+import { ScoreboardModal } from "@/components/riot/ScoreboardModal";
+import { TeammateTracker } from "@/components/riot/TeammateTracker";
 import {
   getChampionImageUrl,
   getItemImageUrl,
@@ -31,6 +36,10 @@ interface RiotParticipant {
   lane?: string;
   riotIdGameName?: string;
   summonerName?: string;
+  totalMinionsKilled?: number;
+  neutralMinionsKilled?: number;
+  gameEndedInEarlySurrender?: boolean;
+  teamEarlySurrendered?: boolean;
 }
 
 interface PlayerSummaryData {
@@ -43,6 +52,8 @@ interface PlayerSummaryData {
   deaths: number;
   assists: number;
   kda: number;
+  csTotal?: number;
+  csPerMinute?: number;
   label?: string;
 }
 
@@ -183,19 +194,31 @@ function PlayerSummarySection({
 
   const statsBlock = (
     <div
-      className={`flex flex-col gap-1 ${reverse ? "items-end text-right" : ""}`}
+      className={`flex flex-col gap-1 w-[80px] flex-shrink-0 ${
+        reverse ? "items-center text-center" : "items-center text-center"
+      }`}
     >
       {data.label && (
-        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+        <span className="text-[10px] uppercase tracking-wide text-slate-600 dark:text-slate-400">
           {data.label}
         </span>
       )}
-      <div className="text-sm font-bold text-slate-100">
+      <div className="text-sm font-bold text-slate-600 dark:text-slate-100">
         {data.kills} / {data.deaths} / {data.assists}
       </div>
-      <div className="text-xs text-slate-400 self-center text-center">
+      <div className="text-xs text-slate-600 dark:text-slate-400 text-center">
         {data.kda.toFixed(2)}
       </div>
+      {typeof data.csTotal === "number" && (
+        <div className="text-sm font-semibold text-slate-600 dark:text-slate-100 text-center">
+          {data.csTotal} CS
+        </div>
+      )}
+      {typeof data.csPerMinute === "number" && (
+        <div className="text-[11px] text-slate-600 dark:text-slate-400 text-center">
+          {data.csPerMinute.toFixed(1)} CS/min
+        </div>
+      )}
     </div>
   );
 
@@ -261,28 +284,44 @@ interface MatchCardProps {
   match: Match;
   version: string;
   linkedAccountsMap?: Record<string, string>;
+  recentMatches?: Match[];
 }
 
 export function MatchCard({
   match,
   version,
   linkedAccountsMap = {},
+  recentMatches = [],
 }: MatchCardProps) {
+  const [scoreboardModalOpen, setScoreboardModalOpen] = useState(false);
+
   // Validar que match.matches existe
   if (!match.matches) {
     return null;
   }
 
   const isVictory = match.win;
-  const items = [
+  const REMAKE_DURATION_THRESHOLD = 300; // 5 minutos
+  const participants = (match.matches?.full_json?.info?.participants ??
+    []) as RiotParticipant[];
+  const isRemake = Boolean(
+    (match.matches?.game_duration ?? 0) < REMAKE_DURATION_THRESHOLD ||
+      participants.some(
+        (participant) =>
+          participant?.gameEndedInEarlySurrender ||
+          participant?.teamEarlySurrendered
+      )
+  );
+  const coreItems = [
     match.item0,
     match.item1,
     match.item2,
     match.item3,
     match.item4,
     match.item5,
-    match.item6,
-  ].filter((id) => id !== 0);
+  ].map((id) => (id && id !== 0 ? id : null));
+
+  const trinketItem = match.item6 && match.item6 !== 0 ? match.item6 : null;
 
   const tags = analyzeMatchTags({
     kills: match.kills,
@@ -313,6 +352,24 @@ export function MatchCard({
     currentParticipant
   );
 
+  const playerCs = currentParticipant
+    ? (currentParticipant.totalMinionsKilled ?? 0) +
+      (currentParticipant.neutralMinionsKilled ?? 0)
+    : null;
+  const csPerMinute =
+    playerCs !== null && match.matches.game_duration
+      ? playerCs / Math.max(1, match.matches.game_duration / 60)
+      : null;
+
+  const opponentCs = laneOpponentParticipant
+    ? (laneOpponentParticipant.totalMinionsKilled ?? 0) +
+      (laneOpponentParticipant.neutralMinionsKilled ?? 0)
+    : null;
+  const opponentCsPerMinute =
+    opponentCs !== null && match.matches.game_duration
+      ? opponentCs / Math.max(1, match.matches.game_duration / 60)
+      : null;
+
   const playerSummary: PlayerSummaryData = {
     championName: match.champion_name,
     summoner1Id: match.summoner1_id,
@@ -323,6 +380,8 @@ export function MatchCard({
     deaths: match.deaths,
     assists: match.assists,
     kda: match.kda,
+    csTotal: playerCs ?? undefined,
+    csPerMinute: csPerMinute ?? undefined,
     label: "Tú",
   };
 
@@ -341,75 +400,93 @@ export function MatchCard({
           laneOpponentParticipant.deaths,
           laneOpponentParticipant.assists
         ),
+        csTotal: opponentCs ?? undefined,
+        csPerMinute: opponentCsPerMinute ?? undefined,
         label: "Rival",
       }
     : null;
 
+  const cardStateClasses = isRemake
+    ? "border-l-slate-500 bg-slate-500/5 hover:bg-slate-500/10"
+    : isVictory
+    ? "border-l-green-500 bg-green-500/5 hover:bg-green-500/10"
+    : "border-l-red-500 bg-red-500/5 hover:bg-red-500/10";
+
+  const outcomeTextClass = isRemake
+    ? "text-slate-600 dark:text-slate-400"
+    : isVictory
+    ? "text-green-600 dark:text-green-400"
+    : "text-red-600 dark:text-red-400";
+
+  const outcomeLabel = isRemake ? "Remake" : isVictory ? "Victoria" : "Derrota";
+
   return (
     <div className="block">
       {/* 
-        Navega a /match/[matchId] que será interceptado por la ruta paralela
-        en /perfil/@modal/(.)match/[matchId]/page.tsx, mostrando el detalle
-        en un modal sin desmontar el historial de partidas
+        Al hacer click, abre un modal con el scoreboard
+        Desde el modal se puede navegar a la página completa con análisis
       */}
-      <Link href={`/match/${match.match_id}`} className="block">
-        <div
-          className={`
-          hidden md:grid grid-cols-[130px,auto,180px,90px,200px] items-center gap-3 p-3 rounded-lg border-l-4 transition-all hover:shadow-lg hover:border-l-8
-          ${
-            isVictory
-              ? "border-l-green-500 bg-green-500/5 hover:bg-green-500/10"
-              : "border-l-red-500 bg-red-500/5 hover:bg-red-500/10"
-          }
+      <div
+        onClick={() => setScoreboardModalOpen(true)}
+        className={`
+          hidden md:grid grid-cols-[60px,auto,180px,90px,200px] items-center gap-3 p-3 rounded-lg border-l-4 transition-all hover:shadow-lg hover:border-l-8 cursor-pointer
+          ${cardStateClasses}
         `}
-        >
-          {/* 1. Metadata */}
-          <div className="flex flex-col gap-1">
-            <span
-              className={`text-xs font-bold ${
-                isVictory ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              {isVictory ? "Victoria" : "Derrota"}
-            </span>
-            <span className="text-xs font-semibold text-slate-300">
-              {getQueueName(match.matches.queue_id)}
-            </span>
-            <span className="text-[10px] text-slate-500">
-              {formatDuration(match.matches.game_duration)}
-            </span>
-            <span className="text-[10px] text-slate-500">
-              {getRelativeTime(match.created_at)}
-            </span>
-          </div>
+      >
+        {/* 1. Metadata */}
+        <div className="flex flex-col gap-1 text-[11px]">
+          <span
+            className={`uppercase tracking-wide font-semibold ${outcomeTextClass}`}
+          >
+            {outcomeLabel}
+          </span>
+          <span className="text-sm font-bold text-slate-600 dark:text-white leading-tight">
+            {getQueueName(match.matches.queue_id)}
+          </span>
+          <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+            {formatDuration(match.matches.game_duration)}
+          </span>
+          <span className="text-xs text-slate-600 dark:text-slate-400">
+            {getRelativeTime(match.created_at)}
+          </span>
+        </div>
 
-          {/* 2. Champion summaries */}
-          <div className="flex items-stretch gap-4">
-            <div className="flex-1 min-w-0">
-              <PlayerSummarySection data={playerSummary} version={version} />
-            </div>
-            {opponentSummary && (
-              <>
-                <div className="self-stretch w-px bg-slate-800/70" />
-                <div className="flex-1 min-w-0">
-                  <PlayerSummarySection
-                    data={opponentSummary}
-                    version={version}
-                    reverse
-                  />
-                </div>
-              </>
-            )}
+        {/* 2. Champion summaries */}
+        <div className="flex items-stretch gap-4 pr-4 border-r border-slate-800/60">
+          <div className="flex-[0.9] min-w-0">
+            <PlayerSummarySection data={playerSummary} version={version} />
           </div>
+          {opponentSummary && (
+            <>
+              <div className="flex flex-col items-center justify-center px-0">
+                <span className="text-xs font-semibold text-slate-500 tracking-widest">
+                  VS
+                </span>
+              </div>
+              <div className="flex-[1] min-w-0">
+                <PlayerSummarySection
+                  data={opponentSummary}
+                  version={version}
+                  reverse
+                />
+              </div>
+            </>
+          )}
+        </div>
 
-          {/* 3. Items */}
-          <div className="grid grid-cols-4 gap-1">
-            {items.slice(0, 7).map((itemId, idx) => (
+        {/* 3. Items */}
+        <div className="flex items-center gap-2 pl-4">
+          <div className="grid grid-cols-3 grid-rows-2 gap-1">
+            {coreItems.map((itemId, idx) => (
               <div
                 key={idx}
-                className="relative w-7 h-7 rounded border border-slate-600 overflow-hidden bg-slate-800"
+                className={`relative w-7 h-7 rounded overflow-hidden ${
+                  itemId
+                    ? "border border-slate-600 bg-slate-800"
+                    : "border border-slate-300 bg-slate-200/70 dark:border-slate-600 dark:bg-slate-800/40"
+                }`}
               >
-                {itemId !== 0 && (
+                {itemId && (
                   <Image
                     src={getItemImageUrl(itemId, version)}
                     alt={`Item ${itemId}`}
@@ -421,54 +498,74 @@ export function MatchCard({
               </div>
             ))}
           </div>
-
-          {/* 4. Stats */}
-          <div className="flex flex-col gap-1 text-[10px]">
-            <div>
-              <span className="text-slate-500">Daño:</span>
-              <span className="text-slate-300 ml-1 font-semibold">
-                {(match.total_damage_dealt / 1000).toFixed(1)}k
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-500">Oro:</span>
-              <span className="text-slate-300 ml-1 font-semibold">
-                {(match.gold_earned / 1000).toFixed(1)}k
-              </span>
-            </div>
-            <div>
-              <span className="text-slate-500">Visión:</span>
-              <span className="text-slate-300 ml-1 font-semibold">
-                {match.vision_score}
-              </span>
-            </div>
-          </div>
-
-          {/* 5. Teams (HORIZONTAL - lado a lado) */}
-          <div className="flex gap-2">
-            {team1.length > 0 && (
-              <div className="flex-1">
-                <TeamPlayerList
-                  players={team1}
-                  currentPuuid={match.puuid}
-                  version={version}
-                  linkedAccountsMap={linkedAccountsMap}
+          <div className="flex items-center">
+            <div
+              className={`relative w-7 h-7 rounded overflow-hidden ${
+                trinketItem
+                  ? "border border-slate-600 bg-slate-800"
+                  : "border border-slate-300 bg-slate-200/70 dark:border-slate-600 dark:bg-slate-800/40"
+              }`}
+            >
+              {trinketItem && (
+                <Image
+                  src={getItemImageUrl(trinketItem, version)}
+                  alt={`Item ${trinketItem}`}
+                  fill
+                  sizes="28px"
+                  className="object-cover"
                 />
-              </div>
-            )}
-            {team2.length > 0 && (
-              <div className="flex-1">
-                <TeamPlayerList
-                  players={team2}
-                  currentPuuid={match.puuid}
-                  version={version}
-                  linkedAccountsMap={linkedAccountsMap}
-                />
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
-      </Link>
+
+        {/* 4. Stats */}
+        <div className="flex flex-col items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-semibold">
+            <Eye
+              className="w-4 h-4 text-slate-500 dark:text-slate-400"
+              aria-hidden="true"
+            />
+            <span>{match.vision_score}</span>
+          </div>
+          <TeammateTracker
+            matches={recentMatches}
+            currentPuuid={match.puuid}
+            className="text-[11px]"
+          />
+        </div>
+
+        {/* 5. Teams (HORIZONTAL - lado a lado) */}
+        <div className="flex gap-2">
+          {team1.length > 0 && (
+            <div className="flex-1">
+              <TeamPlayerList
+                players={team1}
+                currentPuuid={match.puuid}
+                version={version}
+                linkedAccountsMap={linkedAccountsMap}
+              />
+            </div>
+          )}
+          {team2.length > 0 && (
+            <div className="flex-1">
+              <TeamPlayerList
+                players={team2}
+                currentPuuid={match.puuid}
+                version={version}
+                linkedAccountsMap={linkedAccountsMap}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Modal del Scoreboard */}
+      <ScoreboardModal
+        matchId={match.match_id}
+        open={scoreboardModalOpen}
+        onOpenChange={setScoreboardModalOpen}
+      />
     </div>
   );
 }

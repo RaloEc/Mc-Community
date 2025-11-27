@@ -119,7 +119,7 @@ export function ScoreboardTable({
 
     return (
       <div
-        className={`flex items-center gap-3 px-4 py-3 border-b border-slate-800/50 last:border-0 transition-colors group ${
+        className={`flex items-center gap-2 px-3 py-2 border-b border-slate-800/40 last:border-0 transition-colors group ${
           isCurrentUser
             ? isWinner
               ? "bg-blue-500/10 hover:bg-blue-500/15"
@@ -128,14 +128,14 @@ export function ScoreboardTable({
         }`}
       >
         {/* Champion Avatar + KDA Badge + Spells */}
-        <div className="flex items-start gap-3 flex-shrink-0">
+        <div className="flex items-start gap-2 flex-shrink-0">
           <div className="relative flex flex-col items-center gap-1">
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden border-2 border-slate-700 group-hover:border-slate-500 transition-colors shadow-inner">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-700 group-hover:border-slate-500 transition-colors shadow-inner">
               <Image
                 src={getChampionImg(player.champion_name, gameVersion)}
                 alt={player.champion_name}
                 fill
-                sizes="56px"
+                sizes="48px"
                 className="object-cover"
               />
             </div>
@@ -143,24 +143,24 @@ export function ScoreboardTable({
             <div className="flex gap-1">
               {player.summoner1_id &&
                 getSpellImg(player.summoner1_id, gameVersion) && (
-                  <div className="w-5 h-5 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
+                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner1_id, gameVersion)!}
                       alt="Spell 1"
-                      width={20}
-                      height={20}
+                      width={16}
+                      height={16}
                       className="object-cover"
                     />
                   </div>
                 )}
               {player.summoner2_id &&
                 getSpellImg(player.summoner2_id, gameVersion) && (
-                  <div className="w-5 h-5 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
+                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner2_id, gameVersion)!}
                       alt="Spell 2"
-                      width={20}
-                      height={20}
+                      width={16}
+                      height={16}
                       className="object-cover"
                     />
                   </div>
@@ -169,7 +169,7 @@ export function ScoreboardTable({
           </div>
 
           {/* Runas a la derecha del avatar */}
-          <div className="flex flex-col gap-1 mt-1">
+          <div className="flex flex-col gap-0.5 mt-0.5">
             {(() => {
               const primarySrc = getRuneStyleImg(
                 player.perk_primary_style || null
@@ -193,7 +193,7 @@ export function ScoreboardTable({
               return (
                 <>
                   {primarySrc && (
-                    <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
                       <img
                         src={primarySrc}
                         alt="Primary Rune"
@@ -215,7 +215,7 @@ export function ScoreboardTable({
                     </div>
                   )}
                   {secondarySrc && (
-                    <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
                       <img
                         src={secondarySrc}
                         alt="Secondary Rune"
@@ -244,7 +244,7 @@ export function ScoreboardTable({
 
         {/* Player Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-0.5">
             <span
               className={`font-semibold text-sm ${
                 isCurrentUser
@@ -274,18 +274,18 @@ export function ScoreboardTable({
         </div>
 
         {/* KDA Stats */}
-        <div className="flex flex-col items-end gap-1 min-w-fit">
-          <div className={`font-bold text-sm ${kdaColor}`}>
+        <div className="flex flex-col items-end gap-0.5 min-w-fit">
+          <div className={`font-bold text-xs ${kdaColor}`}>
             {player.kills}/{player.deaths}/{player.assists}
           </div>
-          <div className={`text-xs font-semibold ${kdaRatioColor}`}>
+          <div className={`text-[11px] font-semibold ${kdaRatioColor}`}>
             {player.kda.toFixed(2)}
           </div>
         </div>
 
         {/* Items Grid + Trinket */}
         <div className="flex items-center gap-2">
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-0.5">
             {[
               player.item0,
               player.item1,
@@ -296,27 +296,27 @@ export function ScoreboardTable({
             ].map((item, i) => (
               <div
                 key={i}
-                className="w-7 h-7 rounded bg-slate-800 border border-slate-700 relative overflow-hidden hover:border-slate-600 transition-colors"
+                className="w-6 h-6 rounded bg-slate-800 border border-slate-700 relative overflow-hidden hover:border-slate-600 transition-colors"
               >
                 {item !== 0 && (
                   <Image
                     src={getItemImg(item, gameVersion)!}
                     alt="Item"
                     fill
-                    sizes="28px"
+                    sizes="24px"
                     className="object-cover"
                   />
                 )}
               </div>
             ))}
           </div>
-          <div className="w-7 h-7 rounded bg-slate-800 border border-slate-700 relative overflow-hidden flex items-center justify-center hover:border-slate-600 transition-colors">
+          <div className="w-6 h-6 rounded bg-slate-800 border border-slate-700 relative overflow-hidden flex items-center justify-center hover:border-slate-600 transition-colors">
             {player.item6 !== 0 && (
               <Image
                 src={getItemImg(player.item6, gameVersion)!}
                 alt="Trinket"
                 fill
-                sizes="28px"
+                sizes="24px"
                 className="object-cover"
               />
             )}
@@ -324,27 +324,27 @@ export function ScoreboardTable({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 min-w-[10px]">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1 min-w-[10px]">
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-xs font-semibold text-white">
+            <div className="text-[11px] font-semibold text-white">
               {totalLaneCS.toFixed(0)}
             </div>
             <div className="text-[10px] text-slate-500">CS</div>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-xs font-semibold text-white">
+            <div className="text-[11px] font-semibold text-white">
               {visionScore.toFixed(0)}
             </div>
             <div className="text-[10px] text-slate-500">VIS</div>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-xs font-semibold text-white">
+            <div className="text-[11px] font-semibold text-white">
               {(player.total_damage_dealt / 1000).toFixed(1)}k
             </div>
             <div className="text-[10px] text-slate-500">DMG</div>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-xs font-semibold text-yellow-400">
+            <div className="text-[11px] font-semibold text-yellow-400">
               {(player.gold_earned / 1000).toFixed(1)}k
             </div>
             <div className="text-[10px] text-slate-500">ORO</div>
@@ -355,20 +355,20 @@ export function ScoreboardTable({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Desktop: Horizontal Layout */}
-      <div className="hidden lg:grid lg:grid-cols-2 gap-6">
+      <div className="hidden lg:grid lg:grid-cols-2 gap-4">
         {/* Team 1 (Winners) - Left */}
         <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-6 bg-blue-500 rounded-full" />
+          <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-5 bg-blue-500 rounded-full" />
               <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
                 Victoria
               </h3>
             </div>
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-3 text-[11px]">
               <div className="flex items-center gap-1">
                 <span className="text-slate-400">K:</span>
                 <span className="font-bold text-white">{team1Kills}</span>
@@ -398,14 +398,14 @@ export function ScoreboardTable({
         {/* Team 2 (Losers) - Right */}
         <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
           {/* Header */}
-          <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-6 bg-red-500 rounded-full" />
+          <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-5 bg-red-500 rounded-full" />
               <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
                 Derrota
               </h3>
             </div>
-            <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-3 text-[11px]">
               <div className="flex items-center gap-1">
                 <span className="text-slate-400">K:</span>
                 <span className="font-bold text-white">{team2Kills}</span>

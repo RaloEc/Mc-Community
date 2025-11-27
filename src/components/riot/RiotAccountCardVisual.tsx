@@ -279,17 +279,6 @@ export function RiotAccountCardVisual({
                     >
                       {regionName}
                     </span>
-                    {/* Mobile Rank Badge */}
-                    <span
-                      className={`md:hidden text-xs font-bold px-2 py-0.5 rounded ${
-                        topChampionName
-                          ? "bg-black/50 backdrop-blur-sm"
-                          : "bg-gray-100 dark:bg-gray-800"
-                      }`}
-                      style={{ color: topChampionName ? "white" : tierColor }}
-                    >
-                      {tierDisplayName} {soloRank}
-                    </span>
                   </div>
                 </div>
 

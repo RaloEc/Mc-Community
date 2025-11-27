@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
       riotAccount.puuid,
       riotAccount.active_shard || "la1",
       apiKey,
-      20 // Sincronizar últimas 20 partidas
+      100 // Sincronizar últimas 100 partidas
     );
 
     if (!result.success) {

@@ -27,9 +27,11 @@ export async function getLatestDDragonVersion(): Promise<string> {
     }
 
     const versions: string[] = await response.json();
-    return Array.isArray(versions) && versions.length > 0
-      ? versions[0]
-      : FALLBACK_VERSION;
+    if (Array.isArray(versions) && versions.length > 0) {
+      availableVersions = versions;
+      return versions[0];
+    }
+    return FALLBACK_VERSION;
   } catch (error) {
     console.error("[getLatestDDragonVersion] Fallback activado", error);
     return FALLBACK_VERSION;
@@ -40,6 +42,7 @@ const VERSION_CACHE_TTL = 1000 * 60 * 60; // 1 hora
 let cachedLatestVersion = FALLBACK_VERSION;
 let lastVersionFetch = 0;
 let refreshPromise: Promise<void> | null = null;
+let availableVersions: string[] = [];
 
 async function refreshLatestVersionCache(force = false) {
   const shouldRefresh =
@@ -71,12 +74,44 @@ async function refreshLatestVersionCache(force = false) {
   return refreshPromise;
 }
 
+function findClosestAvailableVersion(version: string): string | null {
+  if (!version) {
+    return null;
+  }
+
+  if (availableVersions.length === 0) {
+    return cachedLatestVersion || version;
+  }
+
+  if (availableVersions.includes(version)) {
+    return version;
+  }
+
+  const [major, minor] = version.split(".");
+  const prefix = `${major}.${minor}.`;
+  const matchedVersion = availableVersions.find((v) => v.startsWith(prefix));
+
+  if (matchedVersion) {
+    return matchedVersion;
+  }
+
+  return cachedLatestVersion || availableVersions[0] || null;
+}
+
 function resolveAssetVersion(gameVersion?: string) {
   if (gameVersion) {
-    return formatGameVersion(gameVersion);
+    const normalized = formatGameVersion(gameVersion);
+    const availableVersion = findClosestAvailableVersion(normalized);
+    if (availableVersion) {
+      return formatGameVersion(availableVersion);
+    }
   }
   refreshLatestVersionCache();
   return cachedLatestVersion;
+}
+
+export function resolveDDragonAssetVersion(gameVersion?: string): string {
+  return resolveAssetVersion(gameVersion);
 }
 
 // Lanzar una actualización inicial sin bloquear
@@ -89,8 +124,11 @@ void refreshLatestVersionCache(true);
 export function formatGameVersion(version: string): string {
   if (!version) return FALLBACK_VERSION;
   const parts = version.split(".");
-  if (parts.length >= 2) {
-    return `${parts[0]}.${parts[1]}.1`; // Usually .1 is safe for images
+  if (parts.length >= 3) {
+    return `${parts[0]}.${parts[1]}.${parts[2]}`;
+  }
+  if (parts.length === 2) {
+    return `${parts[0]}.${parts[1]}.1`;
   }
   return FALLBACK_VERSION;
 }
@@ -108,10 +146,19 @@ export function getItemImg(id: number, gameVersion?: string) {
   return `https://ddragon.leagueoflegends.com/cdn/${version}/img/item/${id}.png`;
 }
 
+export function normalizeSpellAssetName(
+  spellName?: string | null
+): string | null {
+  if (!spellName) {
+    return null;
+  }
+  return spellName === "SummonerCleanse" ? "SummonerBoost" : spellName;
+}
+
 export function getSpellImg(id: number, gameVersion?: string) {
   const version = resolveAssetVersion(gameVersion);
   const spells: Record<number, string> = {
-    1: "SummonerCleanse",
+    1: "SummonerBoost",
     3: "SummonerExhaust",
     4: "SummonerFlash",
     6: "SummonerHaste",
@@ -126,9 +173,11 @@ export function getSpellImg(id: number, gameVersion?: string) {
     32: "SummonerSnowball",
     39: "SummonerSnowURFSnowball_Mark",
   };
+  const rawSpellName = spells[id] ?? (id === 1 ? "SummonerBoost" : null);
+  const spellName = normalizeSpellAssetName(rawSpellName);
 
-  return spells[id]
-    ? `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${spells[id]}.png`
+  return spellName
+    ? `https://ddragon.leagueoflegends.com/cdn/${version}/img/spell/${spellName}.png`
     : null;
 }
 

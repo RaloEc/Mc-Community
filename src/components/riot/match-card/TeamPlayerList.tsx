@@ -36,6 +36,11 @@ export function TeamPlayerList({
         const profileUserId = linkedAccountsMap[player.puuid];
         const hasProfile = Boolean(profileUserId);
 
+        const linkedHighlightClasses =
+          hasProfile && !isCurrentPlayer
+            ? "border border-emerald-500/30 bg-emerald-500/5"
+            : "";
+
         const content = (
           <div
             className={`flex items-center gap-1 px-1 py-0.5 rounded transition-colors ${
@@ -44,7 +49,7 @@ export function TeamPlayerList({
                 : hasProfile
                 ? "hover:bg-white/10 cursor-pointer"
                 : ""
-            }`}
+            } ${linkedHighlightClasses}`}
           >
             <div className="relative w-4 h-4 rounded overflow-hidden flex-shrink-0 border border-slate-700">
               <Image
@@ -57,7 +62,9 @@ export function TeamPlayerList({
             </div>
             <span
               className={`text-[10px] truncate max-w-[70px] ${
-                isCurrentPlayer ? "text-blue-300" : "text-slate-400"
+                isCurrentPlayer
+                  ? "text-blue-600 dark:text-blue-200"
+                  : "text-slate-600 dark:text-slate-300"
               }`}
             >
               {player.riotIdGameName || player.summonerName || "Unknown"}
@@ -67,10 +74,12 @@ export function TeamPlayerList({
 
         if (profileUserId && !disableLinks) {
           return (
-            <button
+            <div
               key={`${player.puuid}-${idx}`}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 if (e.metaKey || e.ctrlKey) {
                   window.open(`/perfil/${profileUserId}`, "_blank");
@@ -78,10 +87,18 @@ export function TeamPlayerList({
                 }
                 handleProfileNavigation(profileUserId);
               }}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter" && e.key !== " ") {
+                  return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                handleProfileNavigation(profileUserId);
+              }}
               className="block w-full text-left bg-transparent border-0 p-0"
             >
               {content}
-            </button>
+            </div>
           );
         }
 

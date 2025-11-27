@@ -4,7 +4,10 @@
  */
 
 import { getServiceClient } from "@/lib/supabase/server";
-import { updateMatchRankings } from "@/lib/riot/league";
+import {
+  updateMatchRankings,
+  getOrUpdateSummonerRank,
+} from "@/lib/riot/league";
 
 const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_BACKFILL_BATCH_SIZE = 50;
@@ -241,8 +244,7 @@ async function getMatchCreationBoundary(
       .from("match_participants")
       .select("matches!inner(game_creation)")
       .eq("puuid", puuid)
-      .order("game_creation", {
-        foreignTable: "matches",
+      .order("matches(game_creation)", {
         ascending,
       })
       .limit(1);
@@ -424,10 +426,7 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
       puuid: p.puuid,
       summoner_id: p.summonerId,
       summoner_level: p.summonerLevel,
-      summoner_name:
-        p.riotIdGameName && p.riotIdTagline
-          ? `${p.riotIdGameName}#${p.riotIdTagline}`
-          : p.summonerName || "Unknown",
+      summoner_name: p.riotIdGameName || p.summonerName || "Unknown",
       champion_id: p.championId,
       champion_name: p.championName,
       win: p.win,
@@ -497,20 +496,52 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
       return false;
     }
 
-    // Guardar snapshots de ranking para cada participante
-    const rankSnapshots = matchData.info.participants
-      .filter((p) => p.summonerId)
-      .map((p) => ({
+    // Guardar snapshots de ranking para cada participante usando caché
+    console.log(
+      `[saveMatch] Obteniendo rankings desde caché para ${matchId}...`
+    );
+
+    const platformRegion = "la1"; // Default, se puede mejorar pasándolo como parámetro
+    const apiKey = process.env.RIOT_API_KEY;
+
+    if (!apiKey) {
+      console.warn("[saveMatch] RIOT_API_KEY no está configurada");
+    }
+
+    const rankSnapshots: any[] = [];
+
+    // Procesar cada participante para obtener su rango actual desde caché o Riot API
+    for (const participant of matchData.info.participants) {
+      if (!participant.summonerId || !participant.puuid) {
+        continue;
+      }
+
+      let rankData = null;
+
+      // Obtener rango desde caché o actualizar desde Riot API
+      if (apiKey) {
+        rankData = await getOrUpdateSummonerRank(
+          participant.puuid,
+          platformRegion,
+          apiKey
+        );
+      }
+
+      rankSnapshots.push({
         match_id: matchId,
-        puuid: p.puuid,
-        summoner_id: p.summonerId,
+        puuid: participant.puuid,
+        summoner_id: participant.summonerId,
         queue_type: "RANKED_SOLO_5x5",
-        tier: null,
-        rank: null,
-        league_points: 0,
-        wins: 0,
-        losses: 0,
-      }));
+        tier: rankData?.tier || null,
+        rank: rankData?.rank || null,
+        league_points: rankData?.league_points || 0,
+        wins: rankData?.wins || 0,
+        losses: rankData?.losses || 0,
+      });
+
+      // Pequeño delay para no saturar
+      await delay(100);
+    }
 
     if (rankSnapshots.length > 0) {
       const { error: rankError } = await supabase
@@ -522,44 +553,14 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
           "[saveMatch] Advertencia al guardar ranks (no crítico):",
           rankError.message
         );
+      } else {
+        console.log(
+          `[saveMatch] ✅ ${rankSnapshots.length} snapshots de ranking guardados`
+        );
       }
     }
 
     console.log(`[saveMatch] ✅ Partida ${matchId} guardada exitosamente`);
-
-    // Actualizar rankings en background (no bloqueante)
-    const platformRegion = "la1"; // Default, se puede mejorar pasándolo como parámetro
-    const participantsForRanking = matchData.info.participants
-      .filter((p) => p.summonerId)
-      .map((p) => ({
-        puuid: p.puuid,
-        summonerId: p.summonerId,
-      }));
-
-    if (participantsForRanking.length > 0) {
-      const apiKey = process.env.RIOT_API_KEY;
-      if (apiKey) {
-        console.log(
-          `[saveMatch] Iniciando actualización de rankings para ${matchId} con ${participantsForRanking.length} participantes`
-        );
-        // Ejecutar actualización de rankings de forma asíncrona sin esperar
-        updateMatchRankings(
-          matchId,
-          participantsForRanking,
-          platformRegion,
-          apiKey,
-          supabase
-        ).catch((err) => {
-          console.error("[saveMatch] Error al actualizar rankings:", err);
-        });
-      } else {
-        console.warn("[saveMatch] RIOT_API_KEY no está configurada");
-      }
-    } else {
-      console.warn(
-        "[saveMatch] No hay participantes con summonerId para actualizar rankings"
-      );
-    }
 
     return true;
   } catch (error: any) {
@@ -741,7 +742,7 @@ export async function getMatchHistory(
         lane,
         role,
         created_at,
-        matches (
+        matches!inner (
           match_id,
           game_creation,
           game_duration,
@@ -753,21 +754,40 @@ export async function getMatchHistory(
       )
       .eq("puuid", puuid);
 
-    if (cursor) {
-      query = query.lt("matches.game_creation", cursor);
-    }
-
     if (queueIds && queueIds.length > 0) {
       query = query.in("matches.queue_id", queueIds);
     }
 
+    // Aplicar filtro de cursor para paginación (obtener partidas más antiguas)
+    if (cursor) {
+      query = query.filter("matches.game_creation", "lt", cursor);
+    }
+
     const { data, error } = await query
-      .order("game_creation", { foreignTable: "matches", ascending: false })
+      .order("matches(game_creation)", {
+        ascending: false,
+      })
       .limit(limit + 1);
 
     if (error) {
       console.error("[getMatchHistory] Error:", error.message);
       return { matches: [], hasMore: false, nextCursor: null };
+    }
+
+    // Debug logging
+    if (data && data.length > 0) {
+      console.log("[getMatchHistory] Primera partida:", {
+        match_id: data[0].match_id,
+        game_creation: data[0].matches?.game_creation,
+        game_time: new Date(data[0].matches?.game_creation).toISOString(),
+      });
+      console.log("[getMatchHistory] Última partida:", {
+        match_id: data[data.length - 1].match_id,
+        game_creation: data[data.length - 1].matches?.game_creation,
+        game_time: new Date(
+          data[data.length - 1].matches?.game_creation
+        ).toISOString(),
+      });
     }
 
     // Obtener rankings para todas las partidas
@@ -790,29 +810,21 @@ export async function getMatchHistory(
       }
     }
 
-    // Mapear datos de ranking y asegurar orden correcto
-    const sortedData = (data || [])
-      .map((p: any) => {
-        const rankData = rankingMap.get(
-          `${p.summoner_id}-${p.match_id}`
-        ) as any;
-        return {
-          ...p,
-          tier: rankData?.tier || null,
-          rank: rankData?.rank || null,
-          league_points: rankData?.league_points || 0,
-          wins: rankData?.wins || 0,
-          losses: rankData?.losses || 0,
-        };
-      })
-      .sort((a: any, b: any) => {
-        const timeA = a.matches?.game_creation || 0;
-        const timeB = b.matches?.game_creation || 0;
-        return timeB - timeA; // Descendente: más reciente primero
-      });
+    // Mapear datos de ranking
+    const enrichedData = (data || []).map((p: any) => {
+      const rankData = rankingMap.get(`${p.summoner_id}-${p.match_id}`) as any;
+      return {
+        ...p,
+        tier: rankData?.tier || null,
+        rank: rankData?.rank || null,
+        league_points: rankData?.league_points || 0,
+        wins: rankData?.wins || 0,
+        losses: rankData?.losses || 0,
+      };
+    });
 
-    const hasMore = sortedData.length > limit;
-    const matches = hasMore ? sortedData.slice(0, limit) : sortedData;
+    const hasMore = enrichedData.length > limit;
+    const matches = hasMore ? enrichedData.slice(0, limit) : enrichedData;
     const nextCursor = hasMore
       ? matches[matches.length - 1]?.matches?.game_creation || null
       : null;

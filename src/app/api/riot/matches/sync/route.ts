@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
       riotAccount.puuid,
       riotAccount.active_shard || "la1",
       apiKey,
-      20 // Sincronizar últimas 20 partidas
+      100 // Sincronizar últimas 100 partidas
     );
 
     console.log(
@@ -111,8 +111,10 @@ export async function POST(request: NextRequest) {
     console.log(
       "[POST /api/riot/matches/sync] Obteniendo historial actualizado..."
     );
-    const matchHistory = await getMatchHistory(riotAccount.puuid, 10);
-    const stats = await getPlayerStats(riotAccount.puuid, 20);
+    const matchHistory = await getMatchHistory(riotAccount.puuid, {
+      limit: 40,
+    });
+    const stats = await getPlayerStats(riotAccount.puuid, 40);
     console.log(
       "[POST /api/riot/matches/sync] Historial obtenido, matches:",
       matchHistory?.matches?.length,

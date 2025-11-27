@@ -75,17 +75,17 @@
   @keyframes match-card-fade-in {
     0% {
       opacity: 0;
-      transform: translateY(16px) scale(0.98);
+      transform: translateY(16px);
     }
 
     60% {
       opacity: 1;
-      transform: translateY(0) scale(1.01);
+      transform: translateY(0);
     }
 
     100% {
       opacity: 1;
-      transform: translateY(0) scale(1);
+      transform: translateY(0);
     }
   }
 

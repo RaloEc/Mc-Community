@@ -9,7 +9,7 @@ import {
 import type { InfiniteData } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw } from "lucide-react";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import React from "react";
 import {
   MatchCard,
@@ -18,6 +18,7 @@ import {
   FALLBACK_VERSION,
 } from "./match-card";
 import type { Match } from "./match-card";
+import { useAuth } from "@/context/AuthContext";
 
 interface MatchHistoryListProps {
   userId?: string;
@@ -61,7 +62,7 @@ const QUEUE_FILTERS = [
   { label: "URF", value: "urf" },
 ];
 
-const MATCHES_PER_PAGE = 20;
+const MATCHES_PER_PAGE = 40;
 const DEFAULT_STATS: PlayerStats = {
   totalGames: 0,
   wins: 0,
@@ -80,6 +81,7 @@ export function MatchHistoryList({
   puuid,
 }: MatchHistoryListProps = {}) {
   const queryClient = useQueryClient();
+  const { profile } = useAuth();
   const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [queueFilter, setQueueFilter] = useState<string>(
     QUEUE_FILTERS[0].value
@@ -87,6 +89,9 @@ export function MatchHistoryList({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [lastStableMatches, setLastStableMatches] = useState<Match[]>([]);
   const [isFilterTransition, setIsFilterTransition] = useState(false);
+  const syncRefetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null
+  );
 
   // Obtener user_id del contexto o localStorage si no se pasa por props
   useEffect(() => {
@@ -109,12 +114,6 @@ export function MatchHistoryList({
     () => ["match-history", userId, queueFilter],
     [userId, queueFilter]
   );
-
-  const initialMatchHistory = userId
-    ? queryClient.getQueryData<InfiniteData<MatchHistoryPage>>(
-        matchHistoryQueryKey
-      ) ?? undefined
-    : undefined;
 
   // Query global para obtener PUUIDs de jugadores registrados
   const { data: linkedAccountsData } = useQuery<LinkedAccountsResponse>({
@@ -146,6 +145,7 @@ export function MatchHistoryList({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useInfiniteQuery<MatchHistoryPage>({
     queryKey: matchHistoryQueryKey,
     queryFn: async ({ pageParam }) => {
@@ -180,7 +180,6 @@ export function MatchHistoryList({
     staleTime: 5 * 60 * 1000, // 5 minutos sin refetch al volver del modal
     gcTime: 30 * 60 * 1000, // 30 minutos en caché antes de garbage collection
     initialPageParam: null,
-    initialData: initialMatchHistory,
   });
 
   useEffect(() => {
@@ -246,12 +245,67 @@ export function MatchHistoryList({
     },
   });
 
+  useEffect(() => {
+    if (syncMutation.isPending) {
+      if (!syncRefetchIntervalRef.current) {
+        refetch();
+        syncRefetchIntervalRef.current = setInterval(() => {
+          refetch();
+        }, 4000);
+      }
+    } else if (syncRefetchIntervalRef.current) {
+      clearInterval(syncRefetchIntervalRef.current);
+      syncRefetchIntervalRef.current = null;
+    }
+
+    return () => {
+      if (syncRefetchIntervalRef.current) {
+        clearInterval(syncRefetchIntervalRef.current);
+        syncRefetchIntervalRef.current = null;
+      }
+    };
+  }, [refetch, syncMutation.isPending]);
+
   const pages = matchPages?.pages ?? [];
-  const matches = useMemo(
-    () => pages.flatMap((page) => page.matches ?? []),
-    [pages]
-  );
+  const matches = useMemo(() => {
+    console.log("[MatchHistoryList] Debug - pages:", pages);
+    console.log("[MatchHistoryList] Debug - matchPages:", matchPages);
+
+    const flatMatches = pages.flatMap((page) => page.matches ?? []);
+    console.log("[MatchHistoryList] Debug - flatMatches:", flatMatches);
+
+    const seenKeys = new Set<string>();
+
+    return flatMatches.filter((match) => {
+      const baseKey = match.match_id ?? match.id;
+      const fallbackKey = `${match.created_at ?? ""}-${
+        (match as { puuid?: string }).puuid ?? match.summoner_name ?? ""
+      }-${match.champion_name ?? ""}`;
+      const uniqueKey = baseKey ?? fallbackKey;
+
+      if (seenKeys.has(uniqueKey)) {
+        return false;
+      }
+
+      seenKeys.add(uniqueKey);
+      return true;
+    });
+  }, [pages]);
   const serverStats = pages[0]?.stats ?? DEFAULT_STATS;
+
+  const userColor = profile?.color || "#3b82f6";
+
+  const getColorWithAlpha = useCallback((color: string, alpha: number) => {
+    if (!color.startsWith("#") || (color.length !== 7 && color.length !== 9)) {
+      return color;
+    }
+
+    const hex = color.slice(1);
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }, []);
 
   useEffect(() => {
     if (!isLoading && matches.length > 0) {
@@ -348,7 +402,7 @@ export function MatchHistoryList({
       <div className="flex flex-col gap-3 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-3 justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-lg font-bold text-slate-600 dark:text-white ">
               Historial de Partidas
             </h3>
             <p className="text-sm text-slate-400">
@@ -361,6 +415,13 @@ export function MatchHistoryList({
             disabled={syncMutation.isPending}
             variant="outline"
             size="sm"
+            style={{
+              borderColor: userColor,
+              color: syncMutation.isPending ? "#0f172a" : undefined,
+              backgroundColor: syncMutation.isPending
+                ? getColorWithAlpha(userColor, 0.2)
+                : undefined,
+            }}
           >
             {syncMutation.isPending ? (
               <>
@@ -425,6 +486,7 @@ export function MatchHistoryList({
                 match={match}
                 version={ddragonVersion}
                 linkedAccountsMap={linkedAccountsMap}
+                recentMatches={matchesToRender}
               />
               <MobileMatchCard match={match} version={ddragonVersion} />
             </div>

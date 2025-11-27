@@ -5,6 +5,7 @@
 import {
   FALLBACK_VERSION,
   getLatestDDragonVersion as getLatestDDragonVersionFromLib,
+  resolveDDragonAssetVersion,
 } from "@/lib/riot/helpers";
 
 // Re-export para compatibilidad hacia atrás
@@ -38,13 +39,15 @@ function maybeRefreshVersion() {
 void refreshCachedVersion();
 
 function resolveVersion(version?: string) {
-  if (version) return version;
+  if (version) {
+    return resolveDDragonAssetVersion(version);
+  }
   maybeRefreshVersion();
   return cachedVersion;
 }
 
 export const SUMMONER_SPELL_MAP: Record<number, string> = {
-  1: "SummonerCleanse",
+  1: "SummonerBoost",
   3: "SummonerExhaust",
   4: "SummonerFlash",
   6: "SummonerHaste",

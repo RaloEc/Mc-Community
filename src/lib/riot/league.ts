@@ -250,6 +250,122 @@ export function formatRankBadge(
 }
 
 /**
+ * Obtiene o actualiza el rango de un jugador desde caché o Riot API
+ * Primero intenta obtener del caché (summoners), si no existe o está desactualizado,
+ * consulta Riot API y actualiza el caché
+ *
+ * @param puuid - PUUID del jugador
+ * @param platformRegion - Región de plataforma (ej: 'la1')
+ * @param apiKey - API Key de Riot
+ * @returns Objeto con datos de ranking (tier, rank, league_points, wins, losses) o null si no hay datos
+ */
+export async function getOrUpdateSummonerRank(
+  puuid: string,
+  platformRegion: string,
+  apiKey: string
+): Promise<{
+  tier: string | null;
+  rank: string | null;
+  league_points: number;
+  wins: number;
+  losses: number;
+} | null> {
+  try {
+    const supabase = require("@/lib/supabase/server").getServiceClient();
+
+    // 1. Intentar obtener del caché (tabla summoners)
+    const { data: cachedSummoner, error: cacheError } = await supabase
+      .from("summoners")
+      .select("tier, rank, league_points, wins, losses, rank_updated_at")
+      .eq("puuid", puuid)
+      .single();
+
+    // Si existe en caché y fue actualizado hace menos de 1 hora, usarlo
+    if (cachedSummoner && cachedSummoner.rank_updated_at) {
+      const lastUpdate = new Date(cachedSummoner.rank_updated_at).getTime();
+      const now = Date.now();
+      const oneHourMs = 60 * 60 * 1000;
+
+      if (now - lastUpdate < oneHourMs) {
+        console.log(
+          `[getOrUpdateSummonerRank] Usando caché para ${puuid}: ${cachedSummoner.tier} ${cachedSummoner.rank}`
+        );
+        return {
+          tier: cachedSummoner.tier,
+          rank: cachedSummoner.rank,
+          league_points: cachedSummoner.league_points || 0,
+          wins: cachedSummoner.wins || 0,
+          losses: cachedSummoner.losses || 0,
+        };
+      }
+    }
+
+    // 2. Si no está en caché o está desactualizado, consultar Riot API
+    console.log(`[getOrUpdateSummonerRank] Consultando Riot API para ${puuid}`);
+    const rankings = await getPlayerRanking(puuid, platformRegion, apiKey);
+
+    if (!rankings || rankings.length === 0) {
+      console.warn(
+        `[getOrUpdateSummonerRank] No se encontró ranking para ${puuid}`
+      );
+      return null;
+    }
+
+    // Buscar SoloQ ranking (prioridad)
+    const soloQRanking = rankings.find(
+      (r) => r.queueType === "RANKED_SOLO_5x5"
+    );
+
+    if (!soloQRanking) {
+      console.warn(
+        `[getOrUpdateSummonerRank] No se encontró SoloQ para ${puuid}`
+      );
+      return null;
+    }
+
+    // 3. Actualizar caché en tabla summoners
+    const updatePayload = {
+      puuid,
+      tier: soloQRanking.tier,
+      rank: soloQRanking.rank,
+      league_points: soloQRanking.leaguePoints,
+      wins: soloQRanking.wins,
+      losses: soloQRanking.losses,
+      rank_updated_at: new Date().toISOString(),
+    };
+
+    const { error: updateError } = await supabase
+      .from("summoners")
+      .upsert(updatePayload, { onConflict: "puuid" });
+
+    if (updateError) {
+      console.warn(
+        `[getOrUpdateSummonerRank] Error al actualizar caché para ${puuid}:`,
+        updateError.message
+      );
+    } else {
+      console.log(
+        `[getOrUpdateSummonerRank] ✅ Caché actualizado para ${puuid}: ${soloQRanking.tier} ${soloQRanking.rank}`
+      );
+    }
+
+    return {
+      tier: soloQRanking.tier,
+      rank: soloQRanking.rank,
+      league_points: soloQRanking.leaguePoints,
+      wins: soloQRanking.wins,
+      losses: soloQRanking.losses,
+    };
+  } catch (error: any) {
+    console.error(
+      `[getOrUpdateSummonerRank] Error para ${puuid}:`,
+      error.message
+    );
+    return null;
+  }
+}
+
+/**
  * Obtiene el color del tier para UI
  *
  * @param tier - Tier del jugador
