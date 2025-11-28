@@ -5,7 +5,6 @@ import { Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye } from "lucide-react";
-import { getMatchById, getMatchTimeline } from "@/lib/riot/matches";
 import { MatchDeathMap } from "@/components/riot/MatchDeathMap";
 import { MatchAnalysis } from "@/components/riot/analysis/MatchAnalysis";
 import { ScoreboardTable } from "@/components/riot/ScoreboardTable";
@@ -42,35 +41,83 @@ export function MatchDetailContent({ matchId }: MatchDetailContentProps) {
   const [error, setError] = useState<string | null>(null);
   const [matchData, setMatchData] = useState<any>(null);
   const [timeline, setTimeline] = useState<any>(null);
+  const [timelineLoading, setTimelineLoading] = useState(false);
   const [currentUserPuuid, setCurrentUserPuuid] = useState<
     string | undefined
   >();
 
   useEffect(() => {
-    const loadMatchData = async () => {
+    let cancelled = false;
+
+    const loadMatch = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Obtener datos de la partida
-        const data = await getMatchById(matchId);
-        if (!data) {
-          setError("Partida no encontrada");
-          return;
+        const response = await fetch(`/api/riot/matches/${matchId}`);
+        if (!response.ok) {
+          throw new Error("MATCH_NOT_FOUND");
         }
 
-        setMatchData(data);
+        const data = await response.json();
+        if (!cancelled) {
+          setMatchData(data);
+        }
+      } catch (err) {
+        console.error("[MatchDetailContent] Error loading match:", err);
+        if (!cancelled) {
+          setError("Error al cargar la partida");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
 
-        // Obtener timeline
-        const region = matchId.split("_")[0].toLowerCase();
-        const timelineData = await getMatchTimeline(
-          matchId,
-          region,
-          process.env.NEXT_PUBLIC_RIOT_API_KEY || ""
-        );
-        setTimeline(timelineData);
+    loadMatch();
 
-        // Obtener PUUID del usuario actual
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadTimeline = async () => {
+      try {
+        setTimelineLoading(true);
+        const response = await fetch(`/api/riot/matches/${matchId}/timeline`);
+        if (!response.ok) {
+          console.warn("[MatchDetailContent] Timeline no disponible");
+          return;
+        }
+        const data = await response.json();
+        if (!cancelled) {
+          setTimeline(data?.timeline ?? data ?? null);
+        }
+      } catch (err) {
+        console.error("[MatchDetailContent] Error loading timeline:", err);
+      } finally {
+        if (!cancelled) {
+          setTimelineLoading(false);
+        }
+      }
+    };
+
+    loadTimeline();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matchId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCurrentUser = async () => {
+      try {
         const supabase = createClient();
         const {
           data: { session },
@@ -83,20 +130,21 @@ export function MatchDetailContent({ matchId }: MatchDetailContentProps) {
             .eq("user_id", session.user.id)
             .single();
 
-          if (riotAccount) {
+          if (!cancelled && riotAccount) {
             setCurrentUserPuuid(riotAccount.puuid);
           }
         }
       } catch (err) {
-        console.error("[MatchDetailContent] Error loading match:", err);
-        setError("Error al cargar los detalles de la partida");
-      } finally {
-        setLoading(false);
+        console.error("[MatchDetailContent] Error obteniendo usuario:", err);
       }
     };
 
-    loadMatchData();
-  }, [matchId]);
+    loadCurrentUser();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -169,7 +217,13 @@ export function MatchDetailContent({ matchId }: MatchDetailContentProps) {
         </TabsContent>
 
         {/* Analysis Tab */}
-        <TabsContent value="analysis" className="mt-6">
+        <TabsContent value="analysis" className="mt-6 space-y-4">
+          {timelineLoading && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando timeline...
+            </div>
+          )}
           <MatchAnalysis
             match={match}
             timeline={timeline}
@@ -178,7 +232,13 @@ export function MatchDetailContent({ matchId }: MatchDetailContentProps) {
         </TabsContent>
 
         {/* Map Tab */}
-        <TabsContent value="map" className="mt-6">
+        <TabsContent value="map" className="mt-6 space-y-4">
+          {timelineLoading && (
+            <div className="flex items-center gap-2 text-slate-400 text-sm">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Cargando timeline...
+            </div>
+          )}
           <Card className="bg-slate-900/30 border-slate-800">
             <CardHeader>
               <CardTitle className="text-lg text-white flex items-center gap-2">

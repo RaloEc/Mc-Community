@@ -135,14 +135,17 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
   });
 
   const tagsInfo = getTagsInfo(tags);
-  const ratioClass = match.kda >= 3 ? "text-green-400" : "text-red-400";
+  const ratioClass =
+    match.kda >= 3
+      ? "text-emerald-700 dark:text-emerald-300"
+      : "text-rose-700 dark:text-red-300";
   const queueName = getQueueName(match.matches.queue_id);
   const resultLabel = isRemake ? "Remake" : isVictory ? "Victoria" : "Derrota";
   const resultBadgeClass = isRemake
-    ? "text-slate-200 bg-slate-500/10"
+    ? "text-slate-700 dark:text-slate-200 bg-slate-100/70 dark:bg-slate-500/15"
     : isVictory
-    ? "text-green-300 bg-green-500/10"
-    : "text-red-300 bg-red-500/10";
+    ? "text-emerald-700 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-500/15"
+    : "text-rose-700 dark:text-rose-200 bg-rose-100/80 dark:bg-rose-500/15";
 
   const participants = (match.matches?.full_json?.info?.participants ??
     []) as RiotParticipant[];
@@ -158,8 +161,8 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
     : null;
   const opponentRatioClass =
     opponentKda !== null && opponentKda >= 3
-      ? "text-green-300"
-      : "text-red-300";
+      ? "text-emerald-700 dark:text-emerald-300"
+      : "text-rose-700 dark:text-red-300";
   const playerPrimaryRune = match.perk_primary_style;
   const playerSecondaryRune = match.perk_sub_style;
   const opponentPrimaryRune = getParticipantRuneStyle(laneOpponent, 0);
@@ -202,20 +205,20 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
       <div
         onClick={() => setScoreboardModalOpen(true)}
         className={`
-          md:hidden w-full text-left rounded-xl p-4 border transition-all cursor-pointer
+          md:hidden w-full text-left rounded-xl p-4 border transition-all cursor-pointer shadow-sm
           ${
             isRemake
-              ? "border-slate-500/30 bg-slate-500/5 hover:bg-slate-500/10"
+              ? "border-slate-200/80 dark:border-slate-600 bg-white/80 dark:bg-slate-500/10"
               : isVictory
-              ? "border-green-500/30 bg-green-500/5 hover:bg-green-500/10"
-              : "border-red-500/30 bg-red-500/5 hover:bg-red-500/10"
+              ? "border-emerald-200 dark:border-emerald-500 bg-emerald-50/80 dark:bg-emerald-500/10"
+              : "border-rose-200 dark:border-rose-500 bg-rose-50/80 dark:bg-rose-500/10"
           }
         `}
       >
         {/* Encabezado compacto */}
         <div className="mb-3">
           <div className="flex items-center gap-2">
-            <span className="flex-1 text-[11px] font-bold uppercase tracking-wide text-slate-100 truncate">
+            <span className="flex-1 text-[11px] font-bold uppercase tracking-wide text-slate-900 dark:text-slate-100 truncate">
               {queueName}
             </span>
             <div className="flex-1 text-center">
@@ -226,10 +229,10 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
               </span>
             </div>
             <div className="flex-1 text-right text-xs">
-              <p className="font-semibold text-slate-300">
+              <p className="font-semibold text-slate-900 dark:text-slate-200">
                 {formatDuration(match.matches.game_duration)}
               </p>
-              <p className="text-slate-500">
+              <p className="text-slate-500 dark:text-slate-400">
                 {getRelativeTime(match.created_at)}
               </p>
             </div>
@@ -241,7 +244,7 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <div className="flex flex-col items-center gap-1">
-                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
+                <div className="relative w-14 h-14 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0">
                   <Image
                     src={getChampionImageUrl(match.champion_name, version)}
                     alt={match.champion_name}
@@ -261,7 +264,7 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
               </div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
+              <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                 {match.champion_name}
               </p>
               <p className="text-xs text-slate-400">
@@ -280,10 +283,10 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
               </span>
               <div className="flex items-center gap-3 flex-1 min-w-0 justify-end">
                 <div className="flex-1 min-w-0 text-right">
-                  <p className="text-sm font-semibold text-white truncate">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                     {laneOpponent.championName}
                   </p>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {opponentKills}/{opponentDeaths}/{opponentAssists}
                   </p>
                   <p className={`text-xs font-semibold ${opponentRatioClass}`}>
@@ -292,7 +295,7 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex flex-col items-center gap-1">
-                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-600 flex-shrink-0">
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600 flex-shrink-0">
                       <Image
                         src={getChampionImageUrl(
                           laneOpponent.championName,
@@ -325,22 +328,22 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
           )}
         </div>
         {/* Estadísticas en grid */}
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <div className="text-center p-2 rounded bg-slate-900/20">
-            <p className="text-xs text-slate-400">Daño</p>
-            <p className="text-sm font-semibold text-white">
+        <div className="grid grid-cols-3 gap-4 mb-3 text-center">
+          <div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Daño</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {(match.total_damage_dealt / 1000).toFixed(1)}k
             </p>
           </div>
-          <div className="text-center p-2 rounded bg-slate-900/20">
-            <p className="text-xs text-slate-400">Oro</p>
-            <p className="text-sm font-semibold text-white">
+          <div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Oro</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {(match.gold_earned / 1000).toFixed(1)}k
             </p>
           </div>
-          <div className="text-center p-2 rounded bg-slate-900/20">
-            <p className="text-xs text-slate-400">Visión</p>
-            <p className="text-sm font-semibold text-white">
+          <div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Visión</p>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {match.vision_score}
             </p>
           </div>
@@ -353,7 +356,7 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
             {items.map((itemId, idx) => (
               <div
                 key={idx}
-                className="relative w-8 h-8 rounded border border-slate-600 overflow-hidden bg-slate-800"
+                className="relative w-8 h-8 rounded border border-slate-200 dark:border-slate-600 overflow-hidden bg-white/70 dark:bg-slate-800"
               >
                 {itemId !== 0 && (
                   <Image

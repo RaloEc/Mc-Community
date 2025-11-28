@@ -113,17 +113,11 @@ export function TeammateTracker({
           </button>
         </TooltipTrigger>
         <TooltipContent className="bg-white/90 dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800/60 text-slate-800 dark:text-slate-100 backdrop-blur-sm">
-          <div className="flex flex-col gap-1 text-xs">
+          <div className="flex flex-col gap-1 text-xs text-center">
             {teammates.map((teammate) => (
-              <div
-                key={teammate.puuid}
-                className="flex items-center justify-between gap-4"
-              >
+              <div key={teammate.puuid}>
                 <span className="text-slate-700 dark:text-slate-200">
                   {teammate.name}
-                </span>
-                <span className="text-slate-900 dark:text-indigo-300 font-medium">
-                  {teammate.gamesTogether} partidas
                 </span>
               </div>
             ))}

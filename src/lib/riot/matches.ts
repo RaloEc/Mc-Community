@@ -22,6 +22,91 @@ interface MatchCreationRow {
   } | null;
 }
 
+const MATCH_CACHE_TTL_MS = 5 * 60 * 1000;
+const TIMELINE_CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6 horas
+
+export async function getCachedMatchHistory(
+  userId: string,
+  puuid: string
+): Promise<any[]> {
+  try {
+    const supabase = getServiceClient();
+    const { data, error } = await supabase
+      .from("match_history_cache")
+      .select("match_data, expires_at")
+      .eq("user_id", userId)
+      .eq("puuid", puuid)
+      .gt("expires_at", new Date().toISOString())
+      .order("rank_position", { ascending: true });
+
+    if (error) {
+      console.error("[getCachedMatchHistory] Error:", error.message);
+      return [];
+    }
+
+    return (data ?? []).map((row) => row.match_data);
+  } catch (error: any) {
+    console.error("[getCachedMatchHistory] Error:", error.message);
+    return [];
+  }
+}
+
+export async function refreshMatchHistoryCache(
+  userId: string,
+  puuid: string
+): Promise<void> {
+  try {
+    const supabase = getServiceClient();
+    const { matches } = await getMatchHistory(puuid, { limit: 5 });
+
+    if (!matches || matches.length === 0) {
+      console.log(
+        "[refreshMatchHistoryCache] No hay partidas para cachear",
+        puuid
+      );
+      return;
+    }
+
+    await supabase
+      .from("match_history_cache")
+      .delete()
+      .eq("user_id", userId)
+      .eq("puuid", puuid);
+
+    const now = new Date();
+    const expiresAt = new Date(
+      now.getTime() + MATCH_CACHE_TTL_MS
+    ).toISOString();
+    const cachedRows = matches.map((match: any, index: number) => ({
+      user_id: userId,
+      puuid,
+      match_id: match.match_id ?? match.id ?? `cached-${index}`,
+      match_data: match,
+      rank_position: index + 1,
+      cached_at: now.toISOString(),
+      expires_at: expiresAt,
+    }));
+
+    const { error } = await supabase
+      .from("match_history_cache")
+      .insert(cachedRows);
+
+    if (error) {
+      console.error(
+        "[refreshMatchHistoryCache] Error al insertar:",
+        error.message
+      );
+    } else {
+      console.log(
+        "[refreshMatchHistoryCache] Caché actualizado",
+        `${matches.length} partidas`
+      );
+    }
+  } catch (error: any) {
+    console.error("[refreshMatchHistoryCache] Error:", error.message);
+  }
+}
+
 interface SyncMatchHistoryOptions {
   ensureWeeks?: number;
 }
@@ -1011,12 +1096,59 @@ export async function getMatchById(matchId: string): Promise<{
  * @param platformRegion - Región de plataforma (ej: 'la1') - Necesario para la API
  * @param apiKey - API Key de Riot
  */
+interface GetMatchTimelineOptions {
+  forceRefresh?: boolean;
+}
+
 export async function getMatchTimeline(
   matchId: string,
   platformRegion: string,
-  apiKey: string
+  apiKey: string,
+  options?: GetMatchTimelineOptions
 ): Promise<any | null> {
   try {
+    const supabase = getServiceClient();
+    let cachedTimeline: any | null = null;
+    let cachedAt: Date | null = null;
+
+    // Intentar leer del caché
+    const { data: cachedData, error: cacheError } = await supabase
+      .from("match_timelines")
+      .select("timeline, cached_at")
+      .eq("match_id", matchId)
+      .maybeSingle();
+
+    if (cacheError) {
+      console.warn(
+        "[getMatchTimeline] Error leyendo caché:",
+        cacheError.message
+      );
+    }
+
+    if (cachedData?.timeline) {
+      cachedTimeline = cachedData.timeline;
+      cachedAt = cachedData.cached_at ? new Date(cachedData.cached_at) : null;
+
+      const isFresh = cachedAt
+        ? Date.now() - cachedAt.getTime() < TIMELINE_CACHE_TTL_MS
+        : false;
+
+      if (isFresh && !options?.forceRefresh) {
+        console.log("[getMatchTimeline] Timeline desde caché", {
+          matchId,
+          cachedAt,
+        });
+        return cachedTimeline;
+      }
+    }
+
+    if (!apiKey) {
+      console.warn(
+        "[getMatchTimeline] Sin API Key para refrescar timeline, devolviendo caché"
+      );
+      return cachedTimeline;
+    }
+
     const routingRegion = getRoutingRegion(platformRegion);
     const url = `https://${routingRegion}.api.riotgames.com/lol/match/v5/matches/${matchId}/timeline`;
 
@@ -1026,17 +1158,35 @@ export async function getMatchTimeline(
       headers: {
         "X-Riot-Token": apiKey,
       },
-      next: { revalidate: 3600 }, // Cache por 1 hora
+      next: { revalidate: 3600 },
     });
 
     if (!response.ok) {
       console.error(
         `[getMatchTimeline] Error ${response.status} al obtener timeline`
       );
-      return null;
+      return cachedTimeline;
     }
 
-    return await response.json();
+    const timeline = await response.json();
+
+    // Guardar en caché
+    const { error: upsertError } = await supabase
+      .from("match_timelines")
+      .upsert({
+        match_id: matchId,
+        timeline,
+        cached_at: new Date().toISOString(),
+      });
+
+    if (upsertError) {
+      console.warn(
+        "[getMatchTimeline] Error guardando timeline en caché:",
+        upsertError.message
+      );
+    }
+
+    return timeline;
   } catch (error: any) {
     console.error("[getMatchTimeline] Error:", error.message);
     return null;

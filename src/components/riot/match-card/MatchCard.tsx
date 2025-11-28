@@ -449,6 +449,27 @@ export function MatchCard({
           <span className="text-xs text-slate-600 dark:text-slate-400">
             {getRelativeTime(match.created_at)}
           </span>
+          {tagsInfo.length > 0 && (
+            <div className="flex flex-wrap gap-1 pt-1">
+              {tagsInfo.map((tag) => (
+                <span
+                  key={tag.tag}
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-sm ${
+                    tag.tag === "MVP"
+                      ? "bg-amber-100 text-amber-900 dark:bg-yellow-500 dark:text-slate-900"
+                      : tag.tag === "Stomper"
+                      ? "bg-rose-100 text-rose-700 dark:bg-red-600 dark:text-white"
+                      : tag.tag === "Muralla"
+                      ? "bg-slate-100 text-slate-700 dark:bg-slate-600 dark:text-white"
+                      : "bg-amber-100 text-amber-900 dark:bg-amber-500 dark:text-slate-900"
+                  }`}
+                  title={tag.description}
+                >
+                  {tag.label}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 2. Champion summaries */}

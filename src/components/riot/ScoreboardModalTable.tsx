@@ -75,19 +75,19 @@ export function ScoreboardModalTable({
 
     const kdaColor =
       player.kills > player.deaths
-        ? "text-green-400"
+        ? "text-emerald-700 dark:text-emerald-300"
         : player.deaths > player.kills
-        ? "text-red-400"
-        : "text-slate-300";
+        ? "text-rose-700 dark:text-red-300"
+        : "text-slate-700 dark:text-slate-300";
 
     const kdaRatioColor =
       player.deaths === 0
-        ? "text-emerald-400"
+        ? "text-emerald-700 dark:text-emerald-300"
         : player.kda >= 4
-        ? "text-emerald-400"
+        ? "text-emerald-700 dark:text-emerald-300"
         : player.kda >= 2
-        ? "text-yellow-400"
-        : "text-red-400";
+        ? "text-amber-600 dark:text-yellow-300"
+        : "text-rose-700 dark:text-red-300";
 
     const damagePercent = (player.total_damage_dealt / maxDamage) * 100;
 
@@ -125,17 +125,17 @@ export function ScoreboardModalTable({
 
     return (
       <div
-        className={`flex items-center gap-2 px-3 py-2 border-b border-slate-800/40 last:border-0 transition-colors group ${
+        className={`flex items-center gap-2 px-3 py-2 border-b border-slate-200/70 dark:border-slate-800/40 last:border-0 transition-colors group ${
           isCurrentUser
             ? isWinner
-              ? "bg-blue-500/10 hover:bg-blue-500/15"
-              : "bg-red-500/10 hover:bg-red-500/15"
-            : "hover:bg-slate-800/30"
+              ? "bg-blue-50/80 dark:bg-blue-500/10"
+              : "bg-rose-50/80 dark:bg-red-500/10"
+            : "bg-white/80 dark:bg-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
         }`}
       >
         <div className="flex items-start gap-1.5 flex-shrink-0">
           <div className="relative flex flex-col items-center gap-1">
-            <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-700 group-hover:border-slate-500 transition-colors shadow-inner">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 group-hover:border-blue-200 dark:group-hover:border-slate-500 transition-colors shadow-sm">
               <Image
                 src={getChampionImg(player.champion_name, gameVersion)}
                 alt={player.champion_name}
@@ -147,7 +147,7 @@ export function ScoreboardModalTable({
             <div className="flex gap-1">
               {player.summoner1_id &&
                 getSpellImg(player.summoner1_id, gameVersion) && (
-                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
+                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner1_id, gameVersion)!}
                       alt="Spell 1"
@@ -159,7 +159,7 @@ export function ScoreboardModalTable({
                 )}
               {player.summoner2_id &&
                 getSpellImg(player.summoner2_id, gameVersion) && (
-                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-700 bg-slate-900/50 flex-shrink-0">
+                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner2_id, gameVersion)!}
                       alt="Spell 2"
@@ -184,7 +184,7 @@ export function ScoreboardModalTable({
               return (
                 <>
                   {primarySrc && (
-                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 flex-shrink-0">
                       <img
                         src={primarySrc}
                         alt="Primary Rune"
@@ -193,7 +193,7 @@ export function ScoreboardModalTable({
                     </div>
                   )}
                   {secondarySrc && (
-                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-4 h-4 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 flex-shrink-0">
                       <img
                         src={secondarySrc}
                         alt="Secondary Rune"
@@ -213,24 +213,26 @@ export function ScoreboardModalTable({
               className={`font-semibold text-sm ${
                 isCurrentUser
                   ? isWinner
-                    ? "text-blue-300"
-                    : "text-red-300"
-                  : "text-white"
+                    ? "text-blue-600 dark:text-blue-300"
+                    : "text-rose-600 dark:text-red-300"
+                  : "text-slate-900 dark:text-slate-100"
               }`}
             >
               {displayName}
             </span>
-            <div className="text-xs text-slate-400 truncate">
+            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
               {player.champion_name}
             </div>
             {rankBadge && rankBadge !== "Unranked" ? (
-              <span
-                className={`text-xs font-bold ${rankColor} whitespace-nowrap`}
-              >
+              <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap flex items-center gap-1">
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: rankColor || "#94a3b8" }}
+                />
                 {rankBadge}
               </span>
             ) : division ? (
-              <span className="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded-md font-semibold border border-slate-700 whitespace-nowrap">
+              <span className="text-xs bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-2 py-1 rounded-md font-semibold border border-slate-200 dark:border-slate-700 whitespace-nowrap">
                 {division}
               </span>
             ) : null}
@@ -258,7 +260,7 @@ export function ScoreboardModalTable({
             ].map((item, i) => (
               <div
                 key={i}
-                className="w-6 h-6 rounded bg-slate-800 border border-slate-700 relative overflow-hidden hover:border-slate-600 transition-colors"
+                className="w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative overflow-hidden hover:border-blue-200 dark:hover:border-slate-500 transition-colors"
               >
                 {item !== 0 && (
                   <Image
@@ -272,7 +274,7 @@ export function ScoreboardModalTable({
               </div>
             ))}
           </div>
-          <div className="w-6 h-6 rounded bg-slate-800 border border-slate-700 relative overflow-hidden flex items-center justify-center hover:border-slate-600 transition-colors">
+          <div className="w-6 h-6 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative overflow-hidden flex items-center justify-center hover:border-blue-200 dark:hover-border-slate-500 transition-colors">
             {player.item6 !== 0 && (
               <Image
                 src={getItemImg(player.item6, gameVersion)!}
@@ -287,19 +289,19 @@ export function ScoreboardModalTable({
 
         <div className="flex flex-col gap-2 sm:grid sm:grid-cols-4 sm:gap-x-2 sm:gap-y-1 min-w-[10px]">
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-[11px] font-semibold text-white">
+            <div className="text-[11px] font-semibold text-slate-900 dark:text-white">
               {totalLaneCS.toFixed(0)}
             </div>
             <div className="text-[10px] text-slate-500">CS</div>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-[11px] font-semibold text-white">
+            <div className="text-[11px] font-semibold text-slate-900 dark:text-white">
               {visionScore.toFixed(0)}
             </div>
             <div className="text-[10px] text-slate-500">VIS</div>
           </div>
           <div className="hidden sm:flex flex-col items-center gap-0.5">
-            <div className="text-[11px] font-semibold text-white">
+            <div className="text-[11px] font-semibold text-slate-900 dark:text-white">
               {(player.total_damage_dealt / 1000).toFixed(1)}k
             </div>
             <div className="text-[10px] text-slate-500">DMG</div>
@@ -318,21 +320,23 @@ export function ScoreboardModalTable({
   return (
     <div className="space-y-4">
       <div className="hidden lg:grid lg:grid-cols-2 gap-4 my-4">
-        <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
+        <div className="rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/30 shadow-sm">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-500/20 dark:to-blue-500/5 border-b border-slate-200/80 dark:border-slate-800 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-5 bg-blue-500 rounded-full" />
-              <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-blue-600 dark:text-blue-300 uppercase tracking-wider">
                 Victoria
               </h3>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <div className="flex items-center gap-1">
-                <span className="text-slate-400">K:</span>
-                <span className="font-bold text-white">{team1Kills}</span>
+                <span className="text-slate-500 dark:text-slate-400">K:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {team1Kills}
+                </span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-slate-400">O:</span>
+                <span className="text-slate-500 dark:text-slate-400">O:</span>
                 <span className="font-bold text-yellow-500">
                   {(team1Gold / 1000).toFixed(1)}k
                 </span>
@@ -352,21 +356,23 @@ export function ScoreboardModalTable({
           </div>
         </div>
 
-        <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30">
-          <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-3 py-2 flex items-center justify-between">
+        <div className="rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/30 shadow-sm">
+          <div className="bg-gradient-to-r from-rose-50 to-rose-100 dark:from-red-500/20 dark:to-red-500/5 border-b border-slate-200/80 dark:border-slate-800 px-3 py-2 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1.5 h-5 bg-red-500 rounded-full" />
-              <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
+              <h3 className="text-sm font-bold text-rose-600 dark:text-red-300 uppercase tracking-wider">
                 Derrota
               </h3>
             </div>
             <div className="flex items-center gap-3 text-[11px]">
               <div className="flex items-center gap-1">
-                <span className="text-slate-400">K:</span>
-                <span className="font-bold text-white">{team2Kills}</span>
+                <span className="text-slate-500 dark:text-slate-400">K:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {team2Kills}
+                </span>
               </div>
               <div className="flex items-center gap-1">
-                <span className="text-slate-400">O:</span>
+                <span className="text-slate-500 dark:text-slate-400">O:</span>
                 <span className="font-bold text-yellow-500">
                   {(team2Gold / 1000).toFixed(1)}k
                 </span>
@@ -415,21 +421,27 @@ export function ScoreboardModalTable({
           className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-2 px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           <div className="min-w-full snap-center ">
-            <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30 shadow-lg">
-              <div className="bg-gradient-to-r from-blue-500/20 to-blue-500/5 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+            <div className="rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/30 shadow-sm">
+              <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-500/20 dark:to-blue-500/5 border-b border-slate-200/80 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-6 bg-blue-500 rounded-full" />
-                  <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-blue-600 dark:text-blue-300 uppercase tracking-wider">
                     Victoria
                   </h3>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Kills:</span>
-                    <span className="font-bold text-white">{team1Kills}</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Kills:
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {team1Kills}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Oro:</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Oro:
+                    </span>
                     <span className="font-bold text-yellow-500">
                       {(team1Gold / 1000).toFixed(1)}k
                     </span>
@@ -450,21 +462,27 @@ export function ScoreboardModalTable({
           </div>
 
           <div className="min-w-full snap-center">
-            <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-900/30 shadow-lg">
-              <div className="bg-gradient-to-r from-red-500/20 to-red-500/5 border-b border-slate-800 px-4 py-2 flex items-center justify-between">
+            <div className="rounded-2xl overflow-hidden border border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/30 shadow-sm">
+              <div className="bg-gradient-to-r from-rose-50 to-rose-100 dark:from-red-500/20 dark:to-red-500/5 border-b border-slate-200/80 dark:border-slate-800 px-4 py-2 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-2 h-6 bg-red-500 rounded-full" />
-                  <h3 className="text-sm font-bold text-red-400 uppercase tracking-wider">
+                  <h3 className="text-sm font-bold text-rose-600 dark:text-red-300 uppercase tracking-wider">
                     Derrota
                   </h3>
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Kills:</span>
-                    <span className="font-bold text-white">{team2Kills}</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Kills:
+                    </span>
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      {team2Kills}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-slate-400">Oro:</span>
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Oro:
+                    </span>
                     <span className="font-bold text-yellow-500">
                       {(team2Gold / 1000).toFixed(1)}k
                     </span>

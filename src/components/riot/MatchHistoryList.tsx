@@ -53,6 +53,11 @@ interface MatchHistoryPage {
   nextCursor: number | null;
 }
 
+interface CachedMatchesResponse {
+  matches: Match[];
+  fromCache?: boolean;
+}
+
 const QUEUE_FILTERS = [
   { label: "Todos", value: "all" },
   { label: "Ranked SoloQ", value: "soloq" },
@@ -110,6 +115,31 @@ export function MatchHistoryList({
   });
 
   const userId = propUserId || localUserId;
+
+  const { data: cachedMatchesData } = useQuery<CachedMatchesResponse>({
+    queryKey: ["match-history-cache", userId],
+    queryFn: async () => {
+      if (!userId) throw new Error("No user");
+      const response = await fetch("/api/riot/matches/cache", {
+        headers: { "x-user-id": userId },
+      });
+      if (!response.ok) {
+        throw new Error("Error al obtener caché de partidas");
+      }
+      return (await response.json()) as CachedMatchesResponse;
+    },
+    enabled: !!userId && queueFilter === "all",
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const cachedMatches = useMemo<Match[]>(() => {
+    if (queueFilter !== "all") {
+      return [];
+    }
+    return cachedMatchesData?.matches ?? [];
+  }, [cachedMatchesData, queueFilter]);
+
+  const hasCachedMatches = cachedMatches.length > 0;
 
   const matchHistoryQueryKey = useMemo(
     () => ["match-history", userId, queueFilter],
@@ -334,40 +364,63 @@ export function MatchHistoryList({
     }
   }, [isLoading, matches]);
 
-  const matchesToRender = matches.length > 0 ? matches : lastStableMatches;
+  useEffect(() => {
+    if (hasCachedMatches && matches.length === 0) {
+      setLastStableMatches((prev) =>
+        prev === cachedMatches ? prev : cachedMatches
+      );
+    }
+  }, [hasCachedMatches, cachedMatches, matches.length]);
+
+  const matchesToRender =
+    matches.length > 0
+      ? matches
+      : hasCachedMatches
+      ? cachedMatches
+      : lastStableMatches;
 
   const stats = useMemo(() => {
-    if (matches.length === 0) {
+    const sourceMatches =
+      matches.length > 0 ? matches : hasCachedMatches ? cachedMatches : null;
+
+    if (!sourceMatches || sourceMatches.length === 0) {
       return serverStats;
     }
 
-    const wins = matches.filter((match) => match.win).length;
-    const losses = matches.length - wins;
+    const wins = sourceMatches.filter((match) => match.win).length;
+    const losses = sourceMatches.length - wins;
     const avgKda =
-      matches.reduce((sum, match) => sum + (match.kda ?? 0), 0) /
-      matches.length;
+      sourceMatches.reduce((sum, match) => sum + (match.kda ?? 0), 0) /
+      sourceMatches.length;
     const avgDamage =
-      matches.reduce((sum, match) => sum + (match.total_damage_dealt ?? 0), 0) /
-      matches.length;
+      sourceMatches.reduce(
+        (sum, match) => sum + (match.total_damage_dealt ?? 0),
+        0
+      ) / sourceMatches.length;
     const avgGold =
-      matches.reduce((sum, match) => sum + (match.gold_earned ?? 0), 0) /
-      matches.length;
+      sourceMatches.reduce((sum, match) => sum + (match.gold_earned ?? 0), 0) /
+      sourceMatches.length;
 
     return {
-      totalGames: matches.length,
+      totalGames: sourceMatches.length,
       wins,
       losses,
       winrate:
-        matches.length > 0 ? Math.round((wins / matches.length) * 100) : 0,
+        sourceMatches.length > 0
+          ? Math.round((wins / sourceMatches.length) * 100)
+          : 0,
       avgKda: Math.round(avgKda * 100) / 100,
       avgDamage: Math.round(avgDamage),
       avgGold: Math.round(avgGold),
     } satisfies PlayerStats;
-  }, [matches, serverStats]);
+  }, [matches, cachedMatches, hasCachedMatches, serverStats]);
 
   // Renderizado condicional debe estar después de todos los hooks
   const shouldShowInitialSkeleton =
-    isLoading && pages.length === 0 && lastStableMatches.length === 0;
+    isLoading &&
+    pages.length === 0 &&
+    lastStableMatches.length === 0 &&
+    !hasCachedMatches;
 
   if (shouldShowInitialSkeleton) {
     return (
@@ -498,7 +551,12 @@ export function MatchHistoryList({
         ) : (
           matchesToRender.map((match: Match, idx) => (
             <div
-              key={match.id}
+              key={
+                match.match_id ??
+                match.id ??
+                match.matches?.match_id ??
+                `${match.puuid ?? "match"}-${idx}`
+              }
               className="match-card-appear space-y-2"
               style={{ animationDelay: `${Math.min(idx, 5) * 80}ms` }}
             >

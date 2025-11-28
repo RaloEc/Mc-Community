@@ -10,6 +10,7 @@ import {
   getMatchHistory,
   syncMatchHistory,
   getPlayerStats,
+  refreshMatchHistoryCache,
 } from "@/lib/riot/matches";
 
 /**
@@ -220,6 +221,14 @@ export async function POST(request: NextRequest) {
       limit: DEFAULT_MATCH_LIMIT,
     });
     const stats = await getPlayerStats(riotAccount.puuid, DEFAULT_MATCH_LIMIT);
+
+    // Refrescar caché de últimas 5 partidas en background
+    refreshMatchHistoryCache(userId, riotAccount.puuid).catch((err) =>
+      console.error(
+        "[POST /api/riot/matches/sync] Error refrescando caché:",
+        err
+      )
+    );
 
     return NextResponse.json({
       success: true,
