@@ -95,9 +95,6 @@ export function MatchHistoryList({
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [lastStableMatches, setLastStableMatches] = useState<Match[]>([]);
   const [isFilterTransition, setIsFilterTransition] = useState(false);
-  const syncRefetchIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null
-  );
 
   // Obtener user_id del contexto o localStorage si no se pasa por props
   useEffect(() => {
@@ -106,6 +103,13 @@ export function MatchHistoryList({
       setLocalUserId(id);
     }
   }, [propUserId]);
+
+  // Usar userId del contexto de autenticación si está disponible
+  useEffect(() => {
+    if (!propUserId && profile?.id) {
+      setLocalUserId(profile.id);
+    }
+  }, [profile?.id, propUserId]);
 
   const { data: ddragonVersion = FALLBACK_VERSION } = useQuery({
     queryKey: ["ddragon-version"],
@@ -120,13 +124,29 @@ export function MatchHistoryList({
     queryKey: ["match-history-cache", userId],
     queryFn: async () => {
       if (!userId) throw new Error("No user");
+      console.log(
+        "[MatchHistoryList] 🔄 Fetching cached matches for userId:",
+        userId
+      );
       const response = await fetch("/api/riot/matches/cache", {
         headers: { "x-user-id": userId },
       });
       if (!response.ok) {
         throw new Error("Error al obtener caché de partidas");
       }
-      return (await response.json()) as CachedMatchesResponse;
+      const data = (await response.json()) as CachedMatchesResponse;
+      console.log(
+        "[MatchHistoryList] ✅ Cached matches received:",
+        data.matches?.length || 0,
+        "matches"
+      );
+      if (data.matches && data.matches.length > 0) {
+        console.log(
+          "[MatchHistoryList] 🎮 First cached match:",
+          data.matches[0].match_id
+        );
+      }
+      return data;
     },
     enabled: !!userId && queueFilter === "all",
     staleTime: 5 * 60 * 1000,
@@ -197,6 +217,17 @@ export function MatchHistoryList({
         params.set("cursor", pageParam.toString());
       }
 
+      console.log(
+        "[MatchHistoryList] 📡 Fetching page - isFirstPage:",
+        isFirstPage,
+        "limit:",
+        limit,
+        "cursor:",
+        pageParam,
+        "url:",
+        `/api/riot/matches?${params.toString()}`
+      );
+
       const response = await fetch(`/api/riot/matches?${params.toString()}`, {
         headers: {
           "x-user-id": userId,
@@ -207,29 +238,32 @@ export function MatchHistoryList({
         throw new Error("Failed to fetch matches");
       }
 
-      return (await response.json()) as MatchHistoryPage;
+      const data = (await response.json()) as MatchHistoryPage;
+      console.log(
+        "[MatchHistoryList] 📥 Page received - matches:",
+        data.matches?.length || 0,
+        "hasMore:",
+        data.hasMore,
+        "nextCursor:",
+        data.nextCursor
+      );
+      if (data.matches && data.matches.length > 0) {
+        console.log(
+          "[MatchHistoryList] 🎮 First match in page:",
+          data.matches[0].match_id,
+          "game_creation:",
+          data.matches[0].matches?.game_creation
+        );
+      }
+      return data;
     },
     getNextPageParam: (lastPage) =>
       lastPage?.hasMore ? lastPage.nextCursor ?? undefined : undefined,
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutos sin refetch al volver del modal
-    gcTime: 30 * 60 * 1000, // 30 minutos en caché antes de garbage collection
+    staleTime: 2 * 60 * 1000, // 2 minutos - más corto para refetch después de sync
+    gcTime: 60 * 60 * 1000, // 60 minutos en caché antes de garbage collection
     initialPageParam: null,
   });
-
-  // Lazy load: cargar más partidas automáticamente después de 2 segundos
-  useEffect(() => {
-    if (!isLoading && matchPages?.pages.length === 1 && hasNextPage) {
-      const timer = setTimeout(() => {
-        console.log(
-          "[MatchHistoryList] Lazy loading: cargando más partidas en background..."
-        );
-        fetchNextPage();
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, matchPages?.pages.length, hasNextPage, fetchNextPage]);
 
   // Infinite scroll: cargar más partidas al hacer scroll
   useEffect(() => {
@@ -288,45 +322,92 @@ export function MatchHistoryList({
 
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      console.log("[MatchHistoryList] SYNC SUCCESSFUL - RESETTING CACHE");
+
+      // 1. Cancelar cualquier query en progreso para evitar race conditions
+      console.log("[MatchHistoryList] Cancelando queries en progreso...");
+      await queryClient.cancelQueries({ queryKey: ["match-history"] });
+      await queryClient.cancelQueries({ queryKey: ["match-history-cache"] });
+
+      // 2. Remover completamente los datos del cache (no solo setQueryData undefined)
+      console.log("[MatchHistoryList] Removiendo queries del cache...");
+      queryClient.removeQueries({
+        queryKey: ["match-history", userId, queueFilter],
+      });
+      queryClient.removeQueries({ queryKey: ["match-history-cache", userId] });
+
+      // 3. Marcar las queries como stale para forzar refetch
+      console.log("[MatchHistoryList] Invalidando queries...");
       queryClient.invalidateQueries({
         queryKey: ["match-history", userId, queueFilter],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["match-history-cache", userId],
+      });
+
+      console.log("[MatchHistoryList] Cache limpiado, refetching...");
+
+      // 4. Refetch limpio - esto creará una nueva query desde cero
+      const result = await refetch();
+      console.log("[MatchHistoryList] Refetch completado, resultado:", result);
     },
   });
 
+  // Lazy load: cargar más partidas automáticamente después de 2 segundos
+  // PERO NO si estamos sincronizando
   useEffect(() => {
-    if (syncMutation.isPending) {
-      if (!syncRefetchIntervalRef.current) {
-        refetch();
-        syncRefetchIntervalRef.current = setInterval(() => {
-          refetch();
-        }, 4000);
-      }
-    } else if (syncRefetchIntervalRef.current) {
-      clearInterval(syncRefetchIntervalRef.current);
-      syncRefetchIntervalRef.current = null;
-    }
+    if (
+      !isLoading &&
+      matchPages?.pages.length === 1 &&
+      hasNextPage &&
+      !syncMutation.isPending
+    ) {
+      const timer = setTimeout(() => {
+        console.log(
+          "[MatchHistoryList] ⏳ Lazy loading: cargando más partidas en background..."
+        );
+        fetchNextPage();
+      }, 2000);
 
-    return () => {
-      if (syncRefetchIntervalRef.current) {
-        clearInterval(syncRefetchIntervalRef.current);
-        syncRefetchIntervalRef.current = null;
-      }
-    };
-  }, [refetch, syncMutation.isPending]);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isLoading,
+    matchPages?.pages.length,
+    hasNextPage,
+    fetchNextPage,
+    syncMutation.isPending,
+  ]);
 
   const pages = matchPages?.pages ?? [];
   const matches = useMemo(() => {
-    console.log("[MatchHistoryList] Debug - pages:", pages);
-    console.log("[MatchHistoryList] Debug - matchPages:", matchPages);
+    console.log("[MatchHistoryList] 📄 RENDER - pages.length:", pages.length);
+    console.log("[MatchHistoryList] 📄 RENDER - matchPages:", matchPages);
 
     const flatMatches = pages.flatMap((page) => page.matches ?? []);
-    console.log("[MatchHistoryList] Debug - flatMatches:", flatMatches);
+    console.log(
+      "[MatchHistoryList] 📄 RENDER - flatMatches.length:",
+      flatMatches.length
+    );
+    if (flatMatches.length > 0) {
+      console.log(
+        "[MatchHistoryList] 🎮 RENDER - First match:",
+        flatMatches[0].match_id,
+        "game_creation:",
+        flatMatches[0].matches?.game_creation
+      );
+      console.log(
+        "[MatchHistoryList] 🎮 RENDER - Last match:",
+        flatMatches[flatMatches.length - 1].match_id,
+        "game_creation:",
+        flatMatches[flatMatches.length - 1].matches?.game_creation
+      );
+    }
 
     const seenKeys = new Set<string>();
 
-    return flatMatches.filter((match) => {
+    const filtered = flatMatches.filter((match) => {
       const baseKey = match.match_id ?? match.id;
       const fallbackKey = `${match.created_at ?? ""}-${
         (match as { puuid?: string }).puuid ?? match.summoner_name ?? ""
@@ -340,6 +421,13 @@ export function MatchHistoryList({
       seenKeys.add(uniqueKey);
       return true;
     });
+
+    console.log(
+      "[MatchHistoryList] 📄 RENDER - After dedup:",
+      filtered.length,
+      "matches"
+    );
+    return filtered;
   }, [pages]);
   const serverStats = pages[0]?.stats ?? DEFAULT_STATS;
 

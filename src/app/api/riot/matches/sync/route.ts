@@ -107,6 +107,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Limpiar caché de estadísticas agregadas para forzar recálculo
+    try {
+      await supabase
+        .from("player_stats_cache")
+        .delete()
+        .eq("user_id", userId)
+        .eq("puuid", riotAccount.puuid);
+      console.log(
+        "[POST /api/riot/matches/sync] player_stats_cache limpiado para usuario",
+        userId
+      );
+    } catch (cacheError) {
+      console.warn(
+        "[POST /api/riot/matches/sync] No se pudo limpiar player_stats_cache:",
+        cacheError
+      );
+    }
+
+    // Limpiar caché local de historial para forzar recarga de primeras 5 partidas
+    try {
+      await supabase
+        .from("match_history_cache")
+        .delete()
+        .eq("user_id", userId)
+        .eq("puuid", riotAccount.puuid);
+      console.log(
+        "[POST /api/riot/matches/sync] match_history_cache limpiado para usuario",
+        userId
+      );
+    } catch (cacheError) {
+      console.warn(
+        "[POST /api/riot/matches/sync] No se pudo limpiar match_history_cache:",
+        cacheError
+      );
+    }
+
     // Obtener historial actualizado
     console.log(
       "[POST /api/riot/matches/sync] Obteniendo historial actualizado..."

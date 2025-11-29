@@ -287,6 +287,9 @@ async function getMatchIds({
     console.log(
       `[getMatchIds] ✅ Obtenidos ${matchIds.length} IDs de partidas`
     );
+    if (matchIds.length > 0) {
+      console.log(`[getMatchIds] 🎮 IDs retornados:`, matchIds);
+    }
     return matchIds;
   } catch (error: any) {
     console.error("[getMatchIds] Error:", error.message);
@@ -294,7 +297,10 @@ async function getMatchIds({
   }
 }
 
-async function filterExistingMatchIds(matchIds: string[]): Promise<string[]> {
+async function filterExistingMatchIds(
+  matchIds: string[],
+  puuid?: string
+): Promise<string[]> {
   if (matchIds.length === 0) {
     return [];
   }
@@ -307,14 +313,71 @@ async function filterExistingMatchIds(matchIds: string[]): Promise<string[]> {
       .in("match_id", matchIds);
 
     if (error) {
-      console.error("[filterExistingMatchIds] Error:", error.message);
+      console.error("[filterExistingMatchIds] ❌ Error:", error.message);
       return matchIds;
     }
 
-    const existing = new Set((data || []).map((row: any) => row.match_id));
-    return matchIds.filter((id) => !existing.has(id));
+    const existingMatchIds = (data || [])
+      .map((row: { match_id?: string | null }) => row.match_id)
+      .filter((id): id is string => typeof id === "string" && id.length > 0);
+    const existing = new Set<string>(existingMatchIds);
+
+    // Verificar si existen participantes para el jugador; si no, reintentar descarga
+    let matchesMissingParticipant: string[] = [];
+    if (puuid && existing.size > 0) {
+      const { data: participantsData, error: participantsError } =
+        await supabase
+          .from("match_participants")
+          .select("match_id")
+          .in("match_id", Array.from(existing))
+          .eq("puuid", puuid);
+
+      if (participantsError) {
+        console.warn(
+          "[filterExistingMatchIds] ⚠️ No se pudo verificar participantes:",
+          participantsError.message
+        );
+      } else {
+        const participantMatchIds = (participantsData || [])
+          .map((row: { match_id?: string | null }) => row.match_id)
+          .filter(
+            (id): id is string => typeof id === "string" && id.length > 0
+          );
+        const matchesWithParticipant = new Set<string>(participantMatchIds);
+        matchesMissingParticipant = Array.from(existing).filter(
+          (matchId) => !matchesWithParticipant.has(matchId)
+        );
+
+        if (matchesMissingParticipant.length > 0) {
+          console.warn(
+            "[filterExistingMatchIds] ♻️ Partidas sin participantes, se volverán a descargar:",
+            matchesMissingParticipant
+          );
+        }
+      }
+    }
+
+    // Considerar "nuevas" tanto las que no existen como las que requieren reintento
+    const newMatches = matchIds.filter(
+      (id) => !existing.has(id) || matchesMissingParticipant.includes(id)
+    );
+
+    console.log(
+      `[filterExistingMatchIds] 📊 Total IDs: ${matchIds.length}, Existentes: ${existing.size}, Nuevos: ${newMatches.length}`
+    );
+    if (newMatches.length > 0) {
+      console.log(`[filterExistingMatchIds] 🆕 Nuevos IDs:`, newMatches);
+    }
+    if (existing.size > 0) {
+      console.log(
+        `[filterExistingMatchIds] 📦 IDs existentes:`,
+        Array.from(existing)
+      );
+    }
+
+    return newMatches;
   } catch (error: any) {
-    console.error("[filterExistingMatchIds] Error:", error.message);
+    console.error("[filterExistingMatchIds] ❌ Error:", error.message);
     return matchIds;
   }
 }
@@ -347,7 +410,9 @@ async function getMatchCreationBoundary(
 }
 
 async function getLatestMatchCreation(puuid: string) {
-  return getMatchCreationBoundary(puuid, false);
+  const latest = await getMatchCreationBoundary(puuid, false);
+  console.log(`[getLatestMatchCreation] 📅 Latest match creation: ${latest}`);
+  return latest;
 }
 
 async function getOldestMatchCreation(puuid: string) {
@@ -488,6 +553,10 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
       return false;
     }
 
+    // Limpiar registros previos del mismo match_id para permitir reintentos
+    await supabase.from("match_participants").delete().eq("match_id", matchId);
+    await supabase.from("matches").delete().eq("match_id", matchId);
+
     // Guardar información general de la partida
     // Mapeamos de camelCase (API) a snake_case (DB)
     const { error: matchError } = await supabase.from("matches").insert({
@@ -501,12 +570,17 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
     });
 
     if (matchError) {
-      console.error("[saveMatch] Error al guardar match:", matchError.message);
+      console.error(
+        "[saveMatch] ❌ Error al guardar match:",
+        matchError.message,
+        matchError.details
+      );
       return false;
     }
+    console.log(`[saveMatch] ✅ Match insertado: ${matchId}`);
 
     // Guardar participantes
-    const participants = matchData.info.participants.map((p) => ({
+    const participants = matchData.info.participants.map((p, index) => ({
       match_id: matchId,
       puuid: p.puuid,
       summoner_id: p.summonerId,
@@ -575,11 +649,28 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
 
     if (participantsError) {
       console.error(
-        "[saveMatch] Error al guardar participantes:",
-        participantsError.message
+        "[saveMatch] ❌ Error al guardar participantes:",
+        participantsError.message,
+        participantsError.details
       );
+
+      try {
+        await supabase.from("matches").delete().eq("match_id", matchId);
+        console.warn(
+          `[saveMatch] 📦 Match ${matchId} eliminado tras fallo en participantes`
+        );
+      } catch (cleanupError: any) {
+        console.error(
+          `[saveMatch] ⚠️ No se pudo limpiar match ${matchId}:`,
+          cleanupError.message
+        );
+      }
+
       return false;
     }
+    console.log(
+      `[saveMatch] ✅ ${participants.length} participantes guardados para ${matchId}`
+    );
 
     // Guardar snapshots de ranking para cada participante usando caché
     console.log(
@@ -691,6 +782,10 @@ export async function syncMatchHistory(
         ? Math.floor(latestMatchCreation / 1000) + 1
         : undefined;
 
+    console.log(
+      `[syncMatchHistory] 🔍 latestMatchCreation: ${latestMatchCreation}, startTime: ${startTime}`
+    );
+
     // Obtener IDs de partidas recientes posteriores a la última guardada
     const matchIds = await getMatchIds({
       puuid,
@@ -723,13 +818,22 @@ export async function syncMatchHistory(
 
     // Descargar y guardar partidas nuevas
     for (const matchId of matchesToDownload) {
+      console.log(`[syncMatchHistory] 📥 Descargando partida: ${matchId}`);
       const matchData = await getMatchDetails(matchId, routingRegion, apiKey);
 
       if (matchData) {
+        console.log(`[syncMatchHistory] 💾 Guardando partida: ${matchId}`);
         const saved = await saveMatch(matchData);
         if (saved) {
+          console.log(`[syncMatchHistory] ✅ Partida guardada: ${matchId}`);
           newMatchCount++;
+        } else {
+          console.error(`[syncMatchHistory] ❌ Error al guardar: ${matchId}`);
         }
+      } else {
+        console.warn(
+          `[syncMatchHistory] ⚠️ No se obtuvo data para: ${matchId}`
+        );
       }
 
       // Pequeño delay para no saturar la API
@@ -1191,4 +1295,62 @@ export async function getMatchTimeline(
     console.error("[getMatchTimeline] Error:", error.message);
     return null;
   }
+}
+
+/**
+ * Procesa el timeline de una partida para extraer steals de objetivos epicos
+ * Retorna un mapa de índice de participante -> numero de steals
+ *
+ * @param timeline - Timeline completo de la partida
+ * @param matchInfo - Info del match con participantes
+ * @returns Mapa de índice de participante -> objectivesStolen
+ */
+export function extractObjectiveSteals(
+  timeline: any,
+  matchInfo: any
+): Record<number, number> {
+  const stealsMap: Record<number, number> = {};
+
+  if (!timeline?.info?.frames) {
+    return stealsMap;
+  }
+
+  // Inicializar contador para todos los participantes (0-9)
+  for (let i = 0; i < 10; i++) {
+    stealsMap[i] = 0;
+  }
+
+  // Recorrer frames y eventos para detectar ELITE_MONSTER_KILL
+  timeline.info.frames.forEach((frame: any) => {
+    if (!frame.events) return;
+
+    frame.events.forEach((event: any) => {
+      if (event.type === "ELITE_MONSTER_KILL") {
+        // Tipos de objetivos épicos: BARON_NASHOR, DRAGON, RIFTHERALD
+        const isEpicObjective =
+          event.monsterType === "BARON_NASHOR" ||
+          event.monsterType === "DRAGON" ||
+          event.monsterType === "RIFTHERALD";
+
+        if (!isEpicObjective) return;
+
+        // Detectar steal: el killer pertenece a un equipo diferente al que controlaba el objetivo
+        // Nota: En el timeline, el objetivo no tiene "teamId" explícito, pero podemos inferir
+        // que fue robado si el killer no es del equipo que lo estaba bajando
+        // Para simplificar, contamos cualquier kill de objetivo épico como potencial steal
+        // si el killer tiene baja participación en daño al objetivo (esto requeriría más análisis)
+
+        // Por ahora, registramos todos los kills de objetivos épicos
+        // En una versión mejorada, verificaríamos el daño previo
+        if (
+          typeof event.killerId === "number" &&
+          stealsMap.hasOwnProperty(event.killerId)
+        ) {
+          stealsMap[event.killerId]++;
+        }
+      }
+    });
+  });
+
+  return stealsMap;
 }

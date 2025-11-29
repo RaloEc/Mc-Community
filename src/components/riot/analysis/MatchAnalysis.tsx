@@ -22,6 +22,65 @@ interface MatchAnalysisProps {
   currentUserPuuid?: string;
 }
 
+const normalizePosition = (value?: string | null) => {
+  if (!value) return null;
+  const normalized = value.trim().toUpperCase();
+  if (!normalized || normalized === "NONE" || normalized === "INVALID") {
+    return null;
+  }
+  return normalized;
+};
+
+const getPositionTokens = (participant: any): string[] => {
+  return [
+    normalizePosition(participant.teamPosition),
+    normalizePosition(participant.individualPosition),
+    normalizePosition(participant.role),
+    normalizePosition(participant.lane),
+  ].filter(Boolean) as string[];
+};
+
+const findDefaultOpponentId = (
+  participants: any[],
+  focusParticipantId: number
+) => {
+  const focusPlayer = participants.find(
+    (p: any) => p.participantId === focusParticipantId
+  );
+
+  if (!focusPlayer) return null;
+
+  const isOpponent = (p: any) => p.teamId !== focusPlayer.teamId;
+  const focusTokens = getPositionTokens(focusPlayer);
+
+  for (const token of focusTokens) {
+    const opponent = participants.find((p: any) => {
+      if (!isOpponent(p)) return false;
+      const opponentTokens = getPositionTokens(p);
+      return opponentTokens.includes(token);
+    });
+
+    if (opponent) {
+      return opponent.participantId;
+    }
+  }
+
+  const mirroredParticipantId =
+    focusParticipantId <= 5 ? focusParticipantId + 5 : focusParticipantId - 5;
+
+  const mirroredOpponent = participants.find(
+    (p: any) => isOpponent(p) && p.participantId === mirroredParticipantId
+  );
+
+  if (mirroredOpponent) {
+    return mirroredOpponent.participantId;
+  }
+
+  const fallbackOpponent = participants.find((p: any) => isOpponent(p));
+
+  return fallbackOpponent?.participantId ?? null;
+};
+
 export function MatchAnalysis({
   match,
   timeline,
@@ -52,27 +111,15 @@ export function MatchAnalysis({
   useEffect(() => {
     if (!matchData.info || !matchData.info.participants) return;
 
-    const focusPlayer = matchData.info.participants.find(
-      (p: any) => p.participantId === focusParticipantId
+    const defaultOpponentId = findDefaultOpponentId(
+      matchData.info.participants,
+      focusParticipantId
     );
 
-    if (focusPlayer) {
-      // Find lane opponent
-      const opponent = matchData.info.participants.find(
-        (p: any) =>
-          p.teamId !== focusPlayer.teamId &&
-          (p.lane === focusPlayer.lane || p.role === focusPlayer.role)
-      );
-
-      if (opponent) {
-        setOpponentParticipantId(opponent.participantId);
-      } else {
-        // Fallback: first enemy
-        const firstEnemy = matchData.info.participants.find(
-          (p: any) => p.teamId !== focusPlayer.teamId
-        );
-        if (firstEnemy) setOpponentParticipantId(firstEnemy.participantId);
-      }
+    if (defaultOpponentId) {
+      setOpponentParticipantId(defaultOpponentId);
+    } else {
+      setOpponentParticipantId(null);
     }
   }, [focusParticipantId, matchData]);
 

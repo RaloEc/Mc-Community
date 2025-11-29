@@ -22,6 +22,15 @@ interface RiotParticipant {
   kills?: number;
   deaths?: number;
   assists?: number;
+  totalMinionsKilled?: number;
+  neutralMinionsKilled?: number;
+  totalDamageDealtToChampions?: number;
+  damageDealtToObjectives?: number;
+  damageDealtToTurrets?: number;
+  totalDamageTaken?: number;
+  damageSelfMitigated?: number;
+  visionScore?: number;
+  wardsPlaced?: number;
   summoner1Id?: number;
   summoner2Id?: number;
   perks?: {
@@ -124,17 +133,6 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
     match.item6,
   ].filter((id) => id !== 0);
 
-  const tags = analyzeMatchTags({
-    kills: match.kills,
-    deaths: match.deaths,
-    assists: match.assists,
-    win: match.win,
-    gameDuration: match.matches.game_duration,
-    totalDamageDealt: match.total_damage_dealt,
-    goldEarned: match.gold_earned,
-  });
-
-  const tagsInfo = getTagsInfo(tags);
   const ratioClass =
     match.kda >= 3
       ? "text-emerald-700 dark:text-emerald-300"
@@ -167,6 +165,70 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
   const playerSecondaryRune = match.perk_sub_style;
   const opponentPrimaryRune = getParticipantRuneStyle(laneOpponent, 0);
   const opponentSecondaryRune = getParticipantRuneStyle(laneOpponent, 1);
+
+  const playerCs = currentParticipant
+    ? (currentParticipant.totalMinionsKilled ?? 0) +
+      (currentParticipant.neutralMinionsKilled ?? 0)
+    : null;
+  const csPerMinute =
+    playerCs !== null && match.matches.game_duration
+      ? playerCs / Math.max(1, match.matches.game_duration / 60)
+      : null;
+
+  const playerTeamParticipants = currentParticipant
+    ? participants.filter(
+        (participant) => participant.teamId === currentParticipant.teamId
+      )
+    : [];
+
+  const teamKills = playerTeamParticipants.reduce(
+    (sum, participant) => sum + (participant.kills ?? 0),
+    0
+  );
+
+  const killParticipation =
+    currentParticipant && teamKills > 0
+      ? ((currentParticipant.kills ?? 0) + (currentParticipant.assists ?? 0)) /
+        teamKills
+      : null;
+
+  const teamDamageToChampions = playerTeamParticipants.reduce(
+    (sum, participant) => sum + (participant.totalDamageDealtToChampions ?? 0),
+    0
+  );
+
+  const teamDamageShare =
+    currentParticipant && teamDamageToChampions > 0
+      ? (currentParticipant.totalDamageDealtToChampions ?? 0) /
+        teamDamageToChampions
+      : null;
+
+  const playerVisionScore =
+    currentParticipant?.visionScore ?? match.vision_score ?? undefined;
+
+  const tags = analyzeMatchTags({
+    kills: match.kills,
+    deaths: match.deaths,
+    assists: match.assists,
+    win: match.win,
+    gameDuration: match.matches.game_duration,
+    goldEarned: match.gold_earned,
+    csPerMinute: csPerMinute ?? undefined,
+    totalDamageDealtToChampions:
+      currentParticipant?.totalDamageDealtToChampions ?? undefined,
+    totalDamageTaken: currentParticipant?.totalDamageTaken ?? undefined,
+    damageSelfMitigated: currentParticipant?.damageSelfMitigated ?? undefined,
+    visionScore: playerVisionScore,
+    wardsPlaced: currentParticipant?.wardsPlaced ?? undefined,
+    damageToObjectives:
+      currentParticipant?.damageDealtToObjectives ?? undefined,
+    damageToTurrets: currentParticipant?.damageDealtToTurrets ?? undefined,
+    killParticipation: killParticipation ?? undefined,
+    teamDamageShare: teamDamageShare ?? undefined,
+    objectivesStolen: match.objectives_stolen ?? 0,
+  });
+
+  const tagsInfo = getTagsInfo(tags);
 
   const renderSpellIcon = (spellId?: number, alt?: string) => {
     if (!spellId) return null;

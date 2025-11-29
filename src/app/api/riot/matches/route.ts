@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
 
     // Obtener user_id del header (enviado por el cliente)
     const userId = request.headers.get("x-user-id");
+    console.log("[GET /api/riot/matches] 🔍 REQUEST - userId:", userId);
     if (!userId) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
@@ -132,7 +133,18 @@ export async function GET(request: NextRequest) {
     const queueParam = request.nextUrl.searchParams.get("queue")?.toLowerCase();
     const queueIds = queueParam ? QUEUE_FILTERS[queueParam] : undefined;
 
+    console.log(
+      "[GET /api/riot/matches] 📊 PARAMS - limit:",
+      limit,
+      "cursor:",
+      cursor,
+      "queue:",
+      queueParam
+    );
+
     // Obtener historial de partidas y estadísticas EN PARALELO (no secuencial)
+    // IMPORTANTE: Stats siempre se calcula con límite de 40 para consistencia,
+    // independientemente del límite de partidas mostradas (que puede ser 5 para lazy load)
     const [matchHistory, stats] = await Promise.all([
       getMatchHistory(riotAccount.puuid, {
         limit,
@@ -140,10 +152,27 @@ export async function GET(request: NextRequest) {
         queueIds,
       }),
       getPlayerStatsOptimized(supabase, riotAccount.puuid, {
-        limit,
+        limit: DEFAULT_MATCH_LIMIT, // Siempre 40 para stats consistentes
         queueIds,
       }),
     ]);
+
+    console.log(
+      "[GET /api/riot/matches] ✅ RESPONSE - matches:",
+      matchHistory.matches.length,
+      "hasMore:",
+      matchHistory.hasMore,
+      "nextCursor:",
+      matchHistory.nextCursor
+    );
+    if (matchHistory.matches.length > 0) {
+      console.log(
+        "[GET /api/riot/matches] 🎮 FIRST MATCH:",
+        matchHistory.matches[0].match_id,
+        "game_creation:",
+        matchHistory.matches[0].matches?.game_creation
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -153,7 +182,7 @@ export async function GET(request: NextRequest) {
       stats,
     });
   } catch (error: any) {
-    console.error("[GET /api/riot/matches] Error:", error);
+    console.error("[GET /api/riot/matches] ❌ Error:", error);
     return NextResponse.json(
       { error: "Error al obtener partidas" },
       { status: 500 }

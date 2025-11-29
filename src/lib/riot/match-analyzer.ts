@@ -3,7 +3,86 @@
  * Utiliza lógica matemática simple (sin IA)
  */
 
-export type MatchTag = "MVP" | "Stomper" | "Muralla" | "Farmeador";
+export type MatchTag =
+  | "MVP"
+  | "Stomper"
+  | "Muralla"
+  | "Farmeador"
+  | "Visionario"
+  | "Objetivos"
+  | "Implacable"
+  | "Titan"
+  | "Demoledor"
+  | "KS"
+  | "Sacrificado"
+  | "Ladron"
+  | "Desafortunado";
+
+export interface MatchTagInput {
+  kills: number;
+  deaths: number;
+  assists: number;
+  win: boolean;
+  gameDuration: number;
+  goldEarned: number;
+  csPerMinute?: number;
+  totalDamageDealtToChampions?: number;
+  totalDamageTaken?: number;
+  damageSelfMitigated?: number;
+  visionScore?: number;
+  wardsPlaced?: number;
+  damageToObjectives?: number;
+  damageToTurrets?: number;
+  killParticipation?: number;
+  teamDamageShare?: number;
+  objectivesStolen?: number;
+  role?: string | null;
+  laneOpponentCsPerMinute?: number;
+  laneOpponentTotalCs?: number;
+  totalMinionsKilled?: number;
+  neutralMinionsKilled?: number;
+  damagePerMinutePercentile?: number;
+  goldPerMinutePercentile?: number;
+  visionScorePercentile?: number;
+  utilityScorePercentile?: number;
+  teamContext?: TeamContext;
+  criticalMistakes?: CriticalMistakeFlags;
+}
+
+export interface TeamContext {
+  teamKills?: number;
+  enemyKills?: number;
+  teamDragons?: number;
+  enemyDragons?: number;
+  teamHeralds?: number;
+  enemyHeralds?: number;
+  teamBarons?: number;
+  enemyBarons?: number;
+  teamTowers?: number;
+  enemyTowers?: number;
+  allyLowKdaCount?: number;
+  allyLowDamageShareCount?: number;
+  afkAllyMinutes?: number;
+  enemyEarlyFedPlayers?: number;
+  mmrGap?: number;
+  autofillAllies?: number;
+}
+
+export interface CriticalMistakeFlags {
+  nashorThrows?: number;
+  preObjectiveDeaths?: number;
+  missedTeleports?: number;
+}
+
+export interface DesafortunadoAnalysis {
+  awarded: boolean;
+  impactScore: number;
+  penaltyScore: number;
+  blockers: number;
+  positiveReasons: string[];
+  negativeReasons: string[];
+  narrative: string | null;
+}
 
 export interface MatchTagInfo {
   tag: MatchTag;
@@ -18,27 +97,90 @@ export interface MatchTagInfo {
 const TAG_INFO: Record<MatchTag, MatchTagInfo> = {
   MVP: {
     tag: "MVP",
-    color: "bg-yellow-500 text-yellow-900",
+    color:
+      "bg-amber-100 dark:bg-amber-200/85 text-slate-900 dark:text-slate-950",
     label: "MVP",
-    description: "KDA excepcional",
+    description: "Mayor impacto en su equipo",
   },
   Stomper: {
     tag: "Stomper",
-    color: "bg-red-600 text-red-50",
+    color: "bg-rose-100 dark:bg-rose-200/80 text-slate-900 dark:text-slate-950",
     label: "Stomper",
-    description: "Victoria rápida",
+    description: "Victoria aplastante",
   },
   Muralla: {
     tag: "Muralla",
-    color: "bg-slate-600 text-slate-50",
+    color:
+      "bg-slate-200 dark:bg-slate-300/80 text-slate-900 dark:text-slate-950",
     label: "Muralla",
-    description: "Defensa sólida",
+    description: "Tanque indestructible",
   },
   Farmeador: {
     tag: "Farmeador",
-    color: "bg-amber-500 text-amber-900",
+    color:
+      "bg-amber-200 dark:bg-amber-200/85 text-slate-900 dark:text-slate-950",
     label: "Farmeador",
-    description: "CS excelente",
+    description: "CS sobresaliente",
+  },
+  Visionario: {
+    tag: "Visionario",
+    color:
+      "bg-emerald-100 dark:bg-emerald-200/85 text-slate-900 dark:text-slate-950",
+    label: "Visionario",
+    description: "Control total de visión",
+  },
+  Objetivos: {
+    tag: "Objetivos",
+    color: "bg-blue-100 dark:bg-blue-200/85 text-slate-900 dark:text-slate-950",
+    label: "Objetivos",
+    description: "Daño alto a torres/dragones",
+  },
+  Implacable: {
+    tag: "Implacable",
+    color:
+      "bg-purple-100 dark:bg-fuchsia-200/85 text-slate-900 dark:text-slate-950",
+    label: "Implacable",
+    description: "Partida perfecta (sin muertes)",
+  },
+  Titan: {
+    tag: "Titan",
+    color:
+      "bg-orange-100 dark:bg-orange-200/85 text-slate-900 dark:text-slate-950",
+    label: "Titan",
+    description: "Mas de un tercio del dano total del equipo",
+  },
+  Demoledor: {
+    tag: "Demoledor",
+    color:
+      "bg-amber-100 dark:bg-amber-200/85 text-slate-900 dark:text-slate-950",
+    label: "Demoledor",
+    description: "Mas de 5000 de dano a torres",
+  },
+  KS: {
+    tag: "KS",
+    color: "bg-pink-100 dark:bg-pink-200/85 text-slate-900 dark:text-slate-950",
+    label: "KS",
+    description: "Muchas kills con muy poco daño real",
+  },
+  Sacrificado: {
+    tag: "Sacrificado",
+    color:
+      "bg-slate-200 dark:bg-slate-200/85 text-slate-900 dark:text-slate-950",
+    label: "Sacrificado",
+    description: "Mas de 9 muertes pero victoria asegurada",
+  },
+  Ladron: {
+    tag: "Ladron",
+    color: "bg-red-100 dark:bg-red-200/85 text-slate-900 dark:text-slate-950",
+    label: "Ladron",
+    description: "Robo de objetivos epicos (Baron, Dragon, Heraldo)",
+  },
+  Desafortunado: {
+    tag: "Desafortunado",
+    color:
+      "bg-slate-100 dark:bg-slate-200/80 text-slate-900 dark:text-slate-950",
+    label: "Desafortunado",
+    description: "Jugaste bien pero tu equipo no acompaño",
   },
 };
 
@@ -48,49 +190,110 @@ const TAG_INFO: Record<MatchTag, MatchTagInfo> = {
  * @param stats - Estadísticas de la partida
  * @returns Array de tags aplicables
  */
-export function analyzeMatchTags(stats: {
-  kills: number;
-  deaths: number;
-  assists: number;
-  win: boolean;
-  gameDuration: number;
-  totalDamageDealt: number;
-  goldEarned: number;
-  championLevel?: number;
-}): MatchTag[] {
+export function analyzeMatchTags(stats: MatchTagInput): MatchTag[] {
   const tags: MatchTag[] = [];
 
   // Calcular KDA
-  const kda =
-    stats.deaths === 0
-      ? stats.kills + stats.assists
-      : (stats.kills + stats.assists) / stats.deaths;
+  const kda = calculateKDA(stats.kills, stats.deaths, stats.assists);
+  const minutesPlayed = Math.max(1, stats.gameDuration / 60);
+  const csPerMinute = calculateCsPerMinute(stats);
+  const visionScorePerMinute =
+    typeof stats.visionScore === "number"
+      ? stats.visionScore / minutesPlayed
+      : null;
+  const killParticipation = stats.killParticipation ?? null;
+  const teamDamageShare = stats.teamDamageShare ?? null;
+  const durabilityScore =
+    (stats.totalDamageTaken ?? 0) + (stats.damageSelfMitigated ?? 0);
 
-  // MVP: KDA > 10 o perfecto (0 muertes)
-  if (kda > 10 || (stats.deaths === 0 && stats.kills + stats.assists >= 10)) {
+  // MVP: alto KDA + impacto (KP o % daño)
+  const hasHighImpact =
+    (killParticipation !== null && killParticipation >= 0.65) ||
+    (teamDamageShare !== null && teamDamageShare >= 0.3);
+
+  if (kda >= 5 && hasHighImpact) {
     tags.push("MVP");
   }
 
-  // Stomper: Partida < 20 min y ganó
-  if (stats.win && stats.gameDuration < 1200) {
-    // 1200 segundos = 20 minutos
+  // Stomper: victoria rápida + snowball
+  const goldPerMinute = stats.goldEarned / minutesPlayed;
+  if (
+    stats.win &&
+    stats.gameDuration < 1200 &&
+    (stats.kills >= 8 || goldPerMinute >= 600 || kda >= 6)
+  ) {
     tags.push("Stomper");
   }
 
-  // Muralla: Daño recibido > 30k y muertes < 5
-  // Nota: No tenemos daño recibido en los datos, usamos daño infligido como proxy
-  if (stats.totalDamageDealt > 30000 && stats.deaths < 5) {
+  // Muralla: tanqueo elevado
+  if (durabilityScore >= 45000 && stats.deaths <= 5) {
     tags.push("Muralla");
   }
 
-  // Farmeador: CS/minuto > 7.5
-  // Nota: No tenemos CS directo, estimamos basado en oro
-  const minutesPlayed = stats.gameDuration / 60;
-  const estimatedCS = stats.goldEarned / 50; // Aproximación: ~50 oro por CS
-  const csPerMinute = estimatedCS / minutesPlayed;
-
-  if (csPerMinute > 7.5) {
+  // Farmeador: CS por minuto real
+  if (shouldGrantFarmerTag(stats, csPerMinute)) {
     tags.push("Farmeador");
+  }
+
+  // Visionario: visión colocada
+  if (
+    (visionScorePerMinute !== null && visionScorePerMinute >= 2) ||
+    (visionScorePerMinute === null && (stats.visionScore ?? 0) >= 40) ||
+    (stats.wardsPlaced ?? 0) >= 15
+  ) {
+    tags.push("Visionario");
+  }
+
+  // Objetivos: daño alto a objetivos mayores
+  if ((stats.damageToObjectives ?? 0) >= 15000) {
+    tags.push("Objetivos");
+  }
+
+  // Implacable: sin muertes con mucha participación
+  if (
+    stats.deaths === 0 &&
+    (stats.kills >= 7 || stats.assists >= 12 || kda >= 8)
+  ) {
+    tags.push("Implacable");
+  }
+
+  // Titan: participación masiva de daño
+  if (teamDamageShare !== null && teamDamageShare >= 0.35) {
+    tags.push("Titan");
+  }
+
+  // Demoledor: daño altísimo a estructuras
+  if ((stats.damageToTurrets ?? 0) >= 5000) {
+    tags.push("Demoledor");
+  }
+
+  // KS: muchas kills pero bajo aporte de daño
+  if (stats.kills >= 8 && teamDamageShare !== null && teamDamageShare <= 0.2) {
+    tags.push("KS");
+  }
+
+  // Sacrificado: muchas muertes pero se gana la partida
+  if (stats.win && stats.deaths > 9) {
+    tags.push("Sacrificado");
+  }
+
+  // Ladron: robo de objetivos epicos
+  if ((stats.objectivesStolen ?? 0) > 0) {
+    tags.push("Ladron");
+  }
+
+  const unluckyAnalysis = analyzeDesafortunado(stats);
+  if (unluckyAnalysis.awarded) {
+    tags.push("Desafortunado");
+  }
+
+  // Fallback para partidas sobresalientes aunque no cumplan nuevas reglas
+  if (tags.length === 0) {
+    if (kda > 10 || (stats.deaths === 0 && stats.kills + stats.assists >= 10)) {
+      tags.push("MVP");
+    } else if (shouldGrantFarmerTag(stats, csPerMinute, { fallback: true })) {
+      tags.push("Farmeador");
+    }
   }
 
   return tags;
@@ -127,13 +330,56 @@ export function calculateKDA(
 /**
  * Calcula CS por minuto (estimado)
  */
-export function estimateCSPerMinute(
-  goldEarned: number,
-  gameDuration: number
-): number {
-  const minutesPlayed = gameDuration / 60;
-  const estimatedCS = goldEarned / 50; // ~50 oro por CS
-  return estimatedCS / minutesPlayed;
+export function calculateCsPerMinute(stats: MatchTagInput): number {
+  const totalCs =
+    (stats.totalMinionsKilled ?? 0) + (stats.neutralMinionsKilled ?? 0);
+  const minutesPlayed = Math.max(1, stats.gameDuration / 60);
+  if (totalCs > 0) {
+    return totalCs / minutesPlayed;
+  }
+  if (typeof stats.csPerMinute === "number") {
+    return stats.csPerMinute;
+  }
+  return 0;
+}
+
+interface FarmerOptions {
+  fallback?: boolean;
+}
+
+function shouldGrantFarmerTag(
+  stats: MatchTagInput,
+  csPerMinute: number,
+  options: FarmerOptions = {}
+): boolean {
+  const role = stats.role?.toUpperCase() ?? null;
+  if (role === "SUPPORT" || role === "UTILITY") {
+    return false;
+  }
+
+  const laneThreshold = stats.win ? 7.5 : 8.5;
+  const jungleBonus = role === "JUNGLE" ? 0.5 : 0;
+  const threshold = options.fallback ? laneThreshold + 0.5 : laneThreshold;
+  const meetsCs = csPerMinute >= threshold - jungleBonus;
+
+  if (!meetsCs) {
+    return false;
+  }
+
+  const opponentCs = stats.laneOpponentCsPerMinute;
+  if (typeof opponentCs === "number" && opponentCs > 0) {
+    const hasGap = csPerMinute >= opponentCs * 1.15;
+    return hasGap;
+  }
+
+  const totalCs =
+    (stats.totalMinionsKilled ?? 0) + (stats.neutralMinionsKilled ?? 0);
+  const opponentTotalCs = stats.laneOpponentTotalCs ?? 0;
+  if (opponentTotalCs > 0) {
+    return totalCs >= opponentTotalCs * 1.15;
+  }
+
+  return true;
 }
 
 /**
@@ -141,4 +387,151 @@ export function estimateCSPerMinute(
  */
 export function getTagDescription(tag: MatchTag): string {
   return TAG_INFO[tag].description;
+}
+
+export function analyzeDesafortunado(
+  stats: MatchTagInput
+): DesafortunadoAnalysis {
+  const positiveReasons: string[] = [];
+  const negativeReasons: string[] = [];
+  let impactScore = 0;
+  let penaltyScore = 0;
+  let blockers = 0;
+
+  const kda = calculateKDA(stats.kills, stats.deaths, stats.assists);
+  const killParticipation = stats.killParticipation ?? null;
+  const teamDamageShare = stats.teamDamageShare ?? null;
+  const role = stats.role?.toUpperCase() ?? null;
+
+  if (kda >= 4) {
+    impactScore += 2;
+    positiveReasons.push(`KDA sobresaliente (${kda.toFixed(1)})`);
+  }
+
+  if (killParticipation !== null && killParticipation >= 0.55) {
+    impactScore += 2;
+    positiveReasons.push(
+      `Participaste en ${(killParticipation * 100).toFixed(0)}% de las kills`
+    );
+  }
+
+  if (teamDamageShare !== null && teamDamageShare >= 0.3) {
+    impactScore += 2;
+    positiveReasons.push(
+      `Aportaste ${(teamDamageShare * 100).toFixed(1)}% del daño del equipo`
+    );
+  }
+
+  if ((stats.damagePerMinutePercentile ?? 0) >= 0.8) {
+    impactScore += 1.5;
+    positiveReasons.push("Daño/minuto top del rol");
+  }
+
+  if ((stats.goldPerMinutePercentile ?? 0) >= 0.7) {
+    impactScore += 1;
+    positiveReasons.push("Oro por minuto por encima del percentil 70");
+  }
+
+  const isUtilityRole = role === "UTILITY" || role === "SUPPORT";
+  if (isUtilityRole && (stats.visionScorePercentile ?? 0) >= 0.8) {
+    impactScore += 1.5;
+    positiveReasons.push("Control de visión excepcional");
+  } else if ((stats.utilityScorePercentile ?? 0) >= 0.75) {
+    impactScore += 1;
+    positiveReasons.push("Aporte utilitario sobresaliente");
+  }
+
+  const team = stats.teamContext || {};
+  if ((team.allyLowKdaCount ?? 0) > 0) {
+    const value = Math.min(team.allyLowKdaCount ?? 0, 3);
+    penaltyScore += value * 1.5;
+    negativeReasons.push(`${value} aliados fueron feeders (KDA < 1)`);
+  }
+
+  if ((team.allyLowDamageShareCount ?? 0) > 0) {
+    penaltyScore += 1;
+    negativeReasons.push("Faltó daño en tu equipo");
+  }
+
+  if ((team.afkAllyMinutes ?? 0) >= 3) {
+    penaltyScore += 2;
+    negativeReasons.push("Hubo AFK prolongado en tu equipo");
+  }
+
+  const dragonGap = (team.enemyDragons ?? 0) - (team.teamDragons ?? 0);
+  if (dragonGap >= 2) {
+    penaltyScore += 1.5;
+    negativeReasons.push(`Se perdieron ${dragonGap} dragones de diferencia`);
+  }
+
+  const heraldGap = (team.enemyHeralds ?? 0) - (team.teamHeralds ?? 0);
+  if (heraldGap >= 1) {
+    penaltyScore += 0.5;
+    negativeReasons.push("El rival controló todos los heraldos");
+  }
+
+  const towerGap = (team.enemyTowers ?? 0) - (team.teamTowers ?? 0);
+  if (towerGap >= 4) {
+    penaltyScore += 1;
+    negativeReasons.push("Gran desventaja en torres");
+  }
+
+  const killGap = (team.enemyKills ?? 0) - (team.teamKills ?? 0);
+  if (killGap >= 10) {
+    penaltyScore += 1;
+    negativeReasons.push("Tu equipo murió 10+ veces más");
+  }
+
+  if ((team.enemyEarlyFedPlayers ?? 0) > 0) {
+    penaltyScore += 1;
+    negativeReasons.push("El rival snowballeó temprano");
+  }
+
+  if ((team.mmrGap ?? 0) >= 150) {
+    penaltyScore += 1;
+    negativeReasons.push("El matchmaking te puso con aliados de menor MMR");
+  }
+
+  if ((team.autofillAllies ?? 0) > 0) {
+    penaltyScore += 0.5;
+    negativeReasons.push("Hubo autofill en tu equipo");
+  }
+
+  const mistakes = stats.criticalMistakes || {};
+  const mistakeScore =
+    (mistakes.nashorThrows ?? 0) * 2 +
+    (mistakes.preObjectiveDeaths ?? 0) * 1.5 +
+    (mistakes.missedTeleports ?? 0) * 0.5;
+  if (mistakeScore >= 2) {
+    blockers += mistakeScore;
+    negativeReasons.push(
+      "Hubo errores críticos que afectan tu evaluación personal"
+    );
+  }
+
+  const awarded =
+    !stats.win && impactScore >= 5 && penaltyScore >= 4 && mistakeScore < 2;
+
+  const narrative = awarded
+    ? buildUnluckyNarrative(positiveReasons, negativeReasons)
+    : null;
+
+  return {
+    awarded,
+    impactScore,
+    penaltyScore,
+    blockers,
+    positiveReasons,
+    negativeReasons,
+    narrative,
+  };
+}
+
+function buildUnluckyNarrative(
+  positives: string[],
+  negatives: string[]
+): string {
+  const topPositive = positives.slice(0, 2).join(" y ");
+  const topNegative = negatives.slice(0, 2).join("; ");
+  return `${topPositive}, pero ${topNegative}.`;
 }

@@ -24,6 +24,12 @@ interface RiotParticipant {
   kills: number;
   deaths: number;
   assists: number;
+  totalDamageDealtToChampions?: number;
+  damageDealtToObjectives?: number;
+  totalDamageTaken?: number;
+  damageSelfMitigated?: number;
+  visionScore?: number;
+  wardsPlaced?: number;
   summoner1Id?: number;
   summoner2Id?: number;
   perks?: {
@@ -40,6 +46,7 @@ interface RiotParticipant {
   neutralMinionsKilled?: number;
   gameEndedInEarlySurrender?: boolean;
   teamEarlySurrendered?: boolean;
+  damageDealtToTurrets?: number;
 }
 
 interface PlayerSummaryData {
@@ -270,6 +277,7 @@ export interface Match {
   role: string;
   created_at: string;
   puuid: string;
+  objectives_stolen?: number;
   matches: {
     match_id: string;
     game_creation: number;
@@ -323,18 +331,6 @@ export function MatchCard({
 
   const trinketItem = match.item6 && match.item6 !== 0 ? match.item6 : null;
 
-  const tags = analyzeMatchTags({
-    kills: match.kills,
-    deaths: match.deaths,
-    assists: match.assists,
-    win: match.win,
-    gameDuration: match.matches.game_duration,
-    totalDamageDealt: match.total_damage_dealt,
-    goldEarned: match.gold_earned,
-  });
-
-  const tagsInfo = getTagsInfo(tags);
-
   // Datos de jugadores
   const allParticipants = (match.matches?.full_json?.info?.participants ??
     []) as RiotParticipant[];
@@ -369,6 +365,61 @@ export function MatchCard({
     opponentCs !== null && match.matches.game_duration
       ? opponentCs / Math.max(1, match.matches.game_duration / 60)
       : null;
+
+  const playerTeamParticipants = currentParticipant
+    ? allParticipants.filter(
+        (participant) => participant.teamId === currentParticipant.teamId
+      )
+    : [];
+
+  const teamKills = playerTeamParticipants.reduce(
+    (sum, participant) => sum + (participant.kills ?? 0),
+    0
+  );
+
+  const killParticipation =
+    currentParticipant && teamKills > 0
+      ? ((currentParticipant.kills ?? 0) + (currentParticipant.assists ?? 0)) /
+        teamKills
+      : null;
+
+  const teamDamageToChampions = playerTeamParticipants.reduce(
+    (sum, participant) => sum + (participant.totalDamageDealtToChampions ?? 0),
+    0
+  );
+
+  const teamDamageShare =
+    currentParticipant && teamDamageToChampions > 0
+      ? (currentParticipant.totalDamageDealtToChampions ?? 0) /
+        teamDamageToChampions
+      : null;
+
+  const playerVisionScore =
+    currentParticipant?.visionScore ?? match.vision_score ?? undefined;
+
+  const tags = analyzeMatchTags({
+    kills: match.kills,
+    deaths: match.deaths,
+    assists: match.assists,
+    win: match.win,
+    gameDuration: match.matches.game_duration,
+    goldEarned: match.gold_earned,
+    csPerMinute: csPerMinute ?? undefined,
+    totalDamageDealtToChampions:
+      currentParticipant?.totalDamageDealtToChampions ?? undefined,
+    totalDamageTaken: currentParticipant?.totalDamageTaken ?? undefined,
+    damageSelfMitigated: currentParticipant?.damageSelfMitigated ?? undefined,
+    visionScore: playerVisionScore,
+    wardsPlaced: currentParticipant?.wardsPlaced ?? undefined,
+    damageToObjectives:
+      currentParticipant?.damageDealtToObjectives ?? undefined,
+    damageToTurrets: currentParticipant?.damageDealtToTurrets ?? undefined,
+    killParticipation: killParticipation ?? undefined,
+    teamDamageShare: teamDamageShare ?? undefined,
+    objectivesStolen: match.objectives_stolen ?? 0,
+  });
+
+  const tagsInfo = getTagsInfo(tags);
 
   const playerSummary: PlayerSummaryData = {
     championName: match.champion_name,
@@ -454,15 +505,7 @@ export function MatchCard({
               {tagsInfo.map((tag) => (
                 <span
                   key={tag.tag}
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-sm ${
-                    tag.tag === "MVP"
-                      ? "bg-amber-100 text-amber-900 dark:bg-yellow-500 dark:text-slate-900"
-                      : tag.tag === "Stomper"
-                      ? "bg-rose-100 text-rose-700 dark:bg-red-600 dark:text-white"
-                      : tag.tag === "Muralla"
-                      ? "bg-slate-100 text-slate-700 dark:bg-slate-600 dark:text-white"
-                      : "bg-amber-100 text-amber-900 dark:bg-amber-500 dark:text-slate-900"
-                  }`}
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-sm ${tag.color}`}
                   title={tag.description}
                 >
                   {tag.label}
