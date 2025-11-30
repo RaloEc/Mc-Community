@@ -208,6 +208,7 @@ export default async function MatchPage({
             participants={participants}
             currentUserPuuid={currentUserPuuid}
             gameVersion={gameVersion}
+            gameDuration={match.game_duration}
           />
         </TabsContent>
 

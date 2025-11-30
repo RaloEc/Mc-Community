@@ -8,6 +8,7 @@ import {
   updateMatchRankings,
   getOrUpdateSummonerRank,
 } from "@/lib/riot/league";
+import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
 
 const WEEK_IN_MS = 7 * 24 * 60 * 60 * 1000;
 const DEFAULT_BACKFILL_BATCH_SIZE = 50;
@@ -672,21 +673,167 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
       `[saveMatch] ✅ ${participants.length} participantes guardados para ${matchId}`
     );
 
-    // Guardar snapshots de ranking para cada participante usando caché
+    // FASE RÁPIDA: Marcar como 'processing' para que sea visible en el historial
+    console.log(`[saveMatch] ⚡ Marcando partida como 'processing'...`);
+    const { error: statusError } = await supabase
+      .from("matches")
+      .update({ ingest_status: "processing" })
+      .eq("match_id", matchId);
+
+    if (statusError) {
+      console.warn(
+        `[saveMatch] ⚠️ Error al marcar como processing:`,
+        statusError.message
+      );
+    } else {
+      console.log(
+        `[saveMatch] ✅ Partida ${matchId} marcada como 'processing'`
+      );
+    }
+
+    // FASE PESADA: Disparar job asíncrono para calcular ranking/performance
+    // (no esperamos respuesta, solo lo registramos para procesar después)
     console.log(
-      `[saveMatch] Obteniendo rankings desde caché para ${matchId}...`
+      `[saveMatch] 🔄 Encolando procesamiento de ranking/performance para ${matchId}...`
     );
 
-    const platformRegion = "la1"; // Default, se puede mejorar pasándolo como parámetro
+    // Fire-and-forget: procesar en background
+    processMatchRankingAsync(matchId, matchData).catch((err) => {
+      console.error(
+        `[saveMatch] Error en procesamiento async de ${matchId}:`,
+        err.message
+      );
+    });
+
+    console.log(`[saveMatch] ✅ Partida ${matchId} guardada exitosamente`);
+
+    return true;
+  } catch (error: any) {
+    console.error("[saveMatch] Error:", error.message);
+    return false;
+  }
+}
+
+/**
+ * Procesa ranking y performance score de forma asíncrona (background job)
+ * Se ejecuta sin bloquear la respuesta al usuario
+ * Actualiza ingest_status a 'ready' cuando termina
+ */
+async function processMatchRankingAsync(
+  matchId: string,
+  matchData: MatchData
+): Promise<void> {
+  try {
+    const supabase = getServiceClient();
+    console.log(`[processMatchRankingAsync] 🔄 Iniciando para ${matchId}...`);
+
+    // Calcular totales de equipo
+    const team100 = (matchData.info.participants as any[]).filter(
+      (p: any) => p.teamId === 100
+    );
+    const team200 = (matchData.info.participants as any[]).filter(
+      (p: any) => p.teamId === 200
+    );
+
+    const team100Stats = {
+      kills: team100.reduce((sum, p) => sum + p.kills, 0),
+      damage: team100.reduce(
+        (sum, p) => sum + (p.totalDamageDealtToChampions ?? 0),
+        0
+      ),
+      gold: team100.reduce((sum, p) => sum + p.goldEarned, 0),
+    };
+
+    const team200Stats = {
+      kills: team200.reduce((sum, p) => sum + p.kills, 0),
+      damage: team200.reduce(
+        (sum, p) => sum + (p.totalDamageDealtToChampions ?? 0),
+        0
+      ),
+      gold: team200.reduce((sum, p) => sum + p.goldEarned, 0),
+    };
+
+    // Calcular performance score para cada participante
+    const scoresMap = new Map<string, number>();
+
+    for (const participant of matchData.info.participants as any[]) {
+      const teamStats =
+        participant.teamId === 100 ? team100Stats : team200Stats;
+
+      const score = calculatePerformanceScore({
+        kills: participant.kills,
+        deaths: participant.deaths,
+        assists: participant.assists,
+        win: participant.win,
+        gameDuration: matchData.info.gameDuration,
+        goldEarned: participant.goldEarned,
+        totalDamageDealtToChampions:
+          participant.totalDamageDealtToChampions ?? 0,
+        visionScore: participant.visionScore ?? 0,
+        totalMinionsKilled: participant.totalMinionsKilled ?? 0,
+        neutralMinionsKilled: participant.neutralMinionsKilled ?? 0,
+        role: participant.role || participant.lane,
+        teamTotalKills: teamStats.kills,
+        teamTotalDamage: teamStats.damage,
+        teamTotalGold: teamStats.gold,
+        objectivesStolen: participant.objectivesStolen ?? 0,
+      });
+
+      scoresMap.set(participant.puuid, score);
+    }
+
+    // Ordenar por score para obtener ranking
+    const sortedScores = Array.from(scoresMap.entries()).sort(
+      (a, b) => (b[1] ?? 0) - (a[1] ?? 0)
+    );
+
+    const rankingMap = new Map<string, number>();
+    sortedScores.forEach(([puuid], index) => {
+      rankingMap.set(puuid, index + 1);
+    });
+
+    // Actualizar match_participants con ranking y performance score
+    for (const participant of matchData.info.participants as any[]) {
+      const rankingPosition = rankingMap.get(participant.puuid) ?? null;
+      const performanceScore = scoresMap.get(participant.puuid) ?? null;
+
+      const { error: updateError } = await supabase
+        .from("match_participants")
+        .update({
+          ranking_position: rankingPosition,
+          performance_score: performanceScore,
+        })
+        .eq("match_id", matchId)
+        .eq("puuid", participant.puuid);
+
+      if (updateError) {
+        console.warn(
+          `[processMatchRankingAsync] ⚠️ Error actualizando ranking para ${participant.puuid}:`,
+          updateError.message
+        );
+      }
+    }
+
+    console.log(
+      `[processMatchRankingAsync] ✅ Ranking y performance scores calculados`
+    );
+
+    // Guardar snapshots de ranking para cada participante
+    console.log(
+      `[processMatchRankingAsync] Obteniendo rankings desde caché para ${matchId}...`
+    );
+
+    const platformRegion = "la1";
     const apiKey = process.env.RIOT_API_KEY;
 
     if (!apiKey) {
-      console.warn("[saveMatch] RIOT_API_KEY no está configurada");
+      console.warn(
+        "[processMatchRankingAsync] RIOT_API_KEY no está configurada"
+      );
     }
 
     const rankSnapshots: any[] = [];
 
-    // Procesar cada participante para obtener su rango actual desde caché o Riot API
     for (const participant of matchData.info.participants) {
       if (!participant.summonerId || !participant.puuid) {
         continue;
@@ -694,7 +841,6 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
 
       let rankData = null;
 
-      // Obtener rango desde caché o actualizar desde Riot API
       if (apiKey) {
         rankData = await getOrUpdateSummonerRank(
           participant.puuid,
@@ -715,7 +861,6 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
         losses: rankData?.losses || 0,
       });
 
-      // Pequeño delay para no saturar
       await delay(100);
     }
 
@@ -726,22 +871,55 @@ async function saveMatch(matchData: MatchData): Promise<boolean> {
 
       if (rankError) {
         console.warn(
-          "[saveMatch] Advertencia al guardar ranks (no crítico):",
+          "[processMatchRankingAsync] Advertencia al guardar ranks:",
           rankError.message
         );
       } else {
         console.log(
-          `[saveMatch] ✅ ${rankSnapshots.length} snapshots de ranking guardados`
+          `[processMatchRankingAsync] ✅ ${rankSnapshots.length} snapshots de ranking guardados`
         );
       }
     }
 
-    console.log(`[saveMatch] ✅ Partida ${matchId} guardada exitosamente`);
+    // Marcar como 'ready' cuando todo termina
+    const { error: readyError } = await supabase
+      .from("matches")
+      .update({ ingest_status: "ready" })
+      .eq("match_id", matchId);
 
-    return true;
+    if (readyError) {
+      console.warn(
+        `[processMatchRankingAsync] ⚠️ Error al marcar como ready:`,
+        readyError.message
+      );
+    } else {
+      console.log(
+        `[processMatchRankingAsync] ✅ Partida ${matchId} marcada como 'ready'`
+      );
+    }
+
+    console.log(
+      `[processMatchRankingAsync] ✅ Procesamiento completado para ${matchId}`
+    );
   } catch (error: any) {
-    console.error("[saveMatch] Error:", error.message);
-    return false;
+    console.error(
+      `[processMatchRankingAsync] ❌ Error procesando ${matchId}:`,
+      error.message
+    );
+
+    // Marcar como 'failed' si hay error
+    try {
+      const supabase = getServiceClient();
+      await supabase
+        .from("matches")
+        .update({ ingest_status: "failed" })
+        .eq("match_id", matchId);
+    } catch (failError) {
+      console.error(
+        "[processMatchRankingAsync] Error marcando como failed:",
+        failError
+      );
+    }
   }
 }
 
@@ -931,13 +1109,16 @@ export async function getMatchHistory(
         lane,
         role,
         created_at,
+        ranking_position,
+        performance_score,
         matches!inner (
           match_id,
           game_creation,
           game_duration,
           game_mode,
           queue_id,
-          full_json
+          full_json,
+          ingest_status
         )
       `
       )

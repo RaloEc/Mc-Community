@@ -9,17 +9,20 @@ import {
   getRuneStyleImg,
 } from "@/lib/riot/helpers";
 import { formatRankBadge, getTierColor } from "@/lib/riot/league";
+import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
 
 interface ScoreboardTableProps {
   participants: any[];
   currentUserPuuid?: string;
   gameVersion?: string;
+  gameDuration?: number;
 }
 
 export function ScoreboardTable({
   participants,
   currentUserPuuid,
   gameVersion,
+  gameDuration,
 }: ScoreboardTableProps) {
   // Función para ordenar jugadores por línea
   const laneOrder: Record<string, number> = {
@@ -38,6 +41,9 @@ export function ScoreboardTable({
     });
   };
 
+  const getPlayerKey = (player: any) =>
+    player.puuid ?? `${player.match_id}-${player.summoner_id ?? player.id}`;
+
   const team1 = sortByLane(participants.filter((p: any) => p.win)); // Winners (Blue)
   const team2 = sortByLane(participants.filter((p: any) => !p.win)); // Losers (Red)
 
@@ -52,13 +58,102 @@ export function ScoreboardTable({
     (acc: number, p: any) => acc + p.gold_earned,
     0
   );
+  const team1Damage = team1.reduce(
+    (acc: number, p: any) => acc + (p.total_damage_dealt_to_champions ?? 0),
+    0
+  );
+  const team2Damage = team2.reduce(
+    (acc: number, p: any) => acc + (p.total_damage_dealt_to_champions ?? 0),
+    0
+  );
+
+  const winnersStats = {
+    kills: team1Kills,
+    damage: team1Damage,
+    gold: team1Gold,
+  };
+  const losersStats = {
+    kills: team2Kills,
+    damage: team2Damage,
+    gold: team2Gold,
+  };
+
+  const fallbackScoreMap = new Map<string, number>();
+
+  participants.forEach((player: any) => {
+    const key = getPlayerKey(player);
+    const teamStats = player.win ? winnersStats : losersStats;
+    const playerVisionScore = player.vision_score ?? player.visionScore ?? 0;
+    const derivedGameDuration =
+      gameDuration || player.gameDuration || player.matches?.game_duration || 0;
+
+    const score = calculatePerformanceScore({
+      kills: player.kills,
+      deaths: player.deaths,
+      assists: player.assists,
+      win: player.win,
+      gameDuration: derivedGameDuration,
+      goldEarned: player.gold_earned,
+      totalDamageDealtToChampions:
+        player.total_damage_dealt_to_champions ??
+        player.total_damage_dealt ??
+        0,
+      visionScore: playerVisionScore,
+      totalMinionsKilled:
+        player.total_minions_killed ?? player.totalMinionsKilled ?? 0,
+      neutralMinionsKilled:
+        player.neutral_minions_killed ?? player.neutralMinionsKilled ?? 0,
+      role: player.role || player.lane,
+      teamTotalKills: teamStats.kills,
+      teamTotalDamage: teamStats.damage,
+      teamTotalGold: teamStats.gold,
+      objectivesStolen: player.objectives_stolen ?? 0,
+    });
+
+    fallbackScoreMap.set(key, score);
+  });
+
+  const fallbackRankingEntries = Array.from(fallbackScoreMap.entries()).sort(
+    (a, b) => (b[1] ?? 0) - (a[1] ?? 0)
+  );
+  const fallbackRankingPositions = new Map<string, number>();
+  fallbackRankingEntries.forEach(([key], index) => {
+    fallbackRankingPositions.set(key, index + 1);
+  });
+
+  const playerScores = new Map<string, number>();
+  const rankingPositions = new Map<string, number>();
+
+  participants.forEach((player: any) => {
+    const key = getPlayerKey(player);
+    const persistedScore =
+      typeof player.performance_score === "number"
+        ? player.performance_score
+        : null;
+    const persistedRank =
+      typeof player.ranking_position === "number" && player.ranking_position > 0
+        ? player.ranking_position
+        : null;
+
+    const fallbackScore = fallbackScoreMap.get(key) ?? 0;
+    const fallbackRank = fallbackRankingPositions.get(key) ?? null;
+
+    playerScores.set(key, persistedScore ?? fallbackScore);
+    rankingPositions.set(key, persistedRank ?? fallbackRank ?? 0);
+  });
 
   // Get max damage for scaling bars
   const maxDamage = Math.max(
     ...participants.map((p: any) => p.total_damage_dealt)
   );
 
-  const PlayerRow = ({ player, isCurrentUser, isWinner }: any) => {
+  const PlayerRow = ({
+    player,
+    isCurrentUser,
+    isWinner,
+    performanceScore,
+    rankingPosition,
+  }: any) => {
     const displayName =
       player.riotIdGameName && player.riotIdTagLine
         ? player.riotIdGameName
@@ -104,6 +199,19 @@ export function ScoreboardTable({
     const rankBadge = formatRankBadge(tier, rank);
     const rankColor = getTierColor(tier);
 
+    const rankingBadgeClass = (() => {
+      if (!rankingPosition) {
+        return "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-100";
+      }
+      if (rankingPosition === 1) {
+        return "bg-amber-400 text-slate-900 dark:bg-amber-300";
+      }
+      if (rankingPosition <= 3) {
+        return "bg-sky-400 text-slate-900 dark:bg-sky-300";
+      }
+      return "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100";
+    })();
+
     // Debug info para runas
     if (process.env.NODE_ENV === "development") {
       console.debug("[Scoreboard] Player runes", {
@@ -127,7 +235,7 @@ export function ScoreboardTable({
             : "bg-white/80 dark:bg-transparent hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
         }`}
       >
-        {/* Champion Avatar + KDA Badge + Spells */}
+        {/* Champion Avatar + Spells + Runes */}
         <div className="flex items-start gap-2 flex-shrink-0">
           <div className="relative flex flex-col items-center gap-1">
             <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-slate-200 dark:border-slate-700 group-hover:border-blue-200 dark:group-hover:border-slate-500 transition-colors shadow-sm">
@@ -139,28 +247,27 @@ export function ScoreboardTable({
                 className="object-cover"
               />
             </div>
-            {/* Summoner Spells */}
             <div className="flex gap-1">
               {player.summoner1_id &&
                 getSpellImg(player.summoner1_id, gameVersion) && (
-                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
+                  <div className="w-5 h-5 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner1_id, gameVersion)!}
                       alt="Spell 1"
-                      width={16}
-                      height={16}
+                      width={20}
+                      height={20}
                       className="object-cover"
                     />
                   </div>
                 )}
               {player.summoner2_id &&
                 getSpellImg(player.summoner2_id, gameVersion) && (
-                  <div className="w-4 h-4 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
+                  <div className="w-5 h-5 rounded overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/50 flex-shrink-0">
                     <Image
                       src={getSpellImg(player.summoner2_id, gameVersion)!}
                       alt="Spell 2"
-                      width={16}
-                      height={16}
+                      width={20}
+                      height={20}
                       className="object-cover"
                     />
                   </div>
@@ -168,8 +275,7 @@ export function ScoreboardTable({
             </div>
           </div>
 
-          {/* Runas a la derecha del avatar */}
-          <div className="flex flex-col gap-0.5 mt-0.5">
+          <div className="flex flex-col items-center gap-0.5 mt-0.5">
             {(() => {
               const primarySrc = getRuneStyleImg(
                 player.perk_primary_style || null
@@ -178,22 +284,10 @@ export function ScoreboardTable({
                 player.perk_sub_style || null
               );
 
-              if (process.env.NODE_ENV === "development") {
-                console.debug("[Scoreboard] Rendering runes", {
-                  name: displayName,
-                  primaryStyle: player.perk_primary_style,
-                  primarySrc,
-                  secondaryStyle: player.perk_sub_style,
-                  secondarySrc,
-                  shouldRenderPrimary: !!primarySrc,
-                  shouldRenderSecondary: !!secondarySrc,
-                });
-              }
-
               return (
                 <>
                   {primarySrc && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
                       <img
                         src={primarySrc}
                         alt="Primary Rune"
@@ -215,7 +309,7 @@ export function ScoreboardTable({
                     </div>
                   )}
                   {secondarySrc && (
-                    <div className="w-5 h-5 rounded-full overflow-hidden border border-slate-700 bg-slate-900/60 flex-shrink-0">
+                    <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
                       <img
                         src={secondarySrc}
                         alt="Secondary Rune"
@@ -239,37 +333,18 @@ export function ScoreboardTable({
                 </>
               );
             })()}
-          </div>
-        </div>
-
-        {/* Player Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-col gap-0.5">
             <span
-              className={`font-semibold text-sm ${
-                isCurrentUser
-                  ? isWinner
-                    ? "text-blue-600 dark:text-blue-300"
-                    : "text-rose-600 dark:text-red-300"
-                  : "text-slate-900 dark:text-slate-100"
-              }`}
+              className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow ${rankingBadgeClass}`}
+              title={
+                performanceScore
+                  ? `Posición #${
+                      rankingPosition ?? "-"
+                    } · Score ${performanceScore.toFixed(1)}`
+                  : "Posición no disponible"
+              }
             >
-              {displayName}
+              #{rankingPosition ?? "-"}
             </span>
-            <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-              {player.champion_name}
-            </div>
-            {rankBadge && rankBadge !== "Unranked" ? (
-              <span
-                className={`text-xs font-bold ${rankColor} whitespace-nowrap`}
-              >
-                {rankBadge}
-              </span>
-            ) : division ? (
-              <span className="text-xs bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 px-2 py-1 rounded-md font-semibold border border-slate-200 dark:border-slate-700 whitespace-nowrap">
-                {division}
-              </span>
-            ) : null}
           </div>
         </div>
 
@@ -344,7 +419,7 @@ export function ScoreboardTable({
             <div className="text-[10px] text-slate-500">DMG</div>
           </div>
           <div className="flex flex-col items-center gap-0.5">
-            <div className="text-[11px] font-semibold text-yellow-400">
+            <div className="text-[11px] font-semibold text-slate-900 dark:text-white">
               {(player.gold_earned / 1000).toFixed(1)}k
             </div>
             <div className="text-[10px] text-slate-500">ORO</div>
@@ -377,7 +452,7 @@ export function ScoreboardTable({
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 dark:text-slate-400">O:</span>
-                <span className="font-bold text-yellow-500">
+                <span className="font-bold text-slate-900 dark:text-white">
                   {(team1Gold / 1000).toFixed(1)}k
                 </span>
               </div>
@@ -386,14 +461,19 @@ export function ScoreboardTable({
 
           {/* Players */}
           <div>
-            {team1.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={true}
-              />
-            ))}
+            {team1.map((p: any) => {
+              const key = getPlayerKey(p);
+              return (
+                <PlayerRow
+                  key={p.puuid ?? key}
+                  player={p}
+                  isCurrentUser={p.puuid === currentUserPuuid}
+                  isWinner={true}
+                  performanceScore={playerScores.get(key)}
+                  rankingPosition={rankingPositions.get(key)}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -416,7 +496,7 @@ export function ScoreboardTable({
               </div>
               <div className="flex items-center gap-1">
                 <span className="text-slate-500 dark:text-slate-400">O:</span>
-                <span className="font-bold text-yellow-500">
+                <span className="font-bold text-slate-900 dark:text-white">
                   {(team2Gold / 1000).toFixed(1)}k
                 </span>
               </div>
@@ -425,14 +505,19 @@ export function ScoreboardTable({
 
           {/* Players */}
           <div>
-            {team2.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={false}
-              />
-            ))}
+            {team2.map((p: any) => {
+              const key = getPlayerKey(p);
+              return (
+                <PlayerRow
+                  key={p.puuid ?? key}
+                  player={p}
+                  isCurrentUser={p.puuid === currentUserPuuid}
+                  isWinner={false}
+                  performanceScore={playerScores.get(key)}
+                  rankingPosition={rankingPositions.get(key)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>
@@ -459,7 +544,7 @@ export function ScoreboardTable({
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 dark:text-slate-400">Oro:</span>
-                <span className="font-bold text-yellow-500">
+                <span className="font-bold text-slate-900 dark:text-white">
                   {(team1Gold / 1000).toFixed(1)}k
                 </span>
               </div>
@@ -467,14 +552,19 @@ export function ScoreboardTable({
           </div>
 
           <div>
-            {team1.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={true}
-              />
-            ))}
+            {team1.map((p: any) => {
+              const key = getPlayerKey(p);
+              return (
+                <PlayerRow
+                  key={p.puuid ?? key}
+                  player={p}
+                  isCurrentUser={p.puuid === currentUserPuuid}
+                  isWinner={true}
+                  performanceScore={playerScores.get(key)}
+                  rankingPosition={rankingPositions.get(key)}
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -498,7 +588,7 @@ export function ScoreboardTable({
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-slate-500 dark:text-slate-400">Oro:</span>
-                <span className="font-bold text-yellow-500">
+                <span className="font-bold text-slate-900 dark:text-white">
                   {(team2Gold / 1000).toFixed(1)}k
                 </span>
               </div>
@@ -506,14 +596,19 @@ export function ScoreboardTable({
           </div>
 
           <div>
-            {team2.map((p: any) => (
-              <PlayerRow
-                key={p.puuid}
-                player={p}
-                isCurrentUser={p.puuid === currentUserPuuid}
-                isWinner={false}
-              />
-            ))}
+            {team2.map((p: any) => {
+              const key = getPlayerKey(p);
+              return (
+                <PlayerRow
+                  key={p.puuid ?? key}
+                  player={p}
+                  isCurrentUser={p.puuid === currentUserPuuid}
+                  isWinner={false}
+                  performanceScore={playerScores.get(key)}
+                  rankingPosition={rankingPositions.get(key)}
+                />
+              );
+            })}
           </div>
         </div>
       </div>

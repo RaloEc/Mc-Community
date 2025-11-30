@@ -391,30 +391,34 @@ export function RiotAccountCardVisual({
         </div>
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={onSync}
-            disabled={isSyncing || cooldownSeconds > 0}
-            className="text-xs font-medium text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSyncing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
-            ) : (
-              <RefreshCw className="w-3 h-3" />
-            )}
-            {isSyncing
-              ? "Sincronizando..."
-              : cooldownSeconds > 0
-              ? `Espera ${cooldownSeconds}s`
-              : "Actualizar Datos"}
-          </button>
+          {onSync && (
+            <button
+              onClick={onSync}
+              disabled={isSyncing || cooldownSeconds > 0}
+              className="text-xs font-medium text-gray-500 hover:text-blue-500 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSyncing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+              {isSyncing
+                ? "Sincronizando..."
+                : cooldownSeconds > 0
+                ? `Espera ${cooldownSeconds}s`
+                : "Actualizar Datos"}
+            </button>
+          )}
 
-          <button
-            onClick={onUnlink}
-            className="text-xs font-medium text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors flex items-center gap-1.5"
-          >
-            <Unlink className="w-3 h-3" />
-            Desvincular
-          </button>
+          {onUnlink && (
+            <button
+              onClick={onUnlink}
+              className="text-xs font-medium text-gray-500 hover:text-red-500 dark:text-gray-400 dark:hover:text-red-400 transition-colors flex items-center gap-1.5"
+            >
+              <Unlink className="w-3 h-3" />
+              Desvincular
+            </button>
+          )}
         </div>
       </div>
     </div>

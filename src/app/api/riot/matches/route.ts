@@ -98,8 +98,8 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = getServiceClient();
 
-    // Obtener user_id del header (enviado por el cliente)
-    const userId = request.headers.get("x-user-id");
+    // Obtener user_id del query param (userId)
+    const userId = request.nextUrl.searchParams.get("userId");
     console.log("[GET /api/riot/matches] 🔍 REQUEST - userId:", userId);
     if (!userId) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -198,10 +198,14 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getServiceClient();
 
-    // Obtener user_id del header
-    const userId = request.headers.get("x-user-id");
+    // Obtener userId del body
+    const body = await request.json().catch(() => null);
+    const userId = body?.userId;
     if (!userId) {
-      return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+      return NextResponse.json(
+        { error: "userId es requerido" },
+        { status: 400 }
+      );
     }
 
     // Obtener cuenta de Riot vinculada

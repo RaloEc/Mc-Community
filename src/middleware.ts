@@ -47,9 +47,11 @@ export async function middleware(request: NextRequest) {
   }
 
   // Crear respuesta que será retornada
+  // IMPORTANTE: Preservar headers personalizados del cliente (como x-user-id)
+  const requestHeaders = new Headers(request.headers);
   let response = NextResponse.next({
     request: {
-      headers: request.headers,
+      headers: requestHeaders,
     },
   });
 

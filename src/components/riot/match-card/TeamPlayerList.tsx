@@ -24,7 +24,7 @@ export function TeamPlayerList({
 
   const handleProfileNavigation = useCallback(
     (profileUserId: string) => {
-      router.push(`/perfil/${profileUserId}`);
+      router.push(`/perfil/${profileUserId}?tab=lol`);
     },
     [router]
   );
@@ -82,7 +82,7 @@ export function TeamPlayerList({
                 e.preventDefault();
                 e.stopPropagation();
                 if (e.metaKey || e.ctrlKey) {
-                  window.open(`/perfil/${profileUserId}`, "_blank");
+                  window.open(`/perfil/${profileUserId}?tab=lol`, "_blank");
                   return;
                 }
                 handleProfileNavigation(profileUserId);

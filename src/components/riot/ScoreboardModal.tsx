@@ -24,6 +24,15 @@ interface ScoreboardModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface LinkedAccountEntry {
+  puuid: string;
+  publicId: string | null;
+}
+
+interface LinkedAccountsResponse {
+  accounts: LinkedAccountEntry[];
+}
+
 /**
  * Modal que muestra únicamente el scoreboard de una partida
  * Con botones para ver análisis completo o cerrar
@@ -40,6 +49,9 @@ export function ScoreboardModal({
   const [currentUserPuuid, setCurrentUserPuuid] = useState<
     string | undefined
   >();
+  const [linkedAccountsMap, setLinkedAccountsMap] = useState<
+    Record<string, string>
+  >({});
 
   useEffect(() => {
     if (!open) return;
@@ -86,6 +98,50 @@ export function ScoreboardModal({
 
     loadMatchData();
   }, [matchId, open]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const fetchLinkedAccounts = async () => {
+      try {
+        const response = await fetch("/api/riot/linked-accounts");
+        if (!response.ok) {
+          return;
+        }
+        const data = (await response.json()) as LinkedAccountsResponse;
+        if (!isMounted) {
+          return;
+        }
+
+        const map = data.accounts.reduce<Record<string, string>>(
+          (acc, account) => {
+            if (account.publicId) {
+              acc[account.puuid] = account.publicId;
+            }
+            return acc;
+          },
+          {}
+        );
+
+        setLinkedAccountsMap(map);
+      } catch (linkedAccountsError) {
+        console.error(
+          "[ScoreboardModal] Error fetching linked accounts:",
+          linkedAccountsError
+        );
+      }
+    };
+
+    fetchLinkedAccounts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open]);
 
   const handleViewAnalysis = () => {
     onOpenChange(false);
@@ -138,7 +194,7 @@ export function ScoreboardModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-[98vw] lg:w-[1100px] xl:max-w-[1500px] 2xl:max-w-[1680px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800 max-h-[90vh] p-0 flex flex-col"
+        className="w-full max-w-[98vw] lg:w-[1100px] xl:max-w-[1500px] 2xl:max-w-[1680px] bg-white text-slate-900 border-slate-200 dark:bg-black dark:text-white dark:border-slate-800 max-h-[90vh] p-0 flex flex-col rounded-2xl overflow-hidden focus-visible:outline-none"
       >
         <div className="sr-only">
           <DialogTitle>Scoreboard de la partida</DialogTitle>
@@ -182,22 +238,25 @@ export function ScoreboardModal({
                 participants={participants}
                 currentUserPuuid={currentUserPuuid}
                 gameVersion={gameVersion}
+                gameDuration={durationSeconds}
+                matchInfo={match?.full_json?.info}
+                linkedAccountsMap={linkedAccountsMap}
               />
             )}
           </div>
 
           {!loading && !error && matchData && (
-            <div className="flex flex-row gap-2 items-center justify-end border-t border-slate-200 dark:border-slate-800 px-4 py-3 sm:px-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-center justify-end border-slate-200 dark:border-slate-800 px-4 mb-2 sm:px-6 bg-white dark:bg-black w-full">
               <Button
                 variant="outline"
                 onClick={handleClose}
-                className="border-slate-700 hover:bg-slate-800 px-3 py-2 text-sm"
+                className="h-8 px-3 text-xs border-slate-600 hover:bg-slate-800"
               >
                 Cerrar
               </Button>
               <Button
                 onClick={handleViewAnalysis}
-                className="bg-blue-600 hover:bg-blue-700 px-3 py-2 text-sm"
+                className="h-8 px-3 text-xs bg-blue-600 hover:bg-blue-700"
               >
                 Ver análisis
               </Button>

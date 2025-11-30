@@ -213,6 +213,7 @@ export function MatchDetailContent({ matchId }: MatchDetailContentProps) {
             participants={participants}
             currentUserPuuid={currentUserPuuid}
             gameVersion={gameVersion}
+            gameDuration={match.game_duration}
           />
         </TabsContent>
 

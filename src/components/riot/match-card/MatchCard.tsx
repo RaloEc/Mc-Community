@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Eye } from "lucide-react";
-import { analyzeMatchTags, getTagsInfo } from "@/lib/riot/match-analyzer";
+import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
+import {
+  computeParticipantScores,
+  getParticipantKey as getParticipantKeyUtil,
+  type ParticipantScoreEntry,
+} from "./performance-utils";
 import { TeamPlayerList } from "./TeamPlayerList";
 import { ScoreboardModal } from "@/components/riot/ScoreboardModal";
 import { TeammateTracker } from "@/components/riot/TeammateTracker";
@@ -40,6 +45,7 @@ interface RiotParticipant {
   teamPosition?: string;
   individualPosition?: string;
   lane?: string;
+  role?: string;
   riotIdGameName?: string;
   summonerName?: string;
   totalMinionsKilled?: number;
@@ -47,6 +53,9 @@ interface RiotParticipant {
   gameEndedInEarlySurrender?: boolean;
   teamEarlySurrendered?: boolean;
   damageDealtToTurrets?: number;
+  goldEarned?: number;
+  win?: boolean;
+  objectivesStolen?: number;
 }
 
 interface PlayerSummaryData {
@@ -62,6 +71,7 @@ interface PlayerSummaryData {
   csTotal?: number;
   csPerMinute?: number;
   label?: string;
+  rankingPosition?: number | null;
 }
 
 interface PlayerSummaryProps {
@@ -96,11 +106,98 @@ function calculateKda(kills = 0, deaths = 0, assists = 0): number {
   return (kills + assists) / Math.max(1, deaths);
 }
 
+function getRankingBadgeClass(position?: number | null) {
+  if (!position) {
+    return "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-100";
+  }
+  if (position === 1) {
+    return "bg-amber-400 text-slate-900 dark:bg-amber-300";
+  }
+  if (position <= 3) {
+    return "bg-sky-400 text-slate-900 dark:bg-sky-300";
+  }
+  return "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100";
+}
+
 function getParticipantRuneStyle(
   participant: RiotParticipant | null | undefined,
   index: number
 ): number | undefined {
   return participant?.perks?.styles?.[index]?.style;
+}
+
+interface TeamTotals {
+  kills: number;
+  damage: number;
+  gold: number;
+}
+
+function buildTeamTotals(
+  participants: RiotParticipant[]
+): Record<number, TeamTotals> {
+  return participants.reduce((acc, participant) => {
+    const teamId = participant.teamId ?? 0;
+    if (!acc[teamId]) {
+      acc[teamId] = { kills: 0, damage: 0, gold: 0 };
+    }
+    acc[teamId].kills += participant.kills ?? 0;
+    acc[teamId].damage += participant.totalDamageDealtToChampions ?? 0;
+    acc[teamId].gold += participant.goldEarned ?? 0;
+    return acc;
+  }, {} as Record<number, TeamTotals>);
+}
+
+function buildTeamWinMap(matchInfo: any): Record<number, boolean> {
+  const teams = matchInfo?.teams ?? [];
+  return teams.reduce((acc: Record<number, boolean>, team: any) => {
+    if (typeof team?.teamId === "number") {
+      acc[team.teamId] = Boolean(team.win);
+    }
+    return acc;
+  }, {});
+}
+
+function getParticipantKey(participant?: RiotParticipant | null): string {
+  if (!participant) {
+    return "unknown";
+  }
+  return (
+    participant.puuid ||
+    `${participant.teamId}-${
+      participant.riotIdGameName ??
+      participant.summonerName ??
+      participant.championName
+    }`
+  );
+}
+
+function getParticipantPerformanceScore(
+  participant: RiotParticipant,
+  gameDuration: number,
+  teamTotals: Record<number, TeamTotals>,
+  teamWinMap: Record<number, boolean>
+): number {
+  const teamId = participant.teamId ?? 0;
+  const totals = teamTotals[teamId] ?? { kills: 0, damage: 0, gold: 0 };
+
+  return calculatePerformanceScore({
+    kills: participant.kills ?? 0,
+    deaths: participant.deaths ?? 0,
+    assists: participant.assists ?? 0,
+    win: participant.win ?? teamWinMap[teamId] ?? false,
+    gameDuration,
+    goldEarned: participant.goldEarned ?? 0,
+    totalDamageDealtToChampions: participant.totalDamageDealtToChampions ?? 0,
+    visionScore: participant.visionScore ?? 0,
+    totalMinionsKilled: participant.totalMinionsKilled ?? 0,
+    neutralMinionsKilled: participant.neutralMinionsKilled ?? 0,
+    role:
+      participant.teamPosition ?? participant.role ?? participant.lane ?? null,
+    teamTotalKills: totals.kills,
+    teamTotalDamage: totals.damage,
+    teamTotalGold: totals.gold,
+    objectivesStolen: participant.objectivesStolen ?? 0,
+  });
 }
 
 function findLaneOpponent(
@@ -195,6 +292,16 @@ function PlayerSummarySection({
             className="object-cover p-0.5"
           />
         </div>
+      )}
+      {typeof data.rankingPosition === "number" && data.rankingPosition > 0 && (
+        <span
+          className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow ${getRankingBadgeClass(
+            data.rankingPosition
+          )}`}
+          title={`Ranking global #${data.rankingPosition}`}
+        >
+          #{data.rankingPosition}
+        </span>
       )}
     </div>
   );
@@ -308,6 +415,10 @@ export function MatchCard({
     return null;
   }
 
+  // Estado de ingesta: si está en 'processing', mostrar indicador
+  const isProcessing = (match.matches as any)?.ingest_status === "processing";
+  const isFailed = (match.matches as any)?.ingest_status === "failed";
+
   const isVictory = match.win;
   const REMAKE_DURATION_THRESHOLD = 300; // 5 minutos
   const participants = (match.matches?.full_json?.info?.participants ??
@@ -397,29 +508,54 @@ export function MatchCard({
   const playerVisionScore =
     currentParticipant?.visionScore ?? match.vision_score ?? undefined;
 
-  const tags = analyzeMatchTags({
-    kills: match.kills,
-    deaths: match.deaths,
-    assists: match.assists,
-    win: match.win,
-    gameDuration: match.matches.game_duration,
-    goldEarned: match.gold_earned,
-    csPerMinute: csPerMinute ?? undefined,
-    totalDamageDealtToChampions:
-      currentParticipant?.totalDamageDealtToChampions ?? undefined,
-    totalDamageTaken: currentParticipant?.totalDamageTaken ?? undefined,
-    damageSelfMitigated: currentParticipant?.damageSelfMitigated ?? undefined,
-    visionScore: playerVisionScore,
-    wardsPlaced: currentParticipant?.wardsPlaced ?? undefined,
-    damageToObjectives:
-      currentParticipant?.damageDealtToObjectives ?? undefined,
-    damageToTurrets: currentParticipant?.damageDealtToTurrets ?? undefined,
-    killParticipation: killParticipation ?? undefined,
-    teamDamageShare: teamDamageShare ?? undefined,
-    objectivesStolen: match.objectives_stolen ?? 0,
-  });
+  // Usar ranking y performance score del servidor (persistidos en BD)
+  // IMPORTANTE: No recalcular localmente para mantener consistencia con scoreboards
+  let playerRankingPosition =
+    typeof (match as any).ranking_position === "number" &&
+    (match as any).ranking_position > 0
+      ? (match as any).ranking_position
+      : null;
+  let playerScore =
+    typeof (match as any).performance_score === "number"
+      ? (match as any).performance_score
+      : 0;
 
-  const tagsInfo = getTagsInfo(tags);
+  // Fallback: recalcular SOLO si ambos están ausentes (datos muy antiguos)
+  if (playerRankingPosition === null && playerScore === 0) {
+    const scoreEntries = computeParticipantScores(
+      allParticipants,
+      match.matches.game_duration,
+      match.matches.full_json?.info
+    );
+
+    const sortedByScore = [...scoreEntries].sort(
+      (a, b) => (b.score ?? 0) - (a.score ?? 0)
+    );
+    const rankingPositions = new Map<string, number>();
+    sortedByScore.forEach((entry, index) => {
+      rankingPositions.set(entry.key, index + 1);
+    });
+    const playerKey = currentParticipant
+      ? getParticipantKeyUtil(currentParticipant)
+      : null;
+    const playerScoreEntry = playerKey
+      ? scoreEntries.find((entry) => entry.key === playerKey)
+      : null;
+    playerRankingPosition = playerKey
+      ? rankingPositions.get(playerKey) ?? null
+      : null;
+    playerScore = playerScoreEntry?.score ?? 0;
+
+    if (
+      !playerRankingPosition &&
+      playerScoreEntry &&
+      sortedByScore.length > 0 &&
+      typeof sortedByScore[0]?.score === "number" &&
+      Math.abs(playerScoreEntry.score - (sortedByScore[0]?.score ?? 0)) < 0.01
+    ) {
+      playerRankingPosition = 1;
+    }
+  }
 
   const playerSummary: PlayerSummaryData = {
     championName: match.champion_name,
@@ -434,6 +570,7 @@ export function MatchCard({
     csTotal: playerCs ?? undefined,
     csPerMinute: csPerMinute ?? undefined,
     label: "Tú",
+    rankingPosition: playerRankingPosition,
   };
 
   const opponentSummary: PlayerSummaryData | null = laneOpponentParticipant
@@ -470,6 +607,7 @@ export function MatchCard({
     : "text-red-600 dark:text-red-400";
 
   const outcomeLabel = isRemake ? "Remake" : isVictory ? "Victoria" : "Derrota";
+  const statusLabel = isFailed ? "❌ Error" : outcomeLabel;
 
   return (
     <div className="block">
@@ -481,7 +619,9 @@ export function MatchCard({
         onClick={() => setScoreboardModalOpen(true)}
         className={`
           hidden md:grid grid-cols-[60px,auto,180px,90px,200px] items-center gap-3 p-3 rounded-lg border-l-4 transition-all hover:shadow-lg hover:border-l-8 cursor-pointer
-          ${cardStateClasses}
+          ${isProcessing ? "opacity-70" : ""} ${
+          isFailed ? "opacity-50" : ""
+        } ${cardStateClasses}
         `}
       >
         {/* 1. Metadata */}
@@ -489,7 +629,7 @@ export function MatchCard({
           <span
             className={`uppercase tracking-wide font-semibold ${outcomeTextClass}`}
           >
-            {outcomeLabel}
+            {statusLabel}
           </span>
           <span className="text-sm font-bold text-slate-600 dark:text-white leading-tight">
             {getQueueName(match.matches.queue_id)}
@@ -500,19 +640,6 @@ export function MatchCard({
           <span className="text-xs text-slate-600 dark:text-slate-400">
             {getRelativeTime(match.created_at)}
           </span>
-          {tagsInfo.length > 0 && (
-            <div className="flex flex-wrap gap-1 pt-1">
-              {tagsInfo.map((tag) => (
-                <span
-                  key={tag.tag}
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold shadow-sm ${tag.color}`}
-                  title={tag.description}
-                >
-                  {tag.label}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
 
         {/* 2. Champion summaries */}

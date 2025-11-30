@@ -128,9 +128,9 @@ export function MatchHistoryList({
         "[MatchHistoryList] 🔄 Fetching cached matches for userId:",
         userId
       );
-      const response = await fetch("/api/riot/matches/cache", {
-        headers: { "x-user-id": userId },
-      });
+      const response = await fetch(
+        `/api/riot/matches/cache?userId=${encodeURIComponent(userId)}`
+      );
       if (!response.ok) {
         throw new Error("Error al obtener caché de partidas");
       }
@@ -203,6 +203,7 @@ export function MatchHistoryList({
       if (!userId) throw new Error("No user");
 
       const params = new URLSearchParams();
+      params.set("userId", userId);
 
       // Lazy load: primeras 5 partidas, después 40
       const isFirstPage = pageParam === null;
@@ -228,11 +229,7 @@ export function MatchHistoryList({
         `/api/riot/matches?${params.toString()}`
       );
 
-      const response = await fetch(`/api/riot/matches?${params.toString()}`, {
-        headers: {
-          "x-user-id": userId,
-        },
-      });
+      const response = await fetch(`/api/riot/matches?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error("Failed to fetch matches");
@@ -301,8 +298,9 @@ export function MatchHistoryList({
       const response = await fetch("/api/riot/matches/sync", {
         method: "POST",
         headers: {
-          "x-user-id": userId,
+          "content-type": "application/json",
         },
+        body: JSON.stringify({ userId }),
       });
 
       if (!response.ok) {
@@ -467,6 +465,28 @@ export function MatchHistoryList({
       ? cachedMatches
       : lastStableMatches;
 
+  // Reintentar automáticamente cuando haya partidas en estado "processing"
+  useEffect(() => {
+    if (!matchesToRender || matchesToRender.length === 0) {
+      return;
+    }
+
+    const hasProcessingMatches = matchesToRender.some(
+      (match) => (match.matches as any)?.ingest_status === "processing"
+    );
+
+    if (hasProcessingMatches && !syncMutation.isPending && !isLoading) {
+      const timeout = setTimeout(() => {
+        console.log(
+          "[MatchHistoryList] ♻️ Reintentando fetch por partidas en processing..."
+        );
+        refetch();
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [matchesToRender, syncMutation.isPending, isLoading, refetch]);
+
   const stats = useMemo(() => {
     const sourceMatches =
       matches.length > 0 ? matches : hasCachedMatches ? cachedMatches : null;
@@ -630,7 +650,7 @@ export function MatchHistoryList({
       {/* Lista de Partidas */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-y-auto pr-2 space-y-2 min-h-0 custom-scrollbar"
+        className="flex-1 overflow-y-auto space-y-2 min-h-0 custom-scrollbar"
       >
         {matchesToRender.length === 0 ? (
           <div className="p-4 text-center text-slate-400">

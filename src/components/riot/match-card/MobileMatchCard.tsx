@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { analyzeMatchTags, getTagsInfo } from "@/lib/riot/match-analyzer";
+import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
+import {
+  computeParticipantScores,
+  getParticipantKey as getParticipantKeyUtil,
+} from "./performance-utils";
 import { ScoreboardModal } from "@/components/riot/ScoreboardModal";
 import type { Match } from "./MatchCard";
 import {
@@ -69,6 +73,19 @@ function calculateKda(kills = 0, deaths = 0, assists = 0): number {
   return (kills + assists) / Math.max(1, deaths);
 }
 
+function getRankingBadgeClass(position?: number | null) {
+  if (!position) {
+    return "bg-slate-200 text-slate-800 dark:bg-slate-800 dark:text-slate-100";
+  }
+  if (position === 1) {
+    return "bg-amber-400 text-slate-900 dark:bg-amber-300";
+  }
+  if (position <= 3) {
+    return "bg-sky-400 text-slate-900 dark:bg-sky-300";
+  }
+  return "bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100";
+}
+
 function getParticipantRuneStyle(
   participant: RiotParticipant | null | undefined,
   index: number
@@ -107,6 +124,10 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
     return null;
   }
 
+  // Estado de ingesta
+  const isProcessing = (match.matches as any)?.ingest_status === "processing";
+  const isFailed = (match.matches as any)?.ingest_status === "failed";
+
   const isVictory = match.win;
   const REMAKE_DURATION_THRESHOLD = 300;
   type RemakeFlagsParticipant = {
@@ -138,8 +159,18 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
       ? "text-emerald-700 dark:text-emerald-300"
       : "text-rose-700 dark:text-red-300";
   const queueName = getQueueName(match.matches.queue_id);
-  const resultLabel = isRemake ? "Remake" : isVictory ? "Victoria" : "Derrota";
-  const resultBadgeClass = isRemake
+  const resultLabel = isFailed
+    ? "❌ Error"
+    : isRemake
+    ? "Remake"
+    : isVictory
+    ? "Victoria"
+    : "Derrota";
+  const resultBadgeClass = isProcessing
+    ? "text-slate-700 dark:text-slate-200 bg-slate-100/70 dark:bg-slate-500/15 opacity-70"
+    : isFailed
+    ? "text-slate-700 dark:text-slate-200 bg-slate-100/70 dark:bg-slate-500/15 opacity-50"
+    : isRemake
     ? "text-slate-700 dark:text-slate-200 bg-slate-100/70 dark:bg-slate-500/15"
     : isVictory
     ? "text-emerald-700 dark:text-emerald-200 bg-emerald-100/80 dark:bg-emerald-500/15"
@@ -206,29 +237,54 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
   const playerVisionScore =
     currentParticipant?.visionScore ?? match.vision_score ?? undefined;
 
-  const tags = analyzeMatchTags({
-    kills: match.kills,
-    deaths: match.deaths,
-    assists: match.assists,
-    win: match.win,
-    gameDuration: match.matches.game_duration,
-    goldEarned: match.gold_earned,
-    csPerMinute: csPerMinute ?? undefined,
-    totalDamageDealtToChampions:
-      currentParticipant?.totalDamageDealtToChampions ?? undefined,
-    totalDamageTaken: currentParticipant?.totalDamageTaken ?? undefined,
-    damageSelfMitigated: currentParticipant?.damageSelfMitigated ?? undefined,
-    visionScore: playerVisionScore,
-    wardsPlaced: currentParticipant?.wardsPlaced ?? undefined,
-    damageToObjectives:
-      currentParticipant?.damageDealtToObjectives ?? undefined,
-    damageToTurrets: currentParticipant?.damageDealtToTurrets ?? undefined,
-    killParticipation: killParticipation ?? undefined,
-    teamDamageShare: teamDamageShare ?? undefined,
-    objectivesStolen: match.objectives_stolen ?? 0,
-  });
+  // Usar ranking y performance score del servidor (persistidos en BD)
+  // IMPORTANTE: No recalcular localmente para mantener consistencia con scoreboards
+  let playerRankingPosition =
+    typeof (match as any).ranking_position === "number" &&
+    (match as any).ranking_position > 0
+      ? (match as any).ranking_position
+      : null;
+  let playerScore =
+    typeof (match as any).performance_score === "number"
+      ? (match as any).performance_score
+      : 0;
 
-  const tagsInfo = getTagsInfo(tags);
+  // Fallback: recalcular SOLO si ambos están ausentes (datos muy antiguos)
+  if (playerRankingPosition === null && playerScore === 0) {
+    const scoreEntries = computeParticipantScores(
+      participants,
+      match.matches.game_duration,
+      match.matches.full_json?.info
+    );
+
+    const sortedByScore = [...scoreEntries].sort(
+      (a, b) => (b.score ?? 0) - (a.score ?? 0)
+    );
+    const rankingPositions = new Map<string, number>();
+    sortedByScore.forEach((entry, index) => {
+      rankingPositions.set(entry.key, index + 1);
+    });
+    const playerKey = currentParticipant
+      ? getParticipantKeyUtil(currentParticipant)
+      : null;
+    const playerScoreEntry = playerKey
+      ? scoreEntries.find((entry) => entry.key === playerKey)
+      : null;
+    playerRankingPosition = playerKey
+      ? rankingPositions.get(playerKey) ?? null
+      : null;
+    playerScore = playerScoreEntry?.score ?? 0;
+
+    if (
+      !playerRankingPosition &&
+      playerScoreEntry &&
+      sortedByScore.length > 0 &&
+      typeof sortedByScore[0]?.score === "number" &&
+      Math.abs(playerScoreEntry.score - (sortedByScore[0]?.score ?? 0)) < 0.01
+    ) {
+      playerRankingPosition = 1;
+    }
+  }
 
   const renderSpellIcon = (spellId?: number, alt?: string) => {
     if (!spellId) return null;
@@ -318,6 +374,16 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
                 <div className="flex items-center gap-1">
                   {renderRuneIcon(playerPrimaryRune, "Primary Rune")}
                   {renderRuneIcon(playerSecondaryRune, "Secondary Rune")}
+                  {playerRankingPosition && playerRankingPosition > 0 && (
+                    <span
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow ${getRankingBadgeClass(
+                        playerRankingPosition
+                      )}`}
+                      title={`Ranking global #${playerRankingPosition}`}
+                    >
+                      #{playerRankingPosition}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex flex-col gap-1 items-center">
@@ -429,21 +495,6 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
                     className="object-cover"
                   />
                 )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Badges de análisis */}
-        {tagsInfo.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {tagsInfo.map((tagInfo) => (
-              <div
-                key={tagInfo.tag}
-                className={`px-2 py-0.5 rounded-full text-xs font-semibold ${tagInfo.color}`}
-                title={tagInfo.description}
-              >
-                {tagInfo.label}
               </div>
             ))}
           </div>

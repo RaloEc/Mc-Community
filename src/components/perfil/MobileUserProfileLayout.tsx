@@ -1,20 +1,40 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ChevronLeft, X } from "lucide-react";
 import { PerfilHeader } from "@/components/perfil/PerfilHeader";
 import { FeedActividad } from "@/components/perfil/FeedActividad";
 import { EstadisticasUnificadas } from "@/components/perfil/EstadisticasUnificadas";
+import { ProfileTabs } from "@/components/perfil/ProfileTabs";
+import { RiotAccountCardVisual } from "@/components/riot/RiotAccountCardVisual";
+import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
+import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
 
 import type { ProfileData } from "@/hooks/use-perfil-usuario";
+import type { LinkedAccountRiot } from "@/types/riot";
 
 interface MobileUserProfileLayoutProps {
   profile: ProfileData;
+  riotAccount?: LinkedAccountRiot | null;
+  riotUserId?: string | null;
+  onSync?: () => void;
+  isSyncing?: boolean;
+  syncError?: string | null;
 }
 
 export default function MobileUserProfileLayout({
   profile,
+  riotAccount = null,
+  riotUserId = null,
+  onSync,
+  isSyncing = false,
+  syncError = null,
 }: MobileUserProfileLayoutProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarX, setSidebarX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -80,22 +100,66 @@ export default function MobileUserProfileLayout({
           <PerfilHeader profile={profile} />
         </div>
 
-        {/* Título de actividad */}
-        <div className="sticky top-0 z-20 flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
-            Actividad
-          </h2>
+        {/* Sistema de Pestañas */}
+        <div className="px-4 mt-2">
+          <ProfileTabs hasRiotAccount={!!riotAccount} />
         </div>
 
-        {/* Feed de actividad con scroll infinito */}
-        <div className="px-4 py-6">
-          <FeedActividad
-            ultimosHilos={profile.ultimosHilos}
-            ultimosPosts={profile.ultimosPosts}
-            weaponStatsRecords={profile.weaponStatsRecords}
-            userColor={profile.color}
-          />
-        </div>
+        {/* Contenido según pestaña */}
+        {activeTab === "posts" ? (
+          <>
+            {/* Título de actividad */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-black amoled:bg-black border-b border-gray-200 dark:border-gray-800 amoled:border-gray-800 mt-2">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 amoled:text-gray-100">
+                Actividad
+              </h2>
+            </div>
+
+            {/* Feed de actividad con scroll infinito */}
+            <div className="px-4 py-6">
+              <FeedActividad
+                ultimosHilos={profile.ultimosHilos}
+                ultimosPosts={profile.ultimosPosts}
+                weaponStatsRecords={profile.weaponStatsRecords}
+                userColor={profile.color}
+              />
+            </div>
+          </>
+        ) : (
+          <div className="px-4 py-4 pb-20 space-y-6">
+            {riotAccount ? (
+              <>
+                <RiotAccountCardVisual
+                  account={riotAccount}
+                  isSyncing={isSyncing}
+                  syncError={syncError}
+                  onSync={onSync}
+                />
+
+                <div className="grid grid-cols-1 gap-6">
+                  {/* Estadísticas de campeones */}
+                  {riotAccount.puuid && (
+                    <ChampionStatsSummary puuid={riotAccount.puuid} />
+                  )}
+
+                  {/* Historial de partidas */}
+                  {riotAccount.puuid && (
+                    <MatchHistoryList
+                      userId={riotUserId ?? profile.id}
+                      puuid={riotAccount.puuid}
+                    />
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-gray-500 dark:text-gray-400">
+                  Este usuario no ha vinculado su cuenta de Riot Games.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Indicador visual fijo en la pantalla - Estadísticas */}
