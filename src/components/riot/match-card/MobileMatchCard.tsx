@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { Share2 } from "lucide-react";
+import { useShareMatch } from "@/hooks/use-share-match";
 import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
 import {
   computeParticipantScores,
@@ -119,6 +121,7 @@ interface MobileMatchCardProps {
 
 export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
   const [scoreboardModalOpen, setScoreboardModalOpen] = useState(false);
+  const { shareMatch, isSharing, sharedMatches } = useShareMatch();
 
   if (!match.matches) {
     return null;
@@ -499,6 +502,37 @@ export function MobileMatchCard({ match, version }: MobileMatchCardProps) {
             ))}
           </div>
         )}
+
+        {/* Botón Compartir */}
+        <div className="flex justify-center pt-2 border-t border-slate-200 dark:border-slate-700">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              shareMatch(match.match_id);
+            }}
+            disabled={isSharing || sharedMatches.includes(match.match_id)}
+            className={`
+              flex items-center gap-2 px-3 py-2 rounded text-sm font-medium transition-all
+              ${
+                sharedMatches.includes(match.match_id)
+                  ? "bg-green-500/20 text-green-600 dark:text-green-400 cursor-default"
+                  : "bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
+              }
+            `}
+            title={
+              sharedMatches.includes(match.match_id)
+                ? "Compartida"
+                : "Compartir en Activity"
+            }
+          >
+            <Share2 className="w-4 h-4" />
+            <span>
+              {sharedMatches.includes(match.match_id)
+                ? "Compartida"
+                : "Compartir en Activity"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Modal del Scoreboard */}

@@ -121,6 +121,7 @@ export default function MobileUserProfileLayout({
                 ultimosHilos={profile.ultimosHilos}
                 ultimosPosts={profile.ultimosPosts}
                 weaponStatsRecords={profile.weaponStatsRecords}
+                ultimasPartidas={profile.ultimasPartidas}
                 userColor={profile.color}
               />
             </div>

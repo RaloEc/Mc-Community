@@ -44,6 +44,7 @@ interface RiotAccountCardVisualProps {
   onSync?: () => void;
   onUnlink?: () => void;
   cooldownSeconds?: number;
+  hideSync?: boolean;
 }
 
 /**
@@ -58,6 +59,7 @@ export function RiotAccountCardVisual({
   onSync,
   onUnlink,
   cooldownSeconds = 0,
+  hideSync = false,
 }: RiotAccountCardVisualProps) {
   const [userId, setUserId] = useState<string | null>(account.user_id ?? null);
   const [topChampionName, setTopChampionName] = useState<string | null>(null);
@@ -391,7 +393,7 @@ export function RiotAccountCardVisual({
         </div>
 
         <div className="flex items-center gap-4">
-          {onSync && (
+          {onSync && !hideSync && (
             <button
               onClick={onSync}
               disabled={isSyncing || cooldownSeconds > 0}

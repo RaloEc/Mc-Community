@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useSearchParams } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePerfilUsuario } from "@/hooks/use-perfil-usuario";
 import { PerfilHeader } from "@/components/perfil/PerfilHeader";
@@ -24,6 +25,7 @@ export default function UserProfilePage() {
   const isMobile = useIsMobile(1024);
   const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const {
     data: profile,
@@ -190,6 +192,8 @@ export default function UserProfilePage() {
     return <PerfilError error={new Error("Perfil no encontrado")} />;
   }
 
+  const isOwnProfile = Boolean(user && profile && user.id === profile.id);
+
   // Layout móvil
   if (isMobile) {
     return (
@@ -224,12 +228,17 @@ export default function UserProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
             {/* Columna izquierda - Feed de actividad (estilo red social) */}
             <div className="lg:col-span-2 space-y-6 sm:space-y-8">
-              {/* Feed unificado de hilos y respuestas */}
+              {/* Feed unificado de hilos, respuestas y partidas */}
               <FeedActividad
                 ultimosHilos={profile.ultimosHilos}
                 ultimosPosts={profile.ultimosPosts}
                 weaponStatsRecords={profile.weaponStatsRecords}
+                ultimasPartidas={profile.ultimasPartidas}
                 userColor={profile.color}
+                isOwnProfile={Boolean(
+                  user && profile && user.id === profile.id
+                )}
+                onMatchDeleted={() => refetch()}
               />
             </div>
 

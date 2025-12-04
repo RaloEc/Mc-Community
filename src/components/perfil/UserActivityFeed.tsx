@@ -8,16 +8,54 @@ import {
   Newspaper,
   MessageSquare,
   MessageCircle,
+  Trophy,
 } from "lucide-react";
 import React from "react";
+import { SharedMatchCard, SharedMatchData } from "./SharedMatchCard";
 
 interface ActivityItem {
   id: string;
-  type: "noticia" | "comentario" | "hilo" | "respuesta";
+  type: "noticia" | "comentario" | "hilo" | "respuesta" | "lol_match";
   title: string;
   preview?: string;
   timestamp: string;
   category: string;
+  matchId?: string;
+  championName?: string;
+  role?: string;
+  win?: boolean;
+  kda?: number;
+  kills?: number;
+  deaths?: number;
+  assists?: number;
+  // Campos extendidos para lol_match
+  entryId?: string;
+  championId?: number;
+  lane?: string;
+  totalCS?: number;
+  csPerMin?: number;
+  visionScore?: number;
+  damageToChampions?: number;
+  damageToTurrets?: number;
+  goldEarned?: number;
+  items?: number[];
+  summoner1Id?: number;
+  summoner2Id?: number;
+  perkPrimaryStyle?: number;
+  perkSubStyle?: number;
+  rankingPosition?: number | null;
+  performanceScore?: number | null;
+  queueId?: number;
+  gameDuration?: number;
+  gameCreation?: number;
+  dataVersion?: string;
+  tier?: string | null;
+  rank?: string | null;
+  leaguePoints?: number;
+  rankWins?: number;
+  rankLosses?: number;
+  comment?: string | null;
+  perks?: SharedMatchData["perks"];
 }
 
 interface UserActivityFeedProps {
@@ -83,6 +121,13 @@ export const UserActivityFeed = ({
             style={{ color: `var(--user-color)`, ...colorStyle }}
           />
         );
+      case "lol_match":
+        return (
+          <Trophy
+            className="w-5 h-5 flex-shrink-0"
+            style={{ color: `var(--user-color)`, ...colorStyle }}
+          />
+        );
       default:
         return null;
     }
@@ -98,6 +143,8 @@ export const UserActivityFeed = ({
         return `/foro/hilos/${item.id.replace("hilo-", "")}`;
       case "respuesta":
         return `/foro`;
+      case "lol_match":
+        return item.matchId ? `/match/${item.matchId}` : "#";
       default:
         return "#";
     }
@@ -132,66 +179,118 @@ export const UserActivityFeed = ({
 
   return (
     <div className="space-y-4">
-      {items.map((item) => (
-        <Card
-          key={item.id}
-          className="transition-shadow hover:shadow-lg dark:border-gray-800 overflow-hidden"
-        >
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col gap-3">
-              {/* Header */}
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-grow min-w-0">
-                  <Link href={getLink(item)} className="group">
-                    <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-2 text-foreground">
-                      {item.title}
-                    </h3>
-                  </Link>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span
-                      className="inline-block text-xs px-2 py-1 rounded-full text-foreground"
-                      style={{
-                        backgroundColor: `color-mix(in srgb, var(--user-color) 15%, transparent)`,
-                        color: `var(--user-color)`,
-                        ...colorStyle,
-                      }}
-                    >
-                      {item.category}
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatearFecha(item.timestamp)}
-                    </span>
+      {items.map((item) => {
+        if (item.type === "lol_match") {
+          // Construir objeto SharedMatchData con los datos del item
+          const matchData: SharedMatchData = {
+            entryId: item.entryId || item.id.replace("lol_match-", ""),
+            matchId: item.matchId || "",
+            championId: item.championId || 0,
+            championName: item.championName || "Desconocido",
+            role: item.role || "Unknown",
+            lane: item.lane || item.role || "Unknown",
+            kda: item.kda || 0,
+            kills: item.kills || 0,
+            deaths: item.deaths || 0,
+            assists: item.assists || 0,
+            totalCS: item.totalCS || 0,
+            csPerMin: item.csPerMin || 0,
+            visionScore: item.visionScore || 0,
+            damageToChampions: item.damageToChampions || 0,
+            damageToTurrets: item.damageToTurrets || 0,
+            goldEarned: item.goldEarned || 0,
+            items: item.items || [0, 0, 0, 0, 0, 0, 0],
+            summoner1Id: item.summoner1Id || 0,
+            summoner2Id: item.summoner2Id || 0,
+            perkPrimaryStyle: item.perkPrimaryStyle || 0,
+            perkSubStyle: item.perkSubStyle || 0,
+            rankingPosition: item.rankingPosition || null,
+            performanceScore: item.performanceScore || null,
+            result: item.win ? "win" : "loss",
+            queueId: item.queueId || 0,
+            gameDuration: item.gameDuration || 0,
+            gameCreation: item.gameCreation || 0,
+            dataVersion: item.dataVersion || "14.23.1",
+            tier: item.tier || null,
+            rank: item.rank || null,
+            leaguePoints: item.leaguePoints || 0,
+            rankWins: item.rankWins || 0,
+            rankLosses: item.rankLosses || 0,
+            comment: item.comment || null,
+            created_at: item.timestamp,
+            perks: item.perks,
+          };
+
+          return (
+            <SharedMatchCard
+              key={item.id}
+              partida={matchData}
+              userColor={userColor}
+            />
+          );
+        }
+
+        return (
+          <Card
+            key={item.id}
+            className="transition-shadow hover:shadow-lg dark:border-gray-800 overflow-hidden"
+          >
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col gap-3">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-grow min-w-0">
+                    <Link href={getLink(item)} className="group">
+                      <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-2 text-foreground">
+                        {item.title}
+                      </h3>
+                    </Link>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span
+                        className="inline-block text-xs px-2 py-1 rounded-full text-foreground"
+                        style={{
+                          backgroundColor: `color-mix(in srgb, var(--user-color) 15%, transparent)`,
+                          color: `var(--user-color)`,
+                          ...colorStyle,
+                        }}
+                      >
+                        {item.category}
+                      </span>
+                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatearFecha(item.timestamp)}
+                      </span>
+                    </div>
                   </div>
+                  {getIcon(item.type)}
                 </div>
-                {getIcon(item.type)}
-              </div>
 
-              {/* Preview del contenido */}
-              {item.preview && (
-                <p className="text-sm text-muted-foreground line-clamp-2">
-                  {item.preview}
-                </p>
-              )}
+                {/* Preview del contenido */}
+                {item.preview && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {item.preview}
+                  </p>
+                )}
 
-              {/* Link */}
-              <div className="pt-2 border-t dark:border-gray-700">
-                <Link
-                  href={getLink(item)}
-                  className="flex items-center gap-1 text-xs hover:underline"
-                  style={{
-                    color: `var(--user-color)`,
-                    ...colorStyle,
-                  }}
-                >
-                  Ver más
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
+                {/* Link */}
+                <div className="pt-2 border-t dark:border-gray-700">
+                  <Link
+                    href={getLink(item)}
+                    className="flex items-center gap-1 text-xs hover:underline"
+                    style={{
+                      color: `var(--user-color)`,
+                      ...colorStyle,
+                    }}
+                  >
+                    Ver más
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 };

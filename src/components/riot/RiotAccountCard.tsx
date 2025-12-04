@@ -20,6 +20,8 @@ import { RiotAccountCardSkeleton } from "./RiotAccountCardSkeleton";
 interface RiotAccountCardProps {
   onUnlink?: () => void;
   useVisualDesign?: boolean;
+  externalSyncPending?: boolean;
+  externalCooldownSeconds?: number;
 }
 
 /**
@@ -28,6 +30,8 @@ interface RiotAccountCardProps {
 export function RiotAccountCard({
   onUnlink,
   useVisualDesign = true,
+  externalSyncPending = false,
+  externalCooldownSeconds = 0,
 }: RiotAccountCardProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -175,11 +179,12 @@ export function RiotAccountCard({
       <RiotAccountCardVisual
         account={riotAccount}
         isLoading={isLoading}
-        isSyncing={syncMutation.isPending}
+        isSyncing={syncMutation.isPending || externalSyncPending}
         syncError={syncError}
         onSync={() => syncMutation.mutate()}
         onUnlink={onUnlink}
-        cooldownSeconds={cooldownSeconds}
+        cooldownSeconds={Math.max(cooldownSeconds, externalCooldownSeconds)}
+        hideSync={externalSyncPending || externalCooldownSeconds > 0}
       />
     );
   }

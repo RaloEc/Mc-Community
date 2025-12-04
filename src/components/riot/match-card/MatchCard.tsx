@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Eye } from "lucide-react";
+import { Eye, Share2 } from "lucide-react";
+import { useShareMatch } from "@/hooks/use-share-match";
 import { calculatePerformanceScore } from "@/lib/riot/match-analyzer";
 import {
   computeParticipantScores,
@@ -409,6 +410,7 @@ export function MatchCard({
   recentMatches = [],
 }: MatchCardProps) {
   const [scoreboardModalOpen, setScoreboardModalOpen] = useState(false);
+  const { shareMatch, isSharing, sharedMatches } = useShareMatch();
 
   // Validar que match.matches existe
   if (!match.matches) {
@@ -710,7 +712,7 @@ export function MatchCard({
           </div>
         </div>
 
-        {/* 4. Stats */}
+        {/* 4. Stats & Share */}
         <div className="flex flex-col items-center gap-2 text-xs">
           <div className="flex items-center gap-2 text-slate-800 dark:text-slate-200 font-semibold">
             <Eye
@@ -719,6 +721,33 @@ export function MatchCard({
             />
             <span>{match.vision_score}</span>
           </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              shareMatch(match.match_id);
+            }}
+            disabled={isSharing || sharedMatches.includes(match.match_id)}
+            className={`
+              flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-all
+              ${
+                sharedMatches.includes(match.match_id)
+                  ? "bg-green-500/20 text-green-600 dark:text-green-400 cursor-default"
+                  : "bg-blue-500/20 text-blue-600 dark:text-blue-400 hover:bg-blue-500/30 disabled:opacity-50"
+              }
+            `}
+            title={
+              sharedMatches.includes(match.match_id)
+                ? "Compartida"
+                : "Compartir en Activity"
+            }
+          >
+            <Share2 className="w-3 h-3" />
+            <span className="hidden sm:inline">
+              {sharedMatches.includes(match.match_id)
+                ? "Compartida"
+                : "Compartir"}
+            </span>
+          </button>
           <TeammateTracker
             matches={recentMatches}
             currentPuuid={match.puuid}

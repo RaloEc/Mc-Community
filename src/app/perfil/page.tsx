@@ -24,6 +24,7 @@ import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
 import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
 import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
+import { UnifiedRiotSyncButton } from "@/components/riot/UnifiedRiotSyncButton";
 import {
   Card,
   CardBody,
@@ -86,6 +87,8 @@ function PerfilPageContent() {
     hilos: 0,
     respuestas: 0,
   });
+  const [unifiedSyncPending, setUnifiedSyncPending] = useState(false);
+  const [unifiedSyncCooldown, setUnifiedSyncCooldown] = useState(0);
 
   // Estados para el modal de edición
   const [editData, setEditData] = useState({
@@ -908,8 +911,20 @@ function PerfilPageContent() {
           <div className="mt-8 space-y-6">
             {riotAccount ? (
               <>
+                {/* Botón unificado de sincronización */}
+                <div className="flex justify-end">
+                  <UnifiedRiotSyncButton
+                    userColor={perfil?.color}
+                    showLabel={true}
+                  />
+                </div>
+
                 {/* Tarjeta de cuenta de Riot */}
-                <RiotAccountCard useVisualDesign={true} />
+                <RiotAccountCard
+                  useVisualDesign={true}
+                  externalSyncPending={unifiedSyncPending}
+                  externalCooldownSeconds={unifiedSyncCooldown}
+                />
 
                 {/* Resumen de campeones */}
                 {riotAccount.puuid && (
@@ -917,7 +932,11 @@ function PerfilPageContent() {
                 )}
 
                 {/* Historial de partidas */}
-                <MatchHistoryList userId={user?.id} />
+                <MatchHistoryList
+                  userId={user?.id}
+                  externalSyncPending={unifiedSyncPending}
+                  externalCooldownSeconds={unifiedSyncCooldown}
+                />
               </>
             ) : null}
           </div>

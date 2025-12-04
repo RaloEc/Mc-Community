@@ -23,6 +23,8 @@ import { useAuth } from "@/context/AuthContext";
 interface MatchHistoryListProps {
   userId?: string;
   puuid?: string;
+  externalSyncPending?: boolean;
+  externalCooldownSeconds?: number;
 }
 
 interface PlayerStats {
@@ -85,6 +87,8 @@ const DEFAULT_STATS: PlayerStats = {
 export function MatchHistoryList({
   userId: propUserId,
   puuid,
+  externalSyncPending = false,
+  externalCooldownSeconds = 0,
 }: MatchHistoryListProps = {}) {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -591,31 +595,33 @@ export function MatchHistoryList({
               {stats.winrate}% WR
             </p>
           </div>
-          <Button
-            onClick={() => syncMutation.mutate()}
-            disabled={syncMutation.isPending}
-            variant="outline"
-            size="sm"
-            style={{
-              borderColor: userColor,
-              color: syncMutation.isPending ? "#0f172a" : undefined,
-              backgroundColor: syncMutation.isPending
-                ? getColorWithAlpha(userColor, 0.2)
-                : undefined,
-            }}
-          >
-            {syncMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Sincronizando...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Actualizar
-              </>
-            )}
-          </Button>
+          {!externalSyncPending && externalCooldownSeconds === 0 && (
+            <Button
+              onClick={() => syncMutation.mutate()}
+              disabled={syncMutation.isPending}
+              variant="outline"
+              size="sm"
+              style={{
+                borderColor: userColor,
+                color: syncMutation.isPending ? "#0f172a" : undefined,
+                backgroundColor: syncMutation.isPending
+                  ? getColorWithAlpha(userColor, 0.2)
+                  : undefined,
+              }}
+            >
+              {syncMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sincronizando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Actualizar
+                </>
+              )}
+            </Button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-2">
