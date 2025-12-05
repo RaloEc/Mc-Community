@@ -9,13 +9,21 @@ import {
   MessageSquare,
   MessageCircle,
   Trophy,
+  EyeOff,
 } from "lucide-react";
 import React from "react";
 import { SharedMatchCard, SharedMatchData } from "./SharedMatchCard";
+import { ActivityCardMenu } from "@/components/perfil/ActivityCardMenu";
 
 interface ActivityItem {
   id: string;
-  type: "noticia" | "comentario" | "hilo" | "respuesta" | "lol_match";
+  type:
+    | "noticia"
+    | "comentario"
+    | "hilo"
+    | "respuesta"
+    | "lol_match"
+    | "weapon";
   title: string;
   preview?: string;
   timestamp: string;
@@ -56,18 +64,32 @@ interface ActivityItem {
   rankLosses?: number;
   comment?: string | null;
   perks?: SharedMatchData["perks"];
+  gifUrl?: string;
+  content?: string;
 }
 
 interface UserActivityFeedProps {
   items: ActivityItem[];
   userColor?: string;
   isLoading?: boolean;
+  isAdmin?: boolean;
+  isOwnProfile?: boolean;
+  hiddenIds?: Set<string>;
+  onHideItem?: (id: string) => void;
+  onUnhideItem?: (id: string) => void;
+  filter?: "all" | "hilos" | "respuestas" | "partidas" | "armas";
 }
 
 export const UserActivityFeed = ({
   items,
   userColor = "#3b82f6",
   isLoading = false,
+  isAdmin = false,
+  isOwnProfile = true,
+  hiddenIds = new Set<string>(),
+  onHideItem,
+  onUnhideItem,
+  filter = "all",
 }: UserActivityFeedProps) => {
   const colorStyle = {
     "--user-color": userColor,
@@ -177,11 +199,30 @@ export const UserActivityFeed = ({
     );
   }
 
+  const filteredItems = React.useMemo(() => {
+    return items.filter((item) => {
+      if (filter === "all") return true;
+      if (filter === "hilos") return item.type === "hilo";
+      if (filter === "respuestas")
+        return item.type === "respuesta" || item.type === "comentario";
+      if (filter === "partidas") return item.type === "lol_match";
+      if (filter === "armas") return item.type === "weapon";
+      return true;
+    });
+  }, [items, filter]);
+
   return (
     <div className="space-y-4">
-      {items.map((item) => {
+      {filteredItems.map((item) => {
+        const matchHiddenKey =
+          item.type === "lol_match" && item.matchId
+            ? `match-${item.matchId}`
+            : null;
+        const isHidden =
+          hiddenIds.has(item.id) ||
+          (matchHiddenKey ? hiddenIds.has(matchHiddenKey) : false);
+
         if (item.type === "lol_match") {
-          // Construir objeto SharedMatchData con los datos del item
           const matchData: SharedMatchData = {
             entryId: item.entryId || item.id.replace("lol_match-", ""),
             matchId: item.matchId || "",
@@ -226,6 +267,11 @@ export const UserActivityFeed = ({
               key={item.id}
               partida={matchData}
               userColor={userColor}
+              isAdmin={isAdmin}
+              isOwnProfile={isOwnProfile}
+              isHidden={isHidden}
+              onHide={() => onHideItem?.(item.id)}
+              onUnhide={() => onUnhideItem?.(item.id)}
             />
           );
         }
@@ -233,12 +279,25 @@ export const UserActivityFeed = ({
         return (
           <Card
             key={item.id}
-            className="transition-shadow hover:shadow-lg dark:border-gray-800 overflow-hidden"
+            className={`transition-shadow hover:shadow-lg dark:border-gray-800 overflow-hidden ${
+              isHidden ? "opacity-60" : ""
+            }`}
           >
             <CardContent className="p-4 sm:p-6">
               <div className="flex flex-col gap-3">
+                {/*
+                  ID para backend sin prefijos (hilo-, respuesta-, comentario-, noticia-).
+                  Evita que el endpoint /user-activity/hide falle y así podemos marcar como oculto.
+                */}
+                {/*
+                  Nota: mantenemos item.id (con prefijo) para marcar UI hiddenIds,
+                  pero enviamos backendActivityId al menú de acciones.
+                */}
+                {(() => {
+                  return null;
+                })()}
                 {/* Header */}
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-3">
                   <div className="flex-grow min-w-0">
                     <Link href={getLink(item)} className="group">
                       <h3 className="text-base sm:text-lg font-semibold group-hover:underline line-clamp-2 text-foreground">
@@ -260,20 +319,81 @@ export const UserActivityFeed = ({
                         <Clock className="w-3 h-3" />
                         {formatearFecha(item.timestamp)}
                       </span>
+                      {isHidden && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-500/15 border border-amber-200/70 dark:border-amber-500/30 rounded-full px-2 py-0.5">
+                          <EyeOff className="w-3 h-3" /> Oculto para ti
+                        </span>
+                      )}
                     </div>
                   </div>
-                  {getIcon(item.type)}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {getIcon(item.type)}
+                    {/*
+                      Normalizamos el ID para el backend quitando prefijos conocidos.
+                    */}
+                    {(() => {
+                      const backendActivityId = item.id.replace(
+                        /^(hilo|respuesta|comentario|noticia|lol_match)-/,
+                        ""
+                      );
+                      return (
+                        <ActivityCardMenu
+                          activityType={
+                            item.type === "hilo"
+                              ? "forum_thread"
+                              : item.type === "respuesta"
+                              ? "forum_post"
+                              : item.type === "comentario"
+                              ? "forum_post"
+                              : item.type === "noticia"
+                              ? "noticia"
+                              : "forum_post"
+                          }
+                          activityId={backendActivityId}
+                          isOwnProfile={isOwnProfile}
+                          isAdmin={isAdmin}
+                          onHide={() => onHideItem?.(item.id)}
+                          onUnhide={() => onUnhideItem?.(item.id)}
+                          onDelete={() => onHideItem?.(item.id)}
+                          isHidden={isHidden}
+                        />
+                      );
+                    })()}
+                  </div>
                 </div>
 
-                {/* Preview del contenido */}
-                {item.preview && (
+                {/* Contenido enriquecido (solo hilos) o preview */}
+                {item.type === "hilo" && item.content ? (
+                  <div className="relative">
+                    <div className="prose prose-sm dark:prose-invert max-h-64 overflow-hidden">
+                      <div
+                        className="text-sm leading-relaxed space-y-2"
+                        dangerouslySetInnerHTML={{ __html: item.content }}
+                      />
+                    </div>
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
+                  </div>
+                ) : item.preview ? (
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {item.preview}
                   </p>
+                ) : null}
+
+                {/* GIF adjunto */}
+                {item.gifUrl && (
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-black/5 dark:bg-white/5 p-2 flex justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.gifUrl}
+                      alt="GIF adjunto"
+                      className="max-h-60 w-full h-auto object-contain"
+                      loading="lazy"
+                    />
+                  </div>
                 )}
 
                 {/* Link */}
-                <div className="pt-2 border-t dark:border-gray-700">
+                {/* <div className="pt-2 border-t dark:border-gray-700">
                   <Link
                     href={getLink(item)}
                     className="flex items-center gap-1 text-xs hover:underline"
@@ -282,10 +402,10 @@ export const UserActivityFeed = ({
                       ...colorStyle,
                     }}
                   >
-                    Ver más
+                    Ver másaaaaaaaa
                     <ExternalLink className="w-3 h-3" />
                   </Link>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

@@ -17,6 +17,7 @@ import {
   Swords,
   Target,
   LifeBuoy,
+  EyeOff,
 } from "lucide-react";
 import { ChampionCenteredSplash } from "@/components/riot/ChampionCenteredSplash";
 import {
@@ -41,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
+import { ActivityCardMenu } from "@/components/perfil/ActivityCardMenu";
 import type { LucideIcon } from "lucide-react";
 
 export interface SharedMatchData {
@@ -86,8 +88,12 @@ interface SharedMatchCardProps {
   partida: SharedMatchData;
   userColor?: string;
   isOwnProfile?: boolean;
+  isAdmin?: boolean;
   onDelete?: (entryId: string) => Promise<void>;
   deletingId?: string | null;
+  onHide?: () => void;
+  onUnhide?: () => void;
+  isHidden?: boolean;
 }
 
 type RuneSelection = {
@@ -181,8 +187,12 @@ export const SharedMatchCard = ({
   partida,
   userColor = "#3b82f6",
   isOwnProfile = false,
+  isAdmin = false,
   onDelete,
   deletingId,
+  onHide,
+  onUnhide,
+  isHidden = false,
 }: SharedMatchCardProps) => {
   const isWin = partida.result === "win";
   const isVictory = isWin;
@@ -209,6 +219,11 @@ export const SharedMatchCard = ({
   const laneAbbreviation = getLaneAbbreviation(partida.role, partida.lane);
   const laneIconKey = laneAbbreviation?.toUpperCase();
   const LaneIcon = laneIconKey ? laneIconMap[laneIconKey] : null;
+
+  const rankingBadgeClass =
+    partida.rankingPosition && partida.rankingPosition <= 3
+      ? "border-white/30 bg-white/20 text-slate-900 dark:text-white shadow-[0_10px_30px_rgba(0,0,0,0.25)] backdrop-blur-[2px] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/70 before:to-transparent after:content-[''] after:absolute after:top-0 after:left-0 after:w-px after:h-full after:bg-gradient-to-b after:from-white/70 after:via-transparent after:to-white/30"
+      : "border-white/60 bg-white/80 text-slate-900 dark:text-white shadow-[0_6px_20px_rgba(15,23,42,0.15)] backdrop-blur-[2px] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/60 before:to-transparent after:content-[''] after:absolute after:top-0 after:left-0 after:w-px after:h-full after:bg-gradient-to-b after:from-white/60 after:via-transparent after:to-white/25 dark:bg-white/10 dark:text-white";
 
   const runeStyles = partida.perks?.styles ?? [];
   const primaryStyle =
@@ -375,8 +390,12 @@ export const SharedMatchCard = ({
 
   return (
     <TooltipProvider delayDuration={150}>
-      <Card className="transition-shadow hover:shadow-xl border-none bg-white/70 dark:bg-slate-950/60 overflow-hidden">
-        <div className="relative min-h-[28rem]">
+      <Card
+        className={`transition-shadow hover:shadow-xl border-none bg-white/70 dark:bg-slate-950/60 overflow-hidden ${
+          isHidden ? "opacity-60" : ""
+        }`}
+      >
+        <div className="relative min-h-[22rem]">
           {/* Splash art base */}
           <div className="absolute inset-0 overflow-hidden">
             <ChampionCenteredSplash
@@ -389,10 +408,10 @@ export const SharedMatchCard = ({
           </div>
 
           {/* Contenido superpuesto */}
-          <div className="relative z-10 flex flex-col gap-5 p-4 sm:p-6 text-slate-900 dark:text-white">
+          <div className="relative z-10 flex flex-col gap-4 p-4 sm:p-6 text-slate-900 dark:text-white">
             {/* Header */}
             <div className="flex flex-col gap-4">
-              <div className="flex items-start gap-4">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-grow min-w-0 space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
@@ -401,13 +420,13 @@ export const SharedMatchCard = ({
                       {isVictory ? "Victoria" : "Derrota"}
                     </span>
                     {partida.tier && (
-                      <div className="inline-flex items-center gap-2 bg-black/50 rounded-full pl-1 pr-2 py-0.5">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/85 px-1.5 py-1 text-slate-900 shadow-sm shadow-slate-900/10 backdrop-blur-[2px] dark:border-white/25 dark:bg-black/40 dark:text-white">
                         <RiotTierBadge
                           tier={partida.tier}
                           rank={partida.rank}
                           size="sm"
                         />
-                        <span className="text-[11px] font-semibold text-slate-900 dark:text-white/85">
+                        <span className="text-[11px] font-semibold tracking-wide">
                           {rankLabel}
                         </span>
                       </div>
@@ -416,75 +435,75 @@ export const SharedMatchCard = ({
                   <div className="flex flex-wrap items-center gap-3">
                     <h3 className="text-2xl font-bold drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)] flex items-center gap-2">
                       <span>{partida.championName}</span>
-                      {laneAbbreviation && (
-                        <span className="text-xs font-semibold tracking-wide uppercase bg-white/70 text-slate-900 dark:bg-white/15 dark:text-white rounded-full px-2 py-0.5 flex items-center gap-1">
-                          {LaneIcon && <LaneIcon className="w-3 h-3" />}
-                          {laneAbbreviation}
+                      {isHidden && (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-200 bg-amber-100/90 dark:bg-amber-500/15 border border-amber-200/70 dark:border-amber-500/30 rounded-full px-2 py-0.5 ml-2">
+                          <EyeOff className="w-3 h-3" /> Oculto para ti
                         </span>
                       )}
                     </h3>
                     {partida.rankingPosition && (
                       <div
-                        className="flex items-center justify-center w-10 h-10 rounded-full font-semibold text-white drop-shadow-lg text-xs"
-                        style={{
-                          backgroundColor:
-                            partida.rankingPosition === 1
-                              ? "rgba(34, 197, 94, 0.85)"
-                              : "rgba(100, 116, 139, 0.75)",
-                        }}
+                        className={`relative overflow-hidden flex items-center justify-center w-12 h-12 rounded-2xl font-bold text-xs tracking-tight border ${rankingBadgeClass}`}
                       >
-                        #{partida.rankingPosition}
+                        <div className="flex flex-col items-center leading-tight text-slate-900 dark:text-white">
+                          <span className="text-[10px] uppercase font-semibold opacity-80">
+                            Rank
+                          </span>
+                          <span className="text-base font-semibold">
+                            #{partida.rankingPosition}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-white/80">
-                    {runeIconsWithTooltip}
-                    <span className="h-4 w-px bg-white/25" />
-                    <div className="flex items-center gap-1 text-slate-600 dark:text-white">
-                      {partida.summoner1Id > 0 && (
-                        <div className="relative w-6 h-6 rounded bg-white/15 overflow-hidden">
-                          <Image
-                            src={getSummonerSpellUrl(
-                              partida.summoner1Id,
-                              ddragonVersion
-                            )}
-                            alt="Hechizo 1"
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                      {partida.summoner2Id > 0 && (
-                        <div className="relative w-6 h-6 rounded bg-white/15 overflow-hidden">
-                          <Image
-                            src={getSummonerSpellUrl(
-                              partida.summoner2Id,
-                              ddragonVersion
-                            )}
-                            alt="Hechizo 2"
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <span className="h-4 w-px bg-white/25" />
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>{relativeTime}</span>
-                    </div>
-                  </div>
                 </div>
-                <div className="flex-shrink-0">
-                  <Link
-                    href={`/match/${partida.matchId}`}
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 border border-slate-900/30 text-slate-900 font-semibold hover:bg-slate-900/10 transition-colors text-sm dark:border-white/40 dark:text-white dark:hover:bg-white/15"
-                  >
-                    Ver análisis completo
-                    <ExternalLink className="w-3 h-3" />
-                  </Link>
+                <ActivityCardMenu
+                  activityType="lol_match"
+                  activityId={partida.matchId}
+                  isOwnProfile={isOwnProfile}
+                  isAdmin={isAdmin}
+                  onHide={onHide}
+                  onUnhide={onUnhide}
+                  isHidden={isHidden}
+                />
+                <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-white/80">
+                  {runeIconsWithTooltip}
+                  <span className="h-4 w-px bg-white/25" />
+                  <div className="flex items-center gap-1 text-slate-600 dark:text-white">
+                    {partida.summoner1Id > 0 && (
+                      <div className="relative w-6 h-6 rounded bg-white/15 overflow-hidden">
+                        <Image
+                          src={getSummonerSpellUrl(
+                            partida.summoner1Id,
+                            ddragonVersion
+                          )}
+                          alt="Hechizo 1"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    )}
+                    {partida.summoner2Id > 0 && (
+                      <div className="relative w-6 h-6 rounded bg-white/15 overflow-hidden">
+                        <Image
+                          src={getSummonerSpellUrl(
+                            partida.summoner2Id,
+                            ddragonVersion
+                          )}
+                          alt="Hechizo 2"
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <span className="h-4 w-px bg-white/25" />
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{relativeTime}</span>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-slate-700 dark:text-white/85">
@@ -494,87 +513,85 @@ export const SharedMatchCard = ({
               </div>
             </div>
 
-            {/* Stats principales */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-              {[
-                {
-                  label: "KDA",
-                  value: partida.kda.toFixed(2),
-                  sub: `${partida.kills}/${partida.deaths}/${partida.assists}`,
-                  accentClass: outcomeTextClass,
-                },
-                {
-                  label: "CS",
-                  value: partida.totalCS.toString(),
-                  sub: `${partida.csPerMin.toFixed(1)}/min`,
-                },
-                {
-                  label: "Visión",
-                  value: partida.visionScore.toString(),
-                },
-                {
-                  label: "Score",
-                  value: partida.performanceScore
-                    ? partida.performanceScore.toFixed(0)
-                    : "-",
-                  accentClass: getScoreColor(partida.performanceScore),
-                },
-                {
-                  label: "Daño",
-                  value: `${(partida.damageToChampions / 1000).toFixed(1)}k`,
-                  sub: "champ",
-                },
-                {
-                  label: "Oro",
-                  value: `${(partida.goldEarned / 1000).toFixed(1)}k`,
-                  sub: "total",
-                },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-lg border border-slate-200/70 bg-white/80 px-2.5 py-2 shadow-sm dark:border-white/20 dark:bg-white/10"
-                >
-                  <div className="flex items-center justify-between text-[10px] uppercase text-slate-500 dark:text-white/60">
-                    <span className="font-semibold tracking-wide">
-                      {stat.label}
-                    </span>
-                    {stat.sub && (
-                      <span className="text-[9px] text-slate-400 dark:text-white/50">
-                        {stat.sub}
-                      </span>
-                    )}
-                  </div>
-                  <div
-                    className={`mt-1 text-base sm:text-lg font-semibold leading-none ${
-                      stat.accentClass ?? "text-slate-900 dark:text-white"
-                    }`}
-                  >
-                    {stat.value}
-                  </div>
+            {/* Build + stats */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <div className="space-y-2 sm:w-40 lg:w-48 shrink-0">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-white/70">
+                  Build
                 </div>
-              ))}
-            </div>
-
-            {/* Build */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-white/70">
-                Build
+                <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+                  {partida.items.slice(0, 6).map((itemId, idx) => (
+                    <div
+                      key={idx}
+                      className="relative w-9 h-9 rounded border border-slate-200/80 overflow-hidden bg-white/95 shadow-sm dark:border-white/20 dark:bg-white/10"
+                    >
+                      {itemId > 0 && (
+                        <Image
+                          src={getItemImageUrl(itemId, ddragonVersion)}
+                          alt={`Item ${itemId}`}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {partida.items.slice(0, 6).map((itemId, idx) => (
+              <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-1">
+                {[
+                  {
+                    label: "KDA",
+                    value: `${partida.kills}/${partida.deaths}/${partida.assists}`,
+                    sub: `${partida.kda.toFixed(2)} ratio`,
+                    accentClass: outcomeTextClass,
+                  },
+                  {
+                    label: "CS",
+                    value: partida.totalCS.toString(),
+                    sub: `${partida.csPerMin.toFixed(1)}/min`,
+                  },
+                  {
+                    label: "Visión",
+                    value: partida.visionScore.toString(),
+                  },
+                  {
+                    label: "Score",
+                    value: partida.performanceScore
+                      ? partida.performanceScore.toFixed(0)
+                      : "-",
+                    accentClass: getScoreColor(partida.performanceScore),
+                  },
+                  {
+                    label: "Daño",
+                    value: `${(partida.damageToChampions / 1000).toFixed(1)}k`,
+                    sub: "champ",
+                  },
+                  {
+                    label: "Oro",
+                    value: `${(partida.goldEarned / 1000).toFixed(1)}k`,
+                    sub: "total",
+                  },
+                ].map((stat) => (
                   <div
-                    key={idx}
-                    className="relative w-9 h-9 rounded border border-slate-200 overflow-hidden bg-white/90 shadow-sm dark:border-white/20 dark:bg-white/10"
+                    key={stat.label}
+                    className="relative overflow-hidden rounded-2xl border border-white/30 bg-white/20 px-2 py-1.5 shadow-[0_8px_32px_rgba(0,0,0,0.1)] backdrop-blur-[2px] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent after:content-[''] after:absolute after:top-0 after:left-0 after:w-px after:h-full after:bg-gradient-to-b after:from-white/80 after:via-transparent after:to-white/30 dark:bg-white/10 dark:border-white/20"
                   >
-                    {itemId > 0 && (
-                      <Image
-                        src={getItemImageUrl(itemId, ddragonVersion)}
-                        alt={`Item ${itemId}`}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
-                    )}
+                    <div className="flex items-center justify-between text-[9px] uppercase tracking-wide text-slate-500 dark:text-white/60">
+                      <span className="font-semibold">{stat.label}</span>
+                      {stat.sub && (
+                        <span className="text-[9px] text-slate-400 dark:text-white/50 font-medium">
+                          {stat.sub}
+                        </span>
+                      )}
+                    </div>
+                    <div
+                      className={`mt-1 text-sm sm:text-base font-semibold leading-tight ${
+                        stat.accentClass ?? "text-slate-900 dark:text-white"
+                      }`}
+                    >
+                      {stat.value}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -589,26 +606,25 @@ export const SharedMatchCard = ({
 
             {/* Footer acciones */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link
+                href={`/match/${partida.matchId}`}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1.5 text-sm font-semibold text-white shadow-md shadow-slate-900/20 transition hover:bg-slate-800 dark:bg-white/15 dark:text-white dark:hover:bg-white/25"
+              >
+                Abrir análisis
+                <ExternalLink className="w-4 h-4" />
+              </Link>
               <div className="ml-auto flex items-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-600 hover:bg-slate-900/5 dark:text-white/80 dark:hover:bg-white/10"
-                      aria-label="Acciones de la partida"
-                    >
-                      <MoreVertical className="w-4 h-4" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuItem asChild>
-                      <Link
-                        href={`/match/${partida.matchId}`}
-                        className="flex items-center gap-2 text-xs"
+                {isOwnProfile && onDelete && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        className="inline-flex items-center justify-center rounded-full p-1.5 text-slate-600 hover:bg-slate-900/5 dark:text-white/80 dark:hover:bg-white/10"
+                        aria-label="Acciones de la partida"
                       >
-                        <ExternalLink className="w-3 h-3" /> Ver partida
-                      </Link>
-                    </DropdownMenuItem>
-                    {isOwnProfile && onDelete && (
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
                       <DropdownMenuItem
                         disabled={deletingId === partida.entryId}
                         className="text-red-600 focus:text-red-600"
@@ -622,9 +638,9 @@ export const SharedMatchCard = ({
                           ? "Eliminando..."
                           : "Eliminar"}
                       </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
             </div>
           </div>

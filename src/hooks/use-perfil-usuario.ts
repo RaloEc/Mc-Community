@@ -40,6 +40,7 @@ export interface ProfileData {
     created_at: string;
     hilo_id: string;
     hilo_titulo: string;
+    gif_url?: string | null;
   }[];
   weaponStatsRecords: Array<{
     id: string;

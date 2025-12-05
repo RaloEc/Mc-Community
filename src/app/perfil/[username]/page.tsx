@@ -193,6 +193,7 @@ export default function UserProfilePage() {
   }
 
   const isOwnProfile = Boolean(user && profile && user.id === profile.id);
+  const isAdmin = Boolean(profile && profile.role === "admin");
 
   // Layout móvil
   if (isMobile) {
@@ -204,6 +205,7 @@ export default function UserProfilePage() {
         onSync={() => syncMutation.mutate()}
         isSyncing={syncMutation.isPending}
         syncError={syncError}
+        isOwnProfile={isOwnProfile}
       />
     );
   }
@@ -238,6 +240,7 @@ export default function UserProfilePage() {
                 isOwnProfile={Boolean(
                   user && profile && user.id === profile.id
                 )}
+                isAdmin={isAdmin}
                 onMatchDeleted={() => refetch()}
               />
             </div>

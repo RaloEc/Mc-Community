@@ -162,7 +162,10 @@ function PerfilPageContent() {
 
     // Construir perfil completo
     const userMetadata = user.user_metadata || {};
-    const roleValue = (profile as any)?.role || "user";
+    const rawUserRole = (
+      user.user_metadata as { role?: string } | null | undefined
+    )?.role;
+    const roleValue = (profile as any)?.role || rawUserRole || "user";
     const validRole = ["user", "admin", "moderator"].includes(roleValue)
       ? (roleValue as "user" | "admin" | "moderator")
       : "user";
@@ -219,7 +222,7 @@ function PerfilPageContent() {
 
     // Cargar estadísticas
     cargarEstadisticas();
-  }, [authLoading, session, user, profile, router, syncEditDataWithPerfil]);
+  }, [authLoading, session, user, router, syncEditDataWithPerfil, profile]);
 
   useEffect(() => {
     if (isOpen && perfil) {
@@ -858,9 +861,19 @@ function PerfilPageContent() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
             {/* Columna izquierda - Feed de actividad */}
             <div className="lg:col-span-2">
+              {/*
+                Aseguramos detectar el rol admin aunque venga en mayúsculas/minúsculas mezcladas.
+                Esto permite que el menú muestre la opción de eliminar cuando el usuario es admin.
+              */}
               <UserActivityFeedContainer
                 fetchActivities={fetchActividades}
                 userColor={perfil.color}
+                isAdmin={Boolean(
+                  (perfil?.role ?? profile?.role)
+                    ?.toString()
+                    .trim()
+                    .toLowerCase() === "admin"
+                )}
               />
             </div>
 

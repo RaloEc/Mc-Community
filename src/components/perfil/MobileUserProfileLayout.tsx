@@ -21,6 +21,7 @@ interface MobileUserProfileLayoutProps {
   onSync?: () => void;
   isSyncing?: boolean;
   syncError?: string | null;
+  isOwnProfile?: boolean;
 }
 
 export default function MobileUserProfileLayout({
@@ -30,6 +31,7 @@ export default function MobileUserProfileLayout({
   onSync,
   isSyncing = false,
   syncError = null,
+  isOwnProfile = false,
 }: MobileUserProfileLayoutProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -123,6 +125,7 @@ export default function MobileUserProfileLayout({
                 weaponStatsRecords={profile.weaponStatsRecords}
                 ultimasPartidas={profile.ultimasPartidas}
                 userColor={profile.color}
+                isOwnProfile={isOwnProfile}
               />
             </div>
           </>

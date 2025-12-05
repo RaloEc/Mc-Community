@@ -192,6 +192,7 @@ export default function MobileProfileLayout({
                 userColor={perfil.color}
                 initialPage={1}
                 itemsPerPage={10}
+                isAdmin={perfil.role.toLowerCase() === "admin"}
               />
             </div>
           </>

@@ -43,6 +43,11 @@ export async function GET(
   const offset = (page - 1) * limit;
 
   try {
+    // Obtener usuario actual (si está autenticado)
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
     // 1. Obtener el ID del usuario por public_id o username como fallback
     let { data: perfil, error: perfilError } = await supabase
       .from("perfiles")
@@ -74,6 +79,21 @@ export async function GET(
       }
 
       perfil = perfilPorUsername;
+    }
+
+    // Obtener actividades ocultas por el usuario actual (si está autenticado)
+    let hiddenActivities: Set<string> = new Set();
+    if (currentUser) {
+      const { data: hidden } = await supabase
+        .from("activity_visibility")
+        .select("activity_type, activity_id")
+        .eq("user_id", currentUser.id);
+
+      if (hidden) {
+        hiddenActivities = new Set(
+          hidden.map((h) => `${h.activity_type}:${h.activity_id}`)
+        );
+      }
     }
 
     // 2. Obtener estadísticas de actividad (solo contenido no eliminado)
@@ -108,15 +128,15 @@ export async function GET(
       console.error("Error fetching threads:", hilosError);
     }
 
-    // Mapear hilos con categoría
-    const hilosMapeados: ActivityResponse["hilos"] = (ultimosHilos || []).map(
-      (hilo: any) => ({
+    // Mapear hilos con categoría y filtrar ocultos
+    const hilosMapeados: ActivityResponse["hilos"] = (ultimosHilos || [])
+      .filter((hilo: any) => !hiddenActivities.has(`forum_thread:${hilo.id}`))
+      .map((hilo: any) => ({
         id: hilo.id,
         titulo: hilo.titulo,
         created_at: hilo.created_at,
         categoria_titulo: hilo.foro_categorias?.[0]?.titulo ?? "Sin categoría",
-      })
-    );
+      }));
 
     // 4. Obtener últimos posts (respuestas) con paginación
     const { data: ultimosPosts, error: postsError } = await supabase
@@ -139,18 +159,20 @@ export async function GET(
     if (postsError) {
       console.error("Error fetching posts:", postsError);
     } else if (ultimosPosts) {
-      postsLimpios = ultimosPosts.map((post: any) => {
-        const hilo = Array.isArray(post.foro_hilos)
-          ? post.foro_hilos[0]
-          : post.foro_hilos;
-        return {
-          id: post.id,
-          contenido: limpiarHTML(post.contenido),
-          created_at: post.created_at,
-          hilo_id: post.hilo_id,
-          hilo_titulo: hilo?.titulo ?? "Hilo desconocido",
-        };
-      });
+      postsLimpios = ultimosPosts
+        .filter((post: any) => !hiddenActivities.has(`forum_post:${post.id}`))
+        .map((post: any) => {
+          const hilo = Array.isArray(post.foro_hilos)
+            ? post.foro_hilos[0]
+            : post.foro_hilos;
+          return {
+            id: post.id,
+            contenido: limpiarHTML(post.contenido),
+            created_at: post.created_at,
+            hilo_id: post.hilo_id,
+            hilo_titulo: hilo?.titulo ?? "Hilo desconocido",
+          };
+        });
     }
 
     // 5. Obtener partidas compartidas con paginación
@@ -167,25 +189,29 @@ export async function GET(
       console.error("Error fetching shared matches:", partidasError);
     }
 
-    // Mapear partidas compartidas
+    // Mapear partidas compartidas y filtrar ocultas
     let partidasMapeadas: ActivityResponse["partidas"] = [];
     if (partidasCompartidas) {
-      partidasMapeadas = partidasCompartidas.map((entry: any) => {
-        const metadata = entry.metadata || {};
-        // Determinar resultado basado en si el equipo ganó (simplificado)
-        // En una implementación real, esto vendría del metadata o de match_participants
-        const result = metadata.win ? "win" : "loss";
+      partidasMapeadas = partidasCompartidas
+        .filter(
+          (entry: any) => !hiddenActivities.has(`lol_match:${entry.match_id}`)
+        )
+        .map((entry: any) => {
+          const metadata = entry.metadata || {};
+          // Determinar resultado basado en si el equipo ganó (simplificado)
+          // En una implementación real, esto vendría del metadata o de match_participants
+          const result = metadata.win ? "win" : "loss";
 
-        return {
-          id: entry.id,
-          matchId: entry.match_id,
-          championName: metadata.championName || "Desconocido",
-          role: metadata.role || "Unknown",
-          kda: metadata.kda || 0,
-          result,
-          created_at: entry.created_at,
-        };
-      });
+          return {
+            id: entry.id,
+            matchId: entry.match_id,
+            championName: metadata.championName || "Desconocido",
+            role: metadata.role || "Unknown",
+            kda: metadata.kda || 0,
+            result,
+            created_at: entry.created_at,
+          };
+        });
     }
 
     // 6. Obtener conteo de partidas compartidas

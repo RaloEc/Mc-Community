@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
           .from("foro_posts")
           .select(
             `
-          id, contenido, created_at, 
+          id, contenido, created_at, gif_url,
           hilo:foro_hilos(titulo)
         `
           )
@@ -144,6 +144,7 @@ export async function GET(request: NextRequest) {
       id: number;
       contenido: string;
       created_at: string;
+      gif_url?: string | null;
       hilo?: { titulo?: string } | null;
     };
 
@@ -207,6 +208,7 @@ export async function GET(request: NextRequest) {
       type: "hilo",
       title: hilo.titulo,
       preview: getContentPreview(hilo.contenido || ""),
+      content: hilo.contenido || "",
       timestamp: hilo.created_at,
       category: hilo.categoria?.nombre || "Foro",
     }));
@@ -219,6 +221,7 @@ export async function GET(request: NextRequest) {
       title: `Respuesta en "${respuesta.hilo?.titulo || "un hilo"}"`,
       preview: getContentPreview(respuesta.contenido),
       timestamp: respuesta.created_at,
+      gifUrl: respuesta.gif_url || undefined,
       category: "Foro",
     }));
 

@@ -9,6 +9,11 @@ export async function GET(
   const publicId = params.username;
 
   try {
+    // Obtener usuario actual (si está autenticado)
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
     // 1. Obtener el perfil del usuario por public_id o username como fallback
     let { data: perfil, error: perfilError } = await supabase
       .from("perfiles")
@@ -63,6 +68,21 @@ export async function GET(
 
     const userPuuid = linkedAccountRiot?.puuid || null;
 
+    // Obtener actividades ocultas por el usuario actual (si está autenticado)
+    let hiddenActivities: Set<string> = new Set();
+    if (currentUser) {
+      const { data: hidden } = await supabase
+        .from("activity_visibility")
+        .select("activity_type, activity_id")
+        .eq("user_id", currentUser.id);
+
+      if (hidden) {
+        hiddenActivities = new Set(
+          hidden.map((h) => `${h.activity_type}:${h.activity_id}`)
+        );
+      }
+    }
+
     // 2. Obtener estadísticas de actividad (solo contenido no eliminado)
     const { count: hilosCount, error: hilosCountError } = await supabase
       .from("foro_hilos")
@@ -99,36 +119,38 @@ export async function GET(
     // Transformar ultimosHilos para extraer categoria_titulo y contar respuestas
     let hilosTransformados: any[] = [];
     if (ultimosHilos) {
-      hilosTransformados = (ultimosHilos as any[]).map((hilo: any) => {
-        const respuestas = Array.isArray(hilo.respuestas_conteo)
-          ? hilo.respuestas_conteo[0]?.count ?? 0
-          : hilo.respuestas_conteo?.count ?? 0;
+      hilosTransformados = (ultimosHilos as any[])
+        .filter((hilo: any) => !hiddenActivities.has(`forum_thread:${hilo.id}`))
+        .map((hilo: any) => {
+          const respuestas = Array.isArray(hilo.respuestas_conteo)
+            ? hilo.respuestas_conteo[0]?.count ?? 0
+            : hilo.respuestas_conteo?.count ?? 0;
 
-        const weaponStatsRelation = Array.isArray(hilo.weapon_stats_record)
-          ? hilo.weapon_stats_record[0]
-          : hilo.weapon_stats_record;
+          const weaponStatsRelation = Array.isArray(hilo.weapon_stats_record)
+            ? hilo.weapon_stats_record[0]
+            : hilo.weapon_stats_record;
 
-        return {
-          id: hilo.id,
-          slug: hilo.slug,
-          titulo: hilo.titulo,
-          contenido: hilo.contenido,
-          created_at: hilo.created_at,
-          vistas: hilo.vistas ?? 0,
-          respuestas: respuestas,
-          hasWeaponStats: Boolean(weaponStatsRelation?.id),
-          categoria_titulo: Array.isArray(hilo.foro_categorias)
-            ? hilo.foro_categorias[0]?.nombre ?? "Sin categoría"
-            : hilo.foro_categorias?.nombre ?? "Sin categoría",
-        };
-      });
+          return {
+            id: hilo.id,
+            slug: hilo.slug,
+            titulo: hilo.titulo,
+            contenido: hilo.contenido,
+            created_at: hilo.created_at,
+            vistas: hilo.vistas ?? 0,
+            respuestas: respuestas,
+            hasWeaponStats: Boolean(weaponStatsRelation?.id),
+            categoria_titulo: Array.isArray(hilo.foro_categorias)
+              ? hilo.foro_categorias[0]?.nombre ?? "Sin categoría"
+              : hilo.foro_categorias?.nombre ?? "Sin categoría",
+          };
+        });
     }
 
     // 4. Obtener últimos posts (respuestas) - solo posts no eliminados de hilos no eliminados
     const { data: ultimosPosts, error: postsError } = await supabase
       .from("foro_posts")
       .select(
-        "id, contenido, created_at, hilo_id, foro_hilos!inner(titulo, deleted_at)"
+        "id, contenido, gif_url, created_at, hilo_id, foro_hilos!inner(titulo, deleted_at)"
       )
       .eq("autor_id", perfil.id)
       .is("deleted_at", null)
@@ -145,18 +167,21 @@ export async function GET(
     if (postsError) {
       console.error("Error fetching posts:", postsError);
     } else if (ultimosPosts) {
-      postsLimpios = ultimosPosts.map((post) => {
-        const hilo = Array.isArray(post.foro_hilos)
-          ? post.foro_hilos[0]
-          : post.foro_hilos;
-        return {
-          id: post.id,
-          contenido: limpiarHTML(post.contenido),
-          created_at: post.created_at,
-          hilo_id: post.hilo_id,
-          hilo_titulo: hilo?.titulo ?? "Hilo desconocido",
-        };
-      });
+      postsLimpios = ultimosPosts
+        .filter((post: any) => !hiddenActivities.has(`forum_post:${post.id}`))
+        .map((post) => {
+          const hilo = Array.isArray(post.foro_hilos)
+            ? post.foro_hilos[0]
+            : post.foro_hilos;
+          return {
+            id: post.id,
+            contenido: limpiarHTML(post.contenido),
+            created_at: post.created_at,
+            hilo_id: post.hilo_id,
+            hilo_titulo: hilo?.titulo ?? "Hilo desconocido",
+            gif_url: post.gif_url ?? null,
+          };
+        });
     }
 
     // 5. Obtener hilos con estadísticas de armas asociadas (únicamente los que tienen vínculo y no están borrados)
@@ -288,7 +313,9 @@ export async function GET(
     // Mapear partidas compartidas - traer datos completos desde match_participants si es necesario
     let partidasTransformadas: any[] = [];
     if (ultimasPartidas) {
-      for (const entry of ultimasPartidas) {
+      for (const entry of ultimasPartidas.filter(
+        (e: any) => !hiddenActivities.has(`lol_match:${e.match_id}`)
+      )) {
         const metadata = entry.metadata || {};
 
         let matchParticipant: any = null;
