@@ -9,7 +9,8 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const supabase = getServiceClient();
-    const userId = request.headers.get("x-user-id");
+    // CORREGIDO: Usar query param en lugar de header
+    const userId = request.nextUrl.searchParams.get("userId");
 
     if (!userId) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });

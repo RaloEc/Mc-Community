@@ -193,7 +193,13 @@ export default function UserProfilePage() {
   }
 
   const isOwnProfile = Boolean(user && profile && user.id === profile.id);
-  const isAdmin = Boolean(profile && profile.role === "admin");
+
+  // Obtener el perfil del usuario logueado desde useAuth
+  const { profile: currentUserProfile } = useAuth();
+  // isAdmin debe ser true si el usuario LOGUEADO es admin, no el perfil visitado
+  const isCurrentUserAdmin = Boolean(
+    currentUserProfile && currentUserProfile.role === "admin"
+  );
 
   // Layout móvil
   if (isMobile) {
@@ -240,7 +246,7 @@ export default function UserProfilePage() {
                 isOwnProfile={Boolean(
                   user && profile && user.id === profile.id
                 )}
-                isAdmin={isAdmin}
+                isAdmin={isCurrentUserAdmin}
                 onMatchDeleted={() => refetch()}
               />
             </div>

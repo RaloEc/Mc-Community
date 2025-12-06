@@ -161,6 +161,7 @@ export async function POST(
 
     // 7. Crear snapshot de la partida para el feed
     const metadata = {
+      puuid: userPuuid, // Guardar puuid para poder recuperar datos completos después
       matchId: matchParticipant.match_id,
       championId: matchParticipant.champion_id,
       championName,

@@ -9,6 +9,7 @@ import { HeaderDesktopNav } from "./header/HeaderDesktopNav";
 import { HeaderRightControls } from "./header/HeaderRightControls";
 import { HeaderMobileMenu } from "./header/HeaderMobileMenu";
 import { Search } from "lucide-react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
 import { Input } from "@/components/ui/input";
 import { SearchDropdown } from "./header/SearchDropdown";
 
@@ -159,6 +160,7 @@ const Header: React.FC = () => {
             </div>
 
             {/* Controles del lado derecho */}
+            <NotificationBell />
             <HeaderRightControls
               isAdmin={isAdmin}
               authUser={authUser}

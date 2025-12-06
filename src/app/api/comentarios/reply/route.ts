@@ -229,6 +229,42 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .single();
 
+      // === NOTIFICACIÓN: Respuesta a comentario del foro ===
+      // El autor del post padre (parentForoPost.autor_id) es diferente al usuario actual
+      if (parentForoPost && parentForoPost.autor_id !== user.id) {
+        // Obtener info del hilo para el contexto de la notificación
+        const { data: hiloInfo } = await serviceSupabase
+          .from("foro_hilos")
+          .select("titulo, slug")
+          .eq("id", hiloId)
+          .single();
+
+        await serviceSupabase.from("notifications").insert({
+          user_id: parentForoPost.autor_id,
+          type: "comment_reply",
+          title: "Nueva respuesta a tu comentario",
+          message: `${
+            perfilData?.username || "Alguien"
+          } ha respondido a tu comentario en el hilo "${
+            hiloInfo?.titulo || ""
+          }".`,
+          data: {
+            contentType: "hilo",
+            contentId: hiloId,
+            hiloSlug: hiloInfo?.slug,
+            hiloTitulo: hiloInfo?.titulo,
+            parentId: parent_id,
+            commentId: replyPostData.id,
+            fromUserId: user.id,
+            fromUsername: perfilData?.username,
+          },
+        });
+        console.log(
+          "[API Comentarios Reply] Notificación de respuesta enviada a:",
+          parentForoPost.autor_id
+        );
+      }
+
       // Formatear respuesta para compatibilidad con el frontend
       const respuestaFormateada = {
         id: replyPostData.id,
@@ -357,6 +393,49 @@ export async function POST(request: Request) {
             error: `Error al crear la respuesta: ${error.message}`,
           },
           { status: 500 }
+        );
+      }
+
+      // === NOTIFICACIÓN: Respuesta a comentario ===
+      // Notificar al autor del comentario padre
+      if (parentComment && parentComment.usuario_id !== user.id) {
+        // Obtener info del contenido padre para contexto
+        let contentTitle = "";
+        let contentSlug = "";
+
+        if (tipo_entidad === "noticia") {
+          const { data: noticiaInfo } = await serviceSupabase
+            .from("noticias")
+            .select("titulo, slug")
+            .eq("id", entidad_id)
+            .single();
+          contentTitle = noticiaInfo?.titulo || "";
+          contentSlug = noticiaInfo?.slug || "";
+        }
+
+        await serviceSupabase.from("notifications").insert({
+          user_id: parentComment.usuario_id,
+          type: "comment_reply",
+          title: "Nueva respuesta a tu comentario",
+          message: `${
+            replyData.perfiles?.username || "Alguien"
+          } ha respondido a tu comentario${
+            contentTitle ? ` en "${contentTitle}"` : ""
+          }.`,
+          data: {
+            contentType: tipo_entidad,
+            contentId: entidad_id,
+            contentSlug: contentSlug,
+            contentTitle: contentTitle,
+            parentId: parent_id,
+            commentId: replyData.id,
+            fromUserId: user.id,
+            fromUsername: replyData.perfiles?.username,
+          },
+        });
+        console.log(
+          "[API Comentarios Reply] Notificación de respuesta enviada a:",
+          parentComment.usuario_id
         );
       }
 

@@ -321,8 +321,23 @@ export async function GET(
         let matchParticipant: any = null;
         let matchRecord: any = null;
 
-        if (userPuuid) {
-          const { data } = await supabase
+        // Usar puuid del metadata como fallback si no hay cuenta Riot vinculada
+        const effectivePuuid = userPuuid || metadata.puuid;
+
+        console.log("[Perfil API] Procesando partida:", {
+          entryId: entry.id,
+          matchId: entry.match_id,
+          userPuuid: userPuuid ? `${userPuuid.slice(0, 20)}...` : null,
+          metadataPuuid: metadata.puuid
+            ? `${String(metadata.puuid).slice(0, 20)}...`
+            : null,
+          effectivePuuid: effectivePuuid
+            ? `${String(effectivePuuid).slice(0, 20)}...`
+            : null,
+        });
+
+        if (effectivePuuid) {
+          const { data, error: matchError } = await supabase
             .from("match_participants")
             .select(
               `
@@ -336,8 +351,34 @@ export async function GET(
             `
             )
             .eq("match_id", entry.match_id)
-            .eq("puuid", userPuuid)
+            .eq("puuid", effectivePuuid)
             .single();
+
+          if (matchError) {
+            console.error("[Perfil API] Error obteniendo match_participant:", {
+              matchId: entry.match_id,
+              puuid: String(effectivePuuid).slice(0, 20) + "...",
+              error: matchError.message,
+              code: matchError.code,
+            });
+          } else {
+            console.log("[Perfil API] match_participant encontrado:", {
+              matchId: entry.match_id,
+              hasData: !!data,
+              items: data
+                ? [
+                    data.item0,
+                    data.item1,
+                    data.item2,
+                    data.item3,
+                    data.item4,
+                    data.item5,
+                    data.item6,
+                  ]
+                : null,
+              performanceScore: data?.performance_score,
+            });
+          }
 
           matchParticipant = data;
           matchRecord = matchParticipant?.matches
@@ -345,6 +386,10 @@ export async function GET(
               ? matchParticipant.matches[0]
               : matchParticipant.matches
             : null;
+        } else {
+          console.warn(
+            "[Perfil API] No hay puuid disponible (ni de linked_accounts_riot ni del metadata)"
+          );
         }
 
         const matchInfo = matchRecord || null;

@@ -153,7 +153,7 @@ export function MatchHistoryList({
       return data;
     },
     enabled: !!userId && queueFilter === "all",
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutos - las partidas no cambian
   });
 
   const cachedMatches = useMemo<Match[]>(() => {
@@ -178,7 +178,7 @@ export function MatchHistoryList({
       if (!res.ok) throw new Error("Error al obtener cuentas enlazadas");
       return (await res.json()) as LinkedAccountsResponse;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+    staleTime: 30 * 60 * 1000, // 30 minutos - raramente cambia
   });
 
   const linkedAccounts = linkedAccountsData?.accounts ?? [];
@@ -261,7 +261,7 @@ export function MatchHistoryList({
     getNextPageParam: (lastPage) =>
       lastPage?.hasMore ? lastPage.nextCursor ?? undefined : undefined,
     enabled: !!userId,
-    staleTime: 2 * 60 * 1000, // 2 minutos - más corto para refetch después de sync
+    staleTime: 10 * 60 * 1000, // 10 minutos - las partidas históricas no cambian
     gcTime: 60 * 60 * 1000, // 60 minutos en caché antes de garbage collection
     initialPageParam: null,
   });
@@ -356,8 +356,8 @@ export function MatchHistoryList({
     },
   });
 
-  // Lazy load: cargar más partidas automáticamente después de 2 segundos
-  // PERO NO si estamos sincronizando
+  // Lazy load: cargar más partidas automáticamente después de la carga inicial
+  // SIN DELAY - carga inmediata para mejor UX
   useEffect(() => {
     if (
       !isLoading &&
@@ -365,14 +365,10 @@ export function MatchHistoryList({
       hasNextPage &&
       !syncMutation.isPending
     ) {
-      const timer = setTimeout(() => {
-        console.log(
-          "[MatchHistoryList] ⏳ Lazy loading: cargando más partidas en background..."
-        );
-        fetchNextPage();
-      }, 2000);
-
-      return () => clearTimeout(timer);
+      console.log(
+        "[MatchHistoryList] ⏳ Lazy loading: cargando más partidas en background..."
+      );
+      fetchNextPage();
     }
   }, [
     isLoading,

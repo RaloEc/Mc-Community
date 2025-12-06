@@ -105,14 +105,15 @@ export function ActivityCardMenu({
               </DropdownMenuItem>
             ))}
 
-          {isAdmin && (
+          {/* Eliminar: disponible para el dueño Y para admins */}
+          {(isOwnProfile || isAdmin) && (
             <DropdownMenuItem
               onClick={() => setShowDeleteConfirm(true)}
               disabled={isLoading}
               className="text-red-600 dark:text-red-400"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              <span>Eliminar (Admin)</span>
+              <span>Eliminar{isAdmin && !isOwnProfile ? " (Admin)" : ""}</span>
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

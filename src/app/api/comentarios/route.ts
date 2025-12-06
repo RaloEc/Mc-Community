@@ -950,6 +950,38 @@ export async function POST(request: Request) {
         .eq("id", user.id)
         .single();
 
+      // === NOTIFICACIÓN: Comentario en hilo del foro ===
+      // Obtener el autor del hilo para enviarle notificación
+      const { data: hiloData } = await serviceSupabase
+        .from("foro_hilos")
+        .select("autor_id, titulo, slug")
+        .eq("id", content_id)
+        .single();
+
+      // Enviar notificación solo si el autor del hilo no es quien comenta
+      if (hiloData && hiloData.autor_id !== user.id) {
+        await serviceSupabase.from("notifications").insert({
+          user_id: hiloData.autor_id,
+          type: "thread_comment",
+          title: "Nuevo comentario en tu hilo",
+          message: `${
+            perfilData?.username || "Alguien"
+          } ha comentado en tu hilo "${hiloData.titulo}"`,
+          data: {
+            hiloId: content_id,
+            hiloSlug: hiloData.slug,
+            hiloTitulo: hiloData.titulo,
+            comentarioId: postData.id,
+            fromUserId: user.id,
+            fromUsername: perfilData?.username,
+          },
+        });
+        console.log(
+          "[API Comentarios] Notificación de comentario en hilo enviada a:",
+          hiloData.autor_id
+        );
+      }
+
       // Formatear respuesta para compatibilidad con el frontend
       const comentarioFormateado = {
         id: postData.id,
@@ -999,6 +1031,41 @@ export async function POST(request: Request) {
         },
         { status: 500 }
       );
+    }
+
+    // === NOTIFICACIÓN: Comentario en noticia ===
+    // Solo enviar notificación si es un comentario en una noticia
+    if (content_type === "noticia") {
+      // Obtener el autor de la noticia para enviarle notificación
+      const { data: noticiaData } = await serviceSupabase
+        .from("noticias")
+        .select("autor_id, titulo, slug")
+        .eq("id", content_id)
+        .single();
+
+      // Enviar notificación solo si el autor de la noticia no es quien comenta
+      if (noticiaData && noticiaData.autor_id !== user.id) {
+        await serviceSupabase.from("notifications").insert({
+          user_id: noticiaData.autor_id,
+          type: "news_comment",
+          title: "Nuevo comentario en tu noticia",
+          message: `${
+            comentarioData.perfiles?.username || "Alguien"
+          } ha comentado en tu noticia "${noticiaData.titulo}"`,
+          data: {
+            noticiaId: content_id,
+            noticiaSlug: noticiaData.slug,
+            noticiaTitulo: noticiaData.titulo,
+            comentarioId: comentarioData.id,
+            fromUserId: user.id,
+            fromUsername: comentarioData.perfiles?.username,
+          },
+        });
+        console.log(
+          "[API Comentarios] Notificación de comentario en noticia enviada a:",
+          noticiaData.autor_id
+        );
+      }
     }
 
     // Formatear respuesta para compatibilidad con el frontend

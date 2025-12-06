@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useCheckUsername } from "@/hooks/use-check-username";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useProfilePageData } from "@/hooks/use-profile-page-data";
 import ImageUploader from "@/components/ImageUploader";
 import ProfileHeader from "@/components/perfil/profile-header";
 import { BannerUploader } from "@/components/perfil/BannerUploader";
@@ -25,6 +26,7 @@ import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
 import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
 import { UnifiedRiotSyncButton } from "@/components/riot/UnifiedRiotSyncButton";
+import { ProfilePageSkeleton } from "@/components/perfil/ProfilePageSkeleton";
 import {
   Card,
   CardBody,
@@ -73,37 +75,49 @@ function PerfilPageContent() {
   } = useAuth();
   const { toast } = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const isMobile = useIsMobile(1024); // Usar layout móvil en pantallas < 1024px
+  const isMobile = useIsMobile(1024);
+  const searchParams = useSearchParams();
 
-  const [isEditing, setIsEditing] = useState(false);
+  // ========================================================================
+  // HOOK UNIFICADO CON CACHÉ - Reemplaza múltiples useEffect
+  // ========================================================================
+  const {
+    staticData,
+    dynamicData,
+    isFullyLoaded,
+    isAuthLoading,
+    invalidateStaticCache,
+  } = useProfilePageData();
+
+  // Estados locales para UI (no para datos)
   const [isSaving, setSaving] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [perfil, setPerfil] = useState<PerfilCompleto | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [estadisticas, setEstadisticas] = useState({
+  const [unifiedSyncPending, setUnifiedSyncPending] = useState(false);
+  const [unifiedSyncCooldown, setUnifiedSyncCooldown] = useState(0);
+  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+
+  // Datos derivados del hook unificado (con caché)
+  const perfil = staticData?.perfil ?? null;
+  const riotAccount = staticData?.riotAccount ?? null;
+  const estadisticas = dynamicData?.estadisticas ?? {
     noticias: 0,
     comentarios: 0,
     hilos: 0,
     respuestas: 0,
-  });
-  const [unifiedSyncPending, setUnifiedSyncPending] = useState(false);
-  const [unifiedSyncCooldown, setUnifiedSyncCooldown] = useState(0);
+  };
 
   // Estados para el modal de edición
   const [editData, setEditData] = useState({
     username: "",
     bio: "",
-    color: "#64748B", // Gris azulado por defecto
+    color: "#64748B",
     avatar_url: "",
     banner_url: "" as string | null,
     connected_accounts: {} as Record<string, string>,
   });
-  const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
-  const [riotAccount, setRiotAccount] = useState<any>(null);
-  const [loadingRiotAccount, setLoadingRiotAccount] = useState(false);
+
   const isOwnProfile = user?.id === perfil?.id;
-  const searchParams = useSearchParams();
 
   // Lee el tab activo desde la URL, fallback a "posts"
   const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
@@ -150,151 +164,29 @@ function PerfilPageContent() {
   const hasUsernameValue = normalizedEditUsername.length > 0;
   const shouldShowAvailability = usernameChanged && hasUsernameValue;
 
+  // ========================================================================
+  // EFECTO: Redirección si no hay sesión
+  // ========================================================================
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!session) {
+    if (!isAuthLoading && !session) {
       router.push("/login");
-      return;
     }
+  }, [isAuthLoading, session, router]);
 
-    if (!user) return;
-
-    // Construir perfil completo
-    const userMetadata = user.user_metadata || {};
-    const rawUserRole = (
-      user.user_metadata as { role?: string } | null | undefined
-    )?.role;
-    const roleValue = (profile as any)?.role || rawUserRole || "user";
-    const validRole = ["user", "admin", "moderator"].includes(roleValue)
-      ? (roleValue as "user" | "admin" | "moderator")
-      : "user";
-
-    // Parsear connected_accounts si es string JSON
-    let connectedAccounts: Record<string, string> = {};
-    const rawConnectedAccounts = (profile as any)?.connected_accounts;
-    if (rawConnectedAccounts) {
-      if (typeof rawConnectedAccounts === "string") {
-        try {
-          connectedAccounts = JSON.parse(rawConnectedAccounts);
-        } catch (e) {
-          console.error("[PerfilPage] Error parsing connected_accounts:", e);
-          connectedAccounts = {};
-        }
-      } else if (typeof rawConnectedAccounts === "object") {
-        connectedAccounts = rawConnectedAccounts;
-      }
-    }
-
-    const perfilCompleto: PerfilCompleto = {
-      id: user.id,
-      username:
-        (profile as any)?.username ||
-        userMetadata.full_name ||
-        userMetadata.name ||
-        "Usuario",
-      role: validRole,
-      email: session.user.email || "",
-      avatar_url:
-        (profile as any)?.avatar_url ||
-        userMetadata.avatar_url ||
-        userMetadata.picture ||
-        "/images/default-avatar.png",
-      banner_url: (profile as any)?.banner_url ?? null,
-      color: (profile as any)?.color || "#3b82f6",
-      bio: (profile as any)?.bio || "",
-      ubicacion: (profile as any)?.ubicacion || "",
-      sitio_web: (profile as any)?.sitio_web || "",
-      connected_accounts: connectedAccounts,
-      activo: (profile as any)?.activo ?? true,
-      ultimo_acceso:
-        (profile as any)?.ultimo_acceso || new Date().toISOString(),
-      created_at: session.user.created_at || new Date().toISOString(),
-      updated_at: (profile as any)?.updated_at || new Date().toISOString(),
-    };
-
-    setPerfil(perfilCompleto);
-
-    // Configurar datos para edición
-    syncEditDataWithPerfil(perfilCompleto);
-
-    setLoading(false);
-
-    // Cargar estadísticas
-    cargarEstadisticas();
-  }, [authLoading, session, user, router, syncEditDataWithPerfil, profile]);
-
+  // ========================================================================
+  // EFECTO: Sincronizar datos de edición cuando se abre el modal
+  // ========================================================================
   useEffect(() => {
     if (isOpen && perfil) {
-      syncEditDataWithPerfil(perfil);
+      syncEditDataWithPerfil(perfil as PerfilCompleto);
       setError(null);
     }
   }, [isOpen, perfil, syncEditDataWithPerfil]);
 
-  // Cargar cuenta de Riot vinculada
-  useEffect(() => {
-    const loadRiotAccount = async () => {
-      if (!user) return;
-      setLoadingRiotAccount(true);
-      try {
-        const response = await fetch("/api/riot/account");
-        if (response.ok) {
-          const data = await response.json();
-          setRiotAccount(data.account);
-          console.log("[Perfil] Cuenta Riot cargada:", data.account);
-        } else {
-          console.log("[Perfil] No hay cuenta Riot vinculada (404 o similar)");
-          setRiotAccount(null);
-        }
-      } catch (error) {
-        console.error("[Perfil] Error loading Riot account:", error);
-        setRiotAccount(null);
-      } finally {
-        setLoadingRiotAccount(false);
-      }
-    };
+  // NOTA: Los useEffect de cargar estadísticas y cuenta Riot fueron eliminados
+  // Ahora se obtienen del hook unificado useProfilePageData con caché
 
-    loadRiotAccount();
-  }, [user]);
-
-  const cargarEstadisticas = async () => {
-    if (!user) return;
-
-    try {
-      const { createClient } = await import("@/lib/supabase/client");
-      const supabase = createClient();
-
-      const [noticiasResult, comentariosResult, hilosResult, respuestasResult] =
-        await Promise.all([
-          supabase
-            .from("noticias")
-            .select("id", { count: "exact" })
-            .eq("autor_id", user.id),
-          supabase
-            .from("comentarios")
-            .select("id", { count: "exact" })
-            .eq("usuario_id", user.id),
-          supabase
-            .from("foro_hilos")
-            .select("id", { count: "exact" })
-            .eq("autor_id", user.id)
-            .is("deleted_at", null),
-          supabase
-            .from("foro_posts")
-            .select("id", { count: "exact" })
-            .eq("autor_id", user.id),
-        ]);
-
-      setEstadisticas({
-        noticias: noticiasResult.count || 0,
-        comentarios: comentariosResult.count || 0,
-        hilos: hilosResult.count || 0,
-        respuestas: respuestasResult.count || 0,
-      });
-    } catch (error) {
-      console.error("Error cargando estadísticas:", error);
-    }
-  };
+  // NOTA: cargarEstadisticas fue eliminada - ahora viene del hook unificado
 
   // Función para obtener el nombre del color
   const getColorName = (hex: string): string => {
@@ -360,16 +252,6 @@ function PerfilPageContent() {
       // Cerrar el modal inmediatamente
       onClose();
 
-      // Actualizar la interfaz inmediatamente para mejor experiencia de usuario
-      // Importante: Crear un nuevo objeto para forzar la re-renderización
-      const perfilActualizado = {
-        ...perfil,
-        ...datosActualizados,
-      };
-
-      // Actualizar el estado local inmediatamente
-      setPerfil(perfilActualizado);
-
       // Enviar datos al servidor
       const response = await fetch("/api/perfil/actualizar", {
         method: "POST",
@@ -384,21 +266,11 @@ function PerfilPageContent() {
         throw new Error("Error al actualizar perfil");
       }
 
-      // Obtener los datos actualizados del servidor
-      const resultado = await response.json();
-
-      // Limpiar la caché y forzar la actualización del perfil
-      await refreshProfile();
-
-      // Actualizar el estado local nuevamente con los datos más recientes
-      if (resultado && resultado.data) {
-        setPerfil((prev) => ({
-          ...prev!,
-          ...resultado.data,
-        }));
-      }
+      // Invalidar caché para forzar recarga de datos actualizados
+      invalidateStaticCache();
 
       // También actualizamos el contexto de autenticación
+      await refreshProfile();
       await refreshAuth();
 
       // Mostrar notificación de éxito
@@ -465,14 +337,14 @@ function PerfilPageContent() {
     }
   };
 
-  if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
-    );
+  // ========================================================================
+  // RENDER: Skeleton mientras cargan TODOS los datos (elimina carga escalonada)
+  // ========================================================================
+  if (!isFullyLoaded) {
+    return <ProfilePageSkeleton />;
   }
 
+  // Error state
   if (!perfil) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -589,9 +461,7 @@ function PerfilPageContent() {
                   currentBanner={editData.banner_url || perfil.banner_url || ""}
                   onUpload={(url) => {
                     setEditData((prev) => ({ ...prev, banner_url: url }));
-                    setPerfil((prev) =>
-                      prev ? { ...prev, banner_url: url } : prev
-                    );
+                    // El banner se guarda al dar "Guardar Cambios"
                   }}
                 />
                 <p className="text-xs text-gray-500 dark:text-gray-400 amoled:text-gray-400 mt-1">
@@ -1025,9 +895,7 @@ function PerfilPageContent() {
                 currentBanner={editData.banner_url || perfil.banner_url || ""}
                 onUpload={(url) => {
                   setEditData((prev) => ({ ...prev, banner_url: url }));
-                  setPerfil((prev) =>
-                    prev ? { ...prev, banner_url: url } : prev
-                  );
+                  // El banner se guarda al dar "Guardar Cambios"
                 }}
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 amoled:text-gray-400 mt-1">
@@ -1240,50 +1108,9 @@ function PerfilPageContent() {
         onClose={() => setIsAccountsModalOpen(false)}
         userId={perfil?.id || ""}
         onSave={async () => {
-          // Refrescar el perfil después de guardar cuentas
+          // Invalidar caché para refrescar los datos
+          invalidateStaticCache();
           await refreshProfile();
-          // Recargar los datos del perfil desde el servidor
-          if (perfil?.id && user?.id) {
-            try {
-              const { createClient } = await import("@/lib/supabase/client");
-              const supabase = createClient();
-              const { data: updatedProfile } = await supabase
-                .from("perfiles")
-                .select("*")
-                .eq("id", perfil.id)
-                .single();
-
-              if (updatedProfile) {
-                // Parsear connected_accounts si es string JSON
-                let connectedAccounts: Record<string, string> = {};
-                const rawConnectedAccounts = updatedProfile?.connected_accounts;
-                if (rawConnectedAccounts) {
-                  if (typeof rawConnectedAccounts === "string") {
-                    try {
-                      connectedAccounts = JSON.parse(rawConnectedAccounts);
-                    } catch (e) {
-                      console.error("Error parsing connected_accounts:", e);
-                      connectedAccounts = {};
-                    }
-                  } else if (typeof rawConnectedAccounts === "object") {
-                    connectedAccounts = rawConnectedAccounts;
-                  }
-                }
-
-                setPerfil((prev) =>
-                  prev
-                    ? {
-                        ...prev,
-                        ...updatedProfile,
-                        connected_accounts: connectedAccounts,
-                      }
-                    : prev
-                );
-              }
-            } catch (error) {
-              console.error("Error refrescando perfil:", error);
-            }
-          }
         }}
       />
     </div>
