@@ -26,6 +26,7 @@ import { RiotEmptyState } from "@/components/riot/RiotEmptyState";
 import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
 import { UnifiedRiotSyncButton } from "@/components/riot/UnifiedRiotSyncButton";
+import { useUnifiedRiotSync } from "@/hooks/use-unified-riot-sync";
 import { ProfilePageSkeleton } from "@/components/perfil/ProfilePageSkeleton";
 import {
   Card,
@@ -87,15 +88,20 @@ function PerfilPageContent() {
     isFullyLoaded,
     isAuthLoading,
     invalidateStaticCache,
+    invalidateAndRefetchStatic,
   } = useProfilePageData();
 
   // Estados locales para UI (no para datos)
   const [isSaving, setSaving] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [unifiedSyncPending, setUnifiedSyncPending] = useState(false);
-  const [unifiedSyncCooldown, setUnifiedSyncCooldown] = useState(0);
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
+
+  // Hook para sincronización unificada de Riot
+  const {
+    isPending: unifiedSyncPending,
+    cooldownSeconds: unifiedSyncCooldown,
+  } = useUnifiedRiotSync();
 
   // Datos derivados del hook unificado (con caché)
   const perfil = staticData?.perfil ?? null;
@@ -390,6 +396,7 @@ function PerfilPageContent() {
           isSigningOut={isSigningOut}
           onEditClick={onOpen}
           riotAccount={riotAccount}
+          onInvalidateCache={invalidateAndRefetchStatic}
         />
 
         {/* Modal de edición - Renderizado fuera del layout móvil para evitar z-index issues */}
@@ -713,18 +720,6 @@ function PerfilPageContent() {
         {/* Sistema de Pestañas */}
         <ProfileTabs hasRiotAccount={!!riotAccount} />
 
-        {/* CTA para vincular Riot cuando es su propio perfil */}
-        {!riotAccount && isOwnProfile && (
-          <div className="mt-6">
-            <RiotEmptyState
-              isOwnProfile
-              onLinkClick={() => {
-                window.location.href = "/api/riot/login";
-              }}
-            />
-          </div>
-        )}
-
         {/* Contenido de Pestañas */}
         {activeTab === "posts" ? (
           // Pestaña Actividad
@@ -821,7 +816,21 @@ function PerfilPageContent() {
                   externalCooldownSeconds={unifiedSyncCooldown}
                 />
               </>
-            ) : null}
+            ) : (
+              // CTA para vincular Riot cuando es su propio perfil
+              isOwnProfile && (
+                <RiotEmptyState
+                  isOwnProfile
+                  onLinkClick={() => {
+                    window.location.href = "/api/riot/login";
+                  }}
+                  onManualLinkSuccess={async () => {
+                    // Invalidar caché Y refetch inmediatamente
+                    await invalidateAndRefetchStatic();
+                  }}
+                />
+              )
+            )}
           </div>
         )}
       </div>

@@ -591,33 +591,6 @@ export function MatchHistoryList({
               {stats.winrate}% WR
             </p>
           </div>
-          {!externalSyncPending && externalCooldownSeconds === 0 && (
-            <Button
-              onClick={() => syncMutation.mutate()}
-              disabled={syncMutation.isPending}
-              variant="outline"
-              size="sm"
-              style={{
-                borderColor: userColor,
-                color: syncMutation.isPending ? "#0f172a" : undefined,
-                backgroundColor: syncMutation.isPending
-                  ? getColorWithAlpha(userColor, 0.2)
-                  : undefined,
-              }}
-            >
-              {syncMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sincronizando...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Actualizar
-                </>
-              )}
-            </Button>
-          )}
         </div>
 
         <div className="flex flex-wrap gap-2">

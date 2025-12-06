@@ -77,9 +77,14 @@ export async function GET(request: NextRequest) {
     // TIER 1: DATOS ESTÁTICOS (cacheable 30min)
     // ========================================================================
     if (tier === "static") {
+      // Usar service client para Riot account (bypassar RLS)
+      const { getServiceClient } = await import("@/lib/supabase/server");
+      const serviceClient = getServiceClient();
+
       const [perfilResult, riotAccountResult] = await Promise.all([
         supabase.from("perfiles").select("*").eq("id", currentUserId).single(),
-        supabase
+        // Usar service client para evitar problemas de RLS
+        serviceClient
           .from("linked_accounts_riot")
           .select("*")
           .eq("user_id", currentUserId)
@@ -95,6 +100,15 @@ export async function GET(request: NextRequest) {
 
       const perfil = perfilResult.data;
       const riotAccount = riotAccountResult.data;
+
+      // DEBUG: Log para diagnosticar problema de cuenta Riot no encontrada
+      console.log("[Initial Data API] Riot Account Query Debug:", {
+        currentUserId,
+        sessionUserId: session.user.id,
+        riotAccountFound: !!riotAccount,
+        riotAccountError: riotAccountResult.error,
+        riotAccountData: riotAccount,
+      });
 
       // Construir perfil completo
       const userMetadata = session.user.user_metadata || {};

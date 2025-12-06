@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceClient } from "@/lib/supabase/server";
+import { getServiceClient, createClient } from "@/lib/supabase/server";
 import {
   syncMatchHistory,
   getMatchHistory,
@@ -21,8 +21,31 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = getServiceClient();
 
-    // Obtener user_id del header
-    const userId = request.headers.get("x-user-id");
+    // Intentar obtener user_id de múltiples fuentes:
+    // 1. Header x-user-id (para compatibilidad)
+    // 2. Sesión autenticada
+    // 3. Body del request
+    let userId = request.headers.get("x-user-id");
+
+    if (!userId) {
+      // Intentar obtener desde la sesión
+      const authClient = await createClient();
+      const {
+        data: { session },
+      } = await authClient.auth.getSession();
+      userId = session?.user?.id ?? null;
+    }
+
+    if (!userId) {
+      // Fallback: intentar obtener del body
+      try {
+        const body = await request.clone().json();
+        userId = body.userId ?? null;
+      } catch {
+        // El body puede estar vacío o malformado
+      }
+    }
+
     console.log("[POST /api/riot/matches/sync] userId:", userId);
     if (!userId) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });

@@ -17,6 +17,8 @@ import { RiotAccountCardVisual } from "@/components/riot/RiotAccountCardVisual";
 import { MatchHistoryList } from "@/components/riot/MatchHistoryList";
 import { RiotTierBadge } from "@/components/riot/RiotTierBadge";
 import { ChampionStatsSummary } from "@/components/riot/ChampionStatsSummary";
+import { UnifiedRiotSyncButton } from "@/components/riot/UnifiedRiotSyncButton";
+import { useUnifiedRiotSync } from "@/hooks/use-unified-riot-sync";
 
 interface MobileProfileLayoutProps {
   fetchActivities: (page: number, limit: number) => Promise<any[]>;
@@ -46,6 +48,7 @@ interface MobileProfileLayoutProps {
   isSigningOut: boolean;
   onEditClick?: () => void;
   riotAccount?: any;
+  onInvalidateCache?: () => Promise<any> | void;
 }
 
 export default function MobileProfileLayout({
@@ -57,6 +60,7 @@ export default function MobileProfileLayout({
   isSigningOut,
   onEditClick,
   riotAccount,
+  onInvalidateCache,
 }: MobileProfileLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarX, setSidebarX] = useState(0);
@@ -70,6 +74,12 @@ export default function MobileProfileLayout({
   const activeTab = (searchParams.get("tab") as "posts" | "lol") || "posts";
 
   const isOwnProfile = userId === perfil.id;
+
+  // Hook para sincronización unificada de Riot
+  const {
+    isPending: unifiedSyncPending,
+    cooldownSeconds: unifiedSyncCooldown,
+  } = useUnifiedRiotSync();
 
   // Manejo de drag del sidebar
   const handleTouchStart = (e: React.TouchEvent) => {
@@ -204,10 +214,29 @@ export default function MobileProfileLayout({
                 onLinkClick={() => {
                   window.location.href = "/api/riot/login";
                 }}
+                onManualLinkSuccess={async () => {
+                  // Invalidar caché de React Query para recargar datos de Riot
+                  await onInvalidateCache?.();
+                }}
               />
             ) : riotAccount ? (
               <>
-                <RiotAccountCardVisual account={riotAccount} />
+                {/* Botón unificado de sincronización */}
+                {isOwnProfile && (
+                  <div className="flex justify-end mb-2">
+                    <UnifiedRiotSyncButton
+                      userColor={perfil?.color}
+                      showLabel={true}
+                    />
+                  </div>
+                )}
+
+                <RiotAccountCardVisual
+                  account={riotAccount}
+                  hideSync={true}
+                  isSyncing={unifiedSyncPending}
+                  cooldownSeconds={unifiedSyncCooldown}
+                />
 
                 <div className="grid grid-cols-1 gap-6">
                   {/* Estadísticas de campeones */}
@@ -215,12 +244,11 @@ export default function MobileProfileLayout({
 
                   {/* Historial de partidas */}
                   <div>
-                    {/* <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
-                      Historial de Partidassddasaas
-                    </h3> */}
                     <MatchHistoryList
                       userId={perfil.id}
                       puuid={riotAccount.puuid}
+                      externalSyncPending={unifiedSyncPending}
+                      externalCooldownSeconds={unifiedSyncCooldown}
                     />
                   </div>
                 </div>
